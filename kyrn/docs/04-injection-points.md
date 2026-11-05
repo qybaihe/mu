@@ -1,5 +1,7 @@
 # KYRN 注入点总图：判断模型接在 harness 的哪里
 
+Status: 维护中。新的决策点要在这里登记（[docs/adding-a-decision-point.md](../../docs/adding-a-decision-point.md)）。
+
 > 已于 2026-09-21 更名为 mu（命令 `mu`，标识 μ）。本文是更名前的记录，正文保持原样；新旧名对照见 [10-rename-to-mu.md](10-rename-to-mu.md)。
 
 > 2026-10-24（0.2.5）：Laya 已从 mu 移除，内置的 `laya` 和 `local` 类型都没有了。配置里还写着它时，会话里跳过它（本机装好了 mude 1.0 就由 mude 顶替），mu.json 只改一次，并提示一次。§3 的配置示例和内置判定器清单、§10 的命令已按此改过；正文里用 Laya 做的实测仍是当时的记录。

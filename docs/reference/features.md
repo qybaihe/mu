@@ -252,7 +252,7 @@ On by default: yes. Decision points: `turn.drift`.
 
 ## lsp
 
-**Language server diagnostics.** Uses language servers already installed on this machine (it installs none), keeps only diagnostics an edit newly introduced and lets the judge decide when to tell the model.
+**Language servers.** Uses language servers already installed on this machine (it installs none). It keeps only the diagnostics an edit newly introduced and lets the judge decide when to tell the model. Its lsp tool, opened when a task needs it, finds definitions, references and implementations and shows a symbol's type.
 
 On by default: yes. Decision points: `diagnostics.delivery`.
 
@@ -268,6 +268,8 @@ On by default: yes. Decision points: `diagnostics.delivery`.
 | `maxItems` | `10` | Diagnostics reported at once, at most `10`. Range 1 to 100. |
 | `maxServers` | `4` | Servers running at once, at most `4`. Range 1 to 16. |
 | `waitMs` | `4000` ms | Wait for the judge, at most `4000` ms. Range 500 to 30000. |
+| `navigation` | `true` | The lsp navigation tool. Definitions, references, implementations and types, from the same server processes as the diagnostics. It's in the capability catalog and opened when a task needs it, so it isn't in every request. |
+| `navigationResults` | `30` | Max places listed per answer. Range 1 to 200. |
 
 ## ttsr
 
@@ -528,6 +530,7 @@ On by default: yes.
 | `rules` | `true` | Inherit rules. |
 | `skills` | `true` | Inherit skills. |
 | `mcp` | `true` | Inherit MCP servers. When off, only the servers under mcp.servers in mu.json are used. |
+| `folders` | `true` | AGENTS.md and CLAUDE.md in subfolders. Instructions in a folder below the project folder, such as one package's AGENTS.md in a monorepo, are passed to the model once, with the result of the first tool that reads or changes a file there. The project folder's own are loaded by pi at the start. Those inside node_modules are left out. |
 | `maxRuleChars` | `4000` chars | Max size of a file-scoped rule passed along. The rest stays in the file for the model to read. Range 500 to 20000. |
 | `maxAlwaysChars` | `16000` chars | Budget for always-on rules. Always-on rules that don't fit are listed by description instead, so they can't bloat the prompt. Range 0 to 100000. |
 
@@ -583,6 +586,18 @@ On by default: yes.
 ## recovery
 
 **Interrupted tool calls.** When mu is killed, the machine sleeps or the app quits while tool calls run, reopening the session tells the model and you which calls have no result: which never started, which only read, and which started with an outcome nobody knows. For those, the model is told to check the outside state or ask you first, so a git push, a publish or a migration does not run twice. Before each call that may change something starts, the session gets a marker.
+
+On by default: yes.
+
+## interrupted
+
+**Replies you stop.** When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after "stop, and expand your second point" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) aren't given back: those say what they cut.
+
+On by default: yes.
+
+## prefix
+
+**Prompt cache watch.** Each request to the model is compared with the one before it. When it no longer starts with what was sent before, the provider can't reuse its prompt cache for the rest, so the session records what changed (the model, the system prompt and tools, or the first message that differs) and which of mu's decisions acted in between, each with what it declares it does to the cache. Only hashes, positions and roles are kept, and nothing is sent anywhere.
 
 On by default: yes.
 

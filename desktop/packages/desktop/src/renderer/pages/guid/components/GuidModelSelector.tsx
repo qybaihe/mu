@@ -11,6 +11,7 @@ import { levelsOf, modelMenu, visibleModelMenu } from '@/renderer/pages/conversa
 import { iconColors } from '@/renderer/styles/colors';
 import { getModelDisplayLabel } from '@/renderer/utils/model/agentLogo';
 import type { AgentRuntimeDerivedOption } from '@/renderer/utils/model/agentRuntimeCatalog';
+import { useChooseModels } from '@/renderer/hooks/agent/useChooseModels';
 import { useModelNames } from '@/renderer/hooks/agent/useModelNames';
 import { useProviderNames } from '@/renderer/hooks/agent/useProviderNames';
 import { modelDisplayName, providerDisplayName } from '@/renderer/utils/model/providerName';
@@ -64,6 +65,8 @@ type AcpModelChipProps = {
   label: string;
   defaultModel?: string;
   onMakeDefault?: (model: string) => void;
+  /** Opens where the models the menu offers are chosen, on the account of the model shown. */
+  onChooseModels?: (model?: string | null) => void;
 };
 
 /**
@@ -79,6 +82,7 @@ const AcpModelChip: React.FC<AcpModelChipProps> = ({
   label,
   defaultModel,
   onMakeDefault,
+  onChooseModels,
 }) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
@@ -151,6 +155,14 @@ const AcpModelChip: React.FC<AcpModelChipProps> = ({
               },
             }
           : {}),
+        ...(onChooseModels
+          ? {
+              onChooseModels: () => {
+                close();
+                onChooseModels(current);
+              },
+            }
+          : {}),
       })}
     >
       <span className='inline-flex min-w-0'>
@@ -182,6 +194,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const chooseModels = useChooseModels();
   const names = useModelNames();
   // A send without a pick starts on the default model: that is what the chip names until one is picked.
   const shownAcpModel = selectedAcpModel ?? defaultModel ?? null;
@@ -335,6 +348,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
         label={combinedAcpButtonLabel}
         defaultModel={defaultModel}
         onMakeDefault={onMakeDefault}
+        onChooseModels={chooseModels}
       />
     );
   }

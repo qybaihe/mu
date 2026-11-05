@@ -1,8 +1,7 @@
 // Where the full text of a tool result the model was shown only part of is kept, and how `recall` finds it again.
 import { randomBytes } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { archiveDir, writeArchive } from "./archive.ts";
 import type { KyrnRuntime } from "./runtime.ts";
 
 /** A custom entry beside a tool result, naming the file with its full text. Custom entries never reach the model. */
@@ -41,13 +40,13 @@ export function recallCall(toolCallId: string, offset?: number, limit?: number):
  * records it. Undefined when it could not be written; nothing points to it then.
  */
 export function keepPage(runtime: KyrnRuntime, toolCallId: string, text: string): string | undefined {
-	const dir = join(tmpdir(), `kyrn-${runtime.sessionId}`);
 	// A provider may give calls of different turns the same id, so the name never depends on the id alone.
-	const path = join(dir, `${toolCallId.replace(/[^\w.-]/g, "_")}-${randomBytes(4).toString("hex")}.page.txt`);
+	const path = join(
+		archiveDir(runtime.sessionId),
+		`${toolCallId.replace(/[^\w.-]/g, "_")}-${randomBytes(4).toString("hex")}.page.txt`,
+	);
 	try {
-		mkdirSync(dir, { recursive: true, mode: 0o700 });
-		// `wx` never follows a link someone else placed at the path.
-		writeFileSync(path, text, { mode: 0o600, flag: "wx" });
+		writeArchive(path, text);
 	} catch {
 		return undefined;
 	}

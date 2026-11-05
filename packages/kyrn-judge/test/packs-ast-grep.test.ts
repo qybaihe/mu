@@ -363,6 +363,8 @@ describe.skipIf(process.platform === "win32")("pack:ast-grep in the catalog", ()
 		// The judge wants it open as well: that failure is silent and the prompt goes through.
 		await harness.session.prompt("Find every console.log call.");
 		expect(toolResults(harness)[0]).toContain("ast-grep is not installed. Install it with:");
+		// Installing changes the user's machine: the model asks first.
+		expect(toolResults(harness)[0]).toContain("Next: installing a program changes the user's machine");
 		expect(registered(harness)).not.toContain("sg_search");
 		harness.setResponses([call("find_capability", { query: "ast-grep" }), fauxAssistantMessage("Still hidden.")]);
 		await harness.session.prompt("Look again.");

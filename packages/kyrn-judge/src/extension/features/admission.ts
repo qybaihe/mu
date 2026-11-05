@@ -1,8 +1,7 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { isTestLog, planTestLog, renderTestLog, type TestLogStrategy } from "../../admission/test-log.ts";
 import { type AdmissionOutcome, toolAdmission, toolAdmissionBatch } from "../../decisions/tool-admission.ts";
+import { archiveDir as archiveDirOf, sweepArchives, writeArchive } from "../archive.ts";
 import { canRecall, recallCall, recordFullOutput } from "../full-output.ts";
 import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 
@@ -139,21 +138,23 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		agentEnv: true,
 	});
 	if (!options.enabled) return;
+	const archiveDir = archiveDirOf(runtime.sessionId);
 	const { pi } = runtime;
-	// An explicit reporter flag still wins, so the agent can list every passing test when it needs them.
-	if (options.agentEnv) process.env.AI_AGENT ??= "1";
 
+	// Archives were never removed. Once per process, in the background: the session never waits for it.
+	let swept = false;
 	pi.on(
-		"message_end",
-		failOpen((event, ctx) => {
-			runtime.touch(ctx);
-			const message = event.message as { role?: unknown; content?: unknown };
-			if (message.role !== "assistant") return undefined;
-			const text = textOf(message.content);
-			if (text.trim()) runtime.lastAssistantText = text;
+		"session_start",
+		failOpen(() => {
+			if (swept) return undefined;
+			swept = true;
+			void sweepArchives(archiveDir).catch(() => {});
 			return undefined;
 		}),
 	);
+
+	// An explicit reporter flag still wins, so the agent can list every passing test when it needs them.
+	if (options.agentEnv) process.env.AI_AGENT ??= "1";
 
 	/**
 	 * One verdict per chunk, in order. The judge takes many chunks in one request, the state billed once
@@ -205,7 +206,6 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 				toolName,
 				typeof details?.command === "string" ? { command: details.command } : event.input,
 			);
-			const archiveDir = join(tmpdir(), `kyrn-${runtime.sessionId}`);
 			const archivePath = join(archiveDir, `${event.toolCallId.replace(/[^\w.-]/g, "_")}.txt`);
 			// The notes point to recall when the model has it, which then finds the archive by the entry recorded for it.
 			const recall = canRecall(runtime);
@@ -224,8 +224,7 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 				const rendered = renderTestLog(plan, recall ? recallCall(event.toolCallId) : archivePath);
 				if (!rendered.applied) return undefined;
 				// The markers count lines of this text, so this text is what gets archived, not pi's own full-output file.
-				mkdirSync(archiveDir, { recursive: true });
-				writeFileSync(archivePath, text);
+				writeArchive(archivePath, text);
 				archive();
 				runtime.savings.admissionOmittedChars += rendered.omittedChars;
 				return { content: [{ type: "text" as const, text: rendered.text }] };
@@ -249,8 +248,7 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			const dropped = outcomes.map((outcome) => outcome.drop);
 			if (!dropped.some(Boolean)) return undefined;
 
-			mkdirSync(archiveDir, { recursive: true });
-			writeFileSync(archivePath, text);
+			writeArchive(archivePath, text);
 			archive();
 
 			// Where each chunk starts in the archived text, so a note can send recall to the part it stands for.

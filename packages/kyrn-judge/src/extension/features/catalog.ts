@@ -2,8 +2,9 @@ import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import type { Capability, CapabilityKind, OpenedBy } from "../../catalog/catalog.ts";
 import { capabilityDisclosure } from "../../decisions/capability-disclosure.ts";
-import { say } from "../../language.ts";
+import { codeOf, say } from "../../language.ts";
 import { CAPABILITIES_OPEN_ENV, inheritedNames } from "../../swarm/brief.ts";
+import { nextStep } from "../next-step.ts";
 import { failOpen, type KyrnRuntime, userWords } from "../runtime.ts";
 import { isUnattended } from "./unattended.ts";
 
@@ -137,24 +138,14 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		decision.catch(() => {});
 		early = { turn: runtime.userTurns, decision };
 	});
-	// Only tools this feature switched off are ever switched back on: what the user pinned with --tools stays as it is.
-	const withheld = new Set<string>();
 	/** Left-out names the person called for by their command in this session. */
 	const released = new Set<string>();
 
+	// The masks put back only what one of them took off: what the user pinned with --tools stays as it is.
 	const applyLoadout = (): void => {
-		const hidden = new Set(catalog.hiddenTools());
-		for (const name of leftOut) hidden.add(name);
-		const active = new Set(pi.getActiveTools());
-		for (const tool of hidden) {
-			if (active.delete(tool)) withheld.add(tool);
-		}
-		for (const tool of [...withheld]) {
-			if (hidden.has(tool)) continue;
-			withheld.delete(tool);
-			active.add(tool);
-		}
-		pi.setActiveTools([...active]);
+		runtime.toolMasks.set("catalog", catalog.hiddenTools(), "its capability is not open; find_capability opens it");
+		runtime.toolMasks.set("unattended", leftOut, "left out of a mu --print or json run (catalog.unattendedHidden)");
+		runtime.toolMasks.apply();
 	};
 
 	const open = async (id: string, by: OpenedBy): Promise<Capability | undefined> => {
@@ -276,8 +267,14 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 					await open(params.open, "requested");
 				} catch (error) {
 					const reason = error instanceof Error ? error.message : String(error);
+					const coded = codeOf(error);
 					return {
-						content: [{ type: "text", text: `${known.title} could not be started: ${reason}` }],
+						content: [
+							{
+								type: "text",
+								text: `${known.title} could not be started: ${reason}\n${nextStep(coded?.code, coded?.params)}`,
+							},
+						],
 						details: { opened: undefined, matches: [] } satisfies FindDetails as FindDetails,
 					};
 				}

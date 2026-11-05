@@ -616,7 +616,8 @@
     "madeDefault": "Novas conversas vão começar com este modelo.",
     "makeDefaultFailed": "Não foi possível salvar o modelo padrão.",
     "showAllModels": "Mostrar todos os modelos ({{count}})",
-    "showFewerModels": "Mostrar menos modelos"
+    "showFewerModels": "Mostrar menos modelos",
+    "chooseModels": "Escolher quais modelos aparecem…"
   },
   "agentTip": {
     "codes": {

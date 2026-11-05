@@ -610,7 +610,8 @@
     "madeDefault": "New conversations will start with this model.",
     "makeDefaultFailed": "Couldn't save the default model.",
     "showAllModels": "Show all models ({{count}})",
-    "showFewerModels": "Show fewer models"
+    "showFewerModels": "Show fewer models",
+    "chooseModels": "Choose which models appear…"
   },
   "agentTip": {
     "codes": {

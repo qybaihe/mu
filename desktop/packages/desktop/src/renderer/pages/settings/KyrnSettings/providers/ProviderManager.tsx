@@ -19,6 +19,7 @@ import {
 } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
 import ProviderMark from '@renderer/components/brand/ProviderMark';
+import { takeAccountToShow } from '@/renderer/hooks/agent/useChooseModels';
 import { providerDisplayName } from '@/renderer/utils/model/providerName';
 import {
   consumePendingDeepLink,
@@ -26,6 +27,7 @@ import {
   type DeepLinkAddProviderDetail,
 } from '@renderer/hooks/system/useDeepLink';
 import AccountDetail from '../accounts/AccountDetail';
+import AccountModels from '../accounts/AccountModels';
 import { providerName } from '../accounts/LoginWaiting';
 import { useSubscriptionLogin } from '../accounts/useSubscriptionLogin';
 import type { Draft } from '../draft';
@@ -78,6 +80,21 @@ export default function ProviderManager(props: ProviderManagerProps) {
   const { providers, foreign, commented, problem, defaults } = draft.settings.models;
   const readOnly = commented || Boolean(problem);
   const [selection, setSelection] = useState<Selection>();
+  // Opened from a model menu's "Choose which models appear": on the provider of the model in use, an account or one
+  // an API key makes usable (one no longer listed falls back as any gone choice does).
+  useEffect(() => {
+    const asked = takeAccountToShow();
+    if (!asked) return;
+    const index = providers.findIndex((provider) => provider.id === asked);
+    setSelection(
+      isSubscriptionProvider(asked)
+        ? { kind: 'account', provider: asked }
+        : index >= 0
+          ? { kind: 'custom', index }
+          : { kind: 'builtin', id: asked }
+    );
+    // Only when the page opens: the request is taken once.
+  }, []);
 
   const saved = new Map(base.models.providers.map((provider) => [provider.id, provider]));
   const own = new Set([...providers.map((provider) => provider.id), ...foreign.map((entry) => entry.id)]);
@@ -280,6 +297,7 @@ export default function ProviderManager(props: ProviderManagerProps) {
         provider={provider}
         flow={flow}
         byKey={byKey(provider)}
+        startModel={defaults.provider === provider ? defaults.model : undefined}
         onShow={(running) => setSelection({ kind: 'account', provider: running })}
       />
     );
@@ -335,6 +353,8 @@ export default function ProviderManager(props: ProviderManagerProps) {
     );
   } else if (current?.kind === 'builtin') {
     const entry = builtin.find((candidate) => candidate.id === current.id);
+    // What the harness lists as usable has every model, the ones unchecked too: they are chosen here.
+    const usable = flow.usable.find((candidate) => candidate.provider === current.id);
     detail = (
       <div className={styles.editor} data-testid='mu-provider-builtin'>
         <ProviderHead
@@ -344,13 +364,26 @@ export default function ProviderManager(props: ProviderManagerProps) {
         />
         <div className={styles.fields}>
           <div className={styles.hint}>{t('mu.providers.builtinHelp')}</div>
-          <div className={styles.suggestions}>
-            {entry?.models.map((model) => (
-              <Tag key={model.id} size='small'>
-                {model.id}
-              </Tag>
-            ))}
-          </div>
+          {usable?.models.length ? (
+            <AccountModels
+              key={current.id}
+              provider={current.id}
+              name={providerDisplayName(t, current.id)}
+              models={usable.models}
+              enabled={usable.enabled}
+              startModel={defaults.provider === current.id ? defaults.model : undefined}
+              fresh={false}
+              enable={flow.enable}
+            />
+          ) : (
+            <div className={styles.suggestions}>
+              {entry?.models.map((model) => (
+                <Tag key={model.id} size='small'>
+                  {model.id}
+                </Tag>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );

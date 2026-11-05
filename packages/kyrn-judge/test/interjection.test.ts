@@ -1,5 +1,5 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
+import { fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it } from "vitest";
 import { createHarness, getMessageText, getUserTexts, type Harness } from "../../coding-agent/test/suite/harness.ts";
@@ -35,6 +35,8 @@ describe("interjection: mu decides when a message sent mid-run reaches the work"
 		extra: { modes?: Record<string, string>; features?: Record<string, unknown>; only?: FeatureName[] } = {},
 	) {
 		const asked: string[] = [];
+		/** What the judge was told the agent is doing, for each message it was asked about. */
+		const actions: string[] = [];
 		let release = () => {};
 		const released = new Promise<void>((resolve) => {
 			release = resolve;
@@ -58,6 +60,7 @@ describe("interjection: mu decides when a message sent mid-run reaches the work"
 						if (!("kind" in request.questions) || state.current_action === undefined) return {};
 						const message = String(state.user_message);
 						asked.push(message);
+						actions.push(String(state.current_action));
 						const verdict = verdicts[message] ?? {};
 						if (verdict.delayMs) await sleep(verdict.delayMs);
 						if (verdict.fails) throw new Error("the judge is down");
@@ -87,7 +90,7 @@ describe("interjection: mu decides when a message sent mid-run reaches the work"
 			seen.push(context.messages.filter((message) => message.role === "user").map(getMessageText));
 			return fauxAssistantMessage(text);
 		};
-		return { harness, session: harness.session, asked, release, started, seen, answer };
+		return { harness, session: harness.session, asked, actions, release, started, seen, answer };
 	}
 
 	/** How many times `text` reached the conversation as the person's message. */
@@ -293,6 +296,27 @@ describe("interjection: mu decides when a message sent mid-run reaches the work"
 		bare.release();
 		await bareFirst;
 		expect(bare.asked).toEqual([]);
+	});
+
+	// The kernel keeps the model's last words: admission, memory and the language server each kept a copy, and with all
+	// three off the judge read that the agent was doing nothing.
+	it("reads what the model said last as what the agent is doing, whichever other features are on", async () => {
+		const extra = "Also add an index on email.";
+		const run = await running({ [extra]: { kind: "addition" } }, { only: ["preflight", "frame", "interjection"] });
+		run.harness.setResponses([
+			fauxAssistantMessage([fauxText("Copying the rows into the new table first."), fauxToolCall("wait", {})], {
+				stopReason: "toolUse",
+			}),
+			run.answer("Migrated."),
+			run.answer("Index added."),
+		]);
+		const first = run.session.prompt(GOAL);
+		await run.started;
+		await run.session.prompt(extra, { streamingBehavior: "steer" });
+		await sleep(20);
+		run.release();
+		await first;
+		expect(run.actions).toEqual(["Copying the rows into the new table first."]);
 	});
 
 	it("with shadow as the default mode in mu.json, the message goes at once as sent and the verdict is only recorded", async () => {

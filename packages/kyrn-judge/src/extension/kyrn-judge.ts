@@ -17,7 +17,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
 import type { Capability } from "../catalog/catalog.ts";
-import { DEFAULT_CONFIG, type KyrnConfig, loadConfig } from "../config.ts";
+import { DEFAULT_CONFIG, featureConfigProblems, type KyrnConfig, loadConfig } from "../config.ts";
 import type { DecisionMode } from "../decision.ts";
 import { Judge } from "../judge.ts";
 import { mudeReady } from "../laya-migration.ts";
@@ -48,6 +48,7 @@ import { registerImport } from "./features/import.ts";
 import { type HarnessRoots, registerInherit } from "./features/inherit.ts";
 import { registerInjection } from "./features/injection.ts";
 import { registerInterjection } from "./features/interjection.ts";
+import { registerInterrupted } from "./features/interrupted.ts";
 import { registerJudgeItems } from "./features/judge-items.ts";
 import { registerLayaNotice } from "./features/laya.ts";
 import { registerLsp } from "./features/lsp.ts";
@@ -55,9 +56,11 @@ import { registerMcp } from "./features/mcp.ts";
 import { registerMemory } from "./features/memory.ts";
 import { registerMonitor } from "./features/monitor.ts";
 import { registerNotify } from "./features/notify.ts";
+import { registerNudgeOutcomes } from "./features/nudge-outcome.ts";
 import { registerOpenAIKeyNotice } from "./features/openai-key.ts";
 import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
+import { registerPrefix } from "./features/prefix.ts";
 import { registerPreflight } from "./features/preflight.ts";
 import { registerProcedures } from "./features/procedures.ts";
 import { registerRecall } from "./features/recall.ts";
@@ -77,7 +80,7 @@ import { registerWelcome } from "./features/welcome.ts";
 import type { PresentationListener } from "./presentation.ts";
 import { registerLockSafeQuit } from "./quit.ts";
 import { registerRejectionLog } from "./rejections.ts";
-import { KyrnRuntime, recentTurnDigests } from "./runtime.ts";
+import { failOpen, KyrnRuntime, recentTurnDigests, textOf } from "./runtime.ts";
 
 export { recentTurnDigests };
 
@@ -107,6 +110,11 @@ export interface KyrnJudgeExtensionOptions {
 	sandbox?: SandboxDeps;
 	/** For tests of the write floor: the platform, how the floor is tried, the home and temporary folders. */
 	confine?: ConfineDeps;
+	/**
+	 * Told which part of mu registers next, before it does: a feature's name from the table below, or `kernel` for what
+	 * mu registers around them. For the generated hook table (`test/golden/hooks.test.ts`, `docs/reference/hooks.md`).
+	 */
+	trace?: (part: FeatureName | "kernel") => void;
 }
 
 export type FeatureName =
@@ -151,7 +159,9 @@ export type FeatureName =
 	| "packs"
 	| "googleLogin"
 	| "recovery"
-	| "recall";
+	| "recall"
+	| "interrupted"
+	| "prefix";
 
 export function createKyrnJudgeExtension(options: KyrnJudgeExtensionOptions = {}): (pi: ExtensionAPI) => void {
 	return (pi) => registerKyrn(pi, options);
@@ -166,6 +176,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	// inherits that variable: an Electron app the agent starts would run as a script. Only mu's own sub-agents, which
 	// run on this same binary, get it back (swarm.ts).
 	delete process.env.ELECTRON_RUN_AS_NODE;
+	options.trace?.("kernel");
 	// Whatever else is on or off: in RPC mode, a promise nothing handled is logged instead of ending mu.
 	registerRejectionLog(pi);
 	// An injected provider or config means the caller owns the setup: do not read the user's files.
@@ -213,6 +224,20 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		return;
 	}
 
+	// What the agent said last, the stated intent of the calls that follow it: interjection, memory, admission, lsp,
+	// notify and warming read it, whichever of them are on.
+	pi.on(
+		"message_end",
+		failOpen((event, ctx) => {
+			runtime.touch(ctx);
+			const message = event.message as { role?: unknown; content?: unknown };
+			if (message.role !== "assistant") return undefined;
+			const text = textOf(message.content);
+			if (text.trim()) runtime.lastAssistantText = text;
+			return undefined;
+		}),
+	);
+
 	// A sub-agent first of all listens to its parent: a wrap-up request has to be known before anything else reacts to a step.
 	if (process.env.KYRN_SWARM_CONTROL)
 		registerSwarmChild(runtime, process.env.KYRN_SWARM_CONTROL, process.env[FRAME_OUT_ENV]);
@@ -256,6 +281,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		// Before the watchdog, which cuts sooner when the run has a deadline.
 		["deadline", registerDeadline],
 		["watchdog", registerWatchdog],
+		// A reply the user stopped; the watchdog's and the correction's own cuts are left to them.
+		["interrupted", registerInterrupted],
 		// Before the goal and completion checks: errors an edit introduced are said before "verify your change" is.
 		["lsp", registerLsp],
 		["goal", registerGoal],
@@ -269,6 +296,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["notify", registerNotify],
 		["warming", registerWarming],
 		["warmup", registerWarmup],
+		// Watches what the others' changes do to the prompt cache: it only reads each request.
+		["prefix", registerPrefix],
 		["swarm", (shared) => registerSwarm(shared, options.swarmRunner)],
 		["hive", (shared) => registerHive(shared, options.swarmRunner)],
 		["tools", registerTools],
@@ -276,10 +305,11 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["browser", registerBrowser],
 		["inherit", (shared) => registerInherit(shared, roots)],
 		["mcp", (shared) => registerMcp(shared, roots)],
-		["background", registerBackground],
 		// Replaces bash with one under the write floor when switched on; off by default. Before the Nebius sandbox,
-		// which takes bash over again when it is on: nothing runs on this machine then.
+		// which takes bash over again when it is on: nothing runs on this machine then. Before background, whose bg_start
+		// offers the floor's way out when there is one.
 		["confine", (shared) => registerConfine(shared, options.confine)],
+		["background", registerBackground],
 		// Replaces bash, read, write and edit when switched on; off by default.
 		["sandbox", (shared) => registerSandbox(shared, options.sandbox)],
 		["web", registerWeb],
@@ -288,8 +318,42 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		// Last: its tool_call handler marks a call as started, so every check that may stop the call comes first.
 		["recovery", registerRecovery],
 	];
+	// Before the features that send the agent back to work: the end of the run that answers a nudge is read here before
+	// they decide on it, and they may send another.
+	runtime.nudges = registerNudgeOutcomes(runtime);
 	for (const [name, register] of features) {
-		if (!options.only || options.only.includes(name)) register(runtime);
+		if (options.only && !options.only.includes(name)) continue;
+		options.trace?.(name);
+		register(runtime);
+	}
+	options.trace?.("kernel");
+	// What was put back on the model's list since by something other than the masks (another extension, a tool that
+	// sets the list itself) comes off again before the next request.
+	pi.on(
+		"turn_start",
+		failOpen(() => {
+			runtime.toolMasks.apply();
+			return undefined;
+		}),
+	);
+	// Every feature has read its options by now. What mu.json sets that no feature takes is said, not ignored: in
+	// /doctor and /status, and once when the session starts.
+	if (!options.only) {
+		const wrong = featureConfigProblems(config.features, runtime.optionDefaults);
+		runtime.problems.push(...wrong);
+		if (wrong.length > 0) {
+			pi.on(
+				"session_start",
+				failOpen((_event, ctx) => {
+					if (ctx.hasUI)
+						ctx.ui.notify(
+							`mu.json: ${wrong.length === 1 ? "a setting under features does" : `${wrong.length} settings under features do`} nothing as written. ${wrong[0]}${wrong.length > 1 ? " /doctor lists the rest." : ""}`,
+							"warning",
+						);
+					return undefined;
+				}),
+			);
+		}
 	}
 	registerFreeJevNotice(runtime, roots);
 	registerOpenAIKeyNotice(runtime);

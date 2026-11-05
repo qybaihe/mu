@@ -324,6 +324,14 @@ export interface ResolveModelScopeResult {
 	diagnostics: ModelScopeDiagnostic[];
 }
 
+/** mu: whether a glob starts with one of the models' providers, by name, and a slash ("openai/*", "openrouter/**"). */
+function namesProvider(glob: string, models: readonly Model<Api>[]): boolean {
+	const slash = glob.indexOf("/");
+	if (slash <= 0) return false;
+	const provider = glob.slice(0, slash).toLowerCase();
+	return models.some((model) => model.provider.toLowerCase() === provider);
+}
+
 /**
  * Resolve scope patterns (`--models`, `enabledModels`) to models with optional thinking levels.
  *
@@ -375,10 +383,13 @@ export function resolveModelScopeFromModels(
 			} else {
 				// Match against "provider/modelId" format OR just model ID
 				// This allows "*sonnet*" to match without requiring "anthropic/*sonnet*"
+				// mu: a glob that starts with a provider's name ("openai/*") means that provider's models, not also
+				// another provider's whose ids start the same way (OpenRouter's "openai/gpt-5.5").
+				const named = namesProvider(globPattern, models);
 				matches = models.filter(
 					(m) =>
 						minimatch(`${m.provider}/${m.id}`, globPattern, { nocase: true }) ||
-						minimatch(m.id, globPattern, { nocase: true }),
+						(!named && minimatch(m.id, globPattern, { nocase: true })),
 				);
 			}
 			if (matches.length === 0) noMatch(pattern);

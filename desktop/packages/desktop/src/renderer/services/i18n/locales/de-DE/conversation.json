@@ -611,7 +611,8 @@
     "madeDefault": "Neue Unterhaltungen starten mit diesem Modell.",
     "makeDefaultFailed": "Das Standardmodell konnte nicht gespeichert werden.",
     "showAllModels": "Alle Modelle anzeigen ({{count}})",
-    "showFewerModels": "Weniger Modelle anzeigen"
+    "showFewerModels": "Weniger Modelle anzeigen",
+    "chooseModels": "Angezeigte Modelle auswählen…"
   },
   "agentTip": {
     "codes": {

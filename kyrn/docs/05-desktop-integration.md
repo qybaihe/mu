@@ -1,5 +1,7 @@
 # KYRN Desktop: integrate into the existing desktop app first
 
+Status: 记录。2026-09-21 时桌面端的方向。
+
 > 已于 2026-09-21 更名为 mu（命令 `mu`，标识 μ）。本文是更名前的记录，正文基本保持原样；新旧名对照见 [10-rename-to-mu.md](10-rename-to-mu.md)。
 
 ## Current direction (2026-09-21)

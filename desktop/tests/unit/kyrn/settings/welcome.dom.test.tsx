@@ -1,6 +1,7 @@
 import React from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -786,6 +787,36 @@ describe('signing in with a subscription', () => {
     expect(screen.getByLabelText('Model')).toBeInTheDocument();
     await toSummary();
     expect(screen.getByText('Claude / claude-opus-4-8')).toBeInTheDocument();
+  });
+
+  it('starts an account signed in before on a model it offers, and offers only those', async () => {
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: {
+        signedIn: [
+          {
+            provider: 'xai',
+            models: [
+              { id: 'grok-5', name: 'Grok 5' },
+              { id: 'grok-5-mini', name: 'Grok 5 Mini' },
+              { id: 'grok-5-fast', name: 'Grok 5 Fast' },
+            ],
+            // Grok 5 was unchecked for the model menus in Settings.
+            enabled: ['grok-5-mini', 'grok-5-fast'],
+          },
+        ],
+      },
+    });
+    await toSubscriptions();
+    await waitFor(() => expect(screen.getByTestId('mu-login-xai')).toHaveTextContent('Signed in'));
+    fireEvent.click(screen.getByTestId('mu-login-xai'));
+    const user = userEvent.setup();
+    await user.click(screen.getByLabelText('Model'));
+    expect(await screen.findByText('Grok 5 Fast', { selector: '.arco-select-option' })).toBeInTheDocument();
+    expect(screen.queryByText('Grok 5', { selector: '.arco-select-option' })).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await toSummary();
+    expect(screen.getByText('Grok / grok-5-mini')).toBeInTheDocument();
   });
 
   it('offers Google only when the harness does, and asks about the risk before anything opens', async () => {

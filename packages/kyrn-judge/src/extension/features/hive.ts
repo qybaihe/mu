@@ -98,6 +98,22 @@ type InboxItem =
 	| { kind: "correction"; earlier: Note; later: Note; score: number }
 	| { kind: "conflict"; a: Note; b: Note; score: number };
 
+/** The options of `features.hive` that only a bee reads. */
+const MEMBER_OPTIONS = {
+	maxNotesPerBee: 12,
+	maxDeliveriesPerBee: 10,
+	/** Earlier notes a new one is held against, at most: the ones sharing the most words with it. */
+	maxRelatedPerNote: 2,
+	/** A note a bee starts with FOUND: or DEAD END:, as the checkpoint asks, is published without asking the judge. */
+	publishMarked: true,
+	/** What a bee's tools returned is also put to the judge as a possible note, not only what the bee said. */
+	publishToolOutputs: false,
+	/** Tool calls a bee may make in silence before it is asked what it has found. 0 turns checkpoints off. */
+	checkpointEvery: 4,
+	/** Notes that arrive while a bee writes its report get one hearing: a corrected report, or "NO CHANGE". */
+	lastCall: true,
+};
+
 /**
  * Inside a bee. After every step the judge decides whether what the bee said
  * or saw is news for the hive (H1), what each new note does to the earlier
@@ -105,21 +121,7 @@ type InboxItem =
  * bee (H2). The bee's own model spends nothing on any of it.
  */
 function registerMember(runtime: KyrnRuntime, dir: string): void {
-	const options = runtime.options("hive", {
-		enabled: true,
-		maxNotesPerBee: 12,
-		maxDeliveriesPerBee: 10,
-		/** Earlier notes a new one is held against, at most: the ones sharing the most words with it. */
-		maxRelatedPerNote: 2,
-		/** A note a bee starts with FOUND: or DEAD END:, as the checkpoint asks, is published without asking the judge. */
-		publishMarked: true,
-		/** What a bee's tools returned is also put to the judge as a possible note, not only what the bee said. */
-		publishToolOutputs: false,
-		/** Tool calls a bee may make in silence before it is asked what it has found. 0 turns checkpoints off. */
-		checkpointEvery: 4,
-		/** Notes that arrive while a bee writes its report get one hearing: a corrected report, or "NO CHANGE". */
-		lastCall: true,
-	});
+	const options = runtime.options("hive", { enabled: true, ...MEMBER_OPTIONS });
 	const me = process.env.KYRN_HIVE_BEE ?? "bee";
 	const goal = process.env.KYRN_HIVE_GOAL ?? "";
 	const focus = process.env.KYRN_HIVE_FOCUS ?? "";
@@ -414,6 +416,8 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 		verifyConflicts: 1,
 		verifyAfterSeconds: 60,
 		...SWARM_LIMIT_DEFAULTS,
+		// Read here too, so that the session's check of mu.json knows them (`featureConfigProblems`).
+		...MEMBER_OPTIONS,
 	});
 	if (!options.enabled) return;
 	const memberDir = process.env.KYRN_HIVE_DIR;

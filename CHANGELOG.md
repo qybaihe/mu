@@ -4,10 +4,69 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
-### Changed
+## [0.3.8] - 2026-11-05
 
+**In 0.3.8 the judge reads the whole call it approves, and your keys stay out of the agent's commands and MCP servers. You can also choose which of an account's models the model menus show.** A session reopened after an interruption says which calls may already have run, a reply you stop keeps its text for the model, and the agent gets a language-server tool and a way to read back output mu shortened. An experimental write sandbox can keep the agent's commands to the project. The desktop app carries mu-agent 0.3.8.
+
+### Worth knowing before you update
+
+- **The agent's commands no longer see your keys.** Commands, background jobs and programs run under the debugger start without the environment variables that hold a credential: a name with KEY, TOKEN, SECRET, PASSWORD or CREDENTIAL and a value that looks like one. A setting such as `MAX_TOKENS=4096` stays. If a command needs a key, such as `npm publish` with `NPM_TOKEN`, name it in `MU_PASS_ENV` (`MU_PASS_ENV=NPM_TOKEN`). `gh`, `npm` and `aws` reading their own config files are unaffected.
+- **MCP servers from `mcp.json` start without them too.** A server that read a token from the environment without naming it now needs it in the entry's `env` or in `MU_PASS_ENV`, or `"inheritEnv": true` on the entry. Servers mu inherits from Claude Code, Cursor and Codex already started this way.
+- **Some calls now ask you.** In Judge mode, a call too long for the judge to read whole (over 4,000 characters, or a flagged command over 1,500) asks you instead of being judged on an excerpt. In Judge mode and Ask first, a call that carries one of your keys, or a command that sends a credential file (`.env`, an ssh key, `.npmrc`, `.aws/credentials` and the like) off the computer, asks you every time and is never allowed for the whole conversation. Full access is unchanged.
+- **mu points out mistakes in mu.json's `features`, and a value of the wrong kind is no longer used.** `"enabled": "false"` is text and used to count as on; now it keeps the default. A misspelled feature or option, or a value of the wrong kind, is named at the start of the session and in `/doctor` and `/status`, with the closest name when it looks like a typo.
+
+### Safer runs
+
+- **The judge reads the call that runs.** In Judge mode the approval judge read only the first 400 characters of a command, and the whole command ran. It now reads the whole call, a command line by line, and a change another extension makes to a call is made before the judge reads it, not after.
+- **A call that carries a key asks you.** The question, and what the model reads when it's refused, show the call with the key taken out. Naming a variable (`$GH_TOKEN`) carries nothing and is judged as usual.
+- Web search and page reading through Tavily never follow a redirect with your key.
+- The full output mu keeps when it shortens a tool result is readable only by your user account, and archives untouched for 14 days are removed.
+
+### Choose which models the model menus show
+
+- **Desktop:** Settings → Providers. Each signed-in account (ChatGPT, Antigravity, …) and each provider you use with an API key (OpenRouter, OpenAI or Grok with a key) has a checklist of its models, with Select all, Select none and Restore default, and a search box once there are more than twelve. A click applies at once. The model menus of conversations and of the home page list only the checked models (the model a conversation runs on stays listed) and end with "Choose which models appear…", which opens that provider's checklist.
+- The default model page and the first-run guide offer only checked models. When the default isn't checked, both say so: new conversations then start on the first checked model.
+- **Terminal:** signing in to an account with several models opens the same choice for that account, and `/scoped-models <provider>` opens it again. `/model` shows the chosen models first, as before.
+- By default every model is shown, and models an account gains later appear too. Nothing is written until you uncheck something.
+
+### Interruptions
+
+- **A reopened session says which calls may have run.** When mu is killed, the machine sleeps or the app quits while tool calls run, reopening the session tells the model and you which calls never started and which started with an outcome nobody knows. The model is told to check before running those again, so a `git push`, a publish or a migration doesn't happen twice.
+- **A reply you stop keeps its text.** The model gets back the text you saw, so "stop, and expand your second point" works. Its reasoning and half-written tool calls are still dropped.
+
+### The agent finds more and repeats less
+
+- **An `lsp` tool.** With a language server installed (TypeScript, Python, Go, Rust, C/C++), the model can ask where a symbol is defined, where it's used, what implements it and what its type is, instead of guessing from grep. It's in the capability catalog and opened when a task needs it.
+- **Shortened output can be read back.** Output mu left out to save context (an old result, noise folded out of a log, the rest of a long web page) is read back a piece at a time with `recall`, instead of running the command or fetching the page again.
+- **A subfolder's instructions reach the model.** A folder's own AGENTS.md or CLAUDE.md below the project folder, such as one package's in a monorepo, is passed to the model the first time the work reads or changes a file there. `features.inherit.folders: false` turns this off.
+- **Writing a file and running it in one step works.** When the model writes a file and runs it in the same batch of tool calls, the run waits for the write. The calls between two file changes still run in parallel.
+- **Loops are caught sooner, and mu speaks up more than once.** A call refused again and again, by a check or by you, now counts as a loop, and mu speaks up at 3, 5 and 8 repeats instead of once.
+- **A dead end says what to do next.** A capability that can't start, or a write sandbox that can't, ends its message with who can fix it and whether trying again helps, so the model stops retrying or installing things on its own.
+- **Subagents keep a session.** Each `delegate` or `hive` subagent keeps a session file of its own (in `~/.mu/agent/subagents/`), so what it did can be read after it ended, even when its parent was killed. They don't appear in `/resume` or the app's conversation list.
+- **Subagents think hard less often.** When the judge picks a subagent's thinking level, "high" now starts a little higher on its reasoning scale, so routine multi-step tasks get medium thinking and finish sooner and cheaper. Tasks the judge rates as deep reasoning still get high.
 - **Judged rewind speaks up a little sooner.** When the agent goes in circles, mu proposes going back to the turn's checkpoint if the judge is sure the approach is a dead end and reads progress as less likely than not; before, it also had to be sure there was no progress. It still only proposes: nothing goes back without you.
 - **A subagent's patch review names more unrelated files.** With `swarm.patch` turned on (it is off by default), a file the judge leans against is named as unrelated from p 0.3 down, not only from 0.2.
+
+### Seeing what the judge did
+
+- **Desktop:** the Judge tab says what you answered when a verdict sent you a question ("You allowed it for this conversation"), and an opened verdict has a **Mark as wrong** button (in the app's own conversations). In a terminal, `/ledger wrong <id> [why]` does the same, and `/ledger` shows each record's short id.
+- **`mu ledger`** shows your answer after the verdict that asked you, your marks, and what the agent did after a judge sent it back to work ("acted (2 tool calls)", "ended without a tool call"). **`mu ledger --timeline`** shows one session step by step: your messages, each model reply with its time and tokens, each verdict and each tool result.
+- `/status` lists each tool kept off the model's list, and what keeps it off.
+- The session records a request that broke the provider's prompt cache, with what mu decided just before it. Only hashes, counts and roles are kept, and nothing is sent anywhere.
+
+### Write sandbox (experimental, off by default)
+
+- **`features.confine`**, in Settings as "Write sandbox (experimental)", lets the agent's commands, background jobs and the programs it debugs write only to the project, the temporary folders and package caches, enforced by the operating system: Seatbelt on macOS and bubblewrap on Linux; there's no sandbox on Windows. The project's `.git/hooks` and `.git/config` stay read-only. `features.confine.writable` adds folders.
+- A write the sandbox refuses is named as the sandbox's, with what to do instead, rather than a bare "Operation not permitted".
+- A command or background job that must write elsewhere (`git config`, `git remote add`) can ask to run outside the sandbox, once. The judge decides in every mode, Full access included, and asks you when it's unsure; in Ask first you decide. It's never allowed for the whole conversation.
+- When the sandbox can't start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined, and the message says how to fix it or turn the sandbox off.
+
+### Fixed
+
+- The desktop app's permission card words the two new reasons (a step too long for the judge; a call that sends a credential) in all 13 of its languages, instead of falling back to Chinese or English.
+- The model choice reads right in all 13 languages.
+- While mu runs in the app, the sidebar and the command palette no longer offer Scheduled tasks, which can't start a mu conversation. The page stays reachable by its address, so nothing already scheduled is lost.
+- A judge server of your own that answers 401 or 429 is reported as a refused key or a rate limit, not as a bad request.
 
 ## [0.3.7] - 2026-11-03
 

@@ -18,6 +18,7 @@
 
 - [Contributing guide](../CONTRIBUTING.md): setup, checks, commits and pull requests.
 - [How mu works](architecture.md): the pieces, a decision from end to end and a map of the code.
+- [Hooks](reference/hooks.md): which part of mu handles each pi event and in what order, and what the features share. Generated from the code.
 - [Adding a decision point](adding-a-decision-point.md): from the question to the pull request.
 - [Translations](translations.md): the app's 13 languages, the kernel's catalog and the README.
 - [Writing style](writing-style.md): voice, rules of thumb and the glossary for mu's English.

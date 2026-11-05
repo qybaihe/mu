@@ -97,6 +97,18 @@ describe("HttpJudgeProvider", () => {
 		expect(isJudgeError(server) && server.kind).toBe("server");
 	});
 
+	// As the hosted judges say it: a refused token is not fixed by asking again, and a rate limit passes.
+	it("says a refused token and a rate limit as such, not as a bad request", async () => {
+		const kind = async (status: number, message: string) => {
+			const provider = new HttpJudgeProvider({ baseUrl: BASE, fetch: fakeFetch(status, { error: { message } }) });
+			const error = await provider.evaluate({ state: "x", questions }).catch((caught: unknown) => caught);
+			return isJudgeError(error) ? error.kind : undefined;
+		};
+		expect(await kind(401, "Invalid token")).toBe("auth");
+		expect(await kind(429, "Too many requests")).toBe("rate_limited");
+		expect(await kind(402, "Add credit to continue")).toBe("payment_required");
+	});
+
 	it("records truncation warnings and which judge answered in the ledger", async () => {
 		const ledger = new MemoryLedger();
 		const engine = new DecisionEngine({

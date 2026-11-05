@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { installHint } from "../../../packs/exec.ts";
+import { missingProgram } from "../../../packs/exec.ts";
 import type { Pack, PackShared } from "./pack.ts";
 
 /** Resolves to `<package>/skills/mu-github/SKILL.md` from both `src/` and `dist/`. */
@@ -28,7 +28,7 @@ export function githubPack(shared: PackShared, options: { command: string }): Pa
 				timeoutMs: 5000,
 			});
 			if (result.missing || result.code !== 0 || !/^gh version/m.test(result.stdout)) {
-				throw new Error(installHint("gh", shared.platform));
+				throw missingProgram("gh", shared.platform);
 			}
 		},
 	};

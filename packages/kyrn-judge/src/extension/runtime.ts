@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { AgentEndEvent, ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { isTrusted } from "../cascade.ts";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
 import { DEFAULT_CONFIG, featureOptions, type JudgeConfig, type KyrnConfig } from "../config.ts";
 import type { FloorReady } from "../confine/floor.ts";
-import { DecisionEngine, type DecisionMode } from "../decision.ts";
+import { type Decision, DecisionEngine, type DecisionMode } from "../decision.ts";
 import type { PreflightOutcome, TaskFrame } from "../decisions/input-preflight.ts";
 import type { NotifyFn } from "../decisions/notify-routing.ts";
 import { JudgeError } from "../errors.ts";
@@ -17,7 +17,7 @@ import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
 import { isOpenAIAddress, type OpenAIKeyProblem } from "../providers/openai-decisions.ts";
 import { buildJudge, resolveJudgeConfig } from "../registry.ts";
-import type { Capability } from "../types.ts";
+import type { Capability, JsonValue } from "../types.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
 import {
 	type KyrnPresentationEvent,
@@ -25,6 +25,7 @@ import {
 	type PresentationListener,
 	type ProgressCode,
 } from "./presentation.ts";
+import { ToolMasks } from "./tool-masks.ts";
 
 export const LEDGER_ENTRY_TYPE = "kyrn.decision";
 const GATEWAY_PROVIDER_ID = "vercel-ai-gateway";
@@ -166,6 +167,8 @@ export class KyrnRuntime {
 	readonly memory = new MemoryLedger();
 	/** Everything installed that the judge may open per task: packs, MCP servers, language servers. */
 	readonly catalog = new CapabilityCatalog();
+	/** Which tools are kept off the model's list, by whom and why: the one place that sets pi's active tools. */
+	readonly toolMasks: ToolMasks;
 	readonly problems: string[] = [];
 	readonly savings: Savings = {
 		admissionOmittedChars: 0,
@@ -207,6 +210,11 @@ export class KyrnRuntime {
 	 */
 	readonly nudgedEnds = new WeakSet<object>();
 	/**
+	 * Set before the features register: a feature that sent the agent back to work on a judge's verdict tells it here,
+	 * and what the agent did next is recorded (`nudge-outcome.ts`).
+	 */
+	nudges?: { sent: (decision: Decision<JsonValue>, nudged: AgentEndEvent) => void };
+	/**
 	 * Whoever keeps the task frame sets this. It hears of a message the moment its turn is counted,
 	 * so the frame's judge runs alongside preflight's instead of after its wait.
 	 */
@@ -223,12 +231,14 @@ export class KyrnRuntime {
 	floor?: (cwd: string) => Promise<FloorReady>;
 	/**
 	 * Set by the confine feature with the floor: the way out of it. `asks` tells a call that asks to run outside the floor
-	 * (`bash` with `outside: true`); the permission gate decides it, in every mode, and `allow` lets that one call out,
-	 * once, as its input is. A call nobody allowed runs inside the floor like any other.
+	 * (`bash` or `bg_start` with `outside: true`); the permission gate decides it, in every mode, and `allow` lets that
+	 * one call out, once, as its input is. The tool that runs the call `take`s it: true when the gate allowed this call
+	 * with this command. A call nobody allowed runs inside the floor like any other.
 	 */
 	floorExit?: {
 		readonly asks: (toolName: string, input: unknown) => boolean;
 		readonly allow: (toolCallId: string, input: unknown) => void;
+		readonly take: (toolCallId: string, command: string) => boolean;
 	};
 	/**
 	 * Set by the memory feature: for each sub-agent task, the lessons of this project that apply to it,
@@ -264,6 +274,7 @@ export class KyrnRuntime {
 
 	constructor(pi: ExtensionAPI, config: KyrnConfig, judge?: JudgeLike, problem?: string) {
 		this.pi = pi;
+		this.toolMasks = new ToolMasks(pi);
 		this.config = config;
 		if (problem) this.problems.push(problem);
 		this.tiers = config.tiers;
@@ -468,7 +479,11 @@ export class KyrnRuntime {
 		return this.engine.getMode(specId);
 	}
 
+	/** The options each feature read, with their defaults: what `features.<name>` in mu.json is checked against. */
+	readonly optionDefaults = new Map<string, Record<string, unknown>>();
+
 	options<T extends { enabled: boolean }>(feature: string, defaults: T): T {
+		this.optionDefaults.set(feature, { ...defaults, ...this.optionDefaults.get(feature) });
 		return featureOptions(this.config, feature, defaults);
 	}
 

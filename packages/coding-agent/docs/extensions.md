@@ -1217,7 +1217,7 @@ ctx.sessionManager.getLeafId()              // Current leaf entry ID
 
 Access to models, providers, and resolved authentication. `ctx.modelRegistry.getProvider(id)` returns the effective pi-ai provider, while `getProviderAuth(id)` resolves its current API key, headers, base URL, and provider-scoped environment without requiring a loaded model. `ctx.model` is the active model, and `ctx.thinkingLevel` is its current effective thinking level.
 
-`ctx.scopedModels` is the read-only list of models scoped to the current session — the same set the `/scoped-models` command shows. It is resolved at session start from the `--models` CLI flag and the `enabledModels` setting (matched against the available catalogue with minimatch on `provider/modelId` or a bare `modelId`). It is empty when no scoping is configured, meaning every available model is usable. Each entry is `{ model, thinkingLevel? }`, where `thinkingLevel` is set only when a pattern pinned it (e.g. `anthropic/*:high`). Use it to populate a model picker that mirrors the built-in one instead of enumerating the whole catalogue via `ctx.modelRegistry.getAvailable()`.
+`ctx.scopedModels` is the read-only list of models scoped to the current session — the same set the `/scoped-models` command shows. It is resolved at session start from the `--models` CLI flag and the `enabledModels` setting (matched against the available catalogue with minimatch on `provider/modelId` or, unless the pattern starts with a provider's name, a bare `modelId`). It is empty when no scoping is configured, meaning every available model is usable. Each entry is `{ model, thinkingLevel? }`, where `thinkingLevel` is set only when a pattern pinned it (e.g. `anthropic/*:high`). Use it to populate a model picker that mirrors the built-in one instead of enumerating the whole catalogue via `ctx.modelRegistry.getAvailable()`.
 
 #### Streaming model calls
 
@@ -2288,7 +2288,7 @@ async execute(toolCallId, params) {
 
 **Structured output:** Declare `outputSchema` and return a matching `structuredContent` when the result is data. The model still receives `content`; programmatic callers such as codemode scripts receive `structuredContent` instead of the text. Tools without `outputSchema` are passed to scripts as their text content. To report a failure that still carries data, return the result with `isError: true` instead of throwing: the model sees an error, and scripts still receive `structuredContent`.
 
-**Execution mode:** Tool calls from one assistant message run in parallel by default. Set `executionMode: "sequential"` when a tool must not run concurrently with other calls, for example because it shares mutable in-memory state.
+**Execution mode:** Tool calls from one assistant message run in parallel by default. Set `executionMode: "sequential"` when a tool must not run concurrently with other calls, for example because it shares mutable in-memory state or changes files. Such a call runs alone: the calls before it in the message have ended when it starts, and the calls after it start when it has ended; the others still run in parallel. The built-in `edit` and `write` are sequential.
 
 **Other definition fields:**
 

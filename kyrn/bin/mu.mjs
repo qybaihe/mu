@@ -778,8 +778,9 @@ export const AUTH_USAGE = [
 	"  mu auth enable <provider> [--default | <model>...]",
 	"In a terminal, /login inside mu signs in the same way. With --paste, you paste the address the browser ends on",
 	"instead of mu listening for it. Use it when another program, such as the Codex CLI, holds the callback port.",
-	"enable chooses which of an account's models /model and the app offer (--default: all of them, the default);",
-	"in a terminal, /scoped-models <provider> does the same.",
+	"enable chooses which of a provider's models /model and the app offer (--default: all of them, the default),",
+	"for a signed-in account or a provider an API key makes usable. In a terminal, /scoped-models <provider> does",
+	"the same.",
 	"",
 	"pi's auth commands:",
 ].join("\n");

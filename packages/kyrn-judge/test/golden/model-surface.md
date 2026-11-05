@@ -273,6 +273,62 @@ Read back an earlier tool result in full where mu left part of it out; mu's note
 }
 ```
 
+## Tool: lsp
+
+```text
+Ask a language server about a symbol: where it is defined (definition), every place that uses it, the declaration included (references), what implements an interface or abstract method (implementation), or its type and documentation (hover). Lines and columns count from 1. Find and read code with grep and read as usual; use this when the text alone is ambiguous: a name defined in several places, an interface's implementations, a definition in another file or package.
+```
+
+```json
+{
+	"type": "object",
+	"required": [
+		"op",
+		"path",
+		"line"
+	],
+	"properties": {
+		"op": {
+			"anyOf": [
+				{
+					"type": "string",
+					"const": "definition"
+				},
+				{
+					"type": "string",
+					"const": "references"
+				},
+				{
+					"type": "string",
+					"const": "implementation"
+				},
+				{
+					"type": "string",
+					"const": "hover"
+				}
+			],
+			"description": "What to ask"
+		},
+		"path": {
+			"type": "string",
+			"description": "File the symbol is in"
+		},
+		"line": {
+			"type": "number",
+			"description": "Line it is on, from 1"
+		},
+		"symbol": {
+			"type": "string",
+			"description": "Its name as written on that line"
+		},
+		"column": {
+			"type": "number",
+			"description": "Its column, from 1, when the name is on the line more than once"
+		}
+	}
+}
+```
+
 ## Tool: apply_patch_from
 
 ```text
@@ -691,6 +747,47 @@ Execute a bash command in the current working directory. Returns stdout and stde
 		"reason": {
 			"type": "string",
 			"description": "With outside: true, required: why this command must write outside the sandbox, shown to the user if they are asked."
+		}
+	}
+}
+```
+
+## Tool: bg_start, with the write sandbox on (`features.confine`)
+
+```text
+Start a long-running shell command (dev server, watcher, long build or test run) in the background and get its job id at once. Read it with bg_output, end it with bg_stop. Jobs end with the session, except in an unattended run, where they keep running after it. Jobs run in the write sandbox, as bash commands do. A job that must write elsewhere can set outside: true with a reason: it then runs outside the sandbox, if the judge or the user allows it, for as long as it runs. Ask for that only for a write the task needs.
+```
+
+```json
+{
+	"type": "object",
+	"required": [
+		"command"
+	],
+	"properties": {
+		"command": {
+			"type": "string",
+			"description": "Shell command"
+		},
+		"name": {
+			"type": "string",
+			"description": "Short label"
+		},
+		"cwd": {
+			"type": "string",
+			"description": "Working directory"
+		},
+		"watch": {
+			"type": "string",
+			"description": "Regex: tell me when a line of output matches"
+		},
+		"outside": {
+			"type": "boolean",
+			"description": "Run this job outside the write sandbox, if the judge or the user allows it. Only for a write the task needs that the sandbox refuses."
+		},
+		"reason": {
+			"type": "string",
+			"description": "With outside: true, required: why this job must write outside the sandbox, shown to the user if they are asked."
 		}
 	}
 }

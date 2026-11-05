@@ -1597,10 +1597,10 @@ const DESCRIBED: HarnessManifest = {
 		},
 		{
 			name: "lsp",
-			title: { zh: "语言服务器诊断", en: "Language server diagnostics" },
+			title: { zh: "语言服务器", en: "Language servers" },
 			summary: {
-				zh: "接本机已装的语言服务器（不代装），只留这次改动新引入的报错，由判定器决定何时告诉模型。",
-				en: "Uses language servers already installed on this machine (it installs none), keeps only diagnostics an edit newly introduced and lets the judge decide when to tell the model.",
+				zh: "接本机已装的语言服务器（不代装）：只留这次改动新引入的报错，由判定器决定何时告诉模型；另有用到时才打开的 lsp 工具，查定义、引用、实现和类型说明。",
+				en: "Uses language servers already installed on this machine (it installs none). It keeps only the diagnostics an edit newly introduced and lets the judge decide when to tell the model. Its lsp tool, opened when a task needs it, finds definitions, references and implementations and shows a symbol's type.",
 			},
 			defaultEnabled: true,
 			options: [
@@ -1698,6 +1698,24 @@ const DESCRIBED: HarnessManifest = {
 					max: 30000,
 					unit: ms,
 					label: { zh: "等判定最多多久", en: "Wait for the judge, at most" },
+				},
+				{
+					key: "navigation",
+					kind: "boolean",
+					default: true,
+					label: { zh: "lsp 导航工具", en: "The lsp navigation tool" },
+					help: {
+						zh: "查定义、引用、实现和类型说明，和诊断用同一批服务器进程。它在能力目录里，任务用到时才打开，平时不占工具表。",
+						en: "Definitions, references, implementations and types, from the same server processes as the diagnostics. It's in the capability catalog and opened when a task needs it, so it isn't in every request.",
+					},
+				},
+				{
+					key: "navigationResults",
+					kind: "number",
+					default: 30,
+					min: 1,
+					max: 200,
+					label: { zh: "导航一次最多列几处", en: "Max places listed per answer" },
 				},
 			],
 		},
@@ -2761,6 +2779,16 @@ const DESCRIBED: HarnessManifest = {
 					},
 				},
 				{
+					key: "folders",
+					kind: "boolean",
+					default: true,
+					label: { zh: "子文件夹里的 AGENTS.md 和 CLAUDE.md", en: "AGENTS.md and CLAUDE.md in subfolders" },
+					help: {
+						zh: "项目文件夹下面某个文件夹自己的说明（比如 monorepo 里一个包的 AGENTS.md），在工具第一次读写那里的文件时随结果交给模型一次。项目文件夹本身的由 pi 在启动时加载。node_modules 里的不算。",
+						en: "Instructions in a folder below the project folder, such as one package's AGENTS.md in a monorepo, are passed to the model once, with the result of the first tool that reads or changes a file there. The project folder's own are loaded by pi at the start. Those inside node_modules are left out.",
+					},
+				},
+				{
 					key: "maxRuleChars",
 					kind: "number",
 					default: 4000,
@@ -3032,6 +3060,26 @@ const DESCRIBED: HarnessManifest = {
 			summary: {
 				zh: "mu 在工具调用跑到一半时被杀掉、断电或退出，再打开会话时，会告诉模型和你哪些调用没有结果：哪些没开始、哪些只是读，哪些已经开始、结果不明。结果不明的会提醒模型先核对外部状态或问你，免得 git push、发布、数据库迁移做两次。每个可能改东西的调用开始前，会话里记一条标记。",
 				en: "When mu is killed, the machine sleeps or the app quits while tool calls run, reopening the session tells the model and you which calls have no result: which never started, which only read, and which started with an outcome nobody knows. For those, the model is told to check the outside state or ask you first, so a git push, a publish or a migration does not run twice. Before each call that may change something starts, the session gets a marker.",
+			},
+			defaultEnabled: true,
+			options: [],
+		},
+		{
+			name: "interrupted",
+			title: { zh: "你打断的回复", en: "Replies you stop" },
+			summary: {
+				zh: "你在回复写到一半时打断它，pi 会把整条回复从下次发给模型的内容里去掉，于是你说「停，展开第二点」时，模型手里没有第二点。mu 把你已经看到的那部分文字作为只给模型看的消息还给它，不带推理过程和工具调用。mu 自己掐断的回复（长时间只思考、违反规则）不在此列，它们各自会说明。",
+				en: 'When you stop a reply while it\'s being written, pi leaves the whole reply out of what the model is sent next, so after "stop, and expand your second point" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) aren\'t given back: those say what they cut.',
+			},
+			defaultEnabled: true,
+			options: [],
+		},
+		{
+			name: "prefix",
+			title: { zh: "提示缓存失效记录", en: "Prompt cache watch" },
+			summary: {
+				zh: "每次发给模型的请求都和上一次比较。如果它不再以上一次发出的内容开头，服务商就没法复用这部分的提示缓存，会话里会记下变了什么（模型、系统提示和工具，或从第几条消息开始），以及这期间 mu 做了哪些判定、各自声明会怎样影响缓存。只记哈希、位置和角色，不发往任何地方。",
+				en: "Each request to the model is compared with the one before it. When it no longer starts with what was sent before, the provider can't reuse its prompt cache for the rest, so the session records what changed (the model, the system prompt and tools, or the first message that differs) and which of mu's decisions acted in between, each with what it declares it does to the cache. Only hashes, positions and roles are kept, and nothing is sent anywhere.",
 			},
 			defaultEnabled: true,
 			options: [],

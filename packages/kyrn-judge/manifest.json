@@ -1182,7 +1182,18 @@
 			},
 			"summary": {
 				"zh": "一轮结束在「接下来我去跑测试」却什么也没做，或者你已经让它做了它还在问「要我改吗」：让它接着做。难以撤销、或要出这台电脑的一步（推送、发布、删除、付款）不催。每条消息最多催两次；无人值守的运行里「说了没做」最多催一次，它回应上一次催促时没调工具就不再催。",
-				"en": "When a run ends on \"next I'll run the tests\" without doing it, or asks permission for work you already asked for, sends the agent back to it. Never nudges a step that is hard to undo or reaches beyond this machine (push, publish, delete, pay). At most twice per message; in an unattended run, at most once for work it said it would do, and not after it answered a nudge without a tool call."
+				"en": "When a run ends on \"next I'll run the tests\" without doing it, or asks permission for work you already asked for, sends the agent back to it. Never nudges a step that is hard to undo or reaches beyond this machine (push, publish, delete, pay). At most twice per message; in an unattended run, at most once for work it said it would do, and not after it answered a nudge without a tool call.",
+				"zh-TW": "一輪結束在「接下來我去跑測試」卻什麼也沒做，或者你已經讓它做了它還在問「要我改嗎」：讓它接著做。難以撤銷、或要離開這台電腦的一步（推送、發布、刪除、付款）不催。每則訊息最多催兩次；無人值守執行時，「說了沒做」最多催一次，它回應上一次催促時沒呼叫工具就不再催。",
+				"ja-JP": "「次にテストを実行します」と言って何もせずに終わった回や、すでに頼んだ作業について「直しましょうか？」と聞いて終わった回は、作業に戻らせます。元に戻しにくい手順や、このマシンの外に及ぶ手順（プッシュ、公開、削除、支払い）は促しません。1 メッセージにつき最大 2 回です。無人実行では、やると言った作業についての促しは最大 1 回で、促しにツールを呼び出さずに答えた後はもう促しません。",
+				"ko-KR": "\"다음으로 테스트를 실행하겠습니다\"라고 하고 아무것도 하지 않은 채 끝난 실행이나, 이미 요청한 작업인데 \"고칠까요?\"라고 묻고 끝난 실행은 다시 작업으로 돌려보냅니다. 되돌리기 어렵거나 이 컴퓨터 밖에 영향을 주는 단계(푸시, 게시, 삭제, 결제)는 재촉하지 않습니다. 메시지마다 최대 두 번입니다. 무인 실행에서는 하겠다고 한 작업은 최대 한 번만 재촉하며, 재촉에 도구 호출 없이 답한 뒤에는 더 재촉하지 않습니다.",
+				"de-DE": "Ein Lauf, der mit „als Nächstes führe ich die Tests aus“ endet, ohne es zu tun, oder der für eine bereits erbetene Arbeit um Erlaubnis fragt, wird zurück an die Arbeit geschickt. Ein Schritt, der schwer rückgängig zu machen ist oder über diesen Rechner hinausreicht (Push, Veröffentlichen, Löschen, Bezahlen), wird nie angetrieben. Höchstens zweimal pro Nachricht; in einem unbeaufsichtigten Lauf höchstens einmal für angekündigte Arbeit, und nicht mehr, nachdem er einen Anstoß ohne Tool-Aufruf beantwortet hat.",
+				"fr-FR": "Une exécution qui se termine sur « ensuite je lance les tests » sans le faire, ou qui demande le feu vert pour un travail que vous avez déjà demandé, est renvoyée au travail. Une étape difficile à annuler ou qui sort de cette machine (push, publication, suppression, paiement) n'est jamais forcée. Au plus deux fois par message ; lors d'une exécution sans surveillance, au plus une fois pour un travail annoncé, et plus du tout après qu'elle a répondu à une relance sans appel d'outil.",
+				"es-ES": "Una ejecución que termina en «ahora ejecuto las pruebas» sin hacerlo, o que pide permiso para un trabajo que ya pediste, se devuelve al trabajo. Un paso difícil de deshacer o que va más allá de esta máquina (push, publicar, borrar, pagar) nunca se fuerza. Como máximo dos veces por mensaje; en una ejecución desatendida, como máximo una vez por un trabajo que dijo que haría, y ya no después de haber respondido a un aviso sin llamar a ninguna herramienta.",
+				"pt-BR": "Uma execução que termina em \"agora vou rodar os testes\" sem fazer isso, ou que pede autorização para um trabalho que você já pediu, é mandada de volta ao trabalho. Um passo difícil de desfazer ou que vai além desta máquina (push, publicar, apagar, pagar) nunca é forçado. No máximo duas vezes por mensagem; numa execução sem supervisão, no máximo uma vez pelo que ela disse que faria, e não depois de ela ter respondido a um lembrete sem chamada de ferramenta.",
+				"ru-RU": "Запуск, который заканчивается словами «дальше запущу тесты», но ничего не делает, или спрашивает разрешения на работу, о которой вы уже попросили, отправляется обратно к работе. Шаг, который трудно отменить или который выходит за пределы этой машины (push, публикация, удаление, оплата), никогда не подталкивается. Не больше двух раз на сообщение; при запуске без присмотра — не больше одного раза за обещанную работу и не после того, как он ответил на напоминание без вызова инструмента.",
+				"uk-UA": "Запуск, що завершується словами «далі запущу тести», але нічого не робить, або питає дозволу на роботу, про яку ви вже попросили, відправляється назад до роботи. Крок, який важко скасувати або який виходить за межі цієї машини (push, публікація, видалення, оплата), ніколи не підганяється. Не більше двох разів на повідомлення; під час запуску без нагляду — не більше одного разу за обіцяну роботу і не після того, як він відповів на нагадування без виклику інструмента.",
+				"tr-TR": "\"Sırada testleri çalıştırmak var\" deyip hiçbir şey yapmadan biten ya da zaten istediğiniz bir iş için onay soran bir çalışma, işe geri gönderilir. Geri alınması zor ya da bu makinenin dışına uzanan bir adım (push, yayımlama, silme, ödeme) asla zorlanmaz. Mesaj başına en fazla iki kez; gözetimsiz bir çalıştırmada ise yapacağını söylediği iş için en fazla bir kez, bir hatırlatmayı araç çağırmadan yanıtladıysa artık hiç.",
+				"fa-IR": "اجرایی که با «حالا تست‌ها را اجرا می‌کنم» تمام شود ولی کاری نکند، یا برای کاری که خودتان خواسته‌اید اجازه بخواهد، به کار برگردانده می‌شود. گامی که برگرداندنش دشوار است یا از این رایانه بیرون می‌رود (push، انتشار، حذف، پرداخت) هرگز تحت فشار قرار نمی‌گیرد. حداکثر دو بار برای هر پیام؛ در اجرای بی‌نظارت، برای کاری که گفته بود انجام می‌دهد حداکثر یک بار، و اگر به یادآوری‌ای بدون فراخوانی ابزار پاسخ داده باشد، دیگر نه."
 			}
 		},
 		{
@@ -1706,7 +1717,18 @@
 					},
 					"help": {
 						"zh": "超时就不等了，按原样开始。从消息到达算起；技能、能力和经验的判定同时在问，各自的等待也从这时算起。",
-						"en": "After this, the turn starts without the verdict. Counted from when the message arrives, like the waits of the skill, capability and lesson questions, which are asked alongside."
+						"en": "After this, the turn starts without the verdict. Counted from when the message arrives, like the waits of the skill, capability and lesson questions, which are asked alongside.",
+						"zh-TW": "超過這個時間，這一輪就不等判定結果，直接開始。從訊息到達時算起；技能、能力和經驗的判定同時在問，各自的等待也從這時算起。",
+						"ja-JP": "これを過ぎると、判定を待たずにターンを始めます。メッセージの到着から数えます。同時に問い合わせるスキル、ケイパビリティ、教訓の判定の待ち時間も同じです。",
+						"ko-KR": "이 시간이 지나면 판정 없이 턴을 시작합니다. 메시지가 도착한 때부터 셉니다. 함께 묻는 스킬, 기능 확장, 교훈 판정의 대기 시간도 마찬가지입니다.",
+						"de-DE": "Danach beginnt die Runde ohne das Urteil. Gezählt ab dem Eintreffen der Nachricht, wie die Wartezeiten der Fragen zu Skills, Fähigkeiten und Erfahrungen, die gleichzeitig gestellt werden.",
+						"fr-FR": "Au-delà, le tour démarre sans le jugement. Compté à partir de l’arrivée du message, comme les attentes des questions sur les compétences, les capacités et les leçons, posées en même temps.",
+						"es-ES": "Pasado este tiempo, el turno empieza sin el veredicto. Se cuenta desde que llega el mensaje, igual que las esperas de las preguntas sobre habilidades, capacidades y lecciones, que se hacen a la vez.",
+						"pt-BR": "Depois disso, o turno começa sem o veredito. Contado a partir da chegada da mensagem, como as esperas das perguntas sobre habilidades, capacidades e lições, feitas ao mesmo tempo.",
+						"ru-RU": "После этого ход начинается без решения. Отсчитывается с момента получения сообщения — так же, как ожидание по вопросам о навыках, возможностях и уроках, которые задаются параллельно.",
+						"uk-UA": "Після цього хід починається без рішення. Відлік — від надходження повідомлення, як і для очікування запитань про навички, можливості й уроки, які ставляться паралельно.",
+						"tr-TR": "Bu süreden sonra tur, karar beklenmeden başlar. Süre, onunla birlikte sorulan beceri, yetenek ve deneyim sorularının beklemeleri gibi, mesajın geldiği andan itibaren sayılır.",
+						"fa-IR": "پس از این مدت، نوبت بدون نتیجهٔ داوری شروع می‌شود. این مدت از لحظهٔ رسیدن پیام شمرده می‌شود، مانند انتظارِ پرسش‌های مهارت، توانمندی و تجربه که هم‌زمان با آن پرسیده می‌شوند."
 					}
 				},
 				{
@@ -1988,11 +2010,33 @@
 					"default": true,
 					"label": {
 						"zh": "消息一到就问",
-						"en": "Ask as soon as the message arrives"
+						"en": "Ask as soon as the message arrives",
+						"zh-TW": "訊息一到就問",
+						"ja-JP": "メッセージが届いたらすぐ問い合わせる",
+						"ko-KR": "메시지가 도착하면 바로 묻기",
+						"de-DE": "Fragen, sobald die Nachricht eintrifft",
+						"fr-FR": "Demander dès l’arrivée du message",
+						"es-ES": "Preguntar en cuanto llega el mensaje",
+						"pt-BR": "Perguntar assim que a mensagem chegar",
+						"ru-RU": "Спрашивать сразу при получении сообщения",
+						"uk-UA": "Запитувати, щойно надійде повідомлення",
+						"tr-TR": "Mesaj gelir gelmez sor",
+						"fa-IR": "پرسیدن به‌محض رسیدن پیام"
 					},
 					"help": {
 						"zh": "和预判同时问，不等预判问完，回合开始前不用接连等两个判定。关掉则等预判之后再问。",
-						"en": "Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done."
+						"en": "Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done.",
+						"zh-TW": "和預檢同時問，這一輪開始前就不必接連等兩個判定。關閉：等預檢完成後再問。",
+						"ja-JP": "事前分類と同時に問い合わせるため、ターンが判定を 2 つ続けて待つことはありません。オフの場合は、事前分類が終わってから問い合わせます。",
+						"ko-KR": "사전 분류와 함께 묻기 때문에 턴이 판정 두 개를 연달아 기다리지 않습니다. 끄면 사전 분류가 끝난 뒤에 묻습니다.",
+						"de-DE": "Gefragt wird gleichzeitig mit der Vorabeinordnung, damit die Runde nicht auf zwei Urteile nacheinander wartet. Aus: Gefragt wird erst, wenn die Vorabeinordnung fertig ist.",
+						"fr-FR": "La question est posée en même temps que la classification préalable, pour que le tour n’attende pas deux jugements d’affilée. Désactivé : elle est posée une fois la classification préalable terminée.",
+						"es-ES": "Se pregunta a la vez que la clasificación previa, para que el turno no espere dos veredictos seguidos. Desactivado: se pregunta cuando termina la clasificación previa.",
+						"pt-BR": "Perguntado junto com a classificação prévia, para que o turno não espere dois vereditos seguidos. Desativado: perguntado depois que a classificação prévia termina.",
+						"ru-RU": "Спрашивается одновременно с классификацией сообщения, чтобы ход не ждал двух решений подряд. Выключено: спрашивается после завершения классификации.",
+						"uk-UA": "Запитується одночасно з попередньою класифікацією, щоб хід не чекав двох рішень поспіль. Вимкнено: запитується після завершення попередньої класифікації.",
+						"tr-TR": "Mesaj ön sınıflandırmasıyla aynı anda sorulur; böylece tur art arda iki kararı beklemez. Kapalı: ön sınıflandırma bittikten sonra sorulur.",
+						"fa-IR": "هم‌زمان با پیش‌بررسی پیام پرسیده می‌شود تا نوبت پشت سر هم منتظر دو نتیجهٔ داوری نماند. خاموش: پس از پایان پیش‌بررسی پرسیده می‌شود."
 					}
 				}
 			]
@@ -4156,11 +4200,33 @@
 			"name": "recall",
 			"title": {
 				"zh": "取回省略的输出",
-				"en": "Read back shortened output"
+				"en": "Read back shortened output",
+				"zh-TW": "取回省略的輸出",
+				"ja-JP": "省略した出力の取り出し",
+				"ko-KR": "생략된 출력 불러오기",
+				"de-DE": "Gekürzte Ausgaben nachlesen",
+				"fr-FR": "Relire les sorties raccourcies",
+				"es-ES": "Recuperar la salida acortada",
+				"pt-BR": "Reler saída encurtada",
+				"ru-RU": "Перечитывание сокращённого вывода",
+				"uk-UA": "Перечитування скороченого виводу",
+				"tr-TR": "Kısaltılan çıktıyı geri okuma",
+				"fa-IR": "بازخوانی خروجی کوتاه‌شده"
 			},
 			"summary": {
 				"zh": "mu 为省上下文而省略的工具输出，模型可以用 recall 按调用 id 分段取回原文，不必重跑命令或重新抓网页：遗忘换掉的旧结果、准入归档的噪声、web_fetch 截掉的后半页。只读本次对话；取回的网页后半部分会先过注入筛查。",
-				"en": "Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command or fetching the page again: old results forgetting replaced, noise admission archived, the rest of a page web_fetch cut. Only this conversation; the rest of a page goes through the injection screen first."
+				"en": "Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command or fetching the page again: old results forgetting replaced, noise admission archived, the rest of a page web_fetch cut. Only this conversation; the rest of a page goes through the injection screen first.",
+				"zh-TW": "mu 為了節省上下文而省略的工具輸出，模型可以用 recall 依呼叫 ID 一段一段取回，不必重新執行指令或重新抓取網頁：遺忘時換掉的舊結果、篩選時歸檔的雜訊、web_fetch 截掉的後半頁。只限這次對話；取回的網頁後半部分會先經過注入篩查。",
+				"ja-JP": "mu がコンテキストを節約するために省いたツール出力は、コマンドを再実行したりページを取得し直したりしなくても、モデルが recall で呼び出しの ID を指定して少しずつ取り出せます。対象は、忘却で置き換えた古い結果、取り込みの際にアーカイブしたノイズ、web_fetch が切り捨てたページの残りです。この会話の分に限ります。ページの残りは、先にインジェクションの選別を通します。",
+				"ko-KR": "mu가 컨텍스트를 아끼려고 생략한 도구 출력은, 명령을 다시 실행하거나 페이지를 다시 가져오지 않아도 모델이 recall로 호출 ID를 지정해 조금씩 다시 불러올 수 있습니다. 잊기 기능이 바꿔 놓은 오래된 결과, 선별 과정에서 보관된 잡음, web_fetch가 잘라 낸 페이지 나머지가 대상입니다. 이 대화의 것만 해당하며, 페이지 나머지는 먼저 주입 선별을 거칩니다.",
+				"de-DE": "Tool-Ausgaben, die mu weggelassen hat, um Kontext zu sparen, kann das Modell mit recall nachlesen, Stück für Stück über die ID des Aufrufs, statt den Befehl erneut auszuführen oder die Seite neu abzurufen: vom Vergessen ersetzte alte Ergebnisse, von der Zulassung archiviertes Rauschen, den von web_fetch abgeschnittenen Rest einer Seite. Nur aus dieser Unterhaltung; der Rest einer Seite durchläuft zuerst die Injektionsprüfung.",
+				"fr-FR": "Les sorties d’outil que mu a omises pour économiser le contexte peuvent être relues par le modèle avec recall, morceau par morceau d’après l’id de l’appel, au lieu de relancer la commande ou de récupérer à nouveau la page : anciens résultats remplacés par l’oubli, bruit archivé par l’admission, reste d’une page coupé par web_fetch. Seulement dans cette conversation ; le reste d’une page passe d’abord par le filtrage des injections.",
+				"es-ES": "El modelo puede releer con recall la salida de herramientas que mu omitió para ahorrar contexto, fragmento a fragmento según el id de la llamada, en lugar de volver a ejecutar el comando o a descargar la página: resultados antiguos que sustituyó el olvido, ruido que archivó la admisión, el resto de una página que cortó web_fetch. Solo de esta conversación; el resto de una página pasa antes por el filtrado de inyecciones.",
+				"pt-BR": "A saída de ferramentas que o mu deixou de fora para economizar contexto pode ser relida pelo modelo com recall, um trecho por vez, pelo id da chamada, em vez de rodar o comando ou buscar a página de novo: resultados antigos substituídos pelo esquecimento, ruído arquivado pela admissão, o resto de uma página cortado pelo web_fetch. Só nesta conversa; o resto de uma página passa antes pela triagem de injeções.",
+				"ru-RU": "Вывод инструментов, который mu опустил ради экономии контекста, модель может перечитать через recall — по частям, по id вызова, — вместо того чтобы снова запускать команду или загружать страницу: старые результаты, заменённые при забывании; шум, отправленный в архив при допуске; остаток страницы, обрезанный web_fetch. Только в этом диалоге; остаток страницы сначала проходит проверку на инъекции.",
+				"uk-UA": "Вивід інструментів, який mu пропустив, щоб заощадити контекст, модель може перечитати через recall — частинами, за id виклику, — замість того щоб знову запускати команду чи завантажувати сторінку: старі результати, замінені під час забування; шум, переміщений в архів під час допуску; решта сторінки, яку обрізав web_fetch. Лише в цій розмові; решта сторінки спершу проходить перевірку на ін’єкції.",
+				"tr-TR": "mu'nun bağlamdan tasarruf etmek için dışarıda bıraktığı araç çıktısını model, komutu yeniden çalıştırmak ya da sayfayı yeniden getirmek yerine recall ile, çağrının ID'sine göre parça parça geri okuyabilir: unutmanın yer tutucuya çevirdiği eski sonuçlar, çıktı kabulünün arşivlediği gürültü, web_fetch'in kestiği sayfa devamı. Yalnızca bu konuşmadaki çıktılar; sayfanın devamı önce enjeksiyon taramasından geçer.",
+				"fa-IR": "مدل می‌تواند خروجی ابزاری را که mu برای صرفه‌جویی در زمینه کنار گذاشته، به‌جای اجرای دوبارهٔ فرمان یا آوردن دوبارهٔ صفحه، با recall و تکه‌تکه بر اساس شناسهٔ فراخوانی بازخوانی کند: نتایج قدیمی‌ای که «فراموش کردن» جایگزینشان کرده، نویزی که «پذیرش خروجی» بایگانی کرده، و بقیهٔ صفحه‌ای که web_fetch بریده است. فقط از همین گفتگو؛ بقیهٔ صفحه اول از غربال تزریق می‌گذرد."
 			},
 			"defaultEnabled": true,
 			"options": [
@@ -4172,11 +4238,33 @@
 					"max": 200000,
 					"unit": {
 						"zh": "字符",
-						"en": "chars"
+						"en": "chars",
+						"zh-TW": "字元",
+						"ja-JP": "文字",
+						"ko-KR": "자",
+						"de-DE": "Zeichen",
+						"fr-FR": "caractères",
+						"es-ES": "caracteres",
+						"pt-BR": "caracteres",
+						"ru-RU": "симв.",
+						"uk-UA": "символів",
+						"tr-TR": "karakter",
+						"fa-IR": "نویسه"
 					},
 					"label": {
 						"zh": "一次取回最多返回",
-						"en": "Max text per recall call"
+						"en": "Max text per recall call",
+						"zh-TW": "單次 recall 回傳上限",
+						"ja-JP": "recall が 1 回で返す上限",
+						"ko-KR": "recall 1회 최대 반환량",
+						"de-DE": "Höchstens pro recall-Aufruf zurückgegeben",
+						"fr-FR": "Maximum renvoyé par un recall",
+						"es-ES": "Máximo que devuelve un recall",
+						"pt-BR": "Máximo que um recall retorna",
+						"ru-RU": "Максимум за один вызов recall",
+						"uk-UA": "Макс. обсяг одного recall",
+						"tr-TR": "Tek bir recall'un döndürdüğü en fazla metin",
+						"fa-IR": "حداکثر خروجی یک recall"
 					}
 				}
 			]
@@ -5260,34 +5348,34 @@
 		{
 			"name": "lsp",
 			"title": {
-				"zh": "语言服务器诊断",
-				"en": "Language server diagnostics",
-				"zh-TW": "語言伺服器診斷",
-				"ja-JP": "言語サーバーの診断",
-				"ko-KR": "언어 서버 진단",
-				"de-DE": "Sprachserver-Diagnosen",
-				"fr-FR": "Diagnostics du serveur de langage",
-				"es-ES": "Diagnósticos del servidor de lenguaje",
-				"pt-BR": "Diagnósticos do servidor de linguagem",
-				"ru-RU": "Диагностика языковых серверов",
-				"uk-UA": "Діагностика мовних серверів",
-				"tr-TR": "Dil sunucusu tanılamaları",
-				"fa-IR": "پیام‌های تشخیصی سرور زبان"
+				"zh": "语言服务器",
+				"en": "Language servers",
+				"zh-TW": "語言伺服器",
+				"ja-JP": "言語サーバー",
+				"ko-KR": "언어 서버",
+				"de-DE": "Sprachserver",
+				"fr-FR": "Serveurs de langage",
+				"es-ES": "Servidores de lenguaje",
+				"pt-BR": "Servidores de linguagem",
+				"ru-RU": "Языковые серверы",
+				"uk-UA": "Мовні сервери",
+				"tr-TR": "Dil sunucuları",
+				"fa-IR": "سرورهای زبان"
 			},
 			"summary": {
-				"zh": "接本机已装的语言服务器（不代装），只留这次改动新引入的报错，由判定器决定何时告诉模型。",
-				"en": "Uses language servers already installed on this machine (it installs none), keeps only diagnostics an edit newly introduced and lets the judge decide when to tell the model.",
-				"zh-TW": "使用本機已安裝的語言伺服器（不會代為安裝），只保留這次改動新引入的問題，由判定器決定何時告訴模型。",
-				"ja-JP": "このマシンにインストール済みの言語サーバーを使い（新たにはインストールしません）、編集で新たに生じた診断だけを残して、モデルに伝えるタイミングを判定器に選ばせます。",
-				"ko-KR": "이 컴퓨터에 이미 설치된 언어 서버를 사용하고(따로 설치하지 않음), 편집으로 새로 생긴 진단만 남기며, 모델에게 알릴 시점은 판정기가 고릅니다.",
-				"de-DE": "Nutzt die Sprachserver, die auf diesem Rechner bereits installiert sind (installiert selbst keine), behält nur, was eine Bearbeitung neu eingeführt hat, und lässt den Judge den Zeitpunkt wählen, zu dem das Modell davon erfährt.",
-				"fr-FR": "Utilise les serveurs de langage déjà installés sur cette machine (n’en installe aucun), ne garde que ce qu’une modification vient d’introduire, et laisse le juge choisir le moment de prévenir le modèle.",
-				"es-ES": "Usa los servidores de lenguaje ya instalados en este ordenador (no instala ninguno), conserva solo lo que una edición ha introducido y deja que el juez elija cuándo decírselo al modelo.",
-				"pt-BR": "Usa os servidores de linguagem já instalados nesta máquina (não instala nenhum), mantém só o que uma edição acabou de introduzir e deixa o juiz escolher quando informar o modelo.",
-				"ru-RU": "Использует языковые серверы, уже установленные на этом компьютере (сам ничего не устанавливает), оставляет только ошибки, которые внесла правка, и даёт судье выбрать момент, когда сообщить модели.",
-				"uk-UA": "Використовує мовні сервери, уже встановлені на цьому комп’ютері (сам нічого не встановлює), залишає лише те, що внесла нова правка, і дає судді вибрати момент, щоб повідомити модель.",
-				"tr-TR": "Bu makinede zaten kurulu olan dil sunucularını kullanır (hiçbirini kurmaz), yalnızca bir düzenlemenin yeni getirdiklerini tutar ve modele ne zaman iletileceğine hakem karar verir.",
-				"fa-IR": "از سرورهای زبانی که از قبل روی این دستگاه نصب شده‌اند استفاده می‌کند (چیزی نصب نمی‌کند)، فقط آنچه یک ویرایش تازه پدید آورده را نگه می‌دارد و انتخاب زمان گفتن به مدل را به داور می‌سپارد."
+				"zh": "接本机已装的语言服务器（不代装）：只留这次改动新引入的报错，由判定器决定何时告诉模型；另有用到时才打开的 lsp 工具，查定义、引用、实现和类型说明。",
+				"en": "Uses language servers already installed on this machine (it installs none). It keeps only the diagnostics an edit newly introduced and lets the judge decide when to tell the model. Its lsp tool, opened when a task needs it, finds definitions, references and implementations and shows a symbol's type.",
+				"zh-TW": "使用本機已安裝的語言伺服器（不會代為安裝）。只保留這次改動新引入的問題，由判定器決定何時告訴模型。它的 lsp 工具在任務需要時才開啟，可查定義、引用和實作，並顯示符號的型別。",
+				"ja-JP": "このマシンにインストール済みの言語サーバーを使います（新たにはインストールしません）。編集で新たに生じた診断だけを残し、モデルに伝えるタイミングを判定器に選ばせます。lsp ツールはタスクに必要なときだけ開かれ、定義・参照・実装を探し、シンボルの型を表示します。",
+				"ko-KR": "이 컴퓨터에 이미 설치된 언어 서버를 사용합니다(따로 설치하지 않음). 편집으로 새로 생긴 진단만 남기며, 모델에게 알릴 시점은 판정기가 고릅니다. lsp 도구는 작업에 필요할 때만 열리며 정의, 참조, 구현을 찾고 심볼의 타입을 보여 줍니다.",
+				"de-DE": "Nutzt die Sprachserver, die auf diesem Rechner bereits installiert sind (installiert selbst keine). Behält nur, was eine Bearbeitung neu eingeführt hat, und lässt den Judge den Zeitpunkt wählen, zu dem das Modell davon erfährt. Das lsp-Werkzeug wird geöffnet, wenn eine Aufgabe es braucht, findet Definitionen, Verweise und Implementierungen und zeigt den Typ eines Symbols.",
+				"fr-FR": "Utilise les serveurs de langage déjà installés sur cette machine (n’en installe aucun). Ne garde que ce qu’une modification vient d’introduire, et laisse le juge choisir le moment de prévenir le modèle. Son outil lsp, ouvert quand une tâche en a besoin, trouve les définitions, les références et les implémentations, et montre le type d’un symbole.",
+				"es-ES": "Usa los servidores de lenguaje ya instalados en este ordenador (no instala ninguno). Conserva solo lo que una edición ha introducido y deja que el juez elija cuándo decírselo al modelo. Su herramienta lsp, que se abre cuando una tarea la necesita, encuentra definiciones, referencias e implementaciones y muestra el tipo de un símbolo.",
+				"pt-BR": "Usa os servidores de linguagem já instalados nesta máquina (não instala nenhum). Mantém só o que uma edição acabou de introduzir e deixa o juiz escolher quando informar o modelo. A ferramenta lsp, aberta quando uma tarefa precisa dela, encontra definições, referências e implementações e mostra o tipo de um símbolo.",
+				"ru-RU": "Использует языковые серверы, уже установленные на этом компьютере (сам ничего не устанавливает). Оставляет только ошибки, которые внесла правка, и даёт судье выбрать момент, когда сообщить модели. Инструмент lsp открывается, когда он нужен задаче: находит определения, ссылки и реализации и показывает тип символа.",
+				"uk-UA": "Використовує мовні сервери, уже встановлені на цьому комп’ютері (сам нічого не встановлює). Залишає лише те, що внесла нова правка, і дає судді вибрати момент, щоб повідомити модель. Інструмент lsp відкривається, коли він потрібен завданню: знаходить визначення, посилання й реалізації та показує тип символу.",
+				"tr-TR": "Bu makinede zaten kurulu olan dil sunucularını kullanır (hiçbirini kurmaz). Yalnızca bir düzenlemenin yeni getirdiklerini tutar ve modele ne zaman iletileceğine hakem karar verir. lsp aracı bir görev ihtiyaç duyduğunda açılır; tanımları, başvuruları ve uygulamaları bulur ve bir sembolün türünü gösterir.",
+				"fa-IR": "از سرورهای زبانی که از قبل روی این دستگاه نصب شده‌اند استفاده می‌کند (چیزی نصب نمی‌کند). فقط آنچه یک ویرایش تازه پدید آورده را نگه می‌دارد و انتخاب زمان گفتن به مدل را به داور می‌سپارد. ابزار lsp آن وقتی کاری به آن نیاز دارد باز می‌شود؛ تعریف‌ها، ارجاع‌ها و پیاده‌سازی‌ها را پیدا می‌کند و نوع یک نماد را نشان می‌دهد."
 			},
 			"defaultEnabled": true,
 			"options": [
@@ -5641,6 +5729,63 @@
 						"uk-UA": "Чекати на суддю щонайбільше",
 						"tr-TR": "Hakem için en fazla bekleme",
 						"fa-IR": "حداکثر انتظار برای داور"
+					}
+				},
+				{
+					"key": "navigation",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "lsp 导航工具",
+						"en": "The lsp navigation tool",
+						"zh-TW": "lsp 導覽工具",
+						"ja-JP": "lsp ナビゲーションツール",
+						"ko-KR": "lsp 탐색 도구",
+						"de-DE": "Das lsp-Navigationswerkzeug",
+						"fr-FR": "L’outil de navigation lsp",
+						"es-ES": "La herramienta de navegación lsp",
+						"pt-BR": "A ferramenta de navegação lsp",
+						"ru-RU": "Инструмент навигации lsp",
+						"uk-UA": "Інструмент навігації lsp",
+						"tr-TR": "lsp gezinme aracı",
+						"fa-IR": "ابزار پیمایش lsp"
+					},
+					"help": {
+						"zh": "查定义、引用、实现和类型说明，和诊断用同一批服务器进程。它在能力目录里，任务用到时才打开，平时不占工具表。",
+						"en": "Definitions, references, implementations and types, from the same server processes as the diagnostics. It's in the capability catalog and opened when a task needs it, so it isn't in every request.",
+						"zh-TW": "查定義、引用、實作和型別說明，和診斷使用同一批伺服器程序。它在能力目錄裡，任務需要時才開啟，所以不會出現在每次請求裡。",
+						"ja-JP": "定義・参照・実装・型を、診断と同じサーバープロセスから取得します。能力カタログに入っていて、タスクに必要なときだけ開かれるため、毎回のリクエストには含まれません。",
+						"ko-KR": "정의, 참조, 구현, 타입을 진단과 같은 서버 프로세스에서 가져옵니다. 능력 카탈로그에 있어 작업에 필요할 때만 열리므로 매 요청에 들어가지 않습니다.",
+						"de-DE": "Definitionen, Verweise, Implementierungen und Typen, von denselben Serverprozessen wie die Diagnosen. Es liegt im Fähigkeitskatalog und wird geöffnet, wenn eine Aufgabe es braucht, ist also nicht in jeder Anfrage.",
+						"fr-FR": "Définitions, références, implémentations et types, depuis les mêmes processus serveur que les diagnostics. Il est dans le catalogue des capacités et s’ouvre quand une tâche en a besoin : il n’est donc pas dans chaque requête.",
+						"es-ES": "Definiciones, referencias, implementaciones y tipos, desde los mismos procesos de servidor que los diagnósticos. Está en el catálogo de capacidades y se abre cuando una tarea lo necesita, así que no va en cada petición.",
+						"pt-BR": "Definições, referências, implementações e tipos, dos mesmos processos de servidor que os diagnósticos. Fica no catálogo de capacidades e é aberta quando uma tarefa precisa dela, então não vai em toda requisição.",
+						"ru-RU": "Определения, ссылки, реализации и типы — от тех же серверных процессов, что и диагностика. Инструмент лежит в каталоге возможностей и открывается, когда он нужен задаче, поэтому его нет в каждом запросе.",
+						"uk-UA": "Визначення, посилання, реалізації й типи — від тих самих серверних процесів, що й діагностика. Інструмент лежить у каталозі можливостей і відкривається, коли він потрібен завданню, тому його немає в кожному запиті.",
+						"tr-TR": "Tanımlar, başvurular, uygulamalar ve türler; tanılamalarla aynı sunucu süreçlerinden. Yetenek kataloğunda durur ve bir görev ihtiyaç duyduğunda açılır, bu yüzden her istekte yer almaz.",
+						"fa-IR": "تعریف‌ها، ارجاع‌ها، پیاده‌سازی‌ها و نوع‌ها، از همان فرایندهای سروری که پیام‌های تشخیصی را می‌دهند. در فهرست توانایی‌ها است و وقتی کاری به آن نیاز دارد باز می‌شود، پس در هر درخواست نیست."
+					}
+				},
+				{
+					"key": "navigationResults",
+					"kind": "number",
+					"default": 30,
+					"min": 1,
+					"max": 200,
+					"label": {
+						"zh": "导航一次最多列几处",
+						"en": "Max places listed per answer",
+						"zh-TW": "導覽一次最多列幾處",
+						"ja-JP": "1 回のナビゲーションで示す箇所の最大数",
+						"ko-KR": "탐색 한 번에 보여 줄 최대 위치 수",
+						"de-DE": "Höchstens aufgelistete Stellen je Navigationsantwort",
+						"fr-FR": "Emplacements listés par réponse de navigation, au plus",
+						"es-ES": "Máximo de lugares por respuesta de navegación",
+						"pt-BR": "Máximo de locais por resposta de navegação",
+						"ru-RU": "Мест в одном ответе навигации не больше",
+						"uk-UA": "Макс. місць в одній відповіді навігації",
+						"tr-TR": "Bir gezinme yanıtında en fazla listelenen yer",
+						"fa-IR": "حداکثر جاهای فهرست‌شده در هر پاسخ پیمایش"
 					}
 				}
 			]
@@ -7222,11 +7367,33 @@
 					"max": 5,
 					"label": {
 						"zh": "无人值守时「说了没做」最多催几次",
-						"en": "Unattended: nudges for work it said it would do"
+						"en": "Unattended: nudges for work it said it would do",
+						"zh-TW": "無人值守執行時「說了沒做」最多催幾次",
+						"ja-JP": "無人実行で「やると言った作業」を促す最大回数",
+						"ko-KR": "무인 실행에서 하겠다고 한 작업의 최대 재촉 횟수",
+						"de-DE": "Unbeaufsichtigt: Anstöße für angekündigte Arbeit",
+						"fr-FR": "Sans surveillance : relances pour un travail annoncé",
+						"es-ES": "Desatendida: avisos por lo que dijo que haría",
+						"pt-BR": "Sem supervisão: lembretes pelo que disse que faria",
+						"ru-RU": "Без присмотра: не больше напоминаний об обещанном",
+						"uk-UA": "Без нагляду: не більше нагадувань про обіцяне",
+						"tr-TR": "Gözetimsiz: yapacağını söylediği iş için en fazla dürtme",
+						"fa-IR": "بی‌نظارت: حداکثر یادآوری برای کاری که گفته بود انجام می‌دهد"
 					},
 					"help": {
 						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。那里每条消息因为「说了要做却没做」最多催这么多次；所有催促加起来仍受上面的次数限制。判定把做完了的「已完成，已创建 …」当成没做完时，第二次催促在基准测试里多花了 4 次请求。",
-						"en": "Unattended means a one-shot mu --print or json-mode run. There, a run is sent back at most this many times per message for work it said it would do; Max nudges per message still caps all nudges together. When the judge mistook a finished \"Done. Created …\" for a promise, the second nudge cost a benchmark run 4 more requests."
+						"en": "Unattended means a one-shot mu --print or json-mode run. There, a run is sent back at most this many times per message for work it said it would do; Max nudges per message still caps all nudges together. When the judge mistook a finished \"Done. Created …\" for a promise, the second nudge cost a benchmark run 4 more requests.",
+						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行。那裡每則訊息因為「說了要做卻沒做」最多催這麼多次；所有催促加起來仍受「每則訊息最多催幾次」限制。判定器把已經做完的「完成了，已建立 …」誤當成還沒做時，第二次催促讓一次評測執行多花了 4 次請求。",
+						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。そこでは、やると言った作業について、1 メッセージにつき最大でこの回数だけ作業に戻らせます。すべての促しの合計は、引き続き「1 メッセージあたりの最大催促回数」で制限されます。判定器が完了済みの「完了しました。… を作成しました」を、やると言っただけの発言と取り違えたとき、ベンチマークのある実行では 2 回目の促しのためにリクエストが 4 回余計にかかりました。",
+						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 여기서는 하겠다고 한 작업 때문에 메시지마다 최대 이 횟수만큼 다시 작업으로 돌려보냅니다. 모든 재촉을 합한 횟수는 여전히 “메시지당 최대 재촉 횟수”로 제한됩니다. 판정기가 이미 끝난 “완료했습니다. …를 만들었습니다”를 하겠다는 말로 잘못 보았을 때, 두 번째 재촉 때문에 벤치마크 실행 한 번에서 요청이 4번 더 들었습니다.",
+						"de-DE": "Unbeaufsichtigt heißt: ein einmaliger Lauf mit mu --print oder im json-Modus. Dort wird ein Lauf pro Nachricht höchstens so oft für angekündigte Arbeit zurückgeschickt; „Höchstens so oft pro Nachricht anstoßen“ begrenzt weiterhin alle Anstöße zusammen. Als der Judge ein abgeschlossenes „Fertig. Erstellt: …“ für eine Ankündigung hielt, kostete der zweite Anstoß einen Benchmark-Lauf 4 zusätzliche Anfragen.",
+						"fr-FR": "Sans surveillance désigne une exécution unique de mu --print ou en mode json. Là, une exécution est relancée au plus ce nombre de fois par message pour un travail annoncé ; « Relances au plus par message » plafonne toujours l’ensemble des relances. Quand le juge a pris pour une promesse le « Terminé. J’ai créé … » d’un travail fini, la deuxième relance a coûté 4 requêtes de plus à une exécution de benchmark.",
+						"es-ES": "Desatendida significa una ejecución única de mu --print o en modo json. Ahí, una ejecución se devuelve al trabajo como máximo este número de veces por mensaje por lo que dijo que haría; «Máximo de avisos por mensaje» sigue limitando el total de avisos. Cuando el juez tomó por una promesa un «Hecho. He creado …» de un trabajo ya terminado, el segundo aviso le costó 4 solicitudes más a una ejecución de benchmark.",
+						"pt-BR": "Sem supervisão significa uma execução única de mu --print ou no modo json. Ali, uma execução é mandada de volta ao trabalho no máximo este número de vezes por mensagem pelo que disse que faria; “Máximo de lembretes por mensagem” continua limitando todos os lembretes juntos. Quando o juiz tomou por promessa um “Pronto. Criei …” de um trabalho já terminado, o segundo lembrete custou a uma execução de benchmark mais 4 solicitações.",
+						"ru-RU": "Без присмотра — это разовый запуск mu --print или в режиме json. Там запуск, не сделавший обещанного, отправляется обратно к работе не больше этого числа раз на сообщение; «Не больше напоминаний на сообщение» по-прежнему ограничивает все напоминания вместе. Когда судья принял завершённое «Готово. Создано …» за обещание, второе напоминание стоило запуску бенчмарка ещё 4 запросов.",
+						"uk-UA": "Без нагляду — це разовий запуск mu --print або в режимі json. Там запуск, який не зробив обіцяного, повертається до роботи не більше цієї кількості разів на повідомлення; «Не більше нагадувань на повідомлення» й далі обмежує всі нагадування разом. Коли суддя сприйняв завершене «Готово. Створено …» за обіцянку, друге нагадування коштувало запуску бенчмарку ще 4 запити.",
+						"tr-TR": "Gözetimsiz, mu --print veya json modundaki tek seferlik bir çalıştırmadır. Orada bir çalıştırma, yapacağını söylediği iş için mesaj başına en fazla bu kadar kez geri gönderilir; tüm dürtmelerin toplamını yine “Mesaj başına en fazla dürtme” sınırlar. Hakem bitmiş bir \"Bitti. … oluşturuldu\" yanıtını söz sandığında, ikinci dürtme bir benchmark çalıştırmasına 4 istek daha mal oldu.",
+						"fa-IR": "بی‌نظارت یعنی یک اجرای یک‌بارهٔ mu --print یا در حالت json. آنجا اجرا برای کاری که گفته بود انجام می‌دهد، در هر پیام حداکثر همین تعداد بار به کار برگردانده می‌شود؛ «حداکثر یادآوری برای هر پیام» همچنان سقف همهٔ یادآوری‌ها روی هم است. وقتی داور «انجام شد. … ایجاد شد» را، که کار تمام‌شده بود، وعده پنداشت، یادآوری دوم برای یک اجرای بنچمارک 4 درخواست بیشتر هزینه داشت."
 					}
 				},
 				{
@@ -7235,11 +7402,33 @@
 					"default": false,
 					"label": {
 						"zh": "无人值守时回应催促没调工具也再催",
-						"en": "Unattended: nudge again after an answer without a tool call"
+						"en": "Unattended: nudge again after an answer without a tool call",
+						"zh-TW": "無人值守執行時，回應催促沒呼叫工具也再催",
+						"ja-JP": "無人実行で、ツールを呼ばずに答えた後も再び促す",
+						"ko-KR": "무인 실행에서 도구 호출 없이 답한 뒤에도 다시 재촉",
+						"de-DE": "Unbeaufsichtigt: nach einer Antwort ohne Tool-Aufruf erneut anstoßen",
+						"fr-FR": "Sans surveillance : relancer après une réponse sans appel d’outil",
+						"es-ES": "Desatendida: volver a avisar tras una respuesta sin llamadas a herramientas",
+						"pt-BR": "Sem supervisão: novo lembrete após resposta sem chamada de ferramenta",
+						"ru-RU": "Без присмотра: напоминать снова после ответа без вызова инструмента",
+						"uk-UA": "Без нагляду: нагадувати знову після відповіді без виклику інструмента",
+						"tr-TR": "Gözetimsiz: araç çağrısız bir yanıttan sonra yeniden dürt",
+						"fa-IR": "بی‌نظارت: یادآوری دوباره پس از پاسخی بدون فراخوانی ابزار"
 					},
 					"help": {
 						"zh": "默认不催：它回应上一次催促时一个工具也没调（比如「工作已经做完了」），就是用停下来作了答，不再说它没做完。什么也没说就停下的一轮照样会被催。",
-						"en": "Off by default: when the agent answered the last nudge without calling a tool (\"The work is already complete\"), it answered by stopping, and isn't told again that it said it would do more. A run that stops without a message is still sent back."
+						"en": "Off by default: when the agent answered the last nudge without calling a tool (\"The work is already complete\"), it answered by stopping, and isn't told again that it said it would do more. A run that stops without a message is still sent back.",
+						"zh-TW": "預設關閉：代理回應上一次催促時一個工具也沒呼叫（例如「工作已經完成了」），就是用停下來作答，不會再被提醒它說過還要做。什麼也沒說就停下的一輪，照樣會被催回去。",
+						"ja-JP": "既定ではオフです。前回の促しにエージェントがツールを呼び出さずに答えた場合（「作業はすでに完了しています」など）、止まることで答えたものとみなし、まだやると言っていたことを改めて伝えはしません。何も言わずに止まった実行は、引き続き作業に戻らせます。",
+						"ko-KR": "기본값은 꺼짐입니다. 에이전트가 지난 재촉에 도구를 호출하지 않고 답했다면(“작업은 이미 완료되었습니다”), 멈추는 것으로 답한 것이므로 더 하겠다고 했던 것을 다시 알리지 않습니다. 아무 메시지 없이 멈춘 실행은 여전히 다시 작업으로 돌려보냅니다.",
+						"de-DE": "Standardmäßig aus: Hat der Agent auf den letzten Anstoß geantwortet, ohne ein Tool aufzurufen („Die Arbeit ist bereits erledigt“), war das Anhalten seine Antwort, und ihm wird nicht noch einmal gesagt, dass er mehr angekündigt hat. Ein Lauf, der ohne Nachricht anhält, wird weiterhin zurückgeschickt.",
+						"fr-FR": "Désactivé par défaut : quand l’agent a répondu à la dernière relance sans appeler d’outil (« Le travail est déjà terminé »), il a répondu en s’arrêtant, et on ne lui redit pas qu’il avait annoncé davantage. Une exécution qui s’arrête sans message est quand même renvoyée au travail.",
+						"es-ES": "Desactivado de forma predeterminada: si el agente respondió al último aviso sin llamar a ninguna herramienta («El trabajo ya está terminado»), su respuesta fue detenerse, y no se le vuelve a decir que dijo que haría más. Una ejecución que se detiene sin ningún mensaje se sigue devolviendo al trabajo.",
+						"pt-BR": "Desativado por padrão: quando o agente respondeu ao último lembrete sem chamar nenhuma ferramenta (“O trabalho já está concluído”), ele respondeu parando, e não é avisado de novo de que disse que faria mais. Uma execução que para sem mensagem continua sendo mandada de volta.",
+						"ru-RU": "По умолчанию выключено: если агент ответил на последнее напоминание, не вызвав инструмент («Работа уже выполнена»), он ответил тем, что остановился, и ему больше не говорят, что он обещал сделать больше. Запуск, который останавливается без сообщения, по-прежнему отправляется обратно к работе.",
+						"uk-UA": "Типово вимкнено: якщо агент відповів на останнє нагадування, не викликавши інструмент («Роботу вже виконано»), він відповів тим, що зупинився, і йому більше не кажуть, що він обіцяв зробити більше. Запуск, який зупиняється без повідомлення, і далі повертається до роботи.",
+						"tr-TR": "Varsayılan olarak kapalı: ajan son dürtmeye araç çağırmadan yanıt verdiyse (\"İş zaten tamamlandı\"), durarak yanıt vermiş demektir ve ona daha fazlasını yapacağını söylediği yeniden hatırlatılmaz. Hiçbir mesaj yazmadan duran bir çalıştırma ise yine geri gönderilir.",
+						"fa-IR": "به‌طور پیش‌فرض خاموش است: وقتی عامل به یادآوری قبلی بدون فراخوانی ابزار پاسخ داده باشد («کار از قبل تمام شده است»)، یعنی با ایستادن پاسخ داده، و دیگر به او یادآوری نمی‌شود که گفته بود کار بیشتری انجام می‌دهد. اجرایی که بی هیچ پیامی بایستد همچنان به کار برگردانده می‌شود."
 					}
 				}
 			]
@@ -9191,7 +9380,18 @@
 					},
 					"help": {
 						"zh": "so（360）、sogou、bing-cn、tavily、searxng:<地址>，或带 {query} 的网址。设置了环境变量 TAVILY_API_KEY 时先问 Tavily，这里选的源作为后备。",
-						"en": "so (360), sogou, bing-cn, tavily, searxng:<base url>, or a URL with {query} in it. With TAVILY_API_KEY set in the environment, Tavily is asked first and this source is the fallback."
+						"en": "so (360), sogou, bing-cn, tavily, searxng:<base url>, or a URL with {query} in it. With TAVILY_API_KEY set in the environment, Tavily is asked first and this source is the fallback.",
+						"zh-TW": "so（360）、sogou、bing-cn、tavily、searxng:<base url>，或含有 {query} 的網址。環境變數裡設了 TAVILY_API_KEY 時，會先查詢 Tavily，這裡的來源作為備援。",
+						"ja-JP": "so（360）、sogou、bing-cn、tavily、searxng:<ベース URL>、または {query} を含む URL。環境変数 TAVILY_API_KEY が設定されている場合は、まず Tavily に問い合わせ、このソースは予備として使います。",
+						"ko-KR": "so(360), sogou, bing-cn, tavily, searxng:<기본 URL> 중 하나 또는 {query}가 들어간 URL입니다. 환경 변수에 TAVILY_API_KEY가 설정되어 있으면 Tavily에 먼저 묻고, 이 소스는 예비로 씁니다.",
+						"de-DE": "so (360), sogou, bing-cn, tavily, searxng:<Basis-URL> oder eine URL, die {query} enthält. Ist TAVILY_API_KEY in der Umgebung gesetzt, wird zuerst Tavily gefragt, und diese Quelle dient als Reserve.",
+						"fr-FR": "so (360), sogou, bing-cn, tavily, searxng:<URL de base>, ou une URL contenant {query}. Si TAVILY_API_KEY est défini dans l’environnement, Tavily est interrogé en premier et cette source sert de repli.",
+						"es-ES": "so (360), sogou, bing-cn, tavily, searxng:<URL base> o una URL que contenga {query}. Si TAVILY_API_KEY está definida en el entorno, se consulta primero a Tavily y esta fuente queda de reserva.",
+						"pt-BR": "so (360), sogou, bing-cn, tavily, searxng:<URL base> ou uma URL com {query}. Com TAVILY_API_KEY definida no ambiente, o Tavily é consultado primeiro, e esta fonte fica como reserva.",
+						"ru-RU": "so (360), sogou, bing-cn, tavily, searxng:<базовый URL> или URL, содержащий {query}. Если в окружении задана TAVILY_API_KEY, сначала опрашивается Tavily, а этот источник становится запасным.",
+						"uk-UA": "so (360), sogou, bing-cn, tavily, searxng:<базова адреса> або URL-адреса з {query}. Якщо в середовищі задано TAVILY_API_KEY, спершу запитується Tavily, а це джерело стає запасним.",
+						"tr-TR": "so (360), sogou, bing-cn, tavily, searxng:<temel URL> ya da içinde {query} geçen bir URL. TAVILY_API_KEY ortam değişkeni ayarlıysa önce Tavily'ye sorulur ve bu kaynak yedek olarak kullanılır.",
+						"fa-IR": "so (360)، sogou، bing-cn، tavily، searxng:<base url>، یا یک URL که {query} در آن باشد. اگر متغیر محیطی TAVILY_API_KEY تنظیم شده باشد، اول از Tavily پرسیده می‌شود و این منبع پشتیبان است."
 					}
 				},
 				{
@@ -9669,6 +9869,41 @@
 						"uk-UA": "Коли вимкнено, використовуються лише сервери з mcp.servers у mu.json.",
 						"tr-TR": "Kapalıyken yalnızca mu.json içinde mcp.servers altındaki sunucular kullanılır.",
 						"fa-IR": "وقتی خاموش باشد، فقط سرورهای mcp.servers در mu.json به کار می‌روند."
+					}
+				},
+				{
+					"key": "folders",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "子文件夹里的 AGENTS.md 和 CLAUDE.md",
+						"en": "AGENTS.md and CLAUDE.md in subfolders",
+						"zh-TW": "子資料夾裡的 AGENTS.md 和 CLAUDE.md",
+						"ja-JP": "サブフォルダーの AGENTS.md と CLAUDE.md",
+						"ko-KR": "하위 폴더의 AGENTS.md와 CLAUDE.md",
+						"de-DE": "AGENTS.md und CLAUDE.md in Unterordnern",
+						"fr-FR": "AGENTS.md et CLAUDE.md des sous-dossiers",
+						"es-ES": "AGENTS.md y CLAUDE.md en subcarpetas",
+						"pt-BR": "AGENTS.md e CLAUDE.md em subpastas",
+						"ru-RU": "AGENTS.md и CLAUDE.md во вложенных папках",
+						"uk-UA": "AGENTS.md і CLAUDE.md у вкладених папках",
+						"tr-TR": "Alt klasörlerdeki AGENTS.md ve CLAUDE.md",
+						"fa-IR": "AGENTS.md و CLAUDE.md در زیرپوشه‌ها"
+					},
+					"help": {
+						"zh": "项目文件夹下面某个文件夹自己的说明（比如 monorepo 里一个包的 AGENTS.md），在工具第一次读写那里的文件时随结果交给模型一次。项目文件夹本身的由 pi 在启动时加载。node_modules 里的不算。",
+						"en": "Instructions in a folder below the project folder, such as one package's AGENTS.md in a monorepo, are passed to the model once, with the result of the first tool that reads or changes a file there. The project folder's own are loaded by pi at the start. Those inside node_modules are left out.",
+						"zh-TW": "專案資料夾下某個資料夾自己的說明（例如 monorepo 裡某個套件的 AGENTS.md），會在工具第一次讀寫那裡的檔案時隨結果交給模型一次。專案資料夾本身的由 pi 在啟動時載入。node_modules 裡的不算。",
+						"ja-JP": "プロジェクトフォルダーの下にあるフォルダー独自の指示（monorepo の 1 パッケージの AGENTS.md など）を、そこにあるファイルをツールが初めて読み書きしたときに、その結果と一緒に 1 回だけモデルに渡します。プロジェクトフォルダー自体のものは pi が起動時に読み込みます。node_modules 内のものは対象外です。",
+						"ko-KR": "프로젝트 폴더 아래 폴더의 자체 지침(예: 모노레포에서 한 패키지의 AGENTS.md)을, 도구가 그 폴더의 파일을 처음 읽거나 바꿀 때 결과와 함께 모델에 한 번 전달합니다. 프로젝트 폴더 자체의 지침은 pi가 시작할 때 불러옵니다. node_modules 안의 것은 제외됩니다.",
+						"de-DE": "Anweisungen in einem Ordner unterhalb des Projektordners, etwa die AGENTS.md eines Pakets in einem Monorepo, gehen einmal an das Modell, mit dem Ergebnis des ersten Werkzeugs, das dort eine Datei liest oder ändert. Die des Projektordners selbst lädt pi beim Start. Solche in node_modules bleiben außen vor.",
+						"fr-FR": "Les instructions placées dans un dossier sous le dossier du projet, comme l’AGENTS.md d’un paquet dans un monorepo, sont transmises une fois au modèle, avec le résultat du premier outil qui lit ou modifie un fichier de ce dossier. Celles du dossier du projet lui-même sont chargées par pi au démarrage. Celles de node_modules sont ignorées.",
+						"es-ES": "Las instrucciones que hay en una carpeta bajo la carpeta del proyecto, como el AGENTS.md de un paquete en un monorepo, se pasan una vez al modelo, con el resultado de la primera herramienta que lee o cambia un archivo de esa carpeta. Las de la carpeta del proyecto las carga pi al empezar. Las de node_modules no se tienen en cuenta.",
+						"pt-BR": "As instruções numa pasta abaixo da pasta do projeto, como o AGENTS.md de um pacote num monorepo, são passadas uma vez ao modelo, com o resultado da primeira ferramenta que lê ou altera um arquivo dessa pasta. As da própria pasta do projeto o pi carrega ao iniciar. As de node_modules ficam de fora.",
+						"ru-RU": "Инструкции в папке внутри папки проекта, например AGENTS.md одного пакета в монорепозитории, передаются модели один раз вместе с результатом первого инструмента, который читает или меняет файл в этой папке. Инструкции самой папки проекта pi загружает при запуске. Файлы из node_modules не учитываются.",
+						"uk-UA": "Інструкції в папці всередині папки проєкту, наприклад AGENTS.md одного пакета в монорепозиторії, передаються моделі один раз разом із результатом першого інструмента, який читає або змінює файл у цій папці. Інструкції самої папки проєкту pi завантажує під час запуску. Файли з node_modules не враховуються.",
+						"tr-TR": "Proje klasörünün altındaki bir klasördeki talimatlar (ör. bir monorepo'daki bir paketin AGENTS.md dosyası), oradaki bir dosyayı ilk okuyan veya değiştiren aracın sonucuyla birlikte modele bir kez iletilir. Proje klasörünün kendi talimatlarını pi başlangıçta yükler. node_modules içindekiler dikkate alınmaz.",
+						"fa-IR": "دستورالعمل‌های داخل پوشه‌ای در زیر پوشهٔ پروژه، مثل AGENTS.md یک بسته در یک مونوریپو، یک بار همراه با نتیجهٔ نخستین ابزاری که فایلی را در آن پوشه می‌خواند یا تغییر می‌دهد به مدل داده می‌شود. دستورالعمل‌های خودِ پوشهٔ پروژه را pi هنگام شروع بارگذاری می‌کند. موارد داخل node_modules کنار گذاشته می‌شوند."
 					}
 				},
 				{
@@ -10624,11 +10859,103 @@
 			"name": "recovery",
 			"title": {
 				"zh": "中断的工具调用",
-				"en": "Interrupted tool calls"
+				"en": "Interrupted tool calls",
+				"zh-TW": "中斷的工具呼叫",
+				"ja-JP": "中断されたツール呼び出し",
+				"ko-KR": "중단된 도구 호출",
+				"de-DE": "Unterbrochene Tool-Aufrufe",
+				"fr-FR": "Appels d’outil interrompus",
+				"es-ES": "Llamadas a herramientas interrumpidas",
+				"pt-BR": "Chamadas de ferramenta interrompidas",
+				"ru-RU": "Прерванные вызовы инструментов",
+				"uk-UA": "Перервані виклики інструментів",
+				"tr-TR": "Yarıda kalan araç çağrıları",
+				"fa-IR": "فراخوانی‌های ابزارِ نیمه‌تمام"
 			},
 			"summary": {
 				"zh": "mu 在工具调用跑到一半时被杀掉、断电或退出，再打开会话时，会告诉模型和你哪些调用没有结果：哪些没开始、哪些只是读，哪些已经开始、结果不明。结果不明的会提醒模型先核对外部状态或问你，免得 git push、发布、数据库迁移做两次。每个可能改东西的调用开始前，会话里记一条标记。",
-				"en": "When mu is killed, the machine sleeps or the app quits while tool calls run, reopening the session tells the model and you which calls have no result: which never started, which only read, and which started with an outcome nobody knows. For those, the model is told to check the outside state or ask you first, so a git push, a publish or a migration does not run twice. Before each call that may change something starts, the session gets a marker."
+				"en": "When mu is killed, the machine sleeps or the app quits while tool calls run, reopening the session tells the model and you which calls have no result: which never started, which only read, and which started with an outcome nobody knows. For those, the model is told to check the outside state or ask you first, so a git push, a publish or a migration does not run twice. Before each call that may change something starts, the session gets a marker.",
+				"zh-TW": "工具呼叫執行到一半時，mu 被強制結束、電腦進入睡眠或應用程式關閉，重新開啟對話時，會告訴模型和你哪些呼叫沒有結果：哪些沒開始、哪些只是讀取，哪些已經開始但結果不明。對結果不明的呼叫，會提醒模型先核對外部狀態或先問你，以免 git push、發布或資料庫遷移執行兩次。每個可能改動東西的呼叫開始前，對話裡都會先記下一個標記。",
+				"ja-JP": "ツール呼び出しの実行中に mu が強制終了されたり、マシンがスリープしたり、アプリが終了したりした場合、セッションを開き直すと、結果のない呼び出しをモデルとあなたに伝えます。始まらなかったもの、読み取りだけだったもの、始まったものの結果が誰にもわからないものを区別します。結果がわからないものについては、まず外部の状態を確かめるか、あなたに尋ねるようモデルに伝え、git push、公開、マイグレーションが二重に実行されないようにします。何かを変更しうる呼び出しが始まる前には毎回、セッションに目印を残します。",
+				"ko-KR": "도구 호출이 실행되는 동안 mu가 강제 종료되거나, 컴퓨터가 잠자기 상태가 되거나, 앱이 종료되면, 세션을 다시 열 때 결과가 없는 호출을 모델과 사용자에게 알려 줍니다. 시작되지 않은 호출, 읽기만 한 호출, 시작되었지만 결과를 아무도 모르는 호출을 구분합니다. 결과를 모르는 호출에 대해서는 모델에게 먼저 외부 상태를 확인하거나 사용자에게 물어보라고 알려, git push, 게시, 마이그레이션이 두 번 실행되지 않게 합니다. 무언가를 바꿀 수 있는 호출이 시작되기 전마다 세션에 표시를 남깁니다.",
+				"de-DE": "Wird mu zwangsbeendet, geht der Rechner in den Ruhezustand oder schließt sich die App, während Tool-Aufrufe laufen, erfahren das Modell und du beim erneuten Öffnen der Sitzung, welche Aufrufe kein Ergebnis haben: welche nie gestartet sind, welche nur gelesen haben und welche gestartet sind, ohne dass jemand weiß, wie sie ausgegangen sind. Bei diesen wird das Modell angewiesen, zuerst den Zustand außerhalb zu prüfen oder dich zu fragen, damit ein git push, eine Veröffentlichung oder eine Migration nicht zweimal läuft. Bevor ein Aufruf startet, der etwas ändern kann, bekommt die Sitzung eine Markierung.",
+				"fr-FR": "Quand mu est arrêté de force, que la machine se met en veille ou que l’application se ferme pendant que des appels d’outil s’exécutent, à la réouverture de la session, le modèle et vous apprenez quels appels n’ont pas de résultat : ceux qui n’ont jamais démarré, ceux qui n’ont fait que lire, et ceux qui ont démarré sans que personne ne sache comment ils se sont terminés. Pour ces derniers, le modèle a pour consigne de vérifier d’abord l’état extérieur ou de vous demander, pour qu’un git push, une publication ou une migration ne s’exécute pas deux fois. Avant le démarrage de chaque appel susceptible de modifier quelque chose, la session reçoit un marqueur.",
+				"es-ES": "Si se mata el proceso de mu, el ordenador entra en reposo o la app se cierra mientras se ejecutan llamadas a herramientas, al reabrir la sesión se indica al modelo y a ti qué llamadas no tienen resultado: cuáles no llegaron a empezar, cuáles solo leían y cuáles empezaron sin que nadie sepa cómo acabaron. Para estas últimas, se le indica al modelo que primero compruebe el estado exterior o te pregunte, para que un git push, una publicación o una migración no se ejecute dos veces. Antes de que empiece cada llamada que pueda cambiar algo, la sesión recibe una marca.",
+				"pt-BR": "Quando o mu é encerrado à força, a máquina entra em repouso ou o app fecha enquanto chamadas de ferramenta estão rodando, ao reabrir a sessão o modelo e você ficam sabendo quais chamadas ficaram sem resultado: quais nunca começaram, quais só leram e quais começaram sem que ninguém saiba como terminaram. Para essas, o modelo é orientado a verificar antes o estado externo ou perguntar a você, para que um git push, uma publicação ou uma migração não rode duas vezes. Antes de começar cada chamada que pode alterar algo, a sessão recebe uma marca.",
+				"ru-RU": "Если mu был принудительно завершён, компьютер ушёл в сон или приложение закрылось, пока выполнялись вызовы инструментов, то при повторном открытии сеанса модель и вы узнаёте, у каких вызовов нет результата: какие так и не начались, какие только читали, а какие начались, и чем они закончились, никто не знает. Для последних модели говорят сначала проверить внешнее состояние или спросить вас, чтобы git push, публикация или миграция не выполнились дважды. Перед началом каждого вызова, который может что-то изменить, в сеансе ставится отметка.",
+				"uk-UA": "Якщо mu примусово завершено, комп’ютер заснув або застосунок закрився, поки виконувалися виклики інструментів, то після повторного відкриття сеансу модель і ви дізнаєтеся, які виклики не мають результату: які так і не почалися, які лише читали, а які почалися, і чим вони закінчилися, ніхто не знає. Щодо останніх моделі кажуть спершу перевірити зовнішній стан або запитати вас, щоб git push, публікація чи міграція не виконалися двічі. Перед початком кожного виклику, який може щось змінити, у сеансі ставиться позначка.",
+				"tr-TR": "Araç çağrıları sürerken mu sonlandırılır, makine uykuya geçer ya da uygulama kapanırsa, oturum yeniden açıldığında hangi çağrıların sonucu olmadığı modele ve size bildirilir: hangileri hiç başlamadı, hangileri yalnızca okudu ve hangileri başladı ama sonucunu kimse bilmiyor. Sonucu bilinmeyenler için modele önce dış durumu kontrol etmesi ya da size sorması söylenir; böylece bir git push, bir yayımlama ya da bir veritabanı geçişi iki kez çalışmaz. Bir şeyi değiştirebilecek her çağrı başlamadan önce oturuma bir işaret yazılır.",
+				"fa-IR": "اگر هنگام اجرای فراخوانی‌های ابزار، mu به‌زور متوقف شود، رایانه به خواب برود یا برنامه بسته شود، با باز کردن دوبارهٔ نشست به مدل و شما گفته می‌شود کدام فراخوانی‌ها نتیجه ندارند: کدام هرگز شروع نشد، کدام فقط چیزی خواند، و کدام شروع شد و کسی نتیجه‌اش را نمی‌داند. برای این آخری‌ها به مدل گفته می‌شود اول وضعیت بیرونی را بررسی کند یا از شما بپرسد، تا یک git push، یک انتشار یا یک مهاجرت پایگاه داده دو بار اجرا نشود. پیش از شروع هر فراخوانی‌ای که ممکن است چیزی را تغییر دهد، یک نشانه در نشست ثبت می‌شود."
+			},
+			"defaultEnabled": true,
+			"options": []
+		},
+		{
+			"name": "interrupted",
+			"title": {
+				"zh": "你打断的回复",
+				"en": "Replies you stop",
+				"zh-TW": "你打斷的回覆",
+				"ja-JP": "あなたが止めた返信",
+				"ko-KR": "사용자가 중단한 응답",
+				"de-DE": "Antworten, die du unterbrichst",
+				"fr-FR": "Réponses que vous interrompez",
+				"es-ES": "Respuestas que interrumpes",
+				"pt-BR": "Respostas que você interrompe",
+				"ru-RU": "Ответы, которые вы прерываете",
+				"uk-UA": "Відповіді, які ви перериваєте",
+				"tr-TR": "Durdurduğunuz yanıtlar",
+				"fa-IR": "پاسخ‌هایی که متوقف می‌کنید"
+			},
+			"summary": {
+				"zh": "你在回复写到一半时打断它，pi 会把整条回复从下次发给模型的内容里去掉，于是你说「停，展开第二点」时，模型手里没有第二点。mu 把你已经看到的那部分文字作为只给模型看的消息还给它，不带推理过程和工具调用。mu 自己掐断的回复（长时间只思考、违反规则）不在此列，它们各自会说明。",
+				"en": "When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after \"stop, and expand your second point\" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) aren't given back: those say what they cut.",
+				"zh-TW": "你在回覆寫到一半時打斷它，pi 會把整則回覆從下次送給模型的內容裡拿掉，於是你說「停，展開你的第二點」之後，模型手上根本沒有第二點。mu 會把你已經看到的文字，放在只給模型看的訊息裡還給它，不含推理過程和工具呼叫。mu 自己截斷的回覆（思考太久、違反規則）不會還回去：它們各自會說明截掉了什麼。",
+				"ja-JP": "書かれている途中の返信をあなたが止めると、pi は次にモデルへ送る内容からその返信を丸ごと外します。そのため「止めて。2 つ目の点を詳しく説明して」と言っても、モデルの手元には 2 つ目の点がありません。mu は、あなたが見たテキストを、モデルだけが読むメッセージとしてモデルに返します。推論やツール呼び出しは含めません。mu が自分で打ち切った返信（考えすぎ、ルール違反）は返しません。それらは何を打ち切ったかを自ら示します。",
+				"ko-KR": "응답이 작성되는 도중에 사용자가 중단하면, pi는 다음에 모델에 보내는 내용에서 그 응답 전체를 뺍니다. 그래서 “멈추고, 두 번째 요점을 자세히 설명해 줘”라고 해도 모델에게는 두 번째 요점이 없습니다. mu는 사용자가 본 텍스트를 모델만 읽는 메시지로 모델에게 돌려주며, 추론 과정과 도구 호출은 포함하지 않습니다. mu가 스스로 끊은 응답(너무 오래 생각함, 규칙 위반)은 돌려주지 않습니다. 그런 응답은 무엇을 끊었는지 직접 밝힙니다.",
+				"de-DE": "Unterbrichst du eine Antwort, während sie geschrieben wird, lässt pi die ganze Antwort aus dem weg, was das Modell als Nächstes bekommt; nach „Stopp, und führ deinen zweiten Punkt aus“ hat das Modell also keinen zweiten Punkt. mu gibt dem Modell den Text, den du gesehen hast, in einer Nachricht zurück, die nur das Modell liest, ohne die Überlegungen und Tool-Aufrufe. Antworten, die mu selbst abbricht (zu langes Nachdenken, ein Regelverstoß), werden nicht zurückgegeben: Dort wird jeweils gesagt, was abgeschnitten wurde.",
+				"fr-FR": "Quand vous interrompez une réponse en cours d’écriture, pi retire toute la réponse de ce qui est envoyé ensuite au modèle ; après « stop, et développe ton deuxième point », le modèle n’a donc pas de deuxième point. mu rend au modèle le texte que vous avez vu, dans un message que seul le modèle lit, sans le raisonnement ni les appels d’outil. Les réponses que mu coupe lui-même (réflexion trop longue, règle enfreinte) ne sont pas rendues : elles indiquent elles-mêmes ce qui a été coupé.",
+				"es-ES": "Cuando interrumpes una respuesta mientras se escribe, pi deja la respuesta entera fuera de lo que se envía después al modelo, así que tras «para, y desarrolla tu segundo punto» el modelo no tiene segundo punto. mu le devuelve al modelo el texto que viste, en un mensaje que solo lee el modelo, sin el razonamiento ni las llamadas a herramientas. Las respuestas que corta el propio mu (pensar demasiado, incumplir una regla) no se devuelven: esas ya indican lo que cortaron.",
+				"pt-BR": "Quando você interrompe uma resposta enquanto ela está sendo escrita, o pi deixa a resposta inteira de fora do que é enviado ao modelo em seguida; assim, depois de “pare e desenvolva o seu segundo ponto”, o modelo não tem segundo ponto. O mu devolve ao modelo o texto que você viu, numa mensagem que só o modelo lê, sem o raciocínio nem as chamadas de ferramenta. Respostas que o próprio mu corta (raciocínio longo demais, violação de uma regra) não são devolvidas: nesses casos, é informado o que foi cortado.",
+				"ru-RU": "Когда вы прерываете ответ, пока он пишется, pi целиком исключает этот ответ из того, что модель получит дальше, поэтому после «стоп, раскрой второй пункт» у модели нет второго пункта. mu возвращает модели текст, который вы видели, в сообщении, которое читает только модель, без размышлений и вызовов инструментов. Ответы, которые mu обрывает сам (слишком долгие размышления, нарушение правила), не возвращаются: в этих случаях сообщается, что обрезано.",
+				"uk-UA": "Коли ви перериваєте відповідь, поки вона пишеться, pi повністю вилучає цю відповідь із того, що модель отримає далі, тож після «стоп, розгорни другий пункт» у моделі немає другого пункту. mu повертає моделі текст, який ви бачили, у повідомленні, яке читає лише модель, без міркувань і викликів інструментів. Відповіді, які mu обриває сам (надто довгі міркування, порушення правила), не повертаються: у цих випадках повідомляється, що обрізано.",
+				"tr-TR": "Bir yanıtı yazılırken durdurduğunuzda pi, yanıtın tamamını modele bir sonra gönderilen içerikten çıkarır; bu yüzden \"dur, ikinci noktanı biraz aç\" dedikten sonra modelin elinde ikinci nokta olmaz. mu, gördüğünüz metni akıl yürütme ve araç çağrıları olmadan, yalnızca modelin okuduğu bir mesajla modele geri verir. mu'nun kendisinin kestiği yanıtlar (çok uzun süre düşünme, bir kuralı çiğneme) geri verilmez: bunlar neyi kestiklerini kendileri söyler.",
+				"fa-IR": "وقتی پاسخی را در حین نوشته شدن متوقف می‌کنید، pi کل آن پاسخ را از آنچه دفعهٔ بعد برای مدل فرستاده می‌شود کنار می‌گذارد؛ پس بعد از «دست نگه دار، نکتهٔ دومت را بیشتر توضیح بده» مدل هیچ نکتهٔ دومی در دست ندارد. mu متنی را که دیده‌اید، بدون استدلال و فراخوانی‌های ابزار، در پیامی که فقط مدل می‌خواند به مدل برمی‌گرداند. پاسخ‌هایی که mu خودش قطع می‌کند (فکر کردنِ بیش از حد طولانی، زیر پا گذاشتن یک قانون) برگردانده نمی‌شوند: آن‌ها خودشان می‌گویند چه چیزی را بریده‌اند."
+			},
+			"defaultEnabled": true,
+			"options": []
+		},
+		{
+			"name": "prefix",
+			"title": {
+				"zh": "提示缓存失效记录",
+				"en": "Prompt cache watch",
+				"zh-TW": "提示快取失效記錄",
+				"ja-JP": "プロンプトキャッシュの監視",
+				"ko-KR": "프롬프트 캐시 감시",
+				"de-DE": "Überwachung des Prompt-Caches",
+				"fr-FR": "Suivi du cache du prompt",
+				"es-ES": "Vigilancia de la caché del prompt",
+				"pt-BR": "Monitoramento do cache do prompt",
+				"ru-RU": "Наблюдение за кэшем промпта",
+				"uk-UA": "Спостереження за кешем промпту",
+				"tr-TR": "İstem önbelleği izleme",
+				"fa-IR": "پایش حافظهٔ نهان پرامپت"
+			},
+			"summary": {
+				"zh": "每次发给模型的请求都和上一次比较。如果它不再以上一次发出的内容开头，服务商就没法复用这部分的提示缓存，会话里会记下变了什么（模型、系统提示和工具，或从第几条消息开始），以及这期间 mu 做了哪些判定、各自声明会怎样影响缓存。只记哈希、位置和角色，不发往任何地方。",
+				"en": "Each request to the model is compared with the one before it. When it no longer starts with what was sent before, the provider can't reuse its prompt cache for the rest, so the session records what changed (the model, the system prompt and tools, or the first message that differs) and which of mu's decisions acted in between, each with what it declares it does to the cache. Only hashes, positions and roles are kept, and nothing is sent anywhere.",
+				"zh-TW": "每次送給模型的請求都會和上一次比較。如果它不再以上一次送出的內容開頭，供應商就無法為後面的部分重用提示快取，這時對話會記下變了什麼（模型、系統提示詞和工具，或第一則不同的訊息），以及這期間 mu 有哪些判定起了作用、各自宣告會對快取造成什麼影響。只保留雜湊值、位置和角色，也不會傳送到任何地方。",
+				"ja-JP": "モデルへの各リクエストを直前のリクエストと比べます。前回送った内容で始まらなくなると、プロバイダーはそれ以降の部分にプロンプトキャッシュを再利用できません。そこでセッションに、何が変わったか（モデル、システムプロンプトとツール、または最初に異なるメッセージ）と、その間に働いた mu の判定、それぞれがキャッシュにどう影響すると宣言しているかを記録します。保持するのはハッシュ、位置、ロールだけで、どこにも送信しません。",
+				"ko-KR": "모델에 보내는 요청을 매번 직전 요청과 비교합니다. 요청이 더 이상 이전에 보낸 내용으로 시작하지 않으면 공급자는 그 뒤 부분에 프롬프트 캐시를 재사용할 수 없으므로, 세션에 무엇이 바뀌었는지(모델, 시스템 프롬프트와 도구, 또는 처음으로 달라진 메시지)와 그사이 어떤 mu 판정이 작용했는지, 각 판정이 캐시에 어떤 영향을 준다고 선언하는지를 기록합니다. 해시, 위치, 역할만 남기며 어디로도 보내지 않습니다.",
+				"de-DE": "Jede Anfrage an das Modell wird mit der vorherigen verglichen. Beginnt sie nicht mehr mit dem, was zuvor gesendet wurde, kann der Anbieter seinen Prompt-Cache für den Rest nicht wiederverwenden; die Sitzung hält dann fest, was sich geändert hat (das Modell, der Systemprompt und die Tools oder die erste abweichende Nachricht) und welche Entscheidungen von mu dazwischen gewirkt haben, jeweils mit ihrer erklärten Wirkung auf den Cache. Gespeichert werden nur Hashes, Positionen und Rollen, und nichts wird irgendwohin gesendet.",
+				"fr-FR": "Chaque requête au modèle est comparée à la précédente. Quand elle ne commence plus par ce qui a été envoyé avant, le fournisseur ne peut pas réutiliser son cache du prompt pour la suite ; la session enregistre alors ce qui a changé (le modèle, le prompt système et les outils, ou le premier message qui diffère) et quelles décisions de mu ont agi entre-temps, chacune avec l’effet sur le cache qu’elle déclare. Seuls des hachages, des positions et des rôles sont conservés, et rien n’est envoyé nulle part.",
+				"es-ES": "Cada solicitud al modelo se compara con la anterior. Cuando ya no empieza por lo que se envió antes, el proveedor no puede reutilizar su caché del prompt para el resto, así que la sesión registra qué cambió (el modelo, el prompt del sistema y las herramientas, o el primer mensaje que difiere) y qué decisiones de mu actuaron entretanto, cada una con el efecto que declara tener sobre la caché. Solo se guardan hashes, posiciones y roles, y no se envía nada a ningún sitio.",
+				"pt-BR": "Cada solicitação ao modelo é comparada com a anterior. Quando ela não começa mais com o que foi enviado antes, o provedor não consegue reaproveitar o cache do prompt para o restante; então a sessão registra o que mudou (o modelo, o prompt do sistema e as ferramentas, ou a primeira mensagem diferente) e quais decisões do mu atuaram nesse intervalo, cada uma com o efeito que declara ter sobre o cache. Só são guardados hashes, posições e papéis, e nada é enviado a lugar nenhum.",
+				"ru-RU": "Каждый запрос к модели сравнивается с предыдущим. Если он больше не начинается с того, что было отправлено раньше, провайдер не может повторно использовать кэш промпта для остального, поэтому сеанс записывает, что изменилось (модель, системный промпт и инструменты или первое отличающееся сообщение) и какие решения mu сработали в промежутке, каждое — с заявленным им влиянием на кэш. Хранятся только хеши, позиции и роли, и ничего никуда не отправляется.",
+				"uk-UA": "Кожен запит до моделі порівнюється з попереднім. Якщо він більше не починається з того, що було надіслано раніше, провайдер не може повторно використати кеш промпту для решти, тож сеанс записує, що змінилося (модель, системний промпт та інструменти або перше повідомлення, що відрізняється), і які рішення mu спрацювали в проміжку, кожне — із заявленим ним впливом на кеш. Зберігаються лише хеші, позиції й ролі, і нічого нікуди не надсилається.",
+				"tr-TR": "Modele giden her istek bir öncekiyle karşılaştırılır. İstek artık daha önce gönderilenle başlamıyorsa sağlayıcı geri kalanı için istem önbelleğini yeniden kullanamaz; bu yüzden oturum neyin değiştiğini (model, sistem istemi ve araçlar ya da farklılaşan ilk mesaj) ve arada mu'nun hangi kararlarının devreye girdiğini, her birinin önbelleğe ne yaptığına dair kendi beyanıyla birlikte kaydeder. Yalnızca hash'ler, konumlar ve roller saklanır; hiçbir şey hiçbir yere gönderilmez.",
+				"fa-IR": "هر درخواست به مدل با درخواست قبلی مقایسه می‌شود. وقتی دیگر با آنچه قبلاً فرستاده شده شروع نشود، ارائه‌دهنده نمی‌تواند برای بقیهٔ آن از حافظهٔ نهان پرامپتش دوباره استفاده کند؛ پس نشست ثبت می‌کند چه چیزی تغییر کرده (مدل، پرامپت سیستمی و ابزارها، یا نخستین پیامی که فرق دارد) و کدام تصمیم‌های mu در این فاصله عمل کرده‌اند، هر کدام همراه با اثری که خودش اعلام می‌کند بر حافظهٔ نهان دارد. فقط هش‌ها، موقعیت‌ها و نقش‌ها نگه داشته می‌شوند و هیچ چیز به جایی فرستاده نمی‌شود."
 			},
 			"defaultEnabled": true,
 			"options": []
@@ -10637,11 +10964,33 @@
 			"name": "confine",
 			"title": {
 				"zh": "写入沙箱（实验）",
-				"en": "Write sandbox (experimental)"
+				"en": "Write sandbox (experimental)",
+				"zh-TW": "寫入沙箱（實驗）",
+				"ja-JP": "書き込みサンドボックス（実験的）",
+				"ko-KR": "쓰기 샌드박스(실험적)",
+				"de-DE": "Schreib-Sandbox (experimentell)",
+				"fr-FR": "Bac à sable d’écriture (expérimental)",
+				"es-ES": "Sandbox de escritura (experimental)",
+				"pt-BR": "Sandbox de escrita (experimental)",
+				"ru-RU": "Песочница для записи (экспериментально)",
+				"uk-UA": "Пісочниця для запису (експериментально)",
+				"tr-TR": "Yazma için korumalı alan (deneysel)",
+				"fa-IR": "سندباکس نوشتن (آزمایشی)"
 			},
 			"summary": {
 				"zh": "agent 跑的 bash 命令、后台任务和调试的程序由操作系统限制，只能写项目目录、临时目录和包管理器的缓存；项目的 .git/hooks 和 .git/config 只读。macOS 用 Seatbelt，Linux 用 bubblewrap，Windows 没有。起不来时（没有 bubblewrap、用户命名空间被关掉）每条命令都拒绝执行，不会退回到不受限制地运行。判定器和权限模式照常询问。确实要写别处的命令（git config、git remote add）可以申请在沙箱外运行一次。任何权限模式下都要审，完全访问也一样：先由判定器审，它拿不准再问你（最小权限下直接问你），不会给整个对话授权。",
-				"en": "The agent's bash commands, background jobs and the programs it debugs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. In every permission mode, Full access included, the judge decides, and asks you when it's unsure (in Ask first, you decide). It's never allowed for the whole conversation."
+				"en": "The agent's bash commands, background jobs and the programs it debugs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. In every permission mode, Full access included, the judge decides, and asks you when it's unsure (in Ask first, you decide). It's never allowed for the whole conversation.",
+				"zh-TW": "代理執行的 bash 指令、背景工作和它偵錯的程式，由作業系統強制限制，只能寫入專案、暫存資料夾和套件快取；專案的 .git/hooks 和 .git/config 為唯讀。macOS 用 Seatbelt，Linux 用 bubblewrap，Windows 沒有。無法啟動時（沒有 bubblewrap、使用者命名空間被關閉），每條指令都會被拒絕，而不會在不受限制的情況下執行。判定器和權限模式照常詢問。必須寫入其他地方的指令（git config、git remote add）可以申請在沙箱外執行一次。在任何權限模式下（包括「完全存取」）都由判定器決定，它拿不準時會問你（在「最小權限」下由你決定）。絕不會對整個對話放行。",
+				"ja-JP": "エージェントの bash コマンド、バックグラウンドジョブ、デバッグ中のプログラムは、プロジェクト、一時フォルダー、パッケージのキャッシュにしか書き込めません。これは OS が強制します。プロジェクトの .git/hooks と .git/config は読み取り専用です。macOS では Seatbelt、Linux では bubblewrap を使い、Windows にはありません。起動できない場合（bubblewrap がない、ユーザー名前空間が無効）は、制限なしで実行するのではなく、すべてのコマンドを拒否します。判定器と権限モードはこれまでどおり確認します。ほかの場所に書き込む必要があるコマンド（git config、git remote add）は、サンドボックスの外で 1 回だけ実行するよう求めることができます。フルアクセスを含むどの権限モードでも判定器が判断し、確信が持てないときはあなたに確認します（最小権限ではあなたが判断します）。会話全体に対して許可されることはありません。",
+				"ko-KR": "에이전트의 bash 명령, 백그라운드 작업, 에이전트가 디버깅하는 프로그램은 운영 체제가 강제하는 대로 프로젝트, 임시 폴더, 패키지 캐시에만 쓸 수 있습니다. 프로젝트의 .git/hooks와 .git/config는 읽기 전용입니다. macOS에서는 Seatbelt, Linux에서는 bubblewrap을 쓰며, Windows에는 없습니다. 시작할 수 없으면(bubblewrap 없음, 사용자 네임스페이스 꺼짐) 제한 없이 실행하는 대신 모든 명령을 거부합니다. 판정기와 권한 모드는 전처럼 묻습니다. 다른 곳에 써야 하는 명령(git config, git remote add)은 샌드박스 밖에서 한 번 실행하도록 요청할 수 있습니다. 전체 접근을 포함한 모든 권한 모드에서 판정기가 결정하고, 확실하지 않으면 사용자에게 묻습니다(최소 권한에서는 사용자가 결정합니다). 대화 전체에 대해 허용되는 일은 없습니다.",
+				"de-DE": "Die bash-Befehle des Agenten, seine Hintergrundjobs und die Programme, die er debuggt, können nur in das Projekt, die temporären Ordner und die Paket-Caches schreiben; das setzt das Betriebssystem durch. Im Projekt sind .git/hooks und .git/config schreibgeschützt. Seatbelt unter macOS, bubblewrap unter Linux, unter Windows keine. Kann die Sandbox nicht starten (kein bubblewrap, User-Namespaces abgeschaltet), wird jeder Befehl abgelehnt, statt uneingeschränkt zu laufen. Der Judge und die Berechtigungsmodi fragen wie bisher. Ein Befehl, der woanders schreiben muss (git config, git remote add), kann darum bitten, einmal außerhalb der Sandbox zu laufen. In jedem Berechtigungsmodus, auch bei Vollzugriff, entscheidet der Judge und fragt dich, wenn er unsicher ist (bei minimalen Berechtigungen entscheidest du). Für die ganze Unterhaltung wird das nie erlaubt.",
+				"fr-FR": "Les commandes bash de l’agent, ses processus en arrière-plan et les programmes qu’il débogue ne peuvent écrire que dans le projet, les dossiers temporaires et les caches de paquets, une limite imposée par le système d’exploitation ; dans le projet, .git/hooks et .git/config sont en lecture seule. Seatbelt sous macOS, bubblewrap sous Linux, aucun sous Windows. Si le bac à sable ne peut pas démarrer (pas de bubblewrap, espaces de noms utilisateur désactivés), chaque commande est refusée au lieu de s’exécuter sans confinement. Le juge et les modes d’autorisation demandent comme avant. Une commande qui doit écrire ailleurs (git config, git remote add) peut demander à s’exécuter une fois hors du bac à sable. Dans chaque mode d’autorisation, accès complet compris, c’est le juge qui décide, et il vous demande quand il n’est pas sûr (avec les autorisations minimales, c’est vous qui décidez). Ce n’est jamais autorisé pour toute la conversation.",
+				"es-ES": "Los comandos de bash del agente, sus tareas en segundo plano y los programas que depura solo pueden escribir en el proyecto, las carpetas temporales y las cachés de paquetes, y lo impone el sistema operativo; en el proyecto, .git/hooks y .git/config son de solo lectura. Seatbelt en macOS, bubblewrap en Linux, ninguno en Windows. Si el sandbox no puede arrancar (no hay bubblewrap, los espacios de nombres de usuario están desactivados), se rechaza cada comando en lugar de ejecutarlo sin restricciones. El juez y los modos de permiso preguntan como antes. Un comando que tenga que escribir en otro sitio (git config, git remote add) puede pedir ejecutarse una vez fuera del sandbox. En todos los modos de permiso, incluido el acceso completo, decide el juez, y te pregunta cuando no lo tiene claro (con permisos mínimos, decides tú). Nunca se permite para toda la conversación.",
+				"pt-BR": "Os comandos bash do agente, as tarefas em segundo plano e os programas que ele depura só podem gravar no projeto, nas pastas temporárias e nos caches de pacotes, o que é imposto pelo sistema operacional; .git/hooks e .git/config do projeto ficam somente leitura. Seatbelt no macOS, bubblewrap no Linux, nenhum no Windows. Quando o sandbox não consegue iniciar (sem bubblewrap, namespaces de usuário desativados), todo comando é recusado em vez de rodar sem restrição. O juiz e os modos de permissão perguntam como antes. Um comando que precisa gravar em outro lugar (git config, git remote add) pode pedir para rodar fora do sandbox, uma vez. Em qualquer modo de permissão, inclusive em “Acesso total”, quem decide é o juiz, que pergunta a você quando não tem certeza (em “Permissões mínimas”, quem decide é você). Isso nunca é permitido para a conversa inteira.",
+				"ru-RU": "Команды bash, которые запускает агент, его фоновые задачи и программы, которые он отлаживает, могут писать только в проект, во временные папки и в кэши пакетов — это обеспечивает операционная система; .git/hooks и .git/config проекта доступны только для чтения. Seatbelt в macOS, bubblewrap в Linux, в Windows — ничего. Если песочница не запускается (нет bubblewrap, пользовательские пространства имён отключены), каждая команда отклоняется, а не выполняется без ограничений. Судья и режимы разрешений спрашивают, как и раньше. Команда, которой нужно писать в другое место (git config, git remote add), может попросить один раз выполниться вне песочницы. В любом режиме разрешений, включая полный доступ, решает судья, а если он не уверен, спрашивает вас (в режиме минимальных разрешений решаете вы). На весь диалог это не разрешается никогда.",
+				"uk-UA": "Команди bash, які запускає агент, його фонові процеси й програми, які він налагоджує, можуть писати лише в проєкт, тимчасові папки й кеші пакетів — це забезпечує операційна система; .git/hooks і .git/config проєкту доступні лише для читання. Seatbelt у macOS, bubblewrap у Linux, у Windows — нічого. Якщо пісочниця не запускається (немає bubblewrap, користувацькі простори імен вимкнено), кожна команда відхиляється, а не виконується без обмежень. Суддя й режими дозволів запитують, як і раніше. Команда, якій треба писати деінде (git config, git remote add), може попросити один раз виконатися поза пісочницею. У будь-якому режимі дозволів, зокрема в повному доступі, вирішує суддя, а якщо він не впевнений, запитує вас (у режимі мінімальних дозволів вирішуєте ви). На всю розмову це не дозволяється ніколи.",
+				"tr-TR": "Ajanın bash komutları, arka plan işleri ve hata ayıkladığı programlar yalnızca projeye, geçici klasörlere ve paket önbelleklerine yazabilir; bunu işletim sistemi uygular. Projedeki .git/hooks ve .git/config salt okunurdur. macOS'ta Seatbelt, Linux'ta bubblewrap kullanılır; Windows'ta yoktur. Başlatılamazsa (bubblewrap yoksa, kullanıcı ad alanları kapalıysa) her komut kısıtlamasız çalıştırılmak yerine reddedilir. Hakem ve izin modları eskisi gibi sorar. Başka bir yere yazması gereken bir komut (git config, git remote add) korumalı alanın dışında bir kez çalıştırılmayı isteyebilir. “Tam erişim” dahil her izin modunda buna hakem karar verir ve emin olmadığında size sorar (“En az izin” modunda kararı siz verirsiniz). Bu izin hiçbir zaman tüm konuşma için verilmez.",
+				"fa-IR": "فرمان‌های bash عامل، کارهای پس‌زمینه و برنامه‌هایی که اشکال‌زدایی می‌کند فقط می‌توانند در پروژه، پوشه‌های موقت و حافظه‌های نهان بسته‌ها بنویسند و این را سیستم‌عامل اعمال می‌کند؛ در خود پروژه، .git/hooks و .git/config فقط‌خواندنی‌اند. در macOS با Seatbelt و در Linux با bubblewrap؛ در Windows وجود ندارد. اگر راه نیفتد (bubblewrap نباشد یا user namespaces خاموش باشد)، هر فرمانی رد می‌شود، نه اینکه بی‌محدودیت اجرا شود. داور و حالت‌های مجوز مثل قبل می‌پرسند. فرمانی که باید جای دیگری بنویسد (git config، git remote add) می‌تواند درخواست کند که یک بار بیرون از سندباکس اجرا شود. در هر حالت مجوز، از جمله «دسترسی کامل»، داور تصمیم می‌گیرد و وقتی مطمئن نیست از شما می‌پرسد (در «حداقل مجوز» خودتان تصمیم می‌گیرید). این اجازه هرگز برای کل گفتگو داده نمی‌شود."
 			},
 			"defaultEnabled": false,
 			"beta": true,
@@ -10652,11 +11001,33 @@
 					"default": [],
 					"label": {
 						"zh": "另外允许写入的目录",
-						"en": "More folders commands may write"
+						"en": "More folders commands may write",
+						"zh-TW": "另外允許寫入的資料夾",
+						"ja-JP": "コマンドが書き込める追加のフォルダー",
+						"ko-KR": "명령이 쓸 수 있는 추가 폴더",
+						"de-DE": "Weitere Ordner, in die Befehle schreiben dürfen",
+						"fr-FR": "Autres dossiers où les commandes peuvent écrire",
+						"es-ES": "Otras carpetas en las que pueden escribir los comandos",
+						"pt-BR": "Outras pastas em que os comandos podem gravar",
+						"ru-RU": "Другие папки, куда могут писать команды",
+						"uk-UA": "Інші папки, куди можуть писати команди",
+						"tr-TR": "Komutların yazabileceği ek klasörler",
+						"fa-IR": "پوشه‌های دیگری که فرمان‌ها می‌توانند در آن بنویسند"
 					},
 					"help": {
 						"zh": "比如 mu 不认识的缓存目录。主目录本身和 ~/.mu 不会因此变成可写。",
-						"en": "For example, a cache mu doesn't know about. The home folder itself and ~/.mu never become writable this way."
+						"en": "For example, a cache mu doesn't know about. The home folder itself and ~/.mu never become writable this way.",
+						"zh-TW": "例如 mu 不認得的快取資料夾。主目錄本身和 ~/.mu 不會因此變成可寫入。",
+						"ja-JP": "たとえば mu が把握していないキャッシュです。ホームフォルダー自体と ~/.mu は、この設定で書き込み可能になることはありません。",
+						"ko-KR": "예를 들어 mu가 모르는 캐시입니다. 홈 폴더 자체와 ~/.mu는 이 방법으로 쓰기 가능해지지 않습니다.",
+						"de-DE": "Etwa ein Cache, den mu nicht kennt. Das Home-Verzeichnis selbst und ~/.mu werden auf diesem Weg nie beschreibbar.",
+						"fr-FR": "Par exemple, un cache que mu ne connaît pas. Le dossier personnel lui-même et ~/.mu ne deviennent jamais accessibles en écriture de cette façon.",
+						"es-ES": "Por ejemplo, una caché que mu no conoce. La carpeta personal en sí y ~/.mu nunca quedan con permiso de escritura por esta vía.",
+						"pt-BR": "Por exemplo, um cache que o mu não conhece. A pasta pessoal em si e ~/.mu nunca se tornam graváveis por aqui.",
+						"ru-RU": "Например, кэш, о котором mu не знает. Сама домашняя папка и ~/.mu так никогда не становятся доступными для записи.",
+						"uk-UA": "Наприклад, кеш, про який mu не знає. Сама домашня папка й ~/.mu у такий спосіб ніколи не стають доступними для запису.",
+						"tr-TR": "Örneğin mu'nun bilmediği bir önbellek. Ana klasörün kendisi ve ~/.mu bu yolla hiçbir zaman yazılabilir olmaz.",
+						"fa-IR": "مثلاً حافظهٔ نهانی که mu از آن خبر ندارد. خودِ پوشهٔ خانگی و ~/.mu هرگز از این راه قابل‌نوشتن نمی‌شوند."
 					}
 				}
 			]
@@ -10665,11 +11036,33 @@
 			"name": "sandbox",
 			"title": {
 				"zh": "Nebius 沙箱（实验）",
-				"en": "Nebius sandbox (experimental)"
+				"en": "Nebius sandbox (experimental)",
+				"zh-TW": "Nebius 沙箱（實驗）",
+				"ja-JP": "Nebius サンドボックス（実験的）",
+				"ko-KR": "Nebius 샌드박스(실험적)",
+				"de-DE": "Nebius-Sandbox (experimentell)",
+				"fr-FR": "Bac à sable Nebius (expérimental)",
+				"es-ES": "Sandbox de Nebius (experimental)",
+				"pt-BR": "Sandbox Nebius (experimental)",
+				"ru-RU": "Песочница Nebius (экспериментально)",
+				"uk-UA": "Пісочниця Nebius (експериментально)",
+				"tr-TR": "Nebius korumalı alanı (deneysel)",
+				"fa-IR": "سندباکس Nebius (آزمایشی)"
 			},
 			"summary": {
 				"zh": "bash、read、write、edit 改在 Nebius Token Factory 的沙箱虚拟机里执行，不碰本机：开始时把项目复制进去，之后每条命令都从上一条留下的文件接着跑。改动只有在 /sandbox pull 看过差异并同意后才会带回本地。需要 NEBIUS_API_KEY 和 NEBIUS_PROJECT_ID；也可以用 MU_SANDBOX=nebius 打开。",
-				"en": "bash, read, write and edit run in a Nebius Token Factory sandbox VM instead of on this machine: the project is copied in at the start, and every command continues from the files the previous one left. Changes come back here only through /sandbox pull, after you have seen the diff and agreed. Needs NEBIUS_API_KEY and NEBIUS_PROJECT_ID; MU_SANDBOX=nebius also turns it on."
+				"en": "bash, read, write and edit run in a Nebius Token Factory sandbox VM instead of on this machine: the project is copied in at the start, and every command continues from the files the previous one left. Changes come back here only through /sandbox pull, after you have seen the diff and agreed. Needs NEBIUS_API_KEY and NEBIUS_PROJECT_ID; MU_SANDBOX=nebius also turns it on.",
+				"zh-TW": "bash、read、write 和 edit 改在 Nebius Token Factory 的沙箱虛擬機裡執行，而不是在這台電腦上：開始時把專案複製進去，之後每條指令都接著上一條留下的檔案繼續。改動只有在你看過差異並同意後，透過 /sandbox pull 才會帶回這裡。需要 NEBIUS_API_KEY 和 NEBIUS_PROJECT_ID；設定 MU_SANDBOX=nebius 也會開啟它。",
+				"ja-JP": "bash、read、write、edit を、このマシンではなく Nebius Token Factory のサンドボックス VM で実行します。開始時にプロジェクトをコピーし、各コマンドは前のコマンドが残したファイルから続けます。変更がこちらに戻るのは、差分を確認して同意したあとの /sandbox pull だけです。NEBIUS_API_KEY と NEBIUS_PROJECT_ID が必要です。MU_SANDBOX=nebius でもオンになります。",
+				"ko-KR": "bash, read, write, edit가 이 컴퓨터가 아니라 Nebius Token Factory 샌드박스 VM에서 실행됩니다. 시작할 때 프로젝트를 복사해 넣고, 각 명령은 이전 명령이 남긴 파일에서 이어서 실행됩니다. 변경 사항은 diff를 보고 동의한 뒤 /sandbox pull을 통해서만 이곳으로 돌아옵니다. NEBIUS_API_KEY와 NEBIUS_PROJECT_ID가 필요하며, MU_SANDBOX=nebius로도 켤 수 있습니다.",
+				"de-DE": "bash, read, write und edit laufen in einer Sandbox-VM von Nebius Token Factory statt auf diesem Rechner: Zu Beginn wird das Projekt hineinkopiert, und jeder Befehl macht mit den Dateien weiter, die der vorige hinterlassen hat. Änderungen kommen nur über /sandbox pull hierher zurück, nachdem du den Diff gesehen und zugestimmt hast. Braucht NEBIUS_API_KEY und NEBIUS_PROJECT_ID; MU_SANDBOX=nebius schaltet die Funktion ebenfalls ein.",
+				"fr-FR": "bash, read, write et edit s’exécutent dans une VM bac à sable de Nebius Token Factory plutôt que sur cette machine : le projet y est copié au début, et chaque commande reprend à partir des fichiers laissés par la précédente. Les modifications ne reviennent ici que par /sandbox pull, après que vous avez vu le diff et donné votre accord. Nécessite NEBIUS_API_KEY et NEBIUS_PROJECT_ID ; MU_SANDBOX=nebius l’active aussi.",
+				"es-ES": "bash, read, write y edit se ejecutan en una VM sandbox de Nebius Token Factory en lugar de en esta máquina: al principio se copia el proyecto dentro y cada comando sigue a partir de los archivos que dejó el anterior. Los cambios solo vuelven aquí con /sandbox pull, después de que hayas visto el diff y lo hayas aceptado. Necesita NEBIUS_API_KEY y NEBIUS_PROJECT_ID; MU_SANDBOX=nebius también lo activa.",
+				"pt-BR": "bash, read, write e edit rodam numa VM de sandbox do Nebius Token Factory em vez de nesta máquina: o projeto é copiado para lá no início, e cada comando continua a partir dos arquivos que o anterior deixou. As alterações só voltam para cá por /sandbox pull, depois que você viu o diff e concordou. Requer NEBIUS_API_KEY e NEBIUS_PROJECT_ID; MU_SANDBOX=nebius também ativa o recurso.",
+				"ru-RU": "bash, read, write и edit выполняются в виртуальной машине-песочнице Nebius Token Factory, а не на этом компьютере: в начале туда копируется проект, и каждая команда продолжает работу с файлами, которые оставила предыдущая. Изменения возвращаются сюда только через /sandbox pull, после того как вы посмотрели diff и согласились. Нужны NEBIUS_API_KEY и NEBIUS_PROJECT_ID; включить её можно и через MU_SANDBOX=nebius.",
+				"uk-UA": "bash, read, write і edit виконуються у віртуальній машині-пісочниці Nebius Token Factory, а не на цьому комп’ютері: на початку туди копіюється проєкт, і кожна команда продовжує роботу з файлами, які залишила попередня. Зміни повертаються сюди лише через /sandbox pull, після того як ви переглянули diff і погодилися. Потрібні NEBIUS_API_KEY і NEBIUS_PROJECT_ID; увімкнути її можна й через MU_SANDBOX=nebius.",
+				"tr-TR": "bash, read, write ve edit bu makinede değil, Nebius Token Factory'deki bir korumalı alan sanal makinesinde çalışır: proje başlangıçta içeri kopyalanır ve her komut bir öncekinin bıraktığı dosyalardan devam eder. Değişiklikler buraya yalnızca /sandbox pull ile, diff'i görüp onayladıktan sonra geri gelir. NEBIUS_API_KEY ve NEBIUS_PROJECT_ID gerekir; MU_SANDBOX=nebius da bu özelliği açar.",
+				"fa-IR": "bash، read، write و edit به‌جای این رایانه در یک ماشین مجازی سندباکس در Nebius Token Factory اجرا می‌شوند: پروژه در آغاز به آنجا کپی می‌شود و هر فرمان از فایل‌هایی که فرمان قبلی به جا گذاشته ادامه می‌دهد. تغییرات فقط از راه /sandbox pull، پس از آنکه diff را دیدید و موافقت کردید، به اینجا برمی‌گردند. به NEBIUS_API_KEY و NEBIUS_PROJECT_ID نیاز دارد؛ MU_SANDBOX=nebius هم آن را روشن می‌کند."
 			},
 			"defaultEnabled": false,
 			"beta": true,
@@ -10680,11 +11073,33 @@
 					"default": "tag:ubuntu:latest",
 					"label": {
 						"zh": "基础镜像",
-						"en": "Base image"
+						"en": "Base image",
+						"zh-TW": "基礎映像檔",
+						"ja-JP": "ベースイメージ",
+						"ko-KR": "기본 이미지",
+						"de-DE": "Basis-Image",
+						"fr-FR": "Image de base",
+						"es-ES": "Imagen base",
+						"pt-BR": "Imagem base",
+						"ru-RU": "Базовый образ",
+						"uk-UA": "Базовий образ",
+						"tr-TR": "Temel imaj",
+						"fa-IR": "ایمیج پایه"
 					},
 					"help": {
 						"zh": "镜像 UUID、tag:<名称>，或 docker://<地址>（首次使用时导入）。需要 bash 和 tar；带回改动需要 git，没有时会尝试用 apt-get 或 apk 安装。",
-						"en": "An image UUID, tag:<name>, or docker://<reference> (imported on first use). Needs bash and tar; pulling needs git, which apt-get or apk installs when missing."
+						"en": "An image UUID, tag:<name>, or docker://<reference> (imported on first use). Needs bash and tar; pulling needs git, which apt-get or apk installs when missing.",
+						"zh-TW": "映像檔 UUID、tag:<名稱> 或 docker://<參照>（第一次使用時匯入）。需要 bash 和 tar；帶回改動需要 git，沒有時會用 apt-get 或 apk 安裝。",
+						"ja-JP": "イメージの UUID、tag:<名前>、または docker://<参照>（初回使用時にインポート）。bash と tar が必要です。変更を持ち帰るには git が必要で、ない場合は apt-get か apk でインストールします。",
+						"ko-KR": "이미지 UUID, tag:<이름>, 또는 docker://<참조>(처음 사용할 때 가져옴)입니다. bash와 tar가 필요하며, 변경 사항을 가져오려면 git이 필요합니다. git이 없으면 apt-get이나 apk로 설치합니다.",
+						"de-DE": "Eine Image-UUID, tag:<Name> oder docker://<Referenz> (wird beim ersten Gebrauch importiert). Braucht bash und tar; zum Zurückholen von Änderungen braucht es git, das apt-get oder apk installiert, wenn es fehlt.",
+						"fr-FR": "Un UUID d’image, tag:<nom> ou docker://<référence> (importée à la première utilisation). Nécessite bash et tar ; récupérer les modifications nécessite git, qu’apt-get ou apk installe s’il manque.",
+						"es-ES": "Un UUID de imagen, tag:<nombre> o docker://<referencia> (se importa la primera vez que se usa). Necesita bash y tar; traer los cambios requiere git, que apt-get o apk instalan si falta.",
+						"pt-BR": "Um UUID de imagem, tag:<nome> ou docker://<referência> (importada no primeiro uso). Requer bash e tar; trazer as alterações de volta requer git, que o apt-get ou o apk instala se estiver faltando.",
+						"ru-RU": "UUID образа, tag:<имя> или docker://<ссылка> (импортируется при первом использовании). Нужны bash и tar; для возврата изменений нужен git — если его нет, его устанавливает apt-get или apk.",
+						"uk-UA": "UUID образу, tag:<назва> або docker://<посилання> (імпортується під час першого використання). Потрібні bash і tar; для повернення змін потрібен git — якщо його немає, його встановлює apt-get або apk.",
+						"tr-TR": "Bir imaj UUID'si, tag:<ad> ya da docker://<referans> (ilk kullanımda içe aktarılır). bash ve tar gerekir; pull için git gerekir, eksikse apt-get ya da apk ile kurulur.",
+						"fa-IR": "UUID یک ایمیج، tag:<نام>، یا docker://<مرجع> (در نخستین استفاده وارد می‌شود). به bash و tar نیاز دارد؛ pull به git نیاز دارد که اگر نباشد، apt-get یا apk نصبش می‌کند."
 					}
 				},
 				{
@@ -10693,7 +11108,18 @@
 					"default": "https://api.tokenfactory.nebius.com/sandboxes/v1",
 					"label": {
 						"zh": "API 地址",
-						"en": "API address"
+						"en": "API address",
+						"zh-TW": "API 位址",
+						"ja-JP": "API アドレス",
+						"ko-KR": "API 주소",
+						"de-DE": "API-Adresse",
+						"fr-FR": "Adresse de l’API",
+						"es-ES": "Dirección de la API",
+						"pt-BR": "Endereço da API",
+						"ru-RU": "Адрес API",
+						"uk-UA": "Адреса API",
+						"tr-TR": "API adresi",
+						"fa-IR": "نشانی API"
 					}
 				},
 				{
@@ -10702,7 +11128,18 @@
 					"default": "/workspace",
 					"label": {
 						"zh": "沙箱里的项目目录",
-						"en": "Project folder in the sandbox"
+						"en": "Project folder in the sandbox",
+						"zh-TW": "沙箱中的專案資料夾",
+						"ja-JP": "サンドボックス内のプロジェクトフォルダー",
+						"ko-KR": "샌드박스 안의 프로젝트 폴더",
+						"de-DE": "Projektordner in der Sandbox",
+						"fr-FR": "Dossier du projet dans le bac à sable",
+						"es-ES": "Carpeta del proyecto en el sandbox",
+						"pt-BR": "Pasta do projeto no sandbox",
+						"ru-RU": "Папка проекта в песочнице",
+						"uk-UA": "Папка проєкту в пісочниці",
+						"tr-TR": "Korumalı alandaki proje klasörü",
+						"fa-IR": "پوشهٔ پروژه در سندباکس"
 					}
 				},
 				{
@@ -10711,7 +11148,18 @@
 					"default": "/bin/bash",
 					"label": {
 						"zh": "命令使用的 shell",
-						"en": "Shell commands run in"
+						"en": "Shell commands run in",
+						"zh-TW": "指令使用的 shell",
+						"ja-JP": "コマンドを実行するシェル",
+						"ko-KR": "명령을 실행하는 셸",
+						"de-DE": "Shell, in der Befehle laufen",
+						"fr-FR": "Shell d’exécution des commandes",
+						"es-ES": "Shell en el que se ejecutan los comandos",
+						"pt-BR": "Shell dos comandos",
+						"ru-RU": "Оболочка для команд",
+						"uk-UA": "Оболонка для команд",
+						"tr-TR": "Komutların çalıştığı kabuk",
+						"fa-IR": "shell اجرای فرمان‌ها"
 					}
 				},
 				{
@@ -10721,11 +11169,33 @@
 					"min": 1,
 					"unit": {
 						"zh": "秒",
-						"en": "s"
+						"en": "s",
+						"zh-TW": "秒",
+						"ja-JP": "秒",
+						"ko-KR": "초",
+						"de-DE": "s",
+						"fr-FR": "s",
+						"es-ES": "s",
+						"pt-BR": "s",
+						"ru-RU": "с",
+						"uk-UA": "с",
+						"tr-TR": "sn",
+						"fa-IR": "ثانیه"
 					},
 					"label": {
 						"zh": "命令未设时限时的时限",
-						"en": "Time limit of a command that sets none"
+						"en": "Time limit of a command that sets none",
+						"zh-TW": "指令未設時限時的時限",
+						"ja-JP": "時間制限を指定しないコマンドの制限時間",
+						"ko-KR": "시간 제한을 정하지 않은 명령의 시간 제한",
+						"de-DE": "Zeitlimit für Befehle ohne eigenes Limit",
+						"fr-FR": "Délai d’une commande qui n’en fixe pas",
+						"es-ES": "Tiempo límite de un comando que no fija ninguno",
+						"pt-BR": "Tempo limite de um comando sem limite próprio",
+						"ru-RU": "Лимит времени для команды без своего лимита",
+						"uk-UA": "Ліміт часу для команди без власного ліміту",
+						"tr-TR": "Süre sınırı belirtmeyen komutlar için süre sınırı",
+						"fa-IR": "مهلت فرمانی که مهلتی تعیین نکرده"
 					}
 				},
 				{
@@ -10735,11 +11205,33 @@
 					"min": 10,
 					"unit": {
 						"zh": "秒",
-						"en": "s"
+						"en": "s",
+						"zh-TW": "秒",
+						"ja-JP": "秒",
+						"ko-KR": "초",
+						"de-DE": "s",
+						"fr-FR": "s",
+						"es-ES": "s",
+						"pt-BR": "s",
+						"ru-RU": "с",
+						"uk-UA": "с",
+						"tr-TR": "sn",
+						"fa-IR": "ثانیه"
 					},
 					"label": {
 						"zh": "复制项目的时限",
-						"en": "Time limit of copying the project in"
+						"en": "Time limit of copying the project in",
+						"zh-TW": "複製專案的時限",
+						"ja-JP": "プロジェクトのコピーの制限時間",
+						"ko-KR": "프로젝트 복사 시간 제한",
+						"de-DE": "Zeitlimit für das Hineinkopieren des Projekts",
+						"fr-FR": "Délai de copie du projet",
+						"es-ES": "Tiempo límite para copiar el proyecto",
+						"pt-BR": "Tempo limite para copiar o projeto",
+						"ru-RU": "Лимит времени на копирование проекта",
+						"uk-UA": "Ліміт часу на копіювання проєкту",
+						"tr-TR": "Projeyi içeri kopyalamanın süre sınırı",
+						"fa-IR": "مهلت کپی پروژه به درون سندباکس"
 					}
 				},
 				{
@@ -10749,11 +11241,33 @@
 					"min": 1,
 					"unit": {
 						"zh": "MB",
-						"en": "MB"
+						"en": "MB",
+						"zh-TW": "MB",
+						"ja-JP": "MB",
+						"ko-KR": "MB",
+						"de-DE": "MB",
+						"fr-FR": "Mo",
+						"es-ES": "MB",
+						"pt-BR": "MB",
+						"ru-RU": "MB",
+						"uk-UA": "МБ",
+						"tr-TR": "MB",
+						"fa-IR": "MB"
 					},
 					"label": {
 						"zh": "最多复制的项目大小",
-						"en": "Largest project copied in"
+						"en": "Largest project copied in",
+						"zh-TW": "可複製的專案大小上限",
+						"ja-JP": "コピーするプロジェクトの最大サイズ",
+						"ko-KR": "복사할 프로젝트의 최대 크기",
+						"de-DE": "Größtes Projekt, das hineinkopiert wird",
+						"fr-FR": "Taille maximale du projet copié",
+						"es-ES": "Proyecto más grande que se copia",
+						"pt-BR": "Tamanho máximo do projeto copiado",
+						"ru-RU": "Размер копируемого проекта не больше",
+						"uk-UA": "Макс. розмір проєкту для копіювання",
+						"tr-TR": "İçeri kopyalanan en büyük proje",
+						"fa-IR": "بزرگ‌ترین پروژه‌ای که کپی می‌شود"
 					}
 				},
 				{
@@ -10764,15 +11278,48 @@
 					"max": 10485760,
 					"unit": {
 						"zh": "字节",
-						"en": "bytes"
+						"en": "bytes",
+						"zh-TW": "位元組",
+						"ja-JP": "バイト",
+						"ko-KR": "바이트",
+						"de-DE": "Bytes",
+						"fr-FR": "octets",
+						"es-ES": "bytes",
+						"pt-BR": "bytes",
+						"ru-RU": "байт",
+						"uk-UA": "байтів",
+						"tr-TR": "bayt",
+						"fa-IR": "بایت"
 					},
 					"label": {
 						"zh": "每条命令保留的输出",
-						"en": "Output kept per command"
+						"en": "Output kept per command",
+						"zh-TW": "每條指令保留的輸出",
+						"ja-JP": "コマンドごとに保持する出力",
+						"ko-KR": "명령당 보관하는 출력",
+						"de-DE": "Aufbewahrte Ausgabe pro Befehl",
+						"fr-FR": "Sortie conservée par commande",
+						"es-ES": "Salida conservada por comando",
+						"pt-BR": "Saída guardada por comando",
+						"ru-RU": "Объём сохраняемого вывода команды",
+						"uk-UA": "Обсяг збереженого виводу команди",
+						"tr-TR": "Komut başına saklanan çıktı",
+						"fa-IR": "خروجی نگه‌داشته‌شده برای هر فرمان"
 					},
 					"help": {
 						"zh": "标准输出和标准错误各自的上限，最多 10 MiB。",
-						"en": "For stdout and for stderr each, at most 10 MiB."
+						"en": "For stdout and for stderr each, at most 10 MiB.",
+						"zh-TW": "標準輸出和標準錯誤各自的上限，最多 10 MiB。",
+						"ja-JP": "stdout と stderr のそれぞれに適用され、最大 10 MiB です。",
+						"ko-KR": "stdout과 stderr에 각각 적용되며, 최대 10 MiB입니다.",
+						"de-DE": "Jeweils für stdout und stderr, höchstens 10 MiB.",
+						"fr-FR": "Pour stdout et pour stderr, chacun 10 Mio au plus.",
+						"es-ES": "Para stdout y para stderr por separado, como máximo 10 MiB.",
+						"pt-BR": "Para stdout e stderr separadamente; no máximo 10 MiB.",
+						"ru-RU": "Отдельно для stdout и stderr; не больше 10 MiB.",
+						"uk-UA": "Окремо для stdout і stderr; не більше 10 МіБ.",
+						"tr-TR": "stdout ve stderr için ayrı ayrı; en fazla 10 MiB.",
+						"fa-IR": "برای stdout و stderr هر کدام جداگانه؛ حداکثر 10 MiB."
 					}
 				}
 			]
