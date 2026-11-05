@@ -10,8 +10,8 @@ import { MCP_LABEL } from "./mcp.ts";
 import { UNTRUSTED as DEBUGGER_UNTRUSTED } from "./packs/debugger.ts";
 import { SEARCH_UNTRUSTED } from "./web.ts";
 
-/** Where the text came from: the file admission archived, or the result as the session has it. */
-export type RecallSource = "archive" | "session";
+/** Where the text came from: the file admission archived, the page web_fetch kept, or the result as the session has it. */
+export type RecallSource = "archive" | "page" | "session";
 
 export interface RecallDetails {
 	readonly id: string;
@@ -21,6 +21,8 @@ export interface RecallDetails {
 	readonly offset: number;
 	readonly end: number;
 	readonly total: number;
+	/** Text from outside this machine that no screening has read yet: the injection screen reads it now. */
+	readonly unscreened: boolean;
 }
 
 /** A tool result of this conversation, the call that produced it, and the file that has its full text, if one does. */
@@ -85,12 +87,12 @@ const lineAt = (text: string, offset: number): number => {
 /**
  * `recall`: reads back an earlier tool result of this conversation that mu shortened for the model, a piece at a
  * time. Forgetting shrinks old results in the request only, so the session still has them; admission archives what it
- * leaves out. Both point here, and reading the text back is cheaper and surer than running the call again, which may
- * be slow or give something else (a test run, a page that changed).
+ * leaves out; web_fetch keeps the page it cuts. Each of them points here, and reading the text back is cheaper and
+ * surer than running the call again, which may be slow or give something else (a test run, a page that changed).
  *
  * Only this conversation, read-only, and never anything the model was not given a result for. A piece taken from past
- * a label of mu's (a page, an MCP server, a command's output) gets that label in front of it again. All of it was
- * screened when it first came in, so it is not screened again.
+ * a label of mu's (a page, an MCP server, a command's output) gets that label in front of it again. The part of a page
+ * the model was never shown was never screened: the injection feature screens it when it comes back here.
  */
 export function registerRecall(runtime: KyrnRuntime): void {
 	const options = runtime.options("recall", {
@@ -134,7 +136,12 @@ export function registerRecall(runtime: KyrnRuntime): void {
 			const limit = Math.max(1, Math.min(Math.floor(params.limit ?? options.maxChars), options.maxChars));
 			const end = Math.min(total, offset + limit);
 			const piece = text.slice(offset, end);
-			const where = source === "archive" ? "the full output mu archived" : "the result as the conversation has it";
+			const where =
+				source === "archive"
+					? "the full output mu archived"
+					: source === "page"
+						? "the full page web_fetch kept"
+						: "the result as the conversation has it";
 			const rest =
 				end < total
 					? ` ${total - end} more: ${recallCall(params.id, end)}.`
@@ -146,10 +153,19 @@ export function registerRecall(runtime: KyrnRuntime): void {
 					? "it has no text."
 					: `characters ${offset}-${end} of ${total} (lines ${lineAt(text, offset)}-${lineAt(text, Math.max(offset, end - 1))} of ${lineAt(text, total)}).`;
 			const head = `[mu: ${found.call}, ${where}: ${span}${rest}${gone}]`;
-			// A piece of a result from past the label at its top would otherwise come back without one.
-			const label = labelIn(text);
-			const before = label && label.at < offset ? label.label : undefined;
-			const details: RecallDetails = { id: params.id, tool: found.tool, source, offset, end, total };
+			// The page file holds the page alone, and all of it is outside text. A piece of a result from past the label
+			// at its top would otherwise come back without one.
+			const label = source === "page" ? UNTRUSTED : labelIn(text);
+			const before = typeof label === "string" ? label : label && label.at < offset ? label.label : undefined;
+			const details: RecallDetails = {
+				id: params.id,
+				tool: found.tool,
+				source,
+				offset,
+				end,
+				total,
+				unscreened: source === "page",
+			};
 			return {
 				content: [{ type: "text", text: before ? `${head}\n${before}\n\n${piece}` : `${head}\n\n${piece}` }],
 				details,
@@ -162,7 +178,7 @@ export function registerRecall(runtime: KyrnRuntime): void {
 		kind: "tool",
 		title: "Read back shortened output",
 		description:
-			"Reads back, a piece at a time, a tool result of this conversation that mu shortened: old output it left out of the request, noise it archived.",
+			"Reads back, a piece at a time, a tool result of this conversation that mu shortened: old output it left out of the request, noise it archived, the rest of a page web_fetch cut.",
 		tools: ["recall"],
 		exposure: "always",
 	});

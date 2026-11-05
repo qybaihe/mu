@@ -189,7 +189,7 @@ On by default: yes. Decision points: `context.forget`.
 
 ## recall
 
-**Read back shortened output.** Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command again: old results forgetting replaced, noise admission archived. Only this conversation.
+**Read back shortened output.** Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command or fetching the page again: old results forgetting replaced, noise admission archived, the rest of a page web_fetch cut. Only this conversation; the rest of a page goes through the injection screen first.
 
 On by default: yes.
 
