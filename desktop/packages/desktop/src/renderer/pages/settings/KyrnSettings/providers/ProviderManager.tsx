@@ -27,6 +27,7 @@ import {
   type DeepLinkAddProviderDetail,
 } from '@renderer/hooks/system/useDeepLink';
 import AccountDetail from '../accounts/AccountDetail';
+import AccountModels from '../accounts/AccountModels';
 import { providerName } from '../accounts/LoginWaiting';
 import { useSubscriptionLogin } from '../accounts/useSubscriptionLogin';
 import type { Draft } from '../draft';
@@ -342,6 +343,8 @@ export default function ProviderManager(props: ProviderManagerProps) {
     );
   } else if (current?.kind === 'builtin') {
     const entry = builtin.find((candidate) => candidate.id === current.id);
+    // What the harness lists as usable has every model, the ones unchecked too: they are chosen here.
+    const usable = flow.usable.find((candidate) => candidate.provider === current.id);
     detail = (
       <div className={styles.editor} data-testid='mu-provider-builtin'>
         <ProviderHead
@@ -351,13 +354,26 @@ export default function ProviderManager(props: ProviderManagerProps) {
         />
         <div className={styles.fields}>
           <div className={styles.hint}>{t('mu.providers.builtinHelp')}</div>
-          <div className={styles.suggestions}>
-            {entry?.models.map((model) => (
-              <Tag key={model.id} size='small'>
-                {model.id}
-              </Tag>
-            ))}
-          </div>
+          {usable?.models.length ? (
+            <AccountModels
+              key={current.id}
+              provider={current.id}
+              name={providerDisplayName(t, current.id)}
+              models={usable.models}
+              enabled={usable.enabled}
+              startModel={defaults.provider === current.id ? defaults.model : undefined}
+              fresh={false}
+              enable={flow.enable}
+            />
+          ) : (
+            <div className={styles.suggestions}>
+              {entry?.models.map((model) => (
+                <Tag key={model.id} size='small'>
+                  {model.id}
+                </Tag>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );

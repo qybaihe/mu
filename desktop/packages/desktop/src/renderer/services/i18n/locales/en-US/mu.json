@@ -465,7 +465,10 @@
       "lastModel": "Keep at least one model enabled.",
       "failed": "Couldn't save the model choice. Try again.",
       "startTag": "default",
-      "startOff": "{{name}} is the model new conversations start on. Unchecked, they start on the first checked model instead."
+      "startOff": "{{name}} is the model new conversations start on. Unchecked, they start on the first checked model instead.",
+      "pickOne": "Nothing is checked, so nothing is saved yet. Check the models to keep.",
+      "search": "Search {{count}} models",
+      "nothingFound": "No model matches."
     }
   },
   "endpoints": {

@@ -2,7 +2,7 @@ import React from 'react';
 import { Radio } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import MuSelect from '@/renderer/components/base/MuSelect';
-import { enabledAccountModels, type LoginStatus } from '@/common/kyrn/login';
+import { enabledAccountModels, type UsableProvider } from '@/common/kyrn/login';
 import {
   THINKING_LEVELS,
   supportedThinkingLevels,
@@ -24,8 +24,11 @@ type DefaultModelCardProps = {
   settings: KyrnSettings;
   base: KyrnSettings;
   available: AvailableModels;
-  /** Subscriptions signed in to from the app, which a running mu may not have reported yet. */
-  accounts?: LoginStatus['signedIn'];
+  /**
+   * Subscriptions signed in to from the app, which a running mu may not have reported yet, and the providers an API key
+   * makes usable: each with its models and the ones the model menus offer.
+   */
+  accounts?: readonly UsableProvider[];
   /** Providers removed on this screen that the snapshot of mu's last connection still lists. */
   hidden?: ReadonlySet<string>;
   onChange: (defaults: ModelDefaults) => void;

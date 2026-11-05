@@ -3,6 +3,7 @@ import { createInterface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 import {
   isSubscriptionProvider,
+  PROVIDER_ARG,
   type LoginEnable,
   LOGIN_ERROR_CODES,
   type LoginModel,
@@ -318,12 +319,14 @@ export class LoginManager {
   }
 
   /**
-   * Which of a signed-in account's models the model menus offer (pi's global `enabledModels`), then who is signed in.
-   * One at a time with the looks and sign-outs: each writes pi's settings or reads its stores.
+   * Which of a provider's models the model menus offer (pi's global `enabledModels`): a signed-in account's, or one an
+   * API key makes usable. Then who is signed in. One at a time with the looks and sign-outs: each writes pi's settings
+   * or reads its stores.
    */
   enable(choice: LoginEnable, timeoutMs = 20000): Promise<LoginStatus> {
     const { provider, models, byDefault } = choice ?? {};
-    if (!isSubscriptionProvider(provider)) return Promise.reject(new Error('Unknown provider'));
+    if (typeof provider !== 'string' || !PROVIDER_ARG.test(provider))
+      return Promise.reject(new Error('Unknown provider'));
     const ids = byDefault === true ? [] : Array.isArray(models) ? models : undefined;
     if (!ids || ids.some((id) => typeof id !== 'string' || !MODEL_ID.test(id)))
       return Promise.reject(new Error('Invalid model'));
@@ -388,11 +391,21 @@ export class LoginManager {
             models: toModels(entry.models),
             enabled: toEnabled(entry.enabled),
           }));
-        finish(
-          Array.isArray(message.offered)
-            ? { signedIn, offered: message.offered.filter(isSubscriptionProvider) }
-            : { signedIn }
-        );
+        const usable = Array.isArray(message.usable)
+          ? message.usable
+              .map(record)
+              .filter((entry) => typeof entry.provider === 'string' && PROVIDER_ARG.test(entry.provider))
+              .map((entry) => ({
+                provider: str(entry.provider),
+                models: toModels(entry.models),
+                enabled: toEnabled(entry.enabled),
+              }))
+          : undefined;
+        finish({
+          signedIn,
+          ...(Array.isArray(message.offered) ? { offered: message.offered.filter(isSubscriptionProvider) } : {}),
+          ...(usable ? { usable } : {}),
+        });
       });
       child.on('close', () => {
         this.runs.delete(child);

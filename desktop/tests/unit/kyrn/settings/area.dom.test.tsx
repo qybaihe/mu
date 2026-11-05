@@ -786,7 +786,7 @@ describe('providers and the default model', () => {
     await user.click(within(card).getByLabelText('Provider'));
     const relay = await screen.findByText('Relay', { selector: '.arco-select-option' });
     const popup = relay.closest('.arco-select-popup');
-    const providers = [...(popup?.querySelectorAll('.arco-select-option') ?? [])].map((option) => option.textContent);
+    const providers = [...(popup?.querySelectorAll('.arco-select-option') ?? [])].map((entry) => entry.textContent);
     // Relay and the account's own: not Grok.
     expect(providers).toHaveLength(2);
   });
@@ -834,6 +834,70 @@ describe('providers and the default model', () => {
     cleanup();
     await open('providers');
     expect(await screen.findByTestId('mu-provider-editor')).toBeInTheDocument();
+  });
+
+  it('chooses the models of a provider an API key makes usable, searching a long list', async () => {
+    const routed = [
+      ...['qwen/qwen3-coder', 'qwen/qwen3-max', 'z-ai/glm-5'].map((id) => ({ id, name: id })),
+      ...Array.from({ length: 12 }, (_, i) => ({ id: `openai/gpt-5.${i}`, name: `GPT-5.${i}` })),
+    ];
+    bridge.availableModels.mockResolvedValue({
+      ok: true,
+      // mu's last connection lists only the models offered then.
+      data: { providers: [{ id: 'openrouter', models: routed.slice(0, 2) }], thinkingLevels: [] },
+    });
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: { signedIn: [], usable: [{ provider: 'openrouter', models: routed, enabled: routed.map(({ id }) => id) }] },
+    });
+    bridge.loginEnable.mockImplementation(async ({ models }: { models?: string[] }) => ({
+      ok: true,
+      data: { signedIn: [], usable: [{ provider: 'openrouter', models: routed, enabled: models }] },
+    }));
+    await open('providers');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-builtin-openrouter'));
+    const list = await screen.findByTestId('mu-account-models-openrouter');
+    expect(within(list).getByTestId('mu-account-models-count')).toHaveTextContent('15 of 15');
+    // Found by name or id, and "Select none" then means the models found.
+    fireEvent.change(within(list).getByTestId('mu-account-models-search'), { target: { value: 'gpt' } });
+    expect(within(list).queryByTestId('mu-account-model-qwen/qwen3-coder')).not.toBeInTheDocument();
+    fireEvent.click(within(list).getByTestId('mu-account-models-none'));
+    await waitFor(() =>
+      expect(bridge.loginEnable).toHaveBeenCalledWith({
+        provider: 'openrouter',
+        models: ['qwen/qwen3-coder', 'qwen/qwen3-max', 'z-ai/glm-5'],
+      })
+    );
+    await waitFor(() => expect(within(list).getByTestId('mu-account-models-count')).toHaveTextContent('3 of 15'));
+    fireEvent.change(within(list).getByTestId('mu-account-models-search'), { target: { value: 'nothing like it' } });
+    expect(within(list).getByTestId('mu-account-models-nothing')).toHaveTextContent('No model matches.');
+  });
+
+  it('waits for the models to keep when none is left checked, instead of failing', async () => {
+    const grok = [
+      { id: 'grok-5', name: 'Grok 5' },
+      { id: 'grok-5-mini', name: 'Grok 5 Mini' },
+    ];
+    bridge.loginStatus.mockResolvedValue({ ok: true, data: { signedIn: [{ provider: 'xai', models: grok }] } });
+    bridge.loginEnable.mockImplementation(async ({ models }: { models?: string[] }) =>
+      models?.length
+        ? { ok: true, data: { signedIn: [{ provider: 'xai', models: grok, enabled: models }] } }
+        : { ok: false, error: 'At least one model must stay enabled' }
+    );
+    await open('providers');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-xai'));
+    const list = await screen.findByTestId('mu-account-models-xai');
+    fireEvent.click(within(list).getByTestId('mu-account-models-none'));
+    expect(await within(list).findByTestId('mu-account-models-held')).toHaveTextContent(
+      'Nothing is checked, so nothing is saved yet. Check the models to keep.'
+    );
+    expect(within(list).getByTestId('mu-account-models-count')).toHaveTextContent('0 of 2');
+    fireEvent.click(within(within(list).getByTestId('mu-account-model-grok-5-mini')).getByRole('checkbox'));
+    await waitFor(() =>
+      expect(bridge.loginEnable).toHaveBeenLastCalledWith({ provider: 'xai', models: ['grok-5-mini'] })
+    );
+    await waitFor(() => expect(within(list).queryByTestId('mu-account-models-held')).not.toBeInTheDocument());
+    expect(within(list).getByTestId('mu-account-models-count')).toHaveTextContent('1 of 2');
   });
 
   it('drops a signed-out account’s models from the pickers at once, and says where the default model went', async () => {

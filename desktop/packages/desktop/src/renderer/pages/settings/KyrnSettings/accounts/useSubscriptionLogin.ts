@@ -13,6 +13,7 @@ import {
   type LoginState,
   type LoginStatus,
   type SubscriptionProvider,
+  type UsableProvider,
 } from '@/common/kyrn/login';
 import { DEFAULT_MODEL_KEY } from '@/renderer/hooks/agent/useMuDefaultModel';
 import { emitter } from '@/renderer/utils/emitter';
@@ -45,6 +46,11 @@ export type SubscriptionLoginFlow = {
   /** Who is signed in, with what each account can use. */
   accounts: Account[];
   account: (provider: SubscriptionProvider) => Account | undefined;
+  /**
+   * The other providers with a usable model (an API key's, models.json's), with their models and the ones offered;
+   * empty from an older harness.
+   */
+  usable: UsableProvider[];
   /** The sign-in the main process runs now or ran last; undefined before the first one. */
   login: LoginState | undefined;
   running: boolean;
@@ -58,10 +64,11 @@ export type SubscriptionLoginFlow = {
   answer: (value: string) => void;
   logout: (provider: SubscriptionProvider) => Promise<void>;
   /**
-   * Which of an account's models the model menus offer: these ids, or 'default' (all of them, the ones the account
-   * gains later too). Rejects with the main process's error when the harness refused the choice.
+   * Which of a provider's models the model menus offer, a signed-in account's or a usable one's: these ids, or
+   * 'default' (all of them, the ones it gains later too). Rejects with the main process's error when the harness
+   * refused the choice.
    */
-  enable: (provider: SubscriptionProvider, models: string[] | 'default') => Promise<void>;
+  enable: (provider: string, models: string[] | 'default') => Promise<void>;
 };
 
 /**
@@ -166,6 +173,7 @@ export function useSubscriptionLogin(
     offered: offeredProviders(status),
     accounts: status.signedIn,
     account: (provider) => status.signedIn.find((entry) => entry.provider === provider),
+    usable: status.usable ?? [],
     login,
     running,
     failure: problem.failure ?? failedLogin,

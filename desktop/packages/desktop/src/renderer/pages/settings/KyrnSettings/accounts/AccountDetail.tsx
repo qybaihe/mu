@@ -35,14 +35,18 @@ export default function AccountDetail({ provider, flow, byKey, startModel, onSho
   const name = providerName(t, provider);
   // A sign-in mu no longer offers: shown while an account is signed in with it, to be signed out.
   const legacy = LEGACY_PROVIDERS.includes(provider);
+  // Usable through an API key while nobody is signed in: its models are chosen the same way.
+  const usable = account ? undefined : flow.usable.find((entry) => entry.provider === provider);
+  const keyed = Boolean(byKey || usable);
   const state = busy
     ? 'mu.welcome.login.inProgress'
     : account
       ? 'mu.welcome.login.signedIn'
-      : byKey
+      : keyed
         ? 'mu.accounts.byKey'
         : 'mu.accounts.signedOut';
   const models = account?.models ?? byKey?.models ?? [];
+  const chosen = account ?? usable;
 
   return (
     <div className={providerStyles.editor} data-testid={`mu-account-${provider}`}>
@@ -85,7 +89,7 @@ export default function AccountDetail({ provider, flow, byKey, startModel, onSho
       <div className={providerStyles.fields}>
         <div className={providerStyles.field}>
           <div className={providerStyles.value}>{t(`mu.welcome.login.providers.${provider}.plan`)}</div>
-          {byKey ? <div className={providerStyles.hint}>{t('mu.accounts.byKeyHelp')}</div> : null}
+          {keyed ? <div className={providerStyles.hint}>{t('mu.accounts.byKeyHelp')}</div> : null}
           {legacy ? (
             <div className={providerStyles.hint} data-testid='mu-account-legacy'>
               {t(`mu.accounts.legacy.${provider}`)}
@@ -109,14 +113,15 @@ export default function AccountDetail({ provider, flow, byKey, startModel, onSho
           />
         ) : null}
         <LoginProblem failure={flow.failureOf(provider)} onStart={flow.start} />
-        {account && account.models.length ? (
+        {chosen && chosen.models.length ? (
           <AccountModels
             key={provider}
             provider={provider}
-            models={account.models}
-            enabled={account.enabled}
+            name={name}
+            models={chosen.models}
+            enabled={chosen.enabled}
             startModel={startModel}
-            fresh={login?.provider === provider && login.phase === 'done'}
+            fresh={Boolean(account) && login?.provider === provider && login.phase === 'done'}
             enable={flow.enable}
           />
         ) : models.length ? (

@@ -115,7 +115,18 @@ export type LoginStatus = {
    */
   signedIn: { provider: SubscriptionProvider; models: LoginModel[]; enabled?: string[] }[];
   offered?: SubscriptionProvider[];
+  /**
+   * The other providers with a usable model, by pi's provider id: an API key's (OpenRouter, OpenAI's with a key),
+   * models.json's. Each with its models and `enabled` as an account has them; absent from an older harness.
+   */
+  usable?: UsableProvider[];
 };
+
+/** A provider usable without a sign-in here, with its models and the ones the model menus offer. */
+export type UsableProvider = { provider: string; models: LoginModel[]; enabled?: string[] };
+
+/** A provider id as `mu auth enable` takes it: one argument, never a flag. */
+export const PROVIDER_ARG = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
 
 /**
  * The account's models the model menus offer, in the account's order: the ones `enabled` names, or every one when it
@@ -127,10 +138,11 @@ export function enabledAccountModels(account: { models: LoginModel[]; enabled?: 
 }
 
 /**
- * Which of an account's models the model menus offer (`mu auth enable`): `models`, the ids to offer, or `byDefault`,
- * all of them, the ones the account gains later too, which is how an account starts.
+ * Which of a provider's models the model menus offer (`mu auth enable`): `models`, the ids to offer, or `byDefault`,
+ * all of them, the ones the provider gains later too, which is how a provider starts. A signed-in account, or a
+ * provider in `usable`.
  */
-export type LoginEnable = { provider: SubscriptionProvider; models?: string[]; byDefault?: boolean };
+export type LoginEnable = { provider: string; models?: string[]; byDefault?: boolean };
 
 /** A model a sign-out switched to: pi's provider and model ids, and the model's name. */
 export type SwitchedModel = { provider: string; model: string; name: string };
