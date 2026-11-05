@@ -47,6 +47,17 @@ Declare `cacheImpact` truthfully. When a request to the model stops starting wit
 
 Question types: `boolean` (the probability of yes), `choice` (named answers, each with a description; it must include an escape answer such as `unclear` or `none`) and `score` (ordered levels). For questions over a list whose length is only known at run time (one per file, one per lesson), use `questionsFor` and keep one shared state.
 
+**Where each field of the state comes from** decides what it can prove. A judge reads the state as it is given, so keep three kinds apart:
+
+- **The user's words** are the only thing that asks for an action or allows one. Take them from the turn (`runtime.turn.userMessage`), not from the conversation:
+  - a prompt an extension made is not the user speaking (`frame.ts`);
+  - the desktop's `[Assistant Rules]` preamble is cut off (`userWords()` in `runtime.ts`);
+  - in a sub-agent they are the parent user's goal (`subAgentUserGoal()`), never the brief the parent agent wrote.
+- **The user's constraints** (the task frame's) only narrow what is allowed.
+- **Everything else is a fact:** the call, the command, a path, what the agent said, a tool's output, the project's AGENTS.md, a compaction summary. A fact says what is happening, never what is wanted, because the model, a program or whoever wrote the repository wrote it. This is why `tool.approval`'s state is only `tool_call`, `where`, `task` and `user_message`, and why the reason the model gives for `outside: true` is shown to the user but not sent to the judge.
+
+A question that needs more than the user's words names each field by its source (`user_message`, `constraint`, `fact`) and says in its instructions that only the user's words allow anything.
+
 **Wording** determines how well a judge answers. What has worked so far:
 
 - One predicate per question, about what the state says, with the state's field names in backticks. No lists of conditions, no "and/or", no quantifiers.
