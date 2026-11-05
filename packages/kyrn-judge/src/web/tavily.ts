@@ -9,6 +9,8 @@ import { parseResultsJson, type SearchPage, type SearchSource } from "./search.t
  *
  * The key goes into the Authorization header and nowhere else. An error that
  * could carry it (a transport error quoting the request) has it replaced first.
+ * A redirect is never followed: the API has no reason to send one, and following
+ * it would send the key, and the query, to an address mu did not choose.
  */
 export const TAVILY_API = "https://api.tavily.com";
 /** The most results one search may ask for. */
@@ -35,11 +37,15 @@ async function post(
 			method: "POST",
 			headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
 			body: JSON.stringify(payload),
+			redirect: "error",
 			signal: signal ? AbortSignal.any([signal, deadline]) : deadline,
 		});
 		return { url, status: response.status, body: await response.text() };
 	} catch (error) {
 		if (deadline.aborted && !signal?.aborted) throw new Error(`Timed out after ${timeoutMs} ms`);
+		// Node's fetch says only "fetch failed"; the cause says it was the redirect.
+		if (error instanceof Error && error.cause instanceof Error && error.cause.message === "unexpected redirect")
+			throw new Error("the API answered with a redirect, which is not followed with the key");
 		const message = error instanceof Error ? error.message : String(error);
 		throw new Error(apiKey ? message.replaceAll(apiKey, "[TAVILY_API_KEY]") : message);
 	}
