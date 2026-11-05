@@ -2,11 +2,46 @@
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-11-05
+
+**0.3.8: the judge approves the call that runs (`tool.approval` v3), credentials stay out of the agent's commands and MCP servers and a call that carries one asks, and `enabledModels` is chosen one provider at a time. New features: `recovery`, `interrupted`, `recall` and `prefix` (on), `confine` (experimental, off), the `lsp` navigation tool and `inherit.folders`.**
+
+### Added
+
+- **`recovery`** ("Interrupted tool calls", on). Before each call that may change something, a final `tool_call` handler appends a `kyrn.tool-dispatch` entry. A session reopened after mu was killed tells the model and the user which calls have no result: never started, only read, or started with an outcome nobody knows. For the last, the model is told to check the outside state or ask first.
+- **`interrupted`** ("Replies you stop", on). The text of a reply the user stops goes back to the model in a `kyrn.interrupted` message only the model reads (its first 4,000 and last 2,000 characters), without the reasoning or the tool calls. Replies mu cuts itself are left alone.
+- **`recall`** ("Read back shortened output", on). `recall({ id, offset?, limit? })` reads, at most `maxChars` (20,000) at a time, output that forgetting replaced, that admission archived, or the rest of a page `web_fetch` cut, which it now keeps.
+- **`lsp` navigation tool** (`features.lsp.navigation`, on). `op` = `definition`, `references`, `implementation` or `hover`, by `path`, `line`, `symbol` and/or `column`, through the language servers already installed. It's in the capability catalog, so it isn't in every request. At most `navigationResults` (30) places per answer.
+- **`inherit.folders`** (on). A subfolder's `AGENTS.override.md`, `AGENTS.md` or `CLAUDE.md` below the project folder rides along with the result of the first `read`, `edit` or `write` of a file there, once per session. Not inside `node_modules` or `.git`, and not with `--no-context-files`.
+- **`prefix`** ("Prompt cache watch", on). When a request to the model no longer starts with the one before it, a `kyrn.prefix` entry records what changed (the model, the system prompt and tools, or the first message that differs) and each decision that acted in between with its declared `cacheImpact`. Hashes, counts and roles only.
+- **`confine`** ("Write sandbox (experimental)", off). bash, `bg_start` and `debug_start` run under a write floor: the project, the temporary folders and the package caches under the home folder, plus `features.confine.writable`; `.git/hooks` and `.git/config` read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. A refused write gets a fixed line naming the sandbox, in bash results, `bg_output` and `debug_start`/`debug_step`. bash and `bg_start` take `outside: true` with a `reason`: the permission gate decides it in every mode (the judge first, then the user; in Ask first the user), once, never for the session. When the floor can't start, every command is refused.
+- **Labels on the judge's ledger** (`kyrn.outcome`): the user's answer to a permission question (`once`, `session`, `deny`, `dismissed`, `none`, with `waitedMs`); a mark from `/ledger wrong <id> [why]`; and `followed` (`acted` with its tool calls, or `ended`) for the run that answers a `turn.continue` or `turn.completion` nudge. `/ledger` and `mu ledger` show them after the verdict; `mu ledger --json` adds `userAnswer`, `userMark` and `followed`.
+- **`mu ledger --timeline [--session <file or id>] [--json]`**: one session in order, with the user's messages, each model reply's model, time and tokens, each verdict with its latency and each tool result.
+- **`mu auth enable <provider> [--default | <model>...]`** chooses one provider's models in pi's `enabledModels`. `mu auth status` and a sign-in's `done` give each account's `enabled` models, and `status` lists the other usable providers (an API key's, models.json's) as `usable`. A sign-in to a provider a chosen list leaves out adds `<provider>/**`. In the TUI, an OAuth sign-in with several models opens that provider's selector, and `/scoped-models <provider>` opens it again. RPC `get_available_models` adds `enabledModels`, read from the settings files each time.
+- **Subagent sessions.** A `delegate` or `hive` subagent gets `--session <agentDir>/subagents/<parent session id>/<time>_<name>_<random>.jsonl` when its parent has a session file, and the parent's session ties each file to the call that started it.
+- **mu.json `features` check.** A feature or option mu doesn't have (with the closest name), or a value of another kind than its default, is reported at session start and in `/doctor` and `/status`. A value of the wrong kind keeps the default instead of being used.
+- `/status` lists each tool held off the model's list and who holds it (the catalog, unattended runs, the MCP description screen), through one set of tool masks.
+
 ### Changed
 
+- **`tool.approval` v3.** The approval judge reads the whole call: a command as its lines, any other tool's input as JSON, up to 4,000 characters (it read the first 400). A longer call asks the user with the reason `long` and no session grant; starting subagents is exempt. A flagged command goes to `tool.risk` only when it fits whole in 1,500 characters. An approval that reports `state_truncated` counts as none. mu's `tool_call` handlers run `final`, after every other extension's, on a frozen copy of the input. Version 2 records aren't directly comparable.
+- **Credentials.** The agent's bash, powershell, `bg_start` and `debug_start` start without a variable whose name has KEY, TOKEN, SECRET, PASSWORD or CREDENTIAL and whose value looks like a credential (16 characters, or 8 with a digit); `MU_PASS_ENV` (pi: `PI_PASS_ENV`) keeps named ones. A stdio MCP server from `mcp.json` with `inheritEnv` unset gets the same environment; `true` passes everything, `false` only `env`, and `env` is always passed.
+- **Credential tripwire.** A call whose input holds a credential's value, written out or URL-encoded, or a secret's shape (`sk-…`, `ghp_…`, `github_pat_…`, `xox…`, `AIza…`, a private key block), and a command that sends a credential file off the computer (`.env*`, ssh keys, `.aws/credentials`, `.netrc`, `.npmrc`, `*.pem`, … with curl, scp, rsync, nc and the like), is flagged `sends_credential`: never judged, no session grant, refused where nobody can be asked. In Judge and Ask first; Full access is unchanged. `redact.ts` also treats `KEY` as a word of its own.
 - **`turn.rewind` v2.** A rewind is proposed when the judge is sure the approach is a dead end (`dead_end` at 0.8 or more, as before) and `progress` is below 0.5; before, `progress` had to be at 0.2 or below. At exactly 0.5 the judge has no opinion and nothing is proposed. It still only proposes; the user confirms.
 - **`swarm.patch` v2.** A file counts as unrelated to the task from p 0.3 down (was 0.2). The decision is still off by default and never blocks.
 - **`swarm.routing` v4.** A subagent gets "high" thinking from a reasoning rating of 2.4 (was 2.2, on the 0–3 scale); "medium" still starts at 1.1.
+- **`enabledModels`, one provider at a time.** All of a provider's models are written as `<provider>/**`, which takes ids with a slash of their own (OpenRouter's), and a `<provider>/*` written before is rewritten so. A glob that starts with a provider's name matches only that provider's models; it also matched another provider's ids that start the same way (OpenRouter's `openai/…`). A choice that would enable no model is refused.
+- **A file change is a barrier in its batch of tool calls.** A tool that declares `executionMode: "sequential"` (`edit`, `write` and mu's file-changing tools) starts after the calls before it have ended, and the calls after it start when it has ended. The calls between two barriers still run in parallel.
+- **The loop rule counts refused calls**, and steers at `repeats`, `repeats + 2` and `repeats + 5` (3, 5 and 8).
+- `find_capability` and a write floor that can't start end their message with a "Next:" line by failure code.
+- Archived tool output: folders 0700, files 0600, and archive folders of other runs unused for 14 days are swept at `session_start`.
+
+### Fixed
+
+- Tavily's search and extract requests refuse redirects, so the key never follows one.
+- The `http` judge records 401 as `error:auth` and 429 as `error:rate_limited`, not `bad_request`.
+- hive's bee options (`maxNotesPerBee`, `publishToolOutputs`, …) are read by the session as well as by each bee, from one list.
+- A `git config` the Linux sandbox refuses (`EBUSY` on the read-only `.git/config`) gets the sandbox's line.
 
 ## [0.3.7] - 2026-11-03
 
