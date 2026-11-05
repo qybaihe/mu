@@ -1,5 +1,7 @@
 # KYRN 改动地图：决策点挂在 pi 的哪里
 
+Status: 部分维护。文件地图、启动命令和 provider 列表跟到 0.2.5（2026-10-24），对 pi 的改动以 [fork-ledger.md](fork-ledger.md) 为准；其余是当时的记录。
+
 > 已于 2026-09-21 更名为 mu（命令 `mu`，标识 μ）。本文是更名前的记录，正文保持原样；新旧名对照见 [10-rename-to-mu.md](10-rename-to-mu.md)。
 
 > 2026-10-24（0.2.5）：Laya 已从 mu 移除。`kyrn/bin/kyrn-judge-local`、`kyrn/local-judge/server.py` 和 `local` 类型的判定器都已删掉，`kyrn/local-judge/` 里只剩 mude 1.0 的 Python 依赖锁。下面的文件地图、启动命令和 provider 列表已按此改过；第 9 节等处仍是当时的记录。

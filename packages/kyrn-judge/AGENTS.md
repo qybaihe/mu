@@ -35,3 +35,4 @@ Rules for working in this package. The repository's root `AGENTS.md` still appli
 
 - English the user or the model reads follows `docs/writing-style.md`: plain, concrete, honest about what is not measured.
 - Commits and pull requests that touch `desktop/` carry no AI signature (`desktop/AGENTS.md`).
+- A design note in `kyrn/docs` (`NN-*.md`) says under its title, in a `Status:` line, whether it is kept up to date or is a record of its time. A translation names the original it was made from, with the original's hash: change the original, and `test/design-notes.test.ts` fails until the translation follows.
