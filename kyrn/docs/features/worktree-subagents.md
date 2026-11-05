@@ -34,7 +34,7 @@
 - `within_task`（boolean）：Does `change` stay within what `task` asks for?
 - 每个文件一问，最多 12 个（boolean）：Does `task` call for changing this file? `<路径>` (`<状态> +x -y`)
 
-只有高置信的“否”才把文件标为无关；拿不准就不说。结果是给主代理看的一句话（`2 files in scope, 1 looks unrelated to the task: package-lock.json`），从不拦截。`shadow` 只记录不显示，`off` 不问，判定器不可用时兜底是什么都不说。能力类别 `relate`。
+判定器答“否”才把文件标为无关：v2 起是 p ≤ 0.3（v1 是 0.2，小判定器对任务根本用不到的文件常停在 0.2–0.3）；拿不准（比如 0.5）就不说。结果是给主代理看的一句话（`2 files in scope, 1 looks unrelated to the task: package-lock.json`），从不拦截。`shadow` 只记录不显示，`off` 不问，判定器不可用时兜底是什么都不说。能力类别 `relate`。
 
 ## 选项（`mu.json` 的 `features.swarm`）
 

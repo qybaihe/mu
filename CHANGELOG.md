@@ -4,6 +4,11 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Changed
+
+- **Judged rewind speaks up a little sooner.** When the agent goes in circles, mu proposes going back to the turn's checkpoint if the judge is sure the approach is a dead end and reads progress as less likely than not; before, it also had to be sure there was no progress. It still only proposes: nothing goes back without you.
+- **A subagent's patch review names more unrelated files.** With `swarm.patch` turned on (it is off by default), a file the judge leans against is named as unrelated from p 0.3 down, not only from 0.2.
+
 ## [0.3.7] - 2026-11-03
 
 **In 0.3.7, more of the desktop app looks like mu: the stop button, the line above the send box, notices, the judge's icon and file cards.** "Ask mu about this" on an error now opens a new mu conversation. The desktop app carries mu-agent 0.3.7, which has OpenRouter's current prices for a few models.

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`turn.rewind` v2.** A rewind is proposed when the judge is sure the approach is a dead end (`dead_end` at 0.8 or more, as before) and `progress` is below 0.5; before, `progress` had to be at 0.2 or below. At exactly 0.5 the judge has no opinion and nothing is proposed. It still only proposes; the user confirms.
+- **`swarm.patch` v2.** A file counts as unrelated to the task from p 0.3 down (was 0.2). The decision is still off by default and never blocks.
+
 ## [0.3.7] - 2026-11-03
 
 **0.3.7 has OpenRouter's current prices for five models and output limits for two. It keeps the version in step with the 0.3.7 desktop app.**
