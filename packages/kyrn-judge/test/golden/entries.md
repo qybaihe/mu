@@ -22,6 +22,7 @@ without one.
 | `kyrn.hint` | message | src/extension/features/preflight.ts | - | What the preflight verdict tells the model about the message: a side question, a plan first. |
 | `kyrn.hive` | message | src/extension/features/hive.ts | - | What the hive passes to one of its bees while it works. |
 | `kyrn.hive-request` | message | src/extension/features/hive.ts | - | What a `/hive` the user typed asks for, given to the model with that turn only. |
+| `kyrn.interrupted` | message | src/extension/features/interrupted.ts | - | The text of a reply the user stopped, which pi leaves out of the next request, for the model only. |
 | `kyrn.lessons` | message | src/extension/features/memory.ts | - | Lessons of this project that apply to the task. |
 | `kyrn.monitor` | entry | src/extension/features/monitor.ts | - | What the drift check or the loop rule said, or in shadow mode would have said: the record a shadow run is judged by. |
 | `kyrn.notice` | message | src/extension/features/notify.ts | - | An event the notify feature passes on to the model, now or with the next turn. |
@@ -569,6 +570,10 @@ A message. No schema: no other program reads it.
 A message. No schema: no other program reads it.
 
 ## kyrn.hive-request v1
+
+A message. No schema: no other program reads it.
+
+## kyrn.interrupted v1
 
 A message. No schema: no other program reads it.
 

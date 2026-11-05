@@ -384,6 +384,14 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 		summary: "Which calls an interruption left without a result, and what to check before running them again.",
 	},
 	{
+		type: "kyrn.interrupted",
+		kind: "message",
+		version: 1,
+		writers: [features("interrupted")],
+		readers: [],
+		summary: "The text of a reply the user stopped, which pi leaves out of the next request, for the model only.",
+	},
+	{
 		type: "kyrn.frame",
 		kind: "entry",
 		version: 1,
