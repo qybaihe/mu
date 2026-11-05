@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { mutate } from 'swr';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import {
+  enabledAccountModels,
   offeredProviders,
   type LoginErrorCode,
   type LoginModel,
@@ -72,7 +73,7 @@ let lastStatus: LoginStatus = { signedIn: [] };
 /**
  * Subscription sign-in as a screen sees it. pi's OAuth flow runs in the main process; this reads who is signed in,
  * picks up a sign-in still running from an earlier visit, reads its state twice a second while it runs, and hears
- * of every finished one once (`onSignedIn`).
+ * of every finished one once (`onSignedIn`, with the account's models the model menus offer).
  */
 export function useSubscriptionLogin(
   onSignedIn?: (provider: SubscriptionProvider, models: LoginModel[]) => void
@@ -132,7 +133,7 @@ export function useSubscriptionLogin(
       ...now,
       signedIn: [...now.signedIn.filter((entry) => entry.provider !== provider), { provider, models, ...enabled }],
     }));
-    heard.current?.(provider, models);
+    heard.current?.(provider, enabledAccountModels({ models, ...enabled }));
     void recheckMu();
   }, [login]);
 

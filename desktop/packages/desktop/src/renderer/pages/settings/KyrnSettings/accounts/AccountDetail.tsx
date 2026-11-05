@@ -14,6 +14,8 @@ type AccountDetailProps = {
   flow: SubscriptionLoginFlow;
   /** What mu reported for this id while nobody is signed in: usable through an API key (OpenAI, Grok). */
   byKey?: { models: { id: string; name: string }[] };
+  /** The model new conversations start on, when it is one of this provider's (the draft's). */
+  startModel?: string;
   /** Opens the provider whose sign-in is running, when it is another one. */
   onShow: (provider: SubscriptionProvider) => void;
 };
@@ -23,7 +25,7 @@ type AccountDetailProps = {
  * credential is pi's, in its own store), and what the account can use: signed in, which of its models the model menus
  * offer, asked for at once after a sign-in here.
  */
-export default function AccountDetail({ provider, flow, byKey, onShow }: AccountDetailProps) {
+export default function AccountDetail({ provider, flow, byKey, startModel, onShow }: AccountDetailProps) {
   const { t } = useTranslation();
   const account = flow.account(provider);
   const { login } = flow;
@@ -113,6 +115,7 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
             provider={provider}
             models={account.models}
             enabled={account.enabled}
+            startModel={startModel}
             fresh={login?.provider === provider && login.phase === 'done'}
             enable={flow.enable}
           />

@@ -2,7 +2,7 @@ import React from 'react';
 import { Radio } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import MuSelect from '@/renderer/components/base/MuSelect';
-import type { LoginStatus } from '@/common/kyrn/login';
+import { enabledAccountModels, type LoginStatus } from '@/common/kyrn/login';
 import {
   THINKING_LEVELS,
   supportedThinkingLevels,
@@ -41,6 +41,9 @@ function modelThinkingLevels(model: ProviderModel): ThinkingLevel[] {
 /**
  * The model and thinking level a new session starts with (pi's settings.json, which the mu command line reads too).
  * A conversation can still switch in its send box.
+ *
+ * It offers what the model menus offer: of a signed-in account, the models chosen for them (Providers, the account).
+ * pi starts a new session on the default only while it is one of those, so one that is not is pointed out.
  */
 export default function DefaultModelCard({
   settings,
@@ -58,17 +61,24 @@ export default function DefaultModelCard({
   const custom = providers.find((provider) => provider.id === defaults.provider);
   const reported = listed.find((provider) => provider.id === defaults.provider);
   const account = accounts.find((entry) => entry.provider === defaults.provider);
+  // An account none of whose models the menus offer offers no start either, whatever the snapshot still lists.
+  const closed = new Set<string>(
+    accounts.filter((entry) => entry.enabled?.length === 0).map((entry) => entry.provider)
+  );
   const providerIds = [
     ...new Set([
       ...providers.map((p) => p.id),
-      ...listed.map((p) => p.id),
-      ...accounts.map((entry) => entry.provider),
+      ...[...listed.map((p) => p.id), ...accounts.map((entry) => entry.provider)].filter((id) => !closed.has(id)),
       defaults.provider,
     ]),
   ];
-  const models = custom?.models ?? reported?.models ?? account?.models ?? [];
+  // An account's choice is newer than the snapshot of mu's last connection, which is from before a click.
+  const offered = account?.enabled ? enabledAccountModels(account) : undefined;
+  const models = custom?.models ?? offered ?? reported?.models ?? account?.models ?? [];
   const modelIds = [...new Set([...models.map((m) => m.id), defaults.model])].filter(Boolean);
-  const names = modelNamesOf(models);
+  // Named even when it is not offered: the account still has it.
+  const names = modelNamesOf(custom?.models ?? account?.models ?? models);
+  const notEnabled = Boolean(!custom && offered && defaults.model && !offered.some((m) => m.id === defaults.model));
 
   // Only a custom model says what it can do; for a built-in one pi picks the nearest level it supports.
   const model = custom?.models.find((candidate) => candidate.id === defaults.model);
@@ -94,7 +104,7 @@ export default function DefaultModelCard({
       </Row>
       <Row
         title={t('mu.defaults.model')}
-        help={defaults.provider ? undefined : t('mu.defaults.pickProvider')}
+        help={!defaults.provider ? t('mu.defaults.pickProvider') : notEnabled ? t('mu.defaults.notEnabled') : undefined}
         modified={defaults.model !== base.models.defaults.model}
       >
         <MuSelect

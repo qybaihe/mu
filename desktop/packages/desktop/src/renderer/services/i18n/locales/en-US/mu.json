@@ -434,7 +434,8 @@
     "levelUnset": "Not set",
     "noReasoning": "This model doesn't support thinking, so conversations with it always start with thinking off.",
     "notSet": "Not set",
-    "pickProvider": "Choose a provider first."
+    "pickProvider": "Choose a provider first.",
+    "notEnabled": "It isn't shown in the model picker, so new conversations start on the first model that is. Check it under its account in Providers, or choose another."
   },
   "accounts": {
     "signIn": "Sign in",
@@ -462,7 +463,9 @@
       "reset": "Restore default",
       "fresh": "Signed in to {{name}}, which offers {{count}} models. Uncheck the ones you don't want in the model picker.",
       "lastModel": "Keep at least one model enabled.",
-      "failed": "Couldn't save the model choice. Try again."
+      "failed": "Couldn't save the model choice. Try again.",
+      "startTag": "default",
+      "startOff": "{{name}} is the model new conversations start on. Unchecked, they start on the first checked model instead."
     }
   },
   "endpoints": {

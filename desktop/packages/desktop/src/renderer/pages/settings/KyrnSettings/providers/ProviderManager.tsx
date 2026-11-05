@@ -280,6 +280,7 @@ export default function ProviderManager(props: ProviderManagerProps) {
         provider={provider}
         flow={flow}
         byKey={byKey(provider)}
+        startModel={defaults.provider === provider ? defaults.model : undefined}
         onShow={(running) => setSelection({ kind: 'account', provider: running })}
       />
     );

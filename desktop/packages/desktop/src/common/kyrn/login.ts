@@ -118,6 +118,15 @@ export type LoginStatus = {
 };
 
 /**
+ * The account's models the model menus offer, in the account's order: the ones `enabled` names, or every one when it
+ * is absent (an older harness offers them all).
+ */
+export function enabledAccountModels(account: { models: LoginModel[]; enabled?: string[] }): LoginModel[] {
+  const { models, enabled } = account;
+  return enabled ? models.filter((model) => enabled.includes(model.id)) : models;
+}
+
+/**
  * Which of an account's models the model menus offer (`mu auth enable`): `models`, the ids to offer, or `byDefault`,
  * all of them, the ones the account gains later too, which is how an account starts.
  */

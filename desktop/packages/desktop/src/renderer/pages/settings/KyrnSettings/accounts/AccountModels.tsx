@@ -12,6 +12,8 @@ type AccountModelsProps = {
   models: LoginModel[];
   /** The ids the model menus offer; undefined from an older harness, which offers them all. */
   enabled?: string[];
+  /** The model new conversations start on, when it is one of the account's: marked, and pointed out when unchecked. */
+  startModel?: string;
   /** Signed in a moment ago on this page: the choice is asked for. */
   fresh: boolean;
   enable: (provider: SubscriptionProvider, models: string[] | 'default') => Promise<void>;
@@ -25,7 +27,7 @@ const NO_MODEL_LEFT = 'At least one model must stay enabled';
  * click applies at once, outside the save bar, as a sign-in does; the boxes show the click while it is written. All
  * of them is the default, saved as the account's every model, the ones it gains later too.
  */
-export default function AccountModels({ provider, models, enabled, fresh, enable }: AccountModelsProps) {
+export default function AccountModels({ provider, models, enabled, startModel, fresh, enable }: AccountModelsProps) {
   const { t } = useTranslation();
   // The choice being written, shown until the last write comes back with what is saved.
   const [draft, setDraft] = useState<string[]>();
@@ -34,6 +36,9 @@ export default function AccountModels({ provider, models, enabled, fresh, enable
   const shown = draft ?? enabled ?? ids;
   const all = ids.every((id) => shown.includes(id));
   const none = !ids.some((id) => shown.includes(id));
+  // pi starts a new session on the default only while it is offered, else on the first model that is.
+  const start = models.find((model) => model.id === startModel);
+  const startOff = start && !shown.includes(start.id);
 
   const choose = (next: string[]) => {
     setDraft(next);
@@ -88,6 +93,11 @@ export default function AccountModels({ provider, models, enabled, fresh, enable
         </div>
       </div>
       <div className={providerStyles.hint}>{t('mu.accounts.enable.hint')}</div>
+      {startOff ? (
+        <div className={providerStyles.hint} data-testid='mu-account-models-start-off'>
+          {t('mu.accounts.enable.startOff', { name: start.name || start.id })}
+        </div>
+      ) : null}
       <div className={styles.modelsList}>
         {models.map((model) => (
           <Checkbox
@@ -98,6 +108,11 @@ export default function AccountModels({ provider, models, enabled, fresh, enable
           >
             <span className={styles.modelName}>{model.name || model.id}</span>
             {model.name && model.name !== model.id ? <span className={styles.modelId}>{model.id}</span> : null}
+            {model.id === startModel ? (
+              <span className={styles.modelTag} data-testid='mu-account-model-start'>
+                {t('mu.accounts.enable.startTag')}
+              </span>
+            ) : null}
           </Checkbox>
         ))}
       </div>

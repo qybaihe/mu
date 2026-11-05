@@ -35,6 +35,7 @@ const bridge = vi.hoisted(() => ({
   loginAnswer: vi.fn(),
   loginCancel: vi.fn(),
   loginLogout: vi.fn(),
+  loginEnable: vi.fn(),
   loginSwitchModels: vi.fn(),
   mudeState: vi.fn(),
   mudeRun: vi.fn(),
@@ -69,6 +70,7 @@ vi.mock('@/common/kyrn/bridge', () => ({
     loginAnswer: { invoke: bridge.loginAnswer },
     loginCancel: { invoke: bridge.loginCancel },
     loginLogout: { invoke: bridge.loginLogout },
+    loginEnable: { invoke: bridge.loginEnable },
     loginSwitchModels: { invoke: bridge.loginSwitchModels },
     mudeState: { invoke: bridge.mudeState },
     mudeRun: { invoke: bridge.mudeRun },
@@ -731,6 +733,92 @@ describe('providers and the default model', () => {
     await waitFor(() => expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Not signed in'));
     expect(within(detail).getByTestId('mu-account-signin-xai')).toBeInTheDocument();
     await waitFor(() => expect(bridge.recheck).toHaveBeenCalledTimes(1));
+  });
+
+  it('offers as the default model only an account’s checked models, and says when the default is not one', async () => {
+    const onAntigravity = settings();
+    onAntigravity.models.defaults = { provider: 'google-antigravity', model: 'gemini-3-flash', thinkingLevel: '' };
+    bridge.settings.mockResolvedValue({ ok: true, data: onAntigravity });
+    const antigravity = [
+      { id: 'gemini-3.1-pro-high', name: 'Gemini 3.1 Pro (High)' },
+      { id: 'gemini-3-flash', name: 'Gemini 3 Flash' },
+      { id: 'gemini-3.1-pro-low', name: 'Gemini 3.1 Pro (Low)' },
+      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6' },
+    ];
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: {
+        signedIn: [
+          {
+            provider: 'google-antigravity',
+            models: antigravity,
+            enabled: ['gemini-3.1-pro-high', 'claude-sonnet-4-6'],
+          },
+          // Not one of Grok's models is checked: it offers no start.
+          { provider: 'xai', models: [{ id: 'grok-5', name: 'Grok 5' }], enabled: [] },
+        ],
+      },
+    });
+    // mu's last connection was before the choice: it still lists every model.
+    bridge.availableModels.mockResolvedValue({
+      ok: true,
+      data: {
+        providers: [
+          { id: 'google-antigravity', models: antigravity },
+          { id: 'xai', models: [{ id: 'grok-5', name: 'Grok 5' }] },
+        ],
+        thinkingLevels: [],
+      },
+    });
+    const user = userEvent.setup();
+    await open('default-model');
+    const card = screen.getByTestId('mu-defaults');
+    await waitFor(() => expect(card).toHaveTextContent("It isn't shown in the model picker"));
+    await user.click(within(card).getByLabelText('Model'));
+    expect(await screen.findByText('Claude Sonnet 4.6')).toBeInTheDocument();
+    expect(screen.getByText('Gemini 3.1 Pro (High)')).toBeInTheDocument();
+    // The default stays a choice, by its name, until another is picked; the other unchecked model is not one.
+    expect(screen.getAllByText('Gemini 3 Flash').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Gemini 3.1 Pro (Low)')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Claude Sonnet 4.6'));
+    expect(card).not.toHaveTextContent("It isn't shown in the model picker");
+    await user.click(within(card).getByLabelText('Provider'));
+    const relay = await screen.findByText('Relay', { selector: '.arco-select-option' });
+    const popup = relay.closest('.arco-select-popup');
+    const providers = [...(popup?.querySelectorAll('.arco-select-option') ?? [])].map((option) => option.textContent);
+    // Relay and the account's own: not Grok.
+    expect(providers).toHaveLength(2);
+  });
+
+  it('marks the default model among an account’s models, and says where new conversations go when it is unchecked', async () => {
+    const onGrok = settings();
+    onGrok.models.defaults = { provider: 'xai', model: 'grok-5', thinkingLevel: '' };
+    bridge.settings.mockResolvedValue({ ok: true, data: onGrok });
+    const grok = [
+      { id: 'grok-5', name: 'Grok 5' },
+      { id: 'grok-5-mini', name: 'Grok 5 Mini' },
+    ];
+    bridge.loginStatus.mockResolvedValue({ ok: true, data: { signedIn: [{ provider: 'xai', models: grok }] } });
+    bridge.loginEnable.mockResolvedValue({
+      ok: true,
+      data: { signedIn: [{ provider: 'xai', models: grok, enabled: ['grok-5-mini'] }] },
+    });
+    await open('providers');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-xai'));
+    const detail = screen.getByTestId('mu-account-xai');
+    const start = await within(detail).findByTestId('mu-account-model-start');
+    expect(start).toHaveTextContent('default');
+    expect(within(detail).getByTestId('mu-account-model-grok-5')).toContainElement(start);
+    expect(within(detail).queryByTestId('mu-account-models-start-off')).not.toBeInTheDocument();
+
+    fireEvent.click(within(within(detail).getByTestId('mu-account-model-grok-5')).getByRole('checkbox'));
+    await waitFor(() => expect(bridge.loginEnable).toHaveBeenCalledWith({ provider: 'xai', models: ['grok-5-mini'] }));
+    await waitFor(() =>
+      expect(within(detail).getByTestId('mu-account-models-start-off')).toHaveTextContent(
+        'Grok 5 is the model new conversations start on. Unchecked, they start on the first checked model instead.'
+      )
+    );
+    expect(within(detail).getByTestId('mu-account-models-count')).toHaveTextContent('1 of 2');
   });
 
   it('drops a signed-out account’s models from the pickers at once, and says where the default model went', async () => {

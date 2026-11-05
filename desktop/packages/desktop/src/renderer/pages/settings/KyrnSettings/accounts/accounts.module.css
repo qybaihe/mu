@@ -193,6 +193,16 @@
   line-height: 20px;
 }
 
+.modelTag {
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--color-fill-2);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
 .modelId {
   margin-left: 6px;
   color: var(--text-secondary);
