@@ -944,7 +944,7 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 }
 ```
 
-## swarm.patch v1
+## swarm.patch v2
 
 ```json
 {
@@ -1373,7 +1373,7 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 }
 ```
 
-## turn.rewind v1
+## turn.rewind v2
 
 ```json
 {
