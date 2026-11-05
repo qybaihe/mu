@@ -186,6 +186,7 @@ export class DecisionEngine {
 	private judge: JudgeLike;
 	/** Decisions that are answered by their own judge instead of the shared one. */
 	private readonly routed = new Map<string, JudgeLike>();
+	private readonly impacts = new Map<string, CacheImpact>();
 	private readonly ledger: LedgerSink | undefined;
 	private defaultMode: DecisionMode;
 	private readonly modes: Map<string, DecisionMode>;
@@ -366,11 +367,17 @@ export class DecisionEngine {
 		}
 	}
 
+	/** What acting on a decision asked so far does to the prompt cache, as its spec declares, by id. */
+	cacheImpactOf(specId: string): CacheImpact | undefined {
+		return this.impacts.get(specId);
+	}
+
 	async decide<In, const Qs extends Questions, Out extends JsonValue>(
 		spec: DecisionSpec<In, Qs, Out>,
 		input: In,
 		options: { signal?: AbortSignal } = {},
 	): Promise<Decision<Out>> {
+		this.impacts.set(spec.id, spec.cacheImpact);
 		const mode = this.getMode(spec.id);
 		const fallback = spec.fallback(input);
 		if (mode === "off") return { specId: spec.id, mode, outcome: fallback, source: "fallback", reason: "off" };
@@ -434,6 +441,7 @@ export class DecisionEngine {
 		inputs: readonly In[],
 		options: { signal?: AbortSignal; concurrency?: number } = {},
 	): Promise<Decision<Out>[]> {
+		this.impacts.set(spec.id, spec.cacheImpact);
 		const mode = this.getMode(spec.id);
 		if (mode === "off" || inputs.length === 0) {
 			return inputs.map((input) => ({

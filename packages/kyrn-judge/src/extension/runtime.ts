@@ -25,6 +25,7 @@ import {
 	type PresentationListener,
 	type ProgressCode,
 } from "./presentation.ts";
+import { ToolMasks } from "./tool-masks.ts";
 
 export const LEDGER_ENTRY_TYPE = "kyrn.decision";
 const GATEWAY_PROVIDER_ID = "vercel-ai-gateway";
@@ -166,6 +167,8 @@ export class KyrnRuntime {
 	readonly memory = new MemoryLedger();
 	/** Everything installed that the judge may open per task: packs, MCP servers, language servers. */
 	readonly catalog = new CapabilityCatalog();
+	/** Which tools are kept off the model's list, by whom and why: the one place that sets pi's active tools. */
+	readonly toolMasks: ToolMasks;
 	readonly problems: string[] = [];
 	readonly savings: Savings = {
 		admissionOmittedChars: 0,
@@ -266,6 +269,7 @@ export class KyrnRuntime {
 
 	constructor(pi: ExtensionAPI, config: KyrnConfig, judge?: JudgeLike, problem?: string) {
 		this.pi = pi;
+		this.toolMasks = new ToolMasks(pi);
 		this.config = config;
 		if (problem) this.problems.push(problem);
 		this.tiers = config.tiers;

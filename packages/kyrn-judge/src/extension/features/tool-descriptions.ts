@@ -117,8 +117,6 @@ export function registerToolDescriptions(runtime: KyrnRuntime, options: Descript
 	const verdicts = new Map<string, Verdict>();
 	/** Poisoned tools, by name, with what was found. */
 	const quarantined = new Map<string, Verdict & { readonly server: string }>();
-	/** Tools this feature took off the list: only those are put back when a new description is judged clean. */
-	const removed = new Set<string>();
 	let screening: Promise<void> | undefined;
 	const store = runtime.stateDir ? new VerdictStore(runtime.stateDir) : undefined;
 
@@ -139,13 +137,14 @@ export function registerToolDescriptions(runtime: KyrnRuntime, options: Descript
 			)
 			.digest("hex");
 
+	// A tool whose description is judged clean again comes back, unless another mask still holds it.
 	const enforce = (): void => {
-		const active = pi.getActiveTools();
-		const kept = active.filter((name) => !quarantined.has(name));
-		const back = [...removed].filter((name) => !quarantined.has(name) && !active.includes(name));
-		for (const name of active) if (quarantined.has(name)) removed.add(name);
-		for (const name of back) removed.delete(name);
-		if (kept.length !== active.length || back.length > 0) pi.setActiveTools([...kept, ...back]);
+		runtime.toolMasks.set(
+			"tool.description",
+			quarantined.keys(),
+			"its description carries instructions to the AI beyond using the tool",
+		);
+		runtime.toolMasks.apply();
 	};
 
 	const tell = (name: string, verdict: Verdict & { readonly server: string }): void => {
@@ -324,15 +323,6 @@ export function registerToolDescriptions(runtime: KyrnRuntime, options: Descript
 		failOpen<ToolResultEvent, undefined>(async (_event, ctx) => {
 			if (screening) await settle(ctx.signal);
 			else enforce();
-			return undefined;
-		}),
-	);
-
-	// What another feature put back on the list since (the catalog, when a capability opens) comes off again.
-	pi.on(
-		"turn_start",
-		failOpen(() => {
-			enforce();
 			return undefined;
 		}),
 	);
