@@ -10634,6 +10634,19 @@
 			"options": []
 		},
 		{
+			"name": "prefix",
+			"title": {
+				"zh": "提示缓存失效记录",
+				"en": "Prompt cache watch"
+			},
+			"summary": {
+				"zh": "每次发给模型的请求都和上一次比较。如果它不再以上一次发出的内容开头，服务商就没法复用这部分的提示缓存，会话里会记下变了什么（模型、系统提示和工具，或从第几条消息开始），以及这期间 mu 做了哪些判定、各自声明会怎样影响缓存。只记哈希、位置和角色，不发往任何地方。",
+				"en": "Each request to the model is compared with the one before it. When it no longer starts with what was sent before, the provider can't reuse its prompt cache for the rest, so the session records what changed (the model, the system prompt and tools, or the first message that differs) and which of mu's decisions acted in between, each with what it declares it does to the cache. Only hashes, positions and roles are kept, and nothing is sent anywhere."
+			},
+			"defaultEnabled": true,
+			"options": []
+		},
+		{
 			"name": "confine",
 			"title": {
 				"zh": "写入沙箱（实验）",
