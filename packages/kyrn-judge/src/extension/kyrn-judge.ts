@@ -280,10 +280,11 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["browser", registerBrowser],
 		["inherit", (shared) => registerInherit(shared, roots)],
 		["mcp", (shared) => registerMcp(shared, roots)],
-		["background", registerBackground],
 		// Replaces bash with one under the write floor when switched on; off by default. Before the Nebius sandbox,
-		// which takes bash over again when it is on: nothing runs on this machine then.
+		// which takes bash over again when it is on: nothing runs on this machine then. Before background, whose bg_start
+		// offers the floor's way out when there is one.
 		["confine", (shared) => registerConfine(shared, options.confine)],
+		["background", registerBackground],
 		// Replaces bash, read, write and edit when switched on; off by default.
 		["sandbox", (shared) => registerSandbox(shared, options.sandbox)],
 		["web", registerWeb],

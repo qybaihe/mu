@@ -68,33 +68,35 @@ describe.skipIf(process.platform === "win32")("what the main model is given", ()
 				"```",
 			);
 		}
-		// Off by default, and model-facing when on: the write sandbox's bash, with its way out.
+		// Off by default, and model-facing when on: the write sandbox's bash and bg_start, with their way out.
 		const confined = await createHarness({
 			extensionFactories: [
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(() => ({})),
 					config: parseConfig({ features: { memory: false, confine: { enabled: true } } }),
-					only: ["confine"],
+					only: ["confine", "background"],
 					confine: { probe: async () => ({ ok: true }), tmp: [] },
 				}),
 			],
 		});
 		harnesses.push(confined);
 		await confined.session.bindExtensions({});
-		const bash = confined.session.agent.state.tools.find((tool) => tool.name === "bash");
-		if (!bash) throw new Error("no bash with the write sandbox on");
-		parts.push(
-			"",
-			"## Tool: bash, with the write sandbox on (`features.confine`)",
-			"",
-			"```text",
-			plain(bash.description),
-			"```",
-			"",
-			"```json",
-			plain(JSON.stringify(bash.parameters, null, "\t")),
-			"```",
-		);
+		for (const name of ["bash", "bg_start"]) {
+			const tool = confined.session.agent.state.tools.find((candidate) => candidate.name === name);
+			if (!tool) throw new Error(`no ${name} with the write sandbox on`);
+			parts.push(
+				"",
+				`## Tool: ${name}, with the write sandbox on (\`features.confine\`)`,
+				"",
+				"```text",
+				plain(tool.description),
+				"```",
+				"",
+				"```json",
+				plain(JSON.stringify(tool.parameters, null, "\t")),
+				"```",
+			);
+		}
 		await expect(`${parts.join("\n")}\n`).toMatchFileSnapshot(GOLDEN);
 	});
 });

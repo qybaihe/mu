@@ -59,6 +59,9 @@ export function describeJob(job: JobInfo): string {
  * server or a twenty-minute build is what this is for.
  *
  * - The risk guard inspects `bg_start` exactly as it inspects `bash`.
+ * - With the write floor on (`features.confine`), a job runs inside it as a bash command does, and can ask out of it
+ *   the same way, `outside: true` with a reason, decided by the permission gate. A job let out runs outside for as
+ *   long as it runs.
  * - Long output goes through admission control like any tool result, the
  *   test-log strategy included: the result carries the job's command.
  * - A job that ends (or prints a watched line) while nobody waits on it is an
@@ -100,6 +103,8 @@ export function registerBackground(runtime: KyrnRuntime): void {
 	let keep = false;
 	/** Jobs the user started with `/jobs start`, not the model: the model hears of them as the user's. */
 	const byUser = new Set<string>();
+	/** Jobs the permission gate let out of the write floor: their output gets no line about refused writes. */
+	const outside = new Set<string>();
 	const keepsJobs = (mode: string): boolean =>
 		options.keepOnExit === "always" || (options.keepOnExit === "headless" && (mode === "print" || mode === "json"));
 
@@ -182,18 +187,35 @@ export function registerBackground(runtime: KyrnRuntime): void {
 	};
 	const killAllNow = (): void => manager?.killAllNow();
 
+	// The confine feature registers first: with the write floor on, a job can ask out of it as a bash command can.
+	const floorExit = runtime.floorExit;
 	pi.registerTool({
 		name: "bg_start",
 		label: "Background start",
-		description:
-			"Start a long-running shell command (dev server, watcher, long build or test run) in the background and get its job id at once. Read it with bg_output, end it with bg_stop. Jobs end with the session, except in an unattended run, where they keep running after it.",
+		description: `Start a long-running shell command (dev server, watcher, long build or test run) in the background and get its job id at once. Read it with bg_output, end it with bg_stop. Jobs end with the session, except in an unattended run, where they keep running after it.${floorExit ? " Jobs run in the write sandbox, as bash commands do. A job that must write elsewhere can set outside: true with a reason: it then runs outside the sandbox, if the judge or the user allows it, for as long as it runs. Ask for that only for a write the task needs." : ""}`,
 		parameters: Type.Object({
 			command: Type.String({ description: "Shell command" }),
 			name: Type.Optional(Type.String({ description: "Short label" })),
 			cwd: Type.Optional(Type.String({ description: "Working directory" })),
 			watch: Type.Optional(Type.String({ description: "Regex: tell me when a line of output matches" })),
+			...(floorExit
+				? {
+						outside: Type.Optional(
+							Type.Boolean({
+								description:
+									"Run this job outside the write sandbox, if the judge or the user allows it. Only for a write the task needs that the sandbox refuses.",
+							}),
+						),
+						reason: Type.Optional(
+							Type.String({
+								description:
+									"With outside: true, required: why this job must write outside the sandbox, shown to the user if they are asked.",
+							}),
+						),
+					}
+				: {}),
 		}),
-		execute: async (_toolCallId, params, _signal, _onUpdate, ctx) => {
+		execute: async (toolCallId, params, _signal, _onUpdate, ctx) => {
 			runtime.touch(ctx);
 			if (options.inheritShell) shell = readShellSettings(ctx.cwd, undefined, ctx.isProjectTrusted());
 			const cwd = params.cwd ? (isAbsolute(params.cwd) ? params.cwd : resolve(ctx.cwd, params.cwd)) : ctx.cwd;
@@ -203,22 +225,32 @@ export function registerBackground(runtime: KyrnRuntime): void {
 				throw new Error(
 					`mu: the write sandbox is on but cannot start here (${floor.reason}). Nothing ran.\n${nextStep("sandbox_unavailable")}`,
 				);
+			const asked = (params as { outside?: unknown }).outside === true;
+			const allowed = runtime.floorExit?.take(toolCallId, params.command) === true;
+			const out = asked && allowed;
 			try {
 				const job = start(ctx.mode).start({
 					command: params.command,
 					cwd,
 					name: params.name,
 					watch: params.watch,
-					...(floor?.ok ? { confine: floor.confinement } : {}),
+					...(floor?.ok && !out ? { confine: floor.confinement } : {}),
 				});
+				if (out) outside.add(job.id);
 				const after = keep
 					? "\nThis run is unattended: the job keeps running after the run ends. Stop it with bg_stop if it should not."
 					: "";
+				// Without the permission gate nobody can let a job out.
+				const where = out
+					? "\nIt runs outside the write sandbox, as allowed."
+					: asked && floor?.ok && runtime.permissionMode === undefined
+						? "\n[mu write sandbox: outside: true needs mu's permission check, which is off here, so the job runs inside the sandbox.]"
+						: "";
 				return {
 					content: [
 						{
 							type: "text",
-							text: `Started ${job.id} (pid ${job.pid ?? "unknown"}): ${clip(job.command, 200)}\nRead its output with bg_output({ id: "${job.id}" }); give wait_for or timeout to wait instead of polling.${after}`,
+							text: `Started ${job.id} (pid ${job.pid ?? "unknown"}): ${clip(job.command, 200)}${where}\nRead its output with bg_output({ id: "${job.id}" }); give wait_for or timeout to wait instead of polling.${after}`,
 						},
 					],
 					details: { id: job.id, command: job.command, state: job.state } satisfies OutputDetails as OutputDetails,
@@ -281,11 +313,15 @@ export function registerBackground(runtime: KyrnRuntime): void {
 					`[showing the last ${result.text.length} of ${result.text.length + result.skipped} new characters; the full log is ${job.logPath}]`,
 				);
 			}
-			// A job runs inside the write floor as bash does: a write it refused is said so here, where its output is read.
-			// A job has no way out of the floor, so the note sends the model to the project or to the user.
-			const floor = runtime.floor && result.text ? await runtime.floor(ctx.cwd) : undefined;
+			// A job runs inside the write floor as bash does: a write it refused is said so here, where its output is read,
+			// with the way out when the permission gate is there to decide it. A job let out has nothing refused to say.
+			const floor = runtime.floor && result.text && !outside.has(job.id) ? await runtime.floor(ctx.cwd) : undefined;
 			const refused = floor?.ok
-				? refusalNote(refusedWrites(result.text, floor.floor, job.cwd), floor.floor)
+				? refusalNote(
+						refusedWrites(result.text, floor.floor, job.cwd),
+						floor.floor,
+						runtime.floorExit !== undefined && runtime.permissionMode !== undefined,
+					)
 				: undefined;
 			if (refused) notes.push(refused);
 			const text = [
