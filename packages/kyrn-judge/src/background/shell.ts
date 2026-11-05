@@ -1,4 +1,5 @@
-import { join } from "node:path";
+import { existsSync } from "node:fs";
+import { join, win32 } from "node:path";
 import { getAgentDir, getPowerShellConfig, getShellConfig, SettingsManager } from "@earendil-works/pi-coding-agent";
 
 /**
@@ -57,20 +58,56 @@ export interface SpawnPlan {
 	readonly stdin?: string;
 	/** A process group of its own, which is what makes killing the whole tree possible on POSIX. */
 	readonly detached: boolean;
+	/**
+	 * Windows with Git Bash: the job's bash writes its MSYS pid, which is its process group, to `file`, and `ps` lists
+	 * the group's processes with their Windows pids (process-tree.ts, msysGroup).
+	 */
+	readonly group?: { readonly ps: string; readonly file: string };
 }
 
+/**
+ * `groupFile`: where a job's bash on Windows writes its process group (see SpawnPlan.group). Only for Git Bash's or
+ * another MSYS bash, which has a `ps.exe` beside it or in ../usr/bin; not for PowerShell or the WSL launcher.
+ */
 export function planSpawn(
 	command: string,
 	shell: ShellLike,
-	options: { kind?: ShellKind; prefix?: string; platform: NodeJS.Platform },
+	options: {
+		kind?: ShellKind;
+		prefix?: string;
+		platform: NodeJS.Platform;
+		groupFile?: string;
+		exists?: (path: string) => boolean;
+	},
 ): SpawnPlan {
 	const prefixed = options.prefix ? `${options.prefix}\n${command}` : command;
-	const script = options.kind === "powershell" ? `${POWERSHELL_UTF8}${prefixed}` : prefixed;
+	const ps =
+		options.groupFile &&
+		options.platform === "win32" &&
+		options.kind !== "powershell" &&
+		shell.commandTransport !== "stdin"
+			? msysPs(shell.shell, options.exists ?? existsSync)
+			: undefined;
+	const group = ps && options.groupFile ? { ps, file: options.groupFile } : undefined;
+	const written = group
+		? `printf '%s' "$$" > ${bashQuote(group.file.replaceAll("\\", "/"))} 2>/dev/null\n${prefixed}`
+		: prefixed;
+	const script = options.kind === "powershell" ? `${POWERSHELL_UTF8}${written}` : written;
 	const detached = options.platform !== "win32";
-	return shell.commandTransport === "stdin"
-		? { file: shell.shell, args: [...shell.args], stdin: script, detached }
-		: { file: shell.shell, args: [...shell.args, script], detached };
+	const plan =
+		shell.commandTransport === "stdin"
+			? { file: shell.shell, args: [...shell.args], stdin: script, detached }
+			: { file: shell.shell, args: [...shell.args, script], detached };
+	return group ? { ...plan, group } : plan;
 }
+
+/** MSYS's ps.exe for a bash.exe: beside it (usr\bin\bash.exe), or in ..\usr\bin (Git's bin\bash.exe launcher). */
+function msysPs(bash: string, exists: (path: string) => boolean): string | undefined {
+	const dir = win32.dirname(bash);
+	return [win32.join(dir, "ps.exe"), win32.join(dir, "..", "usr", "bin", "ps.exe")].find(exists);
+}
+
+const bashQuote = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
 
 /** The foreground tools' environment: the agent's own bin directory comes first on PATH. */
 export function shellEnv(env: NodeJS.ProcessEnv, binDir: string, platform: NodeJS.Platform): NodeJS.ProcessEnv {
@@ -81,7 +118,7 @@ export function shellEnv(env: NodeJS.ProcessEnv, binDir: string, platform: NodeJ
 }
 
 // Moved to a module without pi imports, so the packs' runner can end a process tree too.
-export { groupAlive, type KillStep, killPlan, runKillStep } from "../process-tree.ts";
+export { groupAlive, type KillStep, killAllPlan, killPlan, msysGroup, runKillStep } from "../process-tree.ts";
 
 export function agentBinDir(agentDir: string = getAgentDir()): string {
 	return join(agentDir, "bin");

@@ -5,6 +5,7 @@ import {
 	mkdirSync,
 	openSync,
 	readdirSync,
+	readFileSync,
 	readSync,
 	rmSync,
 	statSync,
@@ -14,7 +15,7 @@ import { constants as osConstants } from "node:os";
 import { join } from "node:path";
 import type { Confinement } from "../confine/floor.ts";
 import { OutputCleaner, RingBuffer } from "./ring-buffer.ts";
-import { groupAlive, type KillStep, killPlan, runKillStep, type SpawnPlan } from "./shell.ts";
+import { groupAlive, type KillStep, killAllPlan, killPlan, msysGroup, runKillStep, type SpawnPlan } from "./shell.ts";
 
 /**
  * Background jobs: commands that outlive the tool call that started them.
@@ -25,6 +26,13 @@ import { groupAlive, type KillStep, killPlan, runKillStep, type SpawnPlan } from
  * first SIGTERM and after a grace period SIGKILL. A command that backgrounds its
  * own child (`server &`) leaves the group alive after the shell exits; such a job
  * is reported as `lingering` and is still stopped with the rest.
+ *
+ * On Windows with Git Bash the shell leads a group of MSYS's own, which its
+ * `ps` lists with Windows pids (process-tree.ts, msysGroup): a stop ends each of
+ * them with what it started (`taskkill /T /F`), at once, as nothing short of
+ * forcing ends a console program there; a job is `lingering` while its group
+ * has processes after the shell exits. Elsewhere on Windows (PowerShell, WSL) a
+ * stop walks the shell's tree with `taskkill /T`, asking first.
  *
  * With `outputToFile` a job writes straight to its log file and the buffer is
  * filled from there, so the job does not need this process to go on: `release`
@@ -77,11 +85,14 @@ export interface JobManagerOptions {
 	 */
 	readonly outputToFile?: boolean;
 	/** Resolves the shell for one command. Injected, because shell discovery reads the machine. */
-	readonly plan: (command: string) => SpawnPlan;
+	/** `groupFile`: where the job's bash on Windows writes its process group (SpawnPlan.group). */
+	readonly plan: (command: string, groupFile: string) => SpawnPlan;
 	readonly env?: () => NodeJS.ProcessEnv;
 	readonly onEvent?: (event: JobEvent) => void;
 	/** For tests of the stop sequence. */
 	readonly kill?: (step: KillStep) => void;
+	/** For tests of the Windows stop: the Windows pids of an MSYS process group (process-tree.ts, msysGroup). */
+	readonly msysGroup?: (ps: string, pgid: number) => number[];
 }
 
 export class JobError extends Error {}
@@ -133,6 +144,8 @@ interface Job {
 	tail: { offset: number; timer: NodeJS.Timeout | undefined; pull: () => void } | undefined;
 	logPath: string;
 	logBytes: number;
+	/** Windows with Git Bash: MSYS's ps, the file the shell writes its group to, and the group once read. */
+	group: { ps: string; file: string; pgid?: number } | undefined;
 	startedAt: number;
 	endedAt: number | undefined;
 	exitCode: number | undefined;
@@ -173,11 +186,12 @@ export class JobManager {
 			throw new JobError(`Working directory does not exist: ${request.cwd}`);
 		}
 
-		const planned = this.options.plan(command);
+		const id = `bg-${this.sequence + 1}`;
+		const planned = this.options.plan(command, join(this.options.logDir, `${id}.group`));
 		const plan = request.confine
 			? { ...planned, file: request.confine.runner, args: [...request.confine.args, planned.file, ...planned.args] }
 			: planned;
-		const id = `bg-${++this.sequence}`;
+		this.sequence += 1;
 		mkdirSync(this.options.logDir, { recursive: true });
 		const logPath = join(this.options.logDir, `${id}.log`);
 		// The command holds its own descriptor of the file; ours is closed once it has one.
@@ -210,6 +224,7 @@ export class JobManager {
 			tail: out === undefined ? undefined : { offset: 0, timer: undefined, pull: () => {} },
 			logPath,
 			logBytes: 0,
+			group: plan.group ? { ...plan.group } : undefined,
 			startedAt: Date.now(),
 			endedAt: undefined,
 			exitCode: undefined,
@@ -270,8 +285,14 @@ export class JobManager {
 			};
 			tail.timer = setInterval(() => {
 				tail.pull();
-				// Nothing closes when the last process of a lingering group ends: look.
-				if (job.finished && job.lingering && child.pid !== undefined && !groupAlive(child.pid, this.platform)) {
+				// Nothing closes when the last process of a lingering group ends: look. (On Windows only a stop says.)
+				if (
+					job.finished &&
+					job.lingering &&
+					this.platform !== "win32" &&
+					child.pid !== undefined &&
+					!groupAlive(child.pid, this.platform)
+				) {
 					job.lingering = false;
 					this.closeLog(job);
 				}
@@ -290,7 +311,8 @@ export class JobManager {
 			job.exitCode ??= 1;
 			job.tail?.pull();
 			append(cleaner.push(decoder.decode()) + cleaner.flush());
-			job.lingering = child.pid !== undefined && groupAlive(child.pid, this.platform);
+			job.lingering =
+				child.pid !== undefined && (groupAlive(child.pid, this.platform) || (this.groupPids(job)?.length ?? 0) > 0);
 			let announced = false;
 			const announce = () => {
 				if (announced) return;
@@ -449,17 +471,49 @@ export class JobManager {
 		const pid = job.child.pid;
 		if (pid === undefined || (job.finished && !job.lingering)) return this.info(job);
 		job.stoppedBy ??= by;
-		const kill = this.options.kill ?? runKillStep;
-		const gone = () => job.finished && !groupAlive(pid, this.platform);
-		kill(killPlan(pid, false, this.platform));
-		if (!(await this.until(job, gone, this.options.killGraceMs))) {
-			kill(killPlan(pid, true, this.platform));
-			await this.until(job, gone, FORCE_WAIT_MS);
-		}
+		await this.end(job, pid, this.options.killGraceMs);
 		job.lingering = job.lingering && groupAlive(pid, this.platform);
 		if (!job.lingering) this.closeLog(job);
 		this.emit({ type: "stop", job: this.info(job) });
 		return this.info(job);
+	}
+
+	/**
+	 * Asks the job's processes to end, and forces what is left after `graceMs`. On Windows with Git Bash it forces at
+	 * once, the shell and every process of its group (asking ends no console program there).
+	 */
+	private async end(job: Job, pid: number, graceMs: number, forceWaitMs = FORCE_WAIT_MS): Promise<void> {
+		const kill = this.options.kill ?? runKillStep;
+		const gone = () => job.finished && !groupAlive(pid, this.platform);
+		const group = this.groupPids(job);
+		if (group) {
+			kill(killAllPlan([pid, ...group.filter((member) => member !== pid)]));
+			await this.until(job, gone, forceWaitMs);
+			return;
+		}
+		kill(killPlan(pid, false, this.platform));
+		if (!(await this.until(job, gone, graceMs))) {
+			kill(killPlan(pid, true, this.platform));
+			await this.until(job, gone, forceWaitMs);
+		}
+	}
+
+	/**
+	 * Windows with Git Bash: the Windows pids of the job's MSYS process group, the shell's own among them while it runs.
+	 * Undefined elsewhere, and before the shell has written its group down.
+	 */
+	private groupPids(job: Job): number[] | undefined {
+		const group = job.group;
+		if (this.platform !== "win32" || !group) return undefined;
+		if (group.pgid === undefined) {
+			try {
+				const pgid = Number.parseInt(readFileSync(group.file, "utf8"), 10);
+				if (Number.isInteger(pgid) && pgid > 0) group.pgid = pgid;
+			} catch {
+				// Not written (yet): the shell had not started its script.
+			}
+		}
+		return group.pgid === undefined ? undefined : (this.options.msysGroup ?? msysGroup)(group.ps, group.pgid);
 	}
 
 	/** Polls a condition that a job's end may change; resolves to whether it came true in time. */
@@ -485,20 +539,11 @@ export class JobManager {
 	/** Stops every job. A session must not leave processes behind. Resolves to how many were stopped. */
 	async shutdown(graceMs = Math.min(this.options.killGraceMs, 1500)): Promise<number> {
 		const live = [...this.jobs.values()].filter((job) => !job.finished || job.lingering);
-		const kill = this.options.kill ?? runKillStep;
-		for (const job of live) {
-			job.stoppedBy ??= "shutdown";
-			if (job.child.pid !== undefined) kill(killPlan(job.child.pid, false, this.platform));
-		}
 		await Promise.all(
 			live.map(async (job) => {
+				job.stoppedBy ??= "shutdown";
 				const pid = job.child.pid;
-				if (pid === undefined) return;
-				const gone = () => job.finished && !groupAlive(pid, this.platform);
-				if (!(await this.until(job, gone, graceMs))) {
-					kill(killPlan(pid, true, this.platform));
-					await this.until(job, gone, 500);
-				}
+				if (pid !== undefined) await this.end(job, pid, graceMs, 500);
 				this.closeLog(job);
 			}),
 		);
@@ -528,7 +573,12 @@ export class JobManager {
 			const pid = job.child.pid;
 			if (pid === undefined || (job.finished && !job.lingering)) continue;
 			job.stoppedBy ??= "shutdown";
-			(this.options.kill ?? runKillStep)(killPlan(pid, true, this.platform));
+			const group = this.groupPids(job);
+			(this.options.kill ?? runKillStep)(
+				group
+					? killAllPlan([pid, ...group.filter((member) => member !== pid)])
+					: killPlan(pid, true, this.platform),
+			);
 		}
 	}
 

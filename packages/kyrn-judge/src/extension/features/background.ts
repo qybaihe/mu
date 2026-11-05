@@ -169,12 +169,13 @@ export function registerBackground(runtime: KyrnRuntime): void {
 			maxJobs: options.maxJobs,
 			bufferChars: options.bufferChars,
 			killGraceMs: options.killGraceMs,
-			plan: (command) => {
+			plan: (command, groupFile) => {
 				const kind = shellKind(pi.getActiveTools(), platform);
 				return planSpawn(command, resolveShell(kind, shell.shellPath), {
 					kind,
 					prefix: kind === "bash" ? shell.commandPrefix : undefined,
 					platform,
+					groupFile,
 				});
 			},
 			// As bash's: a command in the background is no less the agent's, and gets none of mu's credentials either.
