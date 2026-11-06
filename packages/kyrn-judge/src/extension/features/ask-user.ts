@@ -133,7 +133,7 @@ export function resultText(
 				...(given.length > 0 ? ["The user answered:", ...given] : []),
 				given.length > 0 ? "They have not answered yet:" : "The user has not answered yet:",
 				...unanswered(questions, answers.length),
-				"This is pending, not a skipped answer, and not permission. Carry on with work that does not depend on the answer. The questions stay open for them: if they answer, the answer comes as a message of theirs.",
+				"This is pending, not a skipped answer, and not permission. Carry on with work that does not depend on the answer. The questions stay open for them: if they answer, the answer comes in a message from them.",
 			].join("\n");
 		case "stopped":
 			return "The user stopped the run while you were asking; nothing was answered.";
@@ -382,7 +382,7 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 			const asking = open.shift();
 			runtime.questionsOpen = open.length;
 			if (!asking) {
-				ctx.ui.notify(say({ zh: "没有等你回答的问题。", en: "No question is waiting for you." }), "info");
+				ctx.ui.notify(say({ zh: "没有等你回答的问题。", en: "No questions are waiting for you." }), "info");
 				return;
 			}
 			const { answers, ended } = await askEach(asking.toolCallId, asking.questions, asking.answers, ctx, undefined);

@@ -199,7 +199,7 @@ On by default: yes.
 
 ## askUser
 
-**Questions for you.** When a decision is yours to make and the request does not settle it, the model can ask you one to four questions with ask_user, each with options to pick from, or you answer in your own words. Each question waits a while; if nobody answers, the agent carries on with what does not depend on it, and /answer brings the questions back. Unattended runs and sub-agents don't have the tool.
+**Questions for you.** When a decision is yours to make and your request doesn't settle it, the model can ask you one to four questions with ask_user. Each has options to pick from, and you can always answer in your own words. Each question waits a while: if nobody answers, the agent carries on with what doesn't depend on it, and /answer brings the questions back. Unattended runs and subagents don't have the tool.
 
 On by default: yes.
 
