@@ -8877,7 +8877,7 @@
 			"fa-IR": "فایل‌های تحویلی"
 		},
 		"features[name=present].summary": {
-			"en": "When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8, each one a file that exists. The desktop app shows them as a card you open each one from. Files the model mentions become links, with the line. Unattended runs and subagents don't have the tool.",
+			"en": "When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8 files, each of which must exist. The desktop app shows them on a card, and you open each one from there. When the model mentions a file that exists, it links to it, down to the line. Unattended runs and subagents don't have the tool.",
 			"zh-TW": "任務做出了你要的檔案（報告、簡報、建置產物、匯出檔），模型在最後用 present 把它們列給你，最多 8 個，每個都必須真實存在；桌面版顯示成一張卡片，點開就能預覽。模型提到的現有檔案寫成可點擊的連結，附行號。無人值守的執行和子代理裡沒有這個工具。",
 			"ja-JP": "依頼したファイル（レポート、スライド、ビルド成果物、エクスポート）がタスクでできたら、モデルは最後に present でそれを渡します。最大 8 個で、どれも実在するファイルです。デスクトップアプリではカードとして表示され、そこから一つずつ開けます。モデルが触れたファイルは行番号付きのリンクになります。無人の実行とサブエージェントにはこのツールはありません。",
 			"ko-KR": "작업에서 요청한 파일(보고서, 슬라이드, 빌드 결과물, 내보낸 파일)이 만들어지면 모델은 마지막에 present로 그 파일을 건넵니다. 최대 8개이며 모두 실제로 있는 파일입니다. 데스크톱 앱에서는 카드로 보이고 거기서 하나씩 열 수 있습니다. 모델이 언급한 파일은 줄 번호가 붙은 링크가 됩니다. 무인 실행과 하위 에이전트에는 이 도구가 없습니다.",

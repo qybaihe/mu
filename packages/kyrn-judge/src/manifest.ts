@@ -1348,7 +1348,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "交付文件", en: "Files handed to you" },
 			summary: {
 				zh: "任务做出了你要的文件（报告、幻灯片、构建产物、导出文件），模型在最后用 present 把它们列给你，最多 8 个，每个都必须真实存在；桌面端显示成一张卡片，点开就能预览。模型提到的现有文件写成可点击的链接，带行号。无人值守的运行和子代理里没有这个工具。",
-				en: "When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8, each one a file that exists. The desktop app shows them as a card you open each one from. Files the model mentions become links, with the line. Unattended runs and subagents don't have the tool.",
+				en: "When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8 files, each of which must exist. The desktop app shows them on a card, and you open each one from there. When the model mentions a file that exists, it links to it, down to the line. Unattended runs and subagents don't have the tool.",
 			},
 			defaultEnabled: true,
 			options: [],
