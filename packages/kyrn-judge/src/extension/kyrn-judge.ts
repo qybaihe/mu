@@ -65,6 +65,7 @@ import { registerPermissions } from "./features/permissions.ts";
 import { registerPlan } from "./features/plan.ts";
 import { registerPrefix } from "./features/prefix.ts";
 import { registerPreflight } from "./features/preflight.ts";
+import { registerPresent } from "./features/present.ts";
 import { registerProcedures } from "./features/procedures.ts";
 import { registerRecall } from "./features/recall.ts";
 import { registerRecovery } from "./features/recovery.ts";
@@ -164,6 +165,7 @@ export type FeatureName =
 	| "recovery"
 	| "recall"
 	| "askUser"
+	| "present"
 	| "plan"
 	| "featureOffers"
 	| "interrupted"
@@ -278,6 +280,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		// Reads back what admission, forgetting and web_fetch left out; they point to it only while the model has it.
 		["recall", registerRecall],
 		["askUser", registerAskUser],
+		["present", registerPresent],
 		["compaction", registerCompaction],
 		[
 			"monitor",

@@ -132,5 +132,9 @@
   },
   "rewind": {
     "action": "回到這則訊息之前"
+  },
+  "deliverables": {
+    "title": "交給你的檔案（{{count}}）",
+    "open": "開啟 {{name}}"
   }
 }

@@ -13,6 +13,7 @@
 //   E2E:SLOW [<n>]       a long reply, one chunk every 200 ms, for stopping in the middle; <n> chunks (150 without it)
 //   E2E:ECHO <text>      replies <text>
 //   E2E:ASK              calls mu's `ask_user` with ASK_QUESTIONS; once the answer is back, says ASK-SAW and what it was
+//   E2E:PRESENT <path>   calls mu's `present` with <path>; once the result is back, says PRESENT-SAW and what it was
 //
 // Anything else (a request mu makes for itself) gets a short neutral reply; the board's writer gets the JSON it asks
 // for. Every completion request is recorded (`GET /__e2e/log` returns them), so a test can check what the model was
@@ -99,7 +100,7 @@ export function planReply(messages) {
   if (/You are the voice of a coding session's status board/.test(system)) {
     return { scenario: 'board', kind: 'text', chunks: [JSON.stringify(BOARD_REPLY)] };
   }
-  const marker = /E2E:(PLAIN|WRITE|BASH|BG|SLOW|ECHO|ASK)(?:[ \t]+([^\n]*))?/.exec(user);
+  const marker = /E2E:(PLAIN|WRITE|BASH|BG|SLOW|ECHO|ASK|PRESENT)(?:[ \t]+([^\n]*))?/.exec(user);
   if (!marker) return { scenario: 'other', kind: 'text', chunks: ['OK.'] };
   const [, name, rawArgument = ''] = marker;
   const argument = rawArgument.trim();
@@ -151,6 +152,16 @@ export function planReply(messages) {
         return { scenario: 'ask', kind: 'tool', tool: 'ask_user', args: { questions: ASK_QUESTIONS } };
       }
       return { scenario: 'ask', kind: 'text', chunks: ['ASK-SAW: ', lastResult.slice(0, 600)], result: lastResult };
+    case 'PRESENT':
+      if (results.length === 0) {
+        return { scenario: 'present', kind: 'tool', tool: 'present', args: { files: [{ path: argument }] } };
+      }
+      return {
+        scenario: 'present',
+        kind: 'text',
+        chunks: ['PRESENT-SAW: ', lastResult.slice(0, 300)],
+        result: lastResult,
+      };
     default:
       return { scenario: 'other', kind: 'text', chunks: ['OK.'] };
   }

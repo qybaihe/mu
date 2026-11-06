@@ -24,6 +24,8 @@ Additional tools may be available.
 - Use edit for targeted changes. Batch changes to one file in a single call.
 - Each edits[].oldText must exactly and uniquely match the original file. Keep matches short and non-overlapping; merge nearby changes without including large unchanged regions.
 - Use write only for new files or complete rewrites.
+- Call present once at the end with the files the user asked for; not to list the source files you edited.
+- When you name a file that exists, link it: [api.ts](src/api.ts#L24), the line as #L24 or #L24-L30, and the file's name as the label.
 - Be concise in your responses
 - Show file paths clearly when working with files
 </rules>
@@ -332,6 +334,48 @@ Ask the user one to four questions, each with options to pick from, when you nee
 			},
 			"minItems": 1,
 			"maxItems": 4
+		}
+	}
+}
+```
+
+## Tool: present
+
+```text
+Hand the user the files this task produced and they asked for (a report, a deck, a build, an export), once, when they are ready: up to 8 files that exist. The user gets them as a list to open.
+```
+
+```json
+{
+	"type": "object",
+	"required": [
+		"files"
+	],
+	"properties": {
+		"files": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"path"
+				],
+				"properties": {
+					"path": {
+						"type": "string",
+						"description": "The file, absolute or from the working folder"
+					},
+					"label": {
+						"type": "string",
+						"description": "What to call it, when not its file name"
+					}
+				}
+			},
+			"minItems": 1,
+			"maxItems": 8
+		},
+		"note": {
+			"type": "string",
+			"description": "One line for the user about them"
 		}
 	}
 }
