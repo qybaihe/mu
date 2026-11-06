@@ -213,6 +213,12 @@ On by default: yes.
 | --- | --- | --- |
 | `waitMs` | `120000` ms | Wait per question. When nobody answers in time, the question stays open and the agent carries on; 0 waits until you answer. Range 0 to 3600000. |
 
+## featureOffers
+
+**Offers of features that are off.** When a task would use a feature that is off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first, and only your yes writes it to mu.json, for the next conversation. One you declined isn't offered again in this conversation. The judge never offers one by itself, and an unattended run writes nothing.
+
+On by default: yes.
+
 ## present
 
 **Files handed to you.** When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8, each one a file that exists. The desktop app shows them as a card you open each one from. Files the model mentions become links, with the line. Unattended runs and subagents don't have the tool.

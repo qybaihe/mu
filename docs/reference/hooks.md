@@ -7,7 +7,7 @@ order of the table in `packages/kyrn-judge/src/extension/kyrn-judge.ts`, and pi 
 order they were registered, except that `tool_call` handlers registered as final run after all the others. So
 the order under each event is the order its handlers run in. `kernel` is what mu registers around the features.
 
-The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `plan`, `permissions`, `admission`, `forgetting`, `recall`, `askUser`, `present`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `recovery`.
+The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `plan`, `permissions`, `admission`, `forgetting`, `recall`, `askUser`, `present`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `featureOffers`, `recovery`.
 
 ## Events
 
@@ -169,7 +169,8 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 17. `sandbox` (off by default)
 18. `packs`
 19. `googleLogin`
-20. `recovery`
+20. `featureOffers`
+21. `recovery`
 
 ### `session_tree`
 
@@ -330,6 +331,7 @@ is marked: two features that set it in the same turn decide between them by the 
 | `lastAssistantText` | `extension/kyrn-judge.ts` | `extension/features/admission.ts`, `extension/features/interjection.ts`, `extension/features/lsp.ts`, `extension/features/memory.ts`, `extension/features/notify.ts`, `extension/features/warming.ts` |
 | `notify` | `extension/features/notify.ts` | `extension/features/background.ts` |
 | `nudges` | `extension/kyrn-judge.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts` |
+| `offerFeature` | `extension/features/feature-offers.ts` | `extension/features/catalog.ts` |
 | `onFreeJev` | `extension/features/free-jev.ts` | `extension/runtime.ts` |
 | `onOpenAIKey` | `extension/features/openai-key.ts` | `extension/runtime.ts` |
 | `onPresentation` | `extension/kyrn-judge.ts` | `extension/runtime.ts` |
