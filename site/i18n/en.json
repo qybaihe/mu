@@ -39,7 +39,8 @@
     "term_label": "Recording of the mu command line",
     "term_note": "In this recording, the coding model's replies are scripted; the judge's answers are live.",
     "star_cta_h2": "If mu is useful to you, star it on GitHub",
-    "star_cta_button": "Star on GitHub"
+    "star_cta_button": "Star on GitHub",
+    "edit_page": "Edit this page on GitHub"
   },
   "home": {
     "h1": "Most of what your agent decides<wbr> <em>isn't code</em>",

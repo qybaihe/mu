@@ -39,7 +39,8 @@
     "term_label": "mu 命令行的录屏",
     "term_note": "录屏里大模型的回复是预先写好的，判定器的回答是现场给出的。",
     "star_cta_h2": "喜欢 mu，就去 GitHub 点个 Star",
-    "star_cta_button": "在 GitHub 上 Star"
+    "star_cta_button": "在 GitHub 上 Star",
+    "edit_page": "在 GitHub 上编辑此页"
   },
   "home": {
     "h1": "编码代理的决定，<wbr>大多<em>不是代码</em>",

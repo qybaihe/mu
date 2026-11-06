@@ -744,8 +744,10 @@ def main():
             front, body = load_doc(lang, slug)
             if not (here / "content" / "docs" / lang / f"{slug}.md").exists():
                 fallbacks.append(f"{lang}/{slug}")
+            doc_file = f"site/content/docs/{lang}/{slug}.md" if (here / "content" / "docs" / lang / f"{slug}.md").exists() else f"site/content/docs/en/{slug}.md"
             docs[slug] = {"slug": slug, "section": U["sections"][section], "section_key": section, "title": fill(front["title"], facts),
-                          "summary": fill(front["summary"], facts), "source": fill(body, facts), "page": PAGES[f"docs/{slug}"]}
+                          "summary": fill(front["summary"], facts), "source": fill(body, facts), "page": PAGES[f"docs/{slug}"],
+                          "edit_url": f"{REPO}/edit/main/{doc_file}"}
         sidebar = [{"title": U["sections"][s], "entries": [docs[slug] for slug, sec in DOCS if sec == s]} for s in ("start", "use", "ref")]
         # The banner: the newest release's version in the pill, then mu's one line on what it is for (the same for every
         # release) and the mu-agent the release carries.
