@@ -273,6 +273,70 @@ Read back an earlier tool result in full where mu left part of it out; mu's note
 }
 ```
 
+## Tool: ask_user
+
+```text
+Ask the user one to four questions, each with options to pick from, when you need a decision only they can make and their request does not settle it. Not for a go-ahead on work they asked for, nor to confirm a plan you can carry out. Put the option you recommend first, with "(Recommended)" after its label. They can always answer in their own words. If nobody answers within 120 seconds you are told so: carry on with work that does not depend on the answer.
+```
+
+```json
+{
+	"type": "object",
+	"required": [
+		"questions"
+	],
+	"properties": {
+		"questions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"question",
+					"options"
+				],
+				"properties": {
+					"question": {
+						"type": "string",
+						"description": "The whole question"
+					},
+					"header": {
+						"type": "string",
+						"description": "A short label for it, a few words"
+					},
+					"options": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"required": [
+								"label"
+							],
+							"properties": {
+								"label": {
+									"type": "string",
+									"description": "The choice, in a few words"
+								},
+								"description": {
+									"type": "string",
+									"description": "What picking it means"
+								}
+							}
+						},
+						"minItems": 2,
+						"maxItems": 6
+					},
+					"multiSelect": {
+						"type": "boolean",
+						"description": "They may pick more than one"
+					}
+				}
+			},
+			"minItems": 1,
+			"maxItems": 4
+		}
+	}
+}
+```
+
 ## Tool: lsp
 
 ```text

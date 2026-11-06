@@ -197,6 +197,8 @@ export class KyrnRuntime {
 	stateDir: string | undefined;
 	/** A goal is set and running: deciding whether the agent may stop is the goal feature's job, nobody else's. */
 	goalActive = false;
+	/** Sets of questions the model asked with ask_user that nobody answered in time and that still wait for /answer. */
+	questionsOpen = 0;
 	/** The harness itself cut the run that is ending (mid-stream correction), and will start the next one. Not the user's Esc. */
 	harnessAbort = false;
 	/**

@@ -8,7 +8,7 @@ import { failOpen, type KyrnRuntime } from "../runtime.ts";
  * Such a run gets a lean profile. Each part has an option that turns it back on:
  * - preflight is not asked (`preflight.unattended`);
  * - capability disclosure is not asked, and packs stay hidden as always (`catalog.askUnattended`);
- * - tools and skills that need a person, a later session or a sub-agent are left out of the request
+ * - tools and skills that need a person, a later session or a sub-agent are left out of the request (ask_user among them)
  *   (`catalog.unattendedHidden`), except `find_capability` when an MCP server is installed
  *   (`catalog.unattendedFindWithMcp`);
  * - the drift check is not asked (`monitor.unattended`, below), nor notification routing (`notify.unattended`);

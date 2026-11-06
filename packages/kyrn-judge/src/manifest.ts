@@ -692,6 +692,7 @@ const DESCRIBED: HarnessManifest = {
 						"find_skill",
 						"find_capability",
 						"hive",
+						"ask_user",
 						"mu-browser",
 					],
 					label: {
@@ -1294,6 +1295,30 @@ const DESCRIBED: HarnessManifest = {
 					max: 200000,
 					unit: chars,
 					label: { zh: "一次取回最多返回", en: "Max text per recall call" },
+				},
+			],
+		},
+		{
+			name: "askUser",
+			title: { zh: "向你提问", en: "Questions for you" },
+			summary: {
+				zh: "遇到只有你能拍板、请求里又没说清的事，模型可以用 ask_user 一次问你一到四个问题，每题给几个选项，你也可以自己写答案。每题最多等一段时间；没人回答，代理就先做不依赖答案的事，问题留着，输入 /answer 再答。无人值守的运行和子代理里没有这个工具。",
+				en: "When a decision is yours to make and the request does not settle it, the model can ask you one to four questions with ask_user, each with options to pick from, or you answer in your own words. Each question waits a while; if nobody answers, the agent carries on with what does not depend on it, and /answer brings the questions back. Unattended runs and sub-agents don't have the tool.",
+			},
+			defaultEnabled: true,
+			options: [
+				{
+					key: "waitMs",
+					kind: "number",
+					default: 120000,
+					min: 0,
+					max: 3600000,
+					unit: ms,
+					label: { zh: "每题最多等", en: "Wait per question" },
+					help: {
+						zh: "到时没人回答，问题先留着，代理接着做别的；0 表示一直等到你回答。",
+						en: "When nobody answers in time, the question stays open and the agent carries on; 0 waits until you answer.",
+					},
 				},
 			],
 		},
@@ -3069,7 +3094,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "你打断的回复", en: "Replies you stop" },
 			summary: {
 				zh: "你在回复写到一半时打断它，pi 会把整条回复从下次发给模型的内容里去掉，于是你说「停，展开第二点」时，模型手里没有第二点。mu 把你已经看到的那部分文字作为只给模型看的消息还给它，不带推理过程和工具调用。mu 自己掐断的回复（长时间只思考、违反规则）不在此列，它们各自会说明。",
-				en: 'When you stop a reply while it\'s being written, pi leaves the whole reply out of what the model is sent next, so after "stop, and expand your second point" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) aren\'t given back: those say what they cut.',
+				en: "When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after \"stop, and expand your second point\" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) aren't given back: those say what they cut.",
 			},
 			defaultEnabled: true,
 			options: [],

@@ -7,7 +7,7 @@ order of the table in `packages/kyrn-judge/src/extension/kyrn-judge.ts`, and pi 
 order they were registered, except that `tool_call` handlers registered as final run after all the others. So
 the order under each event is the order its handlers run in. `kernel` is what mu registers around the features.
 
-The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `permissions`, `admission`, `forgetting`, `recall`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `recovery`.
+The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `permissions`, `admission`, `forgetting`, `recall`, `askUser`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `recovery`.
 
 ## Events
 
@@ -53,12 +53,13 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 5. `skills`
 6. `catalog`
 7. `injection`
-8. `monitor`
-9. `notify`
-10. `hive`
-11. `inherit`
-12. `mcp`
-13. `packs`
+8. `askUser`
+9. `monitor`
+10. `notify`
+11. `hive`
+12. `inherit`
+13. `mcp`
+14. `packs`
 
 ### `before_provider_request`
 
@@ -130,18 +131,19 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 2. `preflight`
 3. `frame`
 4. `forgetting`
-5. `monitor`
-6. `deadline`
-7. `lsp`
-8. `board`
-9. `checkpoint`
-10. `notify`
-11. `warmup`
-12. `swarm`
-13. `browser`
-14. `mcp`
-15. `background`
-16. `packs`
+5. `askUser`
+6. `monitor`
+7. `deadline`
+8. `lsp`
+9. `board`
+10. `checkpoint`
+11. `notify`
+12. `warmup`
+13. `swarm`
+14. `browser`
+15. `mcp`
+16. `background`
+17. `packs`
 
 ### `session_start`
 
@@ -232,6 +234,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 | `find_skill` | `skills` |
 | `find_capability` | `catalog` |
 | `recall` | `recall` |
+| `ask_user` | `askUser` |
 | `lsp` | `lsp` |
 | `apply_patch_from` | `swarm` |
 | `delegate` | `swarm` |
@@ -261,6 +264,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 | `/skills` | `procedures` |
 | `/capabilities` | `catalog` |
 | `/permissions` | `permissions` |
+| `/answer` | `askUser` |
 | `/lsp` | `lsp` |
 | `/goal` | `goal` |
 | `/board` | `board` |
@@ -323,6 +327,7 @@ is marked: two features that set it in the same turn decide between them by the 
 | `onProgress` | `extension/features/preflight.ts` | `extension/runtime.ts` |
 | `onTurnBegin` | `extension/features/frame.ts` | `extension/runtime.ts` |
 | `permissionMode` | `extension/features/permissions.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/guard.ts`, `extension/features/swarm.ts` |
+| `questionsOpen` | `extension/features/ask-user.ts` | `extension/features/continuation.ts` |
 | `skillsHidden` | `extension/features/skills.ts` | `extension/features/swarm.ts` |
 | `stateDir` | `extension/kyrn-judge.ts` | `extension/features/tool-descriptions.ts` |
 | `toolCalls` | `extension/features/preflight.ts` | `extension/features/preflight.ts` |
