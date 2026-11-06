@@ -4394,6 +4394,41 @@
 			]
 		},
 		{
+			"name": "featureOffers",
+			"title": {
+				"zh": "推荐默认关闭的功能",
+				"en": "Offers of features that are off",
+				"zh-TW": "推薦預設關閉的功能",
+				"ja-JP": "オフの機能の提案",
+				"ko-KR": "꺼진 기능 제안",
+				"de-DE": "Angebote ausgeschalteter Funktionen",
+				"fr-FR": "Propositions de fonctions désactivées",
+				"es-ES": "Ofertas de funciones desactivadas",
+				"pt-BR": "Ofertas de recursos desligados",
+				"ru-RU": "Предложения выключенных функций",
+				"uk-UA": "Пропозиції вимкнених функцій",
+				"tr-TR": "Kapalı özellik önerileri",
+				"fa-IR": "پیشنهاد قابلیت‌های خاموش"
+			},
+			"summary": {
+				"zh": "任务用得上某个默认关闭的功能（免摘要压缩、流中纠偏、写入沙箱）时，模型可以提议打开它：mu 先问你，你同意了才写进 mu.json，下一个会话起生效。你拒绝过的，这次对话里不会再提。判定器不会自己提议，无人值守的运行里什么都不写。",
+				"en": "When a task would use a feature that is off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first, and only your yes writes it to mu.json, for the next conversation. One you declined isn't offered again in this conversation. The judge never offers one by itself, and an unattended run writes nothing.",
+				"zh-TW": "任務用得上某個預設關閉的功能（免摘要壓縮、串流中糾偏、寫入沙箱）時，模型可以提議開啟它：mu 會先問你，你同意了才寫進 mu.json，下一個會話起生效。你拒絕過的，這次對話裡不會再提。判定器不會自己提議，無人值守的執行裡什麼都不寫。",
+				"ja-JP": "既定でオフの機能（要約なしの圧縮、出力途中の修正、書き込みサンドボックス）がタスクに役立つとき、モデルはそれをオンにするよう提案できます。mu はまずあなたにたずね、あなたが承諾したときだけ mu.json に書き込み、次の会話から有効になります。断った機能はこの会話では二度と提案されません。判定器が自分から提案することはなく、無人の実行では何も書き込みません。",
+				"ko-KR": "기본으로 꺼져 있는 기능(요약 없는 압축, 출력 중 바로잡기, 쓰기 샌드박스)이 작업에 쓸모 있을 때 모델은 그 기능을 켜자고 제안할 수 있습니다. mu가 먼저 묻고, 동의할 때만 mu.json에 기록하며 다음 대화부터 적용됩니다. 거절한 기능은 이 대화에서 다시 제안하지 않습니다. 판정기가 스스로 제안하는 일은 없고, 무인 실행에서는 아무것도 기록하지 않습니다.",
+				"de-DE": "Wenn eine Aufgabe eine standardmäßig ausgeschaltete Funktion brauchen könnte (Komprimierung ohne Zusammenfassung, Korrektur im Stream, Schreib-Sandbox), kann das Modell anbieten, sie einzuschalten. mu fragt dich zuerst, und nur dein Ja schreibt sie in mu.json, ab der nächsten Unterhaltung. Eine abgelehnte wird in dieser Unterhaltung nicht noch einmal angeboten. Der Judge bietet nie von sich aus eine an, und ein unbeaufsichtigter Lauf schreibt nichts.",
+				"fr-FR": "Quand une tâche pourrait utiliser une fonction désactivée par défaut (compaction sans résumé, correction en cours de flux, bac à sable d’écriture), le modèle peut proposer de l’activer. mu vous le demande d’abord, et seul votre oui l’écrit dans mu.json, pour la conversation suivante. Une fonction refusée n’est plus proposée dans cette conversation. Le juge n’en propose jamais de lui-même, et une exécution sans surveillance n’écrit rien.",
+				"es-ES": "Cuando una tarea podría usar una función desactivada por defecto (compactación sin resumen, corrección a mitad de salida, sandbox de escritura), el modelo puede ofrecer activarla. mu te pregunta primero, y solo tu sí la escribe en mu.json, para la siguiente conversación. Una que rechazaste no se vuelve a ofrecer en esta conversación. El juez nunca ofrece una por su cuenta, y una ejecución desatendida no escribe nada.",
+				"pt-BR": "Quando uma tarefa poderia usar um recurso desligado por padrão (compactação sem resumo, correção no meio da saída, sandbox de escrita), o modelo pode oferecer ligá-lo. O mu pergunta a você primeiro, e só o seu sim o grava no mu.json, para a próxima conversa. Um que você recusou não é oferecido de novo nesta conversa. O juiz nunca oferece um por conta própria, e uma execução sem supervisão não grava nada.",
+				"ru-RU": "Когда задаче пригодилась бы функция, выключенная по умолчанию (сжатие без пересказа, исправление на лету, песочница записи), модель может предложить её включить. mu сначала спрашивает вас, и только ваше «да» записывает её в mu.json — со следующего диалога. Отклонённую функцию в этом диалоге больше не предлагают. Судья никогда не предлагает сам, а запуск без присмотра ничего не записывает.",
+				"uk-UA": "Коли завданню знадобилася б функція, вимкнена за замовчуванням (стиснення без переказу, виправлення на льоту, пісочниця запису), модель може запропонувати її ввімкнути. mu спершу питає вас, і лише ваше «так» записує її в mu.json — з наступної розмови. Відхилену функцію в цій розмові більше не пропонують. Суддя ніколи не пропонує сам, а запуск без нагляду нічого не записує.",
+				"tr-TR": "Bir görev varsayılan olarak kapalı bir özellikten (özetsiz sıkıştırma, akış sırasında düzeltme, yazma korumalı alanı) yararlanabilecekse model onu açmayı önerebilir. mu önce size sorar ve yalnızca evet derseniz mu.json'a yazar; bir sonraki konuşmadan itibaren geçerli olur. Reddettiğiniz bir özellik bu konuşmada yeniden önerilmez. Hakem hiçbir zaman kendiliğinden önermez ve gözetimsiz bir çalıştırma hiçbir şey yazmaz.",
+				"fa-IR": "وقتی کاری می‌تواند از قابلیتی که به‌طور پیش‌فرض خاموش است استفاده کند (فشرده‌سازی بدون خلاصه، اصلاح در میانهٔ خروجی، جعبهٔ شنی نوشتن)، مدل می‌تواند روشن کردنش را پیشنهاد دهد. mu اول از شما می‌پرسد و فقط با موافقت شما آن را در mu.json می‌نویسد، از گفتگوی بعدی. قابلیتی که رد کرده‌اید در این گفتگو دوباره پیشنهاد نمی‌شود. داور هرگز خودش پیشنهاد نمی‌دهد و اجرای بدون ناظر چیزی نمی‌نویسد."
+			},
+			"defaultEnabled": true,
+			"options": []
+		},
+		{
 			"name": "compaction",
 			"title": {
 				"zh": "免摘要压缩",
