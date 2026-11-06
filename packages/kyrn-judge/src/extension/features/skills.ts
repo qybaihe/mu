@@ -3,7 +3,18 @@ import type { Decision } from "../../decision.ts";
 import { type SkillCandidate, type SkillDisclosureOutcome, skillDisclosure } from "../../decisions/skill-disclosure.ts";
 import { inheritedNames, SKILLS_HIDDEN_ENV } from "../../swarm/brief.ts";
 import { failOpen, type KyrnRuntime, userWords } from "../runtime.ts";
+import type { HarnessRoots } from "./inherit.ts";
+import {
+	LISTED_ADDED,
+	type ListedSkill,
+	refreshMessage,
+	SkillRefresh,
+	scanSkillFolders,
+	skillFolders,
+} from "./skill-refresh.ts";
 
+/** The message that tells the model which skills were installed or removed during the session. */
+export const SKILLS_CHANGED_MESSAGE = "kyrn.skills-changed";
 interface HiddenSkill {
 	name: string;
 	description: string;
@@ -15,6 +26,11 @@ interface PromptSkill extends SkillCandidate {
 	readonly filePath: string;
 	readonly disableModelInvocation?: boolean;
 }
+
+const listedOf = (skills: readonly PromptSkill[]): ListedSkill[] =>
+	skills
+		.filter((skill) => !skill.disableModelInvocation)
+		.map(({ name, description, filePath }) => ({ name, description, filePath }));
 
 /**
  * A6: the first message of a session decides which skill descriptions the
@@ -33,8 +49,13 @@ interface PromptSkill extends SkillCandidate {
  * is not on the context of an `input` event, so it is taken from the last turn, and before the first turn from the
  * skill commands, which list the same skills. Asked only once the turn starts, it waited for preflight first: in the
  * owner's sessions that added a median 0.7 s to every message before the model started.
+ *
+ * pi loads the skills once, at the start and on `/reload`, so a skill installed later (`/skills accept`, a SKILL.md
+ * the user or the agent wrote) is missing from the prompt, and a deleted one is still in it. With each message of the
+ * user the folders pi finds skills in are read again (`refresh`), and what changed is told in one message: the prompt
+ * stays as it was, and so does its cached prefix. Not in a sub-agent, whose list is loaded when it starts.
  */
-export function registerSkills(runtime: KyrnRuntime): void {
+export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void {
 	const options = runtime.options("skills", {
 		enabled: true,
 		minSkills: 4,
@@ -44,6 +65,8 @@ export function registerSkills(runtime: KyrnRuntime): void {
 		subagentsInherit: true,
 		/** Ask when the message arrives, alongside preflight, instead of after preflight's wait. */
 		askEarly: true,
+		/** Tell the model, with the user's next message, of skills installed or removed during the session. */
+		refresh: true,
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
@@ -53,6 +76,10 @@ export function registerSkills(runtime: KyrnRuntime): void {
 	const inherited = inheritedNames(SKILLS_HIDDEN_ENV);
 	/** The first verdict, when it came too late for its turn: the skills it was asked about, and what it said once it came. */
 	let late: { skills: readonly PromptSkill[]; decision?: Decision<SkillDisclosureOutcome> } | undefined;
+	/** The prompt's whole list as pi loaded it, before this feature hid any. */
+	let loaded: readonly ListedSkill[] = [];
+	/** Skills installed during the session that the model was told of, by name. */
+	const added = new Map<string, ListedSkill>();
 
 	const visibleOf = (all: readonly PromptSkill[]) => all.filter((skill) => !skill.disableModelInvocation);
 	const disclose = (words: string, skills: readonly SkillCandidate[], signal?: AbortSignal) =>
@@ -110,6 +137,30 @@ export function registerSkills(runtime: KyrnRuntime): void {
 			return [...names];
 		};
 	}
+	// Before the handler below hides any skill from the list it reads.
+	const refresh = options.refresh && roots && !process.env.KYRN_SWARM_DEPTH ? new SkillRefresh() : undefined;
+	pi.on(
+		"before_agent_start",
+		failOpen((event, ctx) => {
+			loaded = listedOf(event.systemPromptOptions.skills ?? []);
+			if (!refresh || !roots || event.messageType !== "user") return undefined;
+			const folders = skillFolders(roots.agentDir, roots.home, ctx.cwd, ctx.isProjectTrusted());
+			const change = refresh.update(loaded, scanSkillFolders(folders));
+			// What pi loaded is in the prompt now: after a `/reload` nothing is added any more.
+			for (const skill of loaded) added.delete(skill.name);
+			for (const skill of change.removed) {
+				added.delete(skill.name);
+				hidden.delete(skill.name);
+			}
+			for (const skill of change.added) added.set(skill.name, skill);
+			// The ones the message only names: find_skill lists them, and a later verdict may announce them.
+			for (const skill of change.added.slice(LISTED_ADDED)) hidden.set(skill.name, { ...skill, announced: false });
+			const content = refreshMessage(change);
+			if (!content) return undefined;
+			return { message: { customType: SKILLS_CHANGED_MESSAGE, content, display: true } };
+		}),
+	);
+
 	runtime.atTurnStart((words) => {
 		if (!options.askEarly || inherited || runtime.mode(skillDisclosure.id) === "off") return;
 		// Before asking which hidden skills to announce: a late first verdict decides which ones are hidden.

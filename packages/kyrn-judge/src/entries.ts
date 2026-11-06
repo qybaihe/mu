@@ -521,6 +521,14 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 		summary: "The skills that apply to the task.",
 	},
 	{
+		type: "kyrn.skills-changed",
+		kind: "message",
+		version: 1,
+		writers: [features("skills")],
+		readers: [],
+		summary: "Skills installed or removed during the session, which the system prompt's list does not show.",
+	},
+	{
 		type: "mu.import",
 		kind: "message",
 		version: 1,

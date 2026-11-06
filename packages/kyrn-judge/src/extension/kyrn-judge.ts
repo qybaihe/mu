@@ -254,7 +254,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["frame", registerFrame],
 		["memory", (shared) => registerMemory(shared, roots)],
 		["procedures", (shared) => registerProcedures(shared, roots)],
-		["skills", registerSkills],
+		["skills", (shared) => registerSkills(shared, roots)],
 		// Registered before the features that add capabilities, and that is fine: it reads the catalog when a turn starts.
 		["catalog", registerCatalog],
 		// Before admission, which then archives the screened text, and before the MCP feature, whose label goes in front of it.

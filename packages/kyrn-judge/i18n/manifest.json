@@ -8400,6 +8400,34 @@
 			"tr-TR": "Mesaj ön sınıflandırmasıyla aynı anda sorulur; böylece tur art arda iki kararı beklemez. Kapalı: ön sınıflandırma bittikten sonra sorulur.",
 			"fa-IR": "هم‌زمان با پیش‌بررسی پیام پرسیده می‌شود تا نوبت پشت سر هم منتظر دو نتیجهٔ داوری نماند. خاموش: پس از پایان پیش‌بررسی پرسیده می‌شود."
 		},
+		"features[name=skills].options[key=refresh].label": {
+			"en": "Tell the agent of skills installed mid-session",
+			"zh-TW": "會話中途裝的技能告訴代理",
+			"ja-JP": "セッション途中で入れたスキルをエージェントに伝える",
+			"ko-KR": "세션 중에 설치한 스킬을 에이전트에게 알리기",
+			"de-DE": "Mitten in der Sitzung installierte Skills dem Agenten mitteilen",
+			"fr-FR": "Signaler à l’agent les skills installés en cours de session",
+			"es-ES": "Avisar al agente de las skills instaladas a mitad de sesión",
+			"pt-BR": "Avisar o agente das skills instaladas no meio da sessão",
+			"ru-RU": "Сообщать агенту о навыках, установленных посреди сеанса",
+			"uk-UA": "Повідомляти агента про навички, встановлені посеред сеансу",
+			"tr-TR": "Oturum ortasında kurulan becerileri ajana bildir",
+			"fa-IR": "خبر دادن مهارت‌های نصب‌شده در میانهٔ نشست به عامل"
+		},
+		"features[name=skills].options[key=refresh].help": {
+			"en": "Skills installed or removed during a session (such as one /skills accept installs) are told to the agent in a message with your next one. The system prompt stays as it is, and so does its cached prefix. Off: they wait for the next session or /reload.",
+			"zh-TW": "會話中途裝上或刪掉的技能（例如 /skills accept 裝的），在你送出下一則訊息時用一則訊息告訴代理。系統提示詞不變，快取的前綴也不受影響。關閉：要等下次會話或 /reload。",
+			"ja-JP": "セッション中に入れた・消したスキル（/skills accept で入れたものなど）は、次にメッセージを送ったときに 1 通のメッセージでエージェントに伝えます。システムプロンプトは変わらず、キャッシュされたプレフィックスもそのままです。オフの場合は、次のセッションか /reload まで待ちます。",
+			"ko-KR": "세션 중에 설치하거나 삭제한 스킬(/skills accept로 설치한 것 등)은 다음 메시지를 보낼 때 메시지 하나로 에이전트에게 알립니다. 시스템 프롬프트는 그대로이고 캐시된 접두부도 영향을 받지 않습니다. 끄면 다음 세션이나 /reload까지 기다립니다.",
+			"de-DE": "Skills, die während einer Sitzung installiert oder entfernt werden (etwa einer, den /skills accept installiert), werden dem Agenten mit deiner nächsten Nachricht in einer Nachricht mitgeteilt. Der Systemprompt bleibt, wie er ist, und sein zwischengespeichertes Präfix ebenso. Aus: Sie warten auf die nächste Sitzung oder /reload.",
+			"fr-FR": "Les skills installés ou supprimés pendant une session (comme celui qu’installe /skills accept) sont signalés à l’agent dans un message, avec ton message suivant. Le prompt système reste tel quel, et son préfixe en cache aussi. Désactivé : ils attendent la session suivante ou /reload.",
+			"es-ES": "Las skills instaladas o eliminadas durante una sesión (como la que instala /skills accept) se comunican al agente en un mensaje junto con tu siguiente mensaje. El prompt del sistema no cambia, ni su prefijo en caché. Desactivado: esperan a la siguiente sesión o a /reload.",
+			"pt-BR": "Skills instaladas ou removidas durante uma sessão (como a que /skills accept instala) são comunicadas ao agente em uma mensagem junto com a sua próxima. O prompt do sistema continua como está, e o prefixo em cache também. Desativado: elas esperam a próxima sessão ou /reload.",
+			"ru-RU": "О навыках, установленных или удалённых во время сеанса (например, установленном через /skills accept), агенту сообщается отдельным сообщением вместе с вашим следующим. Системный промпт остаётся прежним, как и его кешированный префикс. Выключено: они ждут следующего сеанса или /reload.",
+			"uk-UA": "Про навички, встановлені або видалені під час сеансу (наприклад, встановлену через /skills accept), агенту повідомляється окремим повідомленням разом із вашим наступним. Системний промпт лишається незмінним, як і його кешований префікс. Вимкнено: вони чекають наступного сеансу або /reload.",
+			"tr-TR": "Oturum sırasında kurulan veya silinen beceriler (örneğin /skills accept ile kurulan) bir sonraki mesajınla birlikte bir mesajla ajana bildirilir. Sistem istemi olduğu gibi kalır, önbelleğe alınmış öneki de. Kapalı: bir sonraki oturumu veya /reload'u beklerler.",
+			"fa-IR": "مهارت‌هایی که در طول نشست نصب یا حذف می‌شوند (مثلاً مهارتی که /skills accept نصب می‌کند) با پیام بعدی شما در یک پیام به عامل گفته می‌شوند. پرامپت سیستمی همان می‌ماند و پیشوند کش‌شده‌اش هم. خاموش: تا نشست بعدی یا /reload صبر می‌کنند."
+		},
 		"features[name=catalog].options[key=subagentsInherit].label": {
 			"en": "Subagents take this session's capabilities",
 			"zh-TW": "子代理沿用這裡開啟的能力",

@@ -50,7 +50,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 2. `preflight`
 3. `frame`
 4. `memory`
-5. `skills`
+5. `skills` ×2
 6. `catalog`
 7. `injection`
 8. `monitor`

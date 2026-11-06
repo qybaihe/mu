@@ -650,6 +650,16 @@ const DESCRIBED: HarnessManifest = {
 						en: "Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done.",
 					},
 				},
+				{
+					key: "refresh",
+					kind: "boolean",
+					default: true,
+					label: { zh: "会话中途装的技能告诉代理", en: "Tell the agent of skills installed mid-session" },
+					help: {
+						zh: "会话中途装上或删掉的技能（比如 /skills accept 装的），在你发下一条消息时用一条消息告诉代理。系统提示词不变，缓存的前缀也不受影响。关掉则要等下次会话或 /reload。",
+						en: "Skills installed or removed during a session (such as one /skills accept installs) are told to the agent in a message with your next one. The system prompt stays as it is, and so does its cached prefix. Off: they wait for the next session or /reload.",
+					},
+				},
 			],
 		},
 		{
@@ -3069,7 +3079,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "你打断的回复", en: "Replies you stop" },
 			summary: {
 				zh: "你在回复写到一半时打断它，pi 会把整条回复从下次发给模型的内容里去掉，于是你说「停，展开第二点」时，模型手里没有第二点。mu 把你已经看到的那部分文字作为只给模型看的消息还给它，不带推理过程和工具调用。mu 自己掐断的回复（长时间只思考、违反规则）不在此列，它们各自会说明。",
-				en: 'When you stop a reply while it\'s being written, pi leaves the whole reply out of what the model is sent next, so after "stop, and expand your second point" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) aren\'t given back: those say what they cut.',
+				en: "When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after \"stop, and expand your second point\" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) aren't given back: those say what they cut.",
 			},
 			defaultEnabled: true,
 			options: [],
