@@ -3,6 +3,7 @@ import type { IMessageAcpToolCall, TMessage } from '@/common/chat/chatLib';
 import { normalizeAcpToolCall } from '@/common/chat/normalizeToolCall';
 import { emptyView, reduce, reduceAll, type NativeView, type PiRecord } from '@/common/utils/nativeHost';
 import { judgeLine } from '@/renderer/pages/conversation/Messages/acp/judgeLine';
+import { deliverables } from '@/renderer/pages/conversation/Messages/acp/MessageDeliverables';
 import { muNotice } from '@/renderer/pages/conversation/Messages/acp/muNotice';
 import { findMuTurnError } from '@/renderer/utils/chat/muTurnErrors';
 import { createMessageMapper, toMessages, type MessageOptions } from '@/renderer/pages/native/utils/toMessages';
@@ -247,6 +248,24 @@ describe('rows written by hand', () => {
       'call bash error: ',
     ]);
     expect(tool(list, 0).content.update.rawOutput).toEqual({ notice: 'bash_missing' });
+  });
+
+  it('passes the files mu’s present handed over to the row, which the conversation shows as their card', () => {
+    const details = {
+      files: [{ path: '/work/out/report.pdf', name: 'report.pdf', bytes: 2048 }],
+      note: 'The numbers you asked for.',
+    };
+    const view = reduceAll([
+      ended(user('write the report')),
+      ended(reply([toolCall('c1', 'present', { files: [{ path: 'out/report.pdf' }] })], { stopReason: 'toolUse' })),
+      ended(toolResult('c1', 'Presented to the user (1 file):', false, { toolName: 'present', details })),
+    ]);
+    const row = tool(rows(view), 0);
+    expect(row.content.update.rawOutput).toEqual(details);
+    expect(deliverables(row)).toEqual({
+      files: [{ path: '/work/out/report.pdf', name: 'report.pdf', bytes: 2048 }],
+      note: 'The numbers you asked for.',
+    });
   });
 
   it('shows what an extension shows the person, and nothing for an empty message', () => {

@@ -2313,6 +2313,8 @@ export type I18nKey =
   | 'messages.copyFilesHeader'
   | 'messages.copyLastOutput.empty'
   | 'messages.copySuccess'
+  | 'messages.deliverables.open'
+  | 'messages.deliverables.title'
   | 'messages.delivery.pending'
   | 'messages.downloadFailed'
   | 'messages.downloadSuccess'

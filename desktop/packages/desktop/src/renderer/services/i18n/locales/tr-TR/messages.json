@@ -132,5 +132,9 @@
   },
   "rewind": {
     "action": "Bu mesajdan öncesine dön"
+  },
+  "deliverables": {
+    "title": "Sizin için dosyalar ({{count}})",
+    "open": "{{name}} dosyasını aç"
   }
 }

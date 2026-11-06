@@ -29,6 +29,7 @@ import MessageAcpToolCall from '@renderer/pages/conversation/Messages/acp/Messag
 import MessageJudgeLine from '@renderer/pages/conversation/Messages/acp/MessageJudgeLine';
 import { judgeLine } from '@renderer/pages/conversation/Messages/acp/judgeLine';
 import MessageMuNotice from '@renderer/pages/conversation/Messages/acp/MessageMuNotice';
+import MessageDeliverables, { deliverables } from '@renderer/pages/conversation/Messages/acp/MessageDeliverables';
 import { muNotice } from '@renderer/pages/conversation/Messages/acp/muNotice';
 import { questionsBeforeCalls } from './permissionOrder';
 import classNames from 'classnames';
@@ -447,11 +448,10 @@ const MessageItem: React.FC<{
           const verdict = judgeLine(message);
           if (verdict) return <MessageJudgeLine line={verdict} />;
           const notice = muNotice(message);
-          return notice ? (
-            <MessageMuNotice notice={notice} />
-          ) : (
-            <MessageAcpToolCall message={message}></MessageAcpToolCall>
-          );
+          if (notice) return <MessageMuNotice notice={notice} />;
+          const delivered = deliverables(message);
+          if (delivered) return <MessageDeliverables delivered={delivered} />;
+          return <MessageAcpToolCall message={message}></MessageAcpToolCall>;
         }
         case 'acp_terminal_output':
           return <MessageAcpTerminalOutput message={message}></MessageAcpTerminalOutput>;
@@ -734,7 +734,7 @@ const MessageList: React.FC<{
         if (verdict?.stage === 'quiet' || (verdict?.stage === 'noJudge' && saidNoJudge)) continue;
         if (verdict?.stage === 'noJudge') saidNoJudge = true;
         // The judge's class for the message and the bridge's notices are lines of their own, not calls in the tool box.
-        if (hasRenderableAcpDiff(message) || verdict || muNotice(message)) {
+        if (hasRenderableAcpDiff(message) || verdict || muNotice(message) || deliverables(message)) {
           pushStandaloneMessage(message);
           continue;
         }

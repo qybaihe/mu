@@ -132,5 +132,9 @@
   },
   "rewind": {
     "action": "이 메시지 이전으로 되돌리기"
+  },
+  "deliverables": {
+    "title": "전달된 파일 ({{count}})",
+    "open": "{{name}} 열기"
   }
 }

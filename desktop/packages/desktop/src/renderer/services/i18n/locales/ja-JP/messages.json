@@ -132,5 +132,9 @@
   },
   "rewind": {
     "action": "このメッセージの前に戻る"
+  },
+  "deliverables": {
+    "title": "受け取るファイル（{{count}}）",
+    "open": "{{name}} を開く"
   }
 }
