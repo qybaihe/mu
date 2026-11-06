@@ -28,6 +28,7 @@ const LEFT_OUT = [
 	"find_skill",
 	"find_capability",
 	"hive",
+	"ask_user",
 ];
 const KEPT = ["todo", "bg_start", "bg_output", "bg_stop", "web_fetch", "web_search", "bash"];
 
@@ -135,6 +136,7 @@ const EVERYTHING: FeatureName[] = [
 	"browser",
 	"background",
 	"web",
+	"askUser",
 ];
 
 describe("an unattended run (mu --print, json mode)", () => {

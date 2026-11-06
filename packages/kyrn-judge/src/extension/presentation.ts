@@ -20,6 +20,8 @@ export interface KyrnPresentationEvent {
 		| "skill.installed"
 		| "frame.updated"
 		| "capability.opened"
+		| "question.asked"
+		| "question.resolved"
 		| "inherit.found"
 		| "inherit.rule"
 		| "mcp.started"
