@@ -5,7 +5,7 @@ import { I18nextProvider } from 'react-i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
 import type { DialogAnswer, ViewDialog, ViewPermission, ViewQuestion } from '@/common/utils/nativeHost';
-import { pickAnyAnswer } from '@/renderer/pages/native/components/composer/NativeQuestion';
+import { pickAnyAnswer, QuestionsOpenLine } from '@/renderer/pages/native/components/composer/NativeQuestion';
 import NativeDialog from '@/renderer/pages/native/components/NativeDialog';
 import { dialogChoices, permissionCard } from '@/renderer/pages/native/utils/dialogCard';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
@@ -308,5 +308,24 @@ describe('a question of mu’s ask_user', () => {
       fireEvent.click(screen.getByTestId('native-question-skip'));
     });
     expect(answered).toEqual([{ dialogId: 'q1', answer: { cancelled: true } }]);
+  });
+
+  it('says mu waits on questions nobody answered in time, and its button asks them again once', async () => {
+    const asked: number[] = [];
+    render(
+      <I18nextProvider i18n={i18n}>
+        <QuestionsOpenLine onAnswer={() => asked.push(1)} />
+      </I18nextProvider>
+    );
+    expect(screen.getByTestId('native-questions-open')).toHaveTextContent(
+      'mu has a question for you that is still waiting.'
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-questions-answer'));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-questions-answer'));
+    });
+    expect(asked).toEqual([1]);
   });
 });

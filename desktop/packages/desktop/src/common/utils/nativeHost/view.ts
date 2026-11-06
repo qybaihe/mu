@@ -299,6 +299,11 @@ export type ViewHost = {
   editorText?: { id: string; text: string };
   /** The commands mu runs in the background for the agent, oldest first; absent before the first. */
   jobs?: ViewJob[];
+  /**
+   * mu waits on questions of ask_user that nobody answered in time (its `mu.ask.pending` status): `/answer` asks them
+   * again. Gone once they are answered, or the person writes to the agent.
+   */
+  questionsOpen?: true;
 };
 
 /**

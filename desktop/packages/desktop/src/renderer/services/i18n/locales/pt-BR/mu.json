@@ -1053,7 +1053,9 @@
       "other": "Outra coisa",
       "ownWords": "Sua própria resposta",
       "skip": "Pular",
-      "send": "Enviar"
+      "send": "Enviar",
+      "waiting": "O mu tem uma pergunta para você que ainda aguarda resposta.",
+      "answer": "Responder"
     },
     "host": {
       "output": "Última saída do mu",

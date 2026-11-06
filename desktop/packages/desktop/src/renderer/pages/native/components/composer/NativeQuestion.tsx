@@ -4,13 +4,19 @@
  * with the option's exact text; "Something else" answers it with the last choice, and mu then opens a line, which this
  * card asks as the same question. A pick-any question answers its line with the numbers of the options ticked, or with
  * the person's own words. Skip answers nothing: mu tells the model the questions were skipped.
+ *
+ * `QuestionsOpenLine` is the line above the send box while questions nobody answered in time wait: its button sends
+ * `/answer`, which asks them again.
  */
 import { Button, Checkbox, Input, Radio } from '@arco-design/web-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DialogAnswer, ViewDialog, ViewQuestion } from '@/common/utils/nativeHost';
 
 type Answer = (answer: DialogAnswer) => Promise<void>;
+
+/** How long a pressed Answer waits for mu's dialogs before it can be pressed again. */
+const ANSWER_WAIT_MS = 10_000;
 
 const CARD = 'rd-12px border border-solid border-[var(--color-border-2)] bg-1 p-12px flex flex-col gap-10px';
 const OTHER = 'other';
@@ -155,6 +161,38 @@ const QuestionCard: React.FC<{ dialog: ViewDialog; question: ViewQuestion; answe
           {t('mu.native.question.send')}
         </Button>
       </div>
+    </div>
+  );
+};
+
+/** One quiet line above the send box while mu's questions wait: what waits, and a button that sends `/answer`. */
+export const QuestionsOpenLine: React.FC<{ onAnswer: () => void }> = ({ onAnswer }) => {
+  const { t } = useTranslation();
+  const [asking, setAsking] = useState(false);
+  useEffect(() => {
+    if (!asking) return undefined;
+    const timer = setTimeout(() => setAsking(false), ANSWER_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [asking]);
+  return (
+    <div
+      className='mb-8px flex items-center justify-between gap-8px px-4px text-13px leading-20px text-t-secondary'
+      role='status'
+      data-testid='native-questions-open'
+    >
+      <span>{t('mu.native.question.waiting')}</span>
+      <Button
+        type='text'
+        size='mini'
+        disabled={asking}
+        data-testid='native-questions-answer'
+        onClick={() => {
+          setAsking(true);
+          onAnswer();
+        }}
+      >
+        {t('mu.native.question.answer')}
+      </Button>
     </div>
   );
 };

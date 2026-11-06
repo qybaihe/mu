@@ -1053,7 +1053,9 @@
       "other": "Etwas anderes",
       "ownWords": "Deine eigene Antwort",
       "skip": "Überspringen",
-      "send": "Senden"
+      "send": "Senden",
+      "waiting": "mu hat eine Frage an dich, die noch auf Antwort wartet.",
+      "answer": "Antworten"
     },
     "host": {
       "output": "Letzte Ausgabe von mu",

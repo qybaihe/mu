@@ -1053,7 +1053,9 @@
       "other": "Başka bir şey",
       "ownWords": "Kendi yanıtınız",
       "skip": "Atla",
-      "send": "Gönder"
+      "send": "Gönder",
+      "waiting": "mu'nun size, hâlâ yanıt bekleyen bir sorusu var.",
+      "answer": "Yanıtla"
     },
     "host": {
       "output": "mu'nun son çıktısı",

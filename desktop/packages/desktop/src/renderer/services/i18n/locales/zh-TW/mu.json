@@ -1059,7 +1059,9 @@
       "other": "都不是，我自己寫",
       "ownWords": "你自己的回答",
       "skip": "略過",
-      "send": "送出"
+      "send": "送出",
+      "waiting": "mu 有個問題還在等你回答。",
+      "answer": "回答"
     },
     "host": {
       "output": "mu 最後的輸出",

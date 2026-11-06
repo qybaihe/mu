@@ -8,6 +8,7 @@ import {
   fromEntries,
   OUTCOME_ENTRY,
   PRESENTATION_STATUS_KEY,
+  QUESTIONS_OPEN_STATUS,
   readPresentation,
   reduce,
   reduceAll,
@@ -809,5 +810,20 @@ describe('a question of mu’s ask_user', () => {
     ]);
     expect(view.dialogs[0].question).toMatchObject({ question: 'Which parts?', multiSelect: true });
     expect(view.dialogs[0].question?.choices).toBeUndefined();
+  });
+
+  it('says mu waits on questions nobody answered in time, until mu clears its status', () => {
+    const status = (words?: string): PiRecord => ({
+      type: 'extension_ui_request',
+      id: 'st',
+      method: 'setStatus',
+      statusKey: QUESTIONS_OPEN_STATUS,
+      ...(words ? { statusText: words } : {}),
+    });
+    const waiting = reduceAll([status('mu has a question for you: type /answer')]);
+    expect(waiting.host.questionsOpen).toBe(true);
+    expect(reduceAll([status()], waiting).host.questionsOpen).toBeUndefined();
+    // Not in the session file: a reloaded conversation has no live host.
+    expect(durable(waiting).host.questionsOpen).toBeUndefined();
   });
 });

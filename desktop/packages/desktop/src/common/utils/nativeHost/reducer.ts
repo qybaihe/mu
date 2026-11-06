@@ -81,6 +81,14 @@ export const GOAL_FRAME = 'goal.state';
 
 const GOAL_STATUSES: ReadonlySet<string> = new Set(['active', 'paused', 'met', 'cleared']);
 
+/**
+ * The status mu shows while questions of ask_user that nobody answered in time wait for `/answer`
+ * (packages/kyrn-judge/src/extension/features/ask-user.ts `PENDING_STATUS`).
+ */
+export const QUESTIONS_OPEN_STATUS = 'mu.ask.pending';
+/** The command that asks them again. */
+export const ANSWER_COMMAND = '/answer';
+
 /** A goal as a `kyrn.goal` entry or a `goal.state` frame says it, or undefined when it says nothing usable. */
 export function readGoal(data: unknown): ViewGoal | undefined {
   const { status, text } = asObject(data);
@@ -550,6 +558,10 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
   if (method === 'set_editor_text') {
     const id = asText(record.id);
     return id ? { ...view, host: { ...view.host, editorText: { id, text: asText(record.text) } } } : view;
+  }
+  if (method === 'setStatus' && record.statusKey === QUESTIONS_OPEN_STATUS) {
+    const { questionsOpen: _was, ...host } = view.host;
+    return { ...view, host: asText(record.statusText) ? { ...host, questionsOpen: true } : host };
   }
   const frame = readPresentation(record);
   if (!frame || frame.version !== 1) return view;

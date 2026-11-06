@@ -1059,7 +1059,9 @@
       "other": "Something else",
       "ownWords": "Your own answer",
       "skip": "Skip",
-      "send": "Send"
+      "send": "Send",
+      "waiting": "mu has a question for you that is still waiting.",
+      "answer": "Answer"
     },
     "host": {
       "output": "mu's last output",
