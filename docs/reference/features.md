@@ -221,7 +221,7 @@ On by default: yes.
 
 ## present
 
-**Files handed to you.** When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8, each one a file that exists. The desktop app shows them as a card you open each one from. Files the model mentions become links, with the line. Unattended runs and subagents don't have the tool.
+**Files handed to you.** When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8 files, each of which must exist. The desktop app shows them on a card, and you open each one from there. When the model mentions a file that exists, it links to it, down to the line. Unattended runs and subagents don't have the tool.
 
 On by default: yes.
 
