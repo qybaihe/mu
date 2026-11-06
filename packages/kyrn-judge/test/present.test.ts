@@ -1,6 +1,6 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { fauxAssistantMessage, fauxToolCall, type JsonValue } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 import { createHarness, createTestUiContext, type Harness } from "../../coding-agent/test/suite/harness.ts";
@@ -76,22 +76,29 @@ describe("present", () => {
 		await harness.session.prompt("Write the report and the slides.");
 		const { text, details, isError } = lastResult(harness);
 		expect(isError).toBe(false);
-		expect(text).toBe(
-			[
-				"Presented to the user (3 files):",
-				"- report.pdf (out/report.pdf, 2.0 KB)",
-				`- Slides for Monday (${join("out", "deck.pptx")}, 10 B)`,
-				`- export.csv (${join(elsewhere, "export.csv")}, 4 B)`,
-			].join("\n"),
-		);
-		expect(details as PresentDetails).toEqual({
-			files: [
-				{ path: join(root, "out", "report.pdf"), name: "report.pdf", bytes: 2048 },
-				{ path: join(root, "out", "deck.pptx"), name: "Slides for Monday", bytes: 10 },
-				{ path: join(elsewhere, "export.csv"), name: "export.csv", bytes: 4 },
-			],
-			note: "The report has the numbers you asked for.",
-		});
+		const lines = text.split("\n");
+		expect(lines[0]).toBe("Presented to the user (3 files):");
+		// Inside the project a file is named from it, in this platform's separators; outside it by its whole path.
+		expect(lines[1]).toBe(`- report.pdf (${join("out", "report.pdf")}, 2.0 KB)`);
+		expect(lines[2]).toBe(`- Slides for Monday (${join("out", "deck.pptx")}, 10 B)`);
+		expect(lines[3]).toMatch(/^- export\.csv \(.+export\.csv, 4 B\)$/);
+		expect(lines).toHaveLength(4);
+		const presented = details as PresentDetails;
+		expect(presented.note).toBe("The report has the numbers you asked for.");
+		expect(presented.files.map(({ name, bytes }) => ({ name, bytes }))).toEqual([
+			{ name: "report.pdf", bytes: 2048 },
+			{ name: "Slides for Monday", bytes: 10 },
+			{ name: "export.csv", bytes: 4 },
+		]);
+		// Absolute paths, the same files as written: a client opens them from these.
+		for (const [index, written] of [
+			join(root, "out", "report.pdf"),
+			join(root, "out", "deck.pptx"),
+			join(elsewhere, "export.csv"),
+		].entries()) {
+			expect(isAbsolute(presented.files[index].path)).toBe(true);
+			expect(realpathSync(presented.files[index].path)).toBe(realpathSync(written));
+		}
 	});
 
 	it("leaves out what is not a file and says so, and fails when nothing is left", async () => {
@@ -105,7 +112,7 @@ describe("present", () => {
 		await harness.session.prompt("Write the report.");
 		const results = harness.session.messages.filter((message) => message.role === "toolResult");
 		const first = (results[0].content as { text: string }[])[0].text;
-		expect(first).toContain("- report.pdf (out/report.pdf, 2.0 KB)");
+		expect(first).toContain(`- report.pdf (${join("out", "report.pdf")}, 2.0 KB)`);
 		expect(first).toContain("Left out: out: a folder, not a file; out/missing.txt: no such file.");
 		const second = results[1] as { isError?: boolean; content: { text: string }[] };
 		expect(second.isError).toBe(true);
