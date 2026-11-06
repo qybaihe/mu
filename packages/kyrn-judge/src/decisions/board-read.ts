@@ -118,6 +118,7 @@ const READ_ONLY_TOOLS = new Set([
 	"locate",
 	"lsp",
 	"recall",
+	"ask_user",
 ]);
 const CHANGE_TOOLS = new Set(["edit", "write", "sg_rewrite", "conflicts_resolve", "apply_patch_from"]);
 

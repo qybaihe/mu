@@ -442,6 +442,15 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 		summary: "Where the whole of a tool output mu cut is kept, for recall to read the rest.",
 	},
 	{
+		type: "kyrn.question",
+		kind: "entry",
+		version: 1,
+		writers: [features("ask-user")],
+		readers: [],
+		summary:
+			"How questions the model asked with ask_user ended: answered, skipped or pending, and a late answer (kyrn/docs/features/ask-user.md).",
+	},
+	{
 		type: "kyrn.hive",
 		kind: "message",
 		version: 1,

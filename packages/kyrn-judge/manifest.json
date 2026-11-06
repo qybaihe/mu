@@ -2194,6 +2194,7 @@
 						"find_skill",
 						"find_capability",
 						"hive",
+						"ask_user",
 						"mu-browser"
 					],
 					"label": {
@@ -4300,6 +4301,94 @@
 						"uk-UA": "Макс. обсяг одного recall",
 						"tr-TR": "Tek bir recall'un döndürdüğü en fazla metin",
 						"fa-IR": "حداکثر خروجی یک recall"
+					}
+				}
+			]
+		},
+		{
+			"name": "askUser",
+			"title": {
+				"zh": "向你提问",
+				"en": "Questions for you",
+				"zh-TW": "向你提問",
+				"ja-JP": "あなたへの質問",
+				"ko-KR": "사용자에게 묻기",
+				"de-DE": "Fragen an dich",
+				"fr-FR": "Questions pour vous",
+				"es-ES": "Preguntas para ti",
+				"pt-BR": "Perguntas para você",
+				"ru-RU": "Вопросы к вам",
+				"uk-UA": "Питання до вас",
+				"tr-TR": "Size sorular",
+				"fa-IR": "پرسش از شما"
+			},
+			"summary": {
+				"zh": "遇到只有你能拍板、请求里又没说清的事，模型可以用 ask_user 一次问你一到四个问题，每题给几个选项，你也可以自己写答案。每题最多等一段时间；没人回答，代理就先做不依赖答案的事，问题留着，输入 /answer 再答。无人值守的运行和子代理里没有这个工具。",
+				"en": "When a decision is yours to make and the request does not settle it, the model can ask you one to four questions with ask_user, each with options to pick from, or you answer in your own words. Each question waits a while; if nobody answers, the agent carries on with what does not depend on it, and /answer brings the questions back. Unattended runs and sub-agents don't have the tool.",
+				"zh-TW": "遇到只有你能拍板、請求裡又沒說清楚的事，模型可以用 ask_user 一次問你一到四個問題，每題附幾個選項，你也可以自己寫答案。每題最多等一段時間；沒人回答，代理就先做不依賴答案的事，問題留著，輸入 /answer 再回答。無人值守的執行和子代理裡沒有這個工具。",
+				"ja-JP": "あなたが決めるべきことで、依頼からは決まらないとき、モデルは ask_user で一度に 1〜4 問をたずねられます。各問には選択肢があり、自分の言葉で答えることもできます。各問は一定時間だけ待ちます。誰も答えなければ、エージェントは答えに左右されない作業を先に進め、質問は残ります。/answer で質問を呼び戻せます。無人の実行とサブエージェントにはこのツールはありません。",
+				"ko-KR": "사용자가 정해야 하고 요청만으로는 정해지지 않는 일이 있으면, 모델은 ask_user로 한 번에 1~4개의 질문을 할 수 있습니다. 각 질문에는 고를 선택지가 있고, 직접 답을 써도 됩니다. 질문마다 일정 시간만 기다리며, 아무도 답하지 않으면 에이전트는 답과 상관없는 작업을 먼저 하고 질문은 남겨 둡니다. /answer로 질문을 다시 불러올 수 있습니다. 무인 실행과 하위 에이전트에는 이 도구가 없습니다.",
+				"de-DE": "Wenn eine Entscheidung bei dir liegt und die Anfrage sie nicht klärt, kann das Modell dir mit ask_user ein bis vier Fragen stellen, jede mit Optionen zur Auswahl, oder du antwortest in eigenen Worten. Jede Frage wartet eine Weile; antwortet niemand, macht der Agent mit dem weiter, was nicht von der Antwort abhängt, und /answer holt die Fragen zurück. Unbeaufsichtigte Läufe und Sub-Agenten haben das Tool nicht.",
+				"fr-FR": "Quand une décision vous revient et que la demande ne la tranche pas, le modèle peut vous poser une à quatre questions avec ask_user, chacune avec des options à choisir, ou vous répondez avec vos propres mots. Chaque question attend un moment ; si personne ne répond, l’agent poursuit ce qui ne dépend pas de la réponse, et /answer fait revenir les questions. Les exécutions sans surveillance et les sous-agents n’ont pas cet outil.",
+				"es-ES": "Cuando una decisión te corresponde y la petición no la resuelve, el modelo puede hacerte de una a cuatro preguntas con ask_user, cada una con opciones para elegir, o puedes responder con tus propias palabras. Cada pregunta espera un tiempo; si nadie responde, el agente sigue con lo que no depende de la respuesta, y /answer vuelve a mostrar las preguntas. Las ejecuciones desatendidas y los subagentes no tienen esta herramienta.",
+				"pt-BR": "Quando uma decisão cabe a você e o pedido não a resolve, o modelo pode fazer de uma a quatro perguntas com ask_user, cada uma com opções para escolher, ou você responde com suas próprias palavras. Cada pergunta espera um tempo; se ninguém responder, o agente segue com o que não depende da resposta, e /answer traz as perguntas de volta. Execuções sem supervisão e subagentes não têm essa ferramenta.",
+				"ru-RU": "Когда решение за вами, а запрос его не определяет, модель может задать вам от одного до четырёх вопросов через ask_user — у каждого есть варианты на выбор, можно ответить и своими словами. Каждый вопрос ждёт некоторое время; если никто не ответил, агент продолжает то, что от ответа не зависит, а /answer возвращает вопросы. В запусках без присмотра и у субагентов этого инструмента нет.",
+				"uk-UA": "Коли рішення за вами, а запит його не визначає, модель може поставити вам від одного до чотирьох питань через ask_user — кожне з варіантами на вибір, або ви відповідаєте своїми словами. Кожне питання чекає певний час; якщо ніхто не відповів, агент продовжує те, що від відповіді не залежить, а /answer повертає питання. У запусках без нагляду та в субагентів цього інструмента немає.",
+				"tr-TR": "Karar sizinse ve istek bunu belirlemiyorsa model, ask_user ile size bir ila dört soru sorabilir; her sorunun seçenekleri vardır, isterseniz kendi sözlerinizle de yanıtlayabilirsiniz. Her soru bir süre bekler; kimse yanıtlamazsa ajan yanıta bağlı olmayan işlerle devam eder, /answer soruları geri getirir. Gözetimsiz çalıştırmalarda ve alt ajanlarda bu araç yoktur.",
+				"fa-IR": "وقتی تصمیمی با شماست و درخواست آن را روشن نکرده، مدل می‌تواند با ask_user یک تا چهار پرسش از شما بپرسد؛ هر پرسش گزینه‌هایی برای انتخاب دارد، یا با کلمات خودتان پاسخ می‌دهید. هر پرسش مدتی منتظر می‌ماند؛ اگر کسی پاسخ ندهد، عامل کارهایی را که به پاسخ وابسته نیست ادامه می‌دهد و /answer پرسش‌ها را برمی‌گرداند. اجراهای بدون ناظر و زیرعامل‌ها این ابزار را ندارند."
+			},
+			"defaultEnabled": true,
+			"options": [
+				{
+					"key": "waitMs",
+					"kind": "number",
+					"default": 120000,
+					"min": 0,
+					"max": 3600000,
+					"unit": {
+						"zh": "毫秒",
+						"en": "ms",
+						"zh-TW": "毫秒",
+						"ja-JP": "ミリ秒",
+						"ko-KR": "밀리초",
+						"de-DE": "ms",
+						"fr-FR": "ms",
+						"es-ES": "ms",
+						"pt-BR": "ms",
+						"ru-RU": "мс",
+						"uk-UA": "мс",
+						"tr-TR": "ms",
+						"fa-IR": "میلی‌ثانیه"
+					},
+					"label": {
+						"zh": "每题最多等",
+						"en": "Wait per question",
+						"zh-TW": "每題最多等",
+						"ja-JP": "1 問あたりの待ち時間",
+						"ko-KR": "질문당 대기 시간",
+						"de-DE": "Wartezeit pro Frage",
+						"fr-FR": "Attente par question",
+						"es-ES": "Espera por pregunta",
+						"pt-BR": "Espera por pergunta",
+						"ru-RU": "Ожидание на вопрос",
+						"uk-UA": "Очікування на питання",
+						"tr-TR": "Soru başına bekleme",
+						"fa-IR": "انتظار برای هر پرسش"
+					},
+					"help": {
+						"zh": "到时没人回答，问题先留着，代理接着做别的；0 表示一直等到你回答。",
+						"en": "When nobody answers in time, the question stays open and the agent carries on; 0 waits until you answer.",
+						"zh-TW": "時間到了沒人回答，問題先留著，代理接著做別的；0 表示一直等到你回答。",
+						"ja-JP": "時間内に誰も答えなければ、質問は残したままエージェントは作業を続けます。0 にすると答えるまで待ちます。",
+						"ko-KR": "시간 안에 아무도 답하지 않으면 질문은 남겨 두고 에이전트는 계속 진행합니다. 0이면 답할 때까지 기다립니다.",
+						"de-DE": "Antwortet niemand rechtzeitig, bleibt die Frage offen und der Agent macht weiter; 0 wartet, bis du antwortest.",
+						"fr-FR": "Si personne ne répond à temps, la question reste ouverte et l’agent continue ; 0 attend votre réponse.",
+						"es-ES": "Si nadie responde a tiempo, la pregunta queda abierta y el agente sigue; 0 espera hasta que respondas.",
+						"pt-BR": "Se ninguém responder a tempo, a pergunta fica em aberto e o agente continua; 0 espera até você responder.",
+						"ru-RU": "Если никто не ответил вовремя, вопрос остаётся открытым, а агент продолжает работу; 0 — ждать, пока вы ответите.",
+						"uk-UA": "Якщо ніхто не відповів вчасно, питання лишається відкритим, а агент продовжує роботу; 0 — чекати, доки ви відповісте.",
+						"tr-TR": "Zamanında kimse yanıtlamazsa soru açık kalır ve ajan devam eder; 0, siz yanıtlayana kadar bekler.",
+						"fa-IR": "اگر کسی به‌موقع پاسخ ندهد، پرسش باز می‌ماند و عامل ادامه می‌دهد؛ ۰ یعنی تا پاسخ شما صبر کند."
 					}
 				}
 			]

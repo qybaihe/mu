@@ -25,6 +25,7 @@ import { muHome } from "../naming.ts";
 import { FRAME_OUT_ENV } from "../swarm/brief.ts";
 import type { JudgeProvider } from "../types.ts";
 import { registerAdmission } from "./features/admission.ts";
+import { registerAskUser } from "./features/ask-user.ts";
 import { registerBackground } from "./features/background.ts";
 import { registerBoard } from "./features/board.ts";
 import { registerBrowser } from "./features/browser.ts";
@@ -160,6 +161,7 @@ export type FeatureName =
 	| "googleLogin"
 	| "recovery"
 	| "recall"
+	| "askUser"
 	| "interrupted"
 	| "prefix";
 
@@ -269,6 +271,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["forgetting", registerForgetting],
 		// Reads back what admission, forgetting and web_fetch left out; they point to it only while the model has it.
 		["recall", registerRecall],
+		["askUser", registerAskUser],
 		["compaction", registerCompaction],
 		[
 			"monitor",

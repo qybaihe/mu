@@ -65,7 +65,7 @@ On by default: yes. Decision points: `capability.disclosure`.
 | --- | --- | --- |
 | `waitMs` | `3000` ms | Wait at most `3000` ms. Range 500 to 30000. |
 | `askUnattended` | `false` | Also choose capabilities in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait. |
-| `unattendedHidden` | `delegate`, `apply_patch_from`, `browse`, `locate`, `remember`, `find_skill`, `find_capability`, `hive`, `mu-browser` | Tools and skills left out of unattended runs. List them by name. One-shot runs almost never use these, yet every request carries them. Anything you call by its command (such as /hive) stays in. Empty keeps them all. |
+| `unattendedHidden` | `delegate`, `apply_patch_from`, `browse`, `locate`, `remember`, `find_skill`, `find_capability`, `hive`, `ask_user`, `mu-browser` | Tools and skills left out of unattended runs. List them by name. One-shot runs almost never use these, yet every request carries them. Anything you call by its command (such as /hive) stays in. Empty keeps them all. |
 | `unattendedFindWithMcp` | `true` | Keep find_capability in unattended runs when an MCP server is installed. Unattended means a one-shot mu --print or json-mode run. Nobody asks the judge there, so without find_capability an MCP server that isn't always open can't be reached. On: with such a server installed, find_capability stays, lists what's installed, and the model opens what it needs. With packs alone it's left out, and requests stay as they were. |
 | `subagentsInherit` | `true` | Subagents take this session's capabilities. A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Until this session has chosen, a subagent asks the judge itself, as before. |
 
@@ -197,6 +197,16 @@ On by default: yes.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `maxChars` | `20000` chars | Max text per recall call. Range 1000 to 200000. |
+
+## askUser
+
+**Questions for you.** When a decision is yours to make and the request does not settle it, the model can ask you one to four questions with ask_user, each with options to pick from, or you answer in your own words. Each question waits a while; if nobody answers, the agent carries on with what does not depend on it, and /answer brings the questions back. Unattended runs and sub-agents don't have the tool.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `waitMs` | `120000` ms | Wait per question. When nobody answers in time, the question stays open and the agent carries on; 0 waits until you answer. Range 0 to 3600000. |
 
 ## compaction
 
