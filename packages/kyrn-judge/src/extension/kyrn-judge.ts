@@ -38,6 +38,7 @@ import { type ConfineDeps, registerConfine } from "./features/confine.ts";
 import { registerConstraints } from "./features/constraints.ts";
 import { registerContinuation } from "./features/continuation.ts";
 import { registerDeadline } from "./features/deadline.ts";
+import { registerFeatureOffers } from "./features/feature-offers.ts";
 import { registerForgetting } from "./features/forgetting.ts";
 import { registerFrame } from "./features/frame.ts";
 import { registerFreeJevNotice } from "./features/free-jev.ts";
@@ -64,6 +65,7 @@ import { registerPermissions } from "./features/permissions.ts";
 import { registerPlan } from "./features/plan.ts";
 import { registerPrefix } from "./features/prefix.ts";
 import { registerPreflight } from "./features/preflight.ts";
+import { registerPresent } from "./features/present.ts";
 import { registerProcedures } from "./features/procedures.ts";
 import { registerRecall } from "./features/recall.ts";
 import { registerRecovery } from "./features/recovery.ts";
@@ -163,7 +165,9 @@ export type FeatureName =
 	| "recovery"
 	| "recall"
 	| "askUser"
+	| "present"
 	| "plan"
+	| "featureOffers"
 	| "interrupted"
 	| "prefix";
 
@@ -276,6 +280,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		// Reads back what admission, forgetting and web_fetch left out; they point to it only while the model has it.
 		["recall", registerRecall],
 		["askUser", registerAskUser],
+		["present", registerPresent],
 		["compaction", registerCompaction],
 		[
 			"monitor",
@@ -322,6 +327,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["web", registerWeb],
 		["packs", registerPacks],
 		["googleLogin", registerGoogleLogin],
+		// Adds mu's default-off features to the catalog, which is first read when a turn starts.
+		["featureOffers", (shared) => registerFeatureOffers(shared, roots?.agentDir)],
 		// Last: its tool_call handler marks a call as started, so every check that may stop the call comes first.
 		["recovery", registerRecovery],
 	];

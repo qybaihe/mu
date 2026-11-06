@@ -459,6 +459,15 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 		summary: "What plan mode means, given to the model when it is turned on, and that it is off when it is left.",
 	},
 	{
+		type: "kyrn.feature-offer",
+		kind: "entry",
+		version: 1,
+		writers: [features("feature-offers")],
+		readers: [],
+		summary:
+			"The user's answer to turning on a feature that is off by default: on, declined or unanswered (kyrn/docs/features/feature-offers.md).",
+	},
+	{
 		type: "kyrn.question",
 		kind: "entry",
 		version: 1,

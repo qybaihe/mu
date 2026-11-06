@@ -205,6 +205,10 @@ function toolRow(
         rawInput: tool.args,
         // No bash on Windows: pi's error, meant for developers, makes way for the line that says what to do.
         ...(noBash ? { content: [], rawOutput: { notice: 'bash_missing' } } : resultUpdate(result)),
+        // The files mu's present handed over: the conversation shows them as a card (MessageDeliverables).
+        ...(tool.name === 'present' && tool.status === 'done' && result?.details
+          ? { rawOutput: result.details as Record<string, unknown> }
+          : {}),
         ...(typeof path === 'string' && path ? { locations: [{ path }] } : {}),
       },
     },

@@ -2195,6 +2195,7 @@
 						"find_capability",
 						"hive",
 						"ask_user",
+						"present",
 						"mu-browser"
 					],
 					"label": {
@@ -3204,7 +3205,7 @@
 			},
 			"summary": {
 				"zh": "/plan 进入计划模式：代理只看、只查、只问，不改任何东西，最后交出一份以「# Plan」开头的计划；你批准后才动手，计划的步骤记进任务清单。改文件、会改东西的命令、子代理都会被拦下。工具列表和系统提示都不变，提示缓存不会因为切换而失效。",
-				"en": "/plan enters plan mode: the agent only reads, searches and asks, changes nothing, and ends with a plan under \"# Plan\". It starts once you approve it, and the plan's steps go on the task's checklist. Edits, commands that change things and sub-agents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.",
+				"en": "/plan enters plan mode: the agent only reads, searches and asks. It changes nothing and ends with a plan under \"# Plan\". Once you approve the plan, the agent starts on it, and the plan's steps go on the task's checklist. Edits, commands that change things and subagents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.",
 				"zh-TW": "/plan 進入計畫模式：代理只看、只查、只問，不改任何東西，最後交出一份以「# Plan」開頭的計畫；你批准後才動手，計畫的步驟記進任務清單。改檔案、會改東西的指令、子代理都會被擋下。工具清單和系統提示都不變，提示快取不會因為切換而失效。",
 				"ja-JP": "/plan でプランモードに入ります。エージェントは読む・調べる・たずねるだけで何も変更せず、最後に「# Plan」で始まるプランを出します。あなたが承認してから作業を始め、プランの手順はタスクのチェックリストに入ります。ファイルの編集、何かを変えるコマンド、サブエージェントは拒否されます。ツール一覧とシステムプロンプトは変わらないので、切り替えでプロンプトキャッシュが無効になりません。",
 				"ko-KR": "/plan으로 계획 모드에 들어갑니다. 에이전트는 읽고, 찾아보고, 묻기만 하며 아무것도 바꾸지 않고, 마지막에 \"# Plan\"으로 시작하는 계획을 내놓습니다. 승인하면 그때 작업을 시작하고, 계획의 단계는 작업 체크리스트에 들어갑니다. 파일 편집, 무언가를 바꾸는 명령, 하위 에이전트는 거부됩니다. 도구 목록과 시스템 프롬프트는 그대로라 전환해도 프롬프트 캐시가 깨지지 않습니다.",
@@ -4427,6 +4428,76 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "featureOffers",
+			"title": {
+				"zh": "推荐默认关闭的功能",
+				"en": "Offers to turn features on",
+				"zh-TW": "推薦預設關閉的功能",
+				"ja-JP": "オフの機能の提案",
+				"ko-KR": "꺼진 기능 제안",
+				"de-DE": "Angebote ausgeschalteter Funktionen",
+				"fr-FR": "Propositions de fonctions désactivées",
+				"es-ES": "Ofertas de funciones desactivadas",
+				"pt-BR": "Ofertas de recursos desligados",
+				"ru-RU": "Предложения выключенных функций",
+				"uk-UA": "Пропозиції вимкнених функцій",
+				"tr-TR": "Kapalı özellik önerileri",
+				"fa-IR": "پیشنهاد قابلیت‌های خاموش"
+			},
+			"summary": {
+				"zh": "任务用得上某个默认关闭的功能（免摘要压缩、流中纠偏、写入沙箱）时，模型可以提议打开它：mu 先问你，你同意了才写进 mu.json，下一个会话起生效。你拒绝过的，这次对话里不会再提。判定器不会自己提议，无人值守的运行里什么都不写。",
+				"en": "When a task would benefit from a feature that's off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first. The feature is written to mu.json only if you say yes, and it takes effect in the next session. A feature you decline isn't offered again in this session. The judge never offers one on its own, and an unattended run writes nothing.",
+				"zh-TW": "任務用得上某個預設關閉的功能（免摘要壓縮、串流中糾偏、寫入沙箱）時，模型可以提議開啟它：mu 會先問你，你同意了才寫進 mu.json，下一個會話起生效。你拒絕過的，這次對話裡不會再提。判定器不會自己提議，無人值守的執行裡什麼都不寫。",
+				"ja-JP": "既定でオフの機能（要約なしの圧縮、出力途中の修正、書き込みサンドボックス）がタスクに役立つとき、モデルはそれをオンにするよう提案できます。mu はまずあなたにたずね、あなたが承諾したときだけ mu.json に書き込み、次の会話から有効になります。断った機能はこの会話では二度と提案されません。判定器が自分から提案することはなく、無人の実行では何も書き込みません。",
+				"ko-KR": "기본으로 꺼져 있는 기능(요약 없는 압축, 출력 중 바로잡기, 쓰기 샌드박스)이 작업에 쓸모 있을 때 모델은 그 기능을 켜자고 제안할 수 있습니다. mu가 먼저 묻고, 동의할 때만 mu.json에 기록하며 다음 대화부터 적용됩니다. 거절한 기능은 이 대화에서 다시 제안하지 않습니다. 판정기가 스스로 제안하는 일은 없고, 무인 실행에서는 아무것도 기록하지 않습니다.",
+				"de-DE": "Wenn eine Aufgabe eine standardmäßig ausgeschaltete Funktion brauchen könnte (Komprimierung ohne Zusammenfassung, Korrektur im Stream, Schreib-Sandbox), kann das Modell anbieten, sie einzuschalten. mu fragt dich zuerst, und nur dein Ja schreibt sie in mu.json, ab der nächsten Unterhaltung. Eine abgelehnte wird in dieser Unterhaltung nicht noch einmal angeboten. Der Judge bietet nie von sich aus eine an, und ein unbeaufsichtigter Lauf schreibt nichts.",
+				"fr-FR": "Quand une tâche pourrait utiliser une fonction désactivée par défaut (compaction sans résumé, correction en cours de flux, bac à sable d’écriture), le modèle peut proposer de l’activer. mu vous le demande d’abord, et seul votre oui l’écrit dans mu.json, pour la conversation suivante. Une fonction refusée n’est plus proposée dans cette conversation. Le juge n’en propose jamais de lui-même, et une exécution sans surveillance n’écrit rien.",
+				"es-ES": "Cuando una tarea podría usar una función desactivada por defecto (compactación sin resumen, corrección a mitad de salida, sandbox de escritura), el modelo puede ofrecer activarla. mu te pregunta primero, y solo tu sí la escribe en mu.json, para la siguiente conversación. Una que rechazaste no se vuelve a ofrecer en esta conversación. El juez nunca ofrece una por su cuenta, y una ejecución desatendida no escribe nada.",
+				"pt-BR": "Quando uma tarefa poderia usar um recurso desligado por padrão (compactação sem resumo, correção no meio da saída, sandbox de escrita), o modelo pode oferecer ligá-lo. O mu pergunta a você primeiro, e só o seu sim o grava no mu.json, para a próxima conversa. Um que você recusou não é oferecido de novo nesta conversa. O juiz nunca oferece um por conta própria, e uma execução sem supervisão não grava nada.",
+				"ru-RU": "Когда задаче пригодилась бы функция, выключенная по умолчанию (сжатие без пересказа, исправление на лету, песочница записи), модель может предложить её включить. mu сначала спрашивает вас, и только ваше «да» записывает её в mu.json — со следующего диалога. Отклонённую функцию в этом диалоге больше не предлагают. Судья никогда не предлагает сам, а запуск без присмотра ничего не записывает.",
+				"uk-UA": "Коли завданню знадобилася б функція, вимкнена за замовчуванням (стиснення без переказу, виправлення на льоту, пісочниця запису), модель може запропонувати її ввімкнути. mu спершу питає вас, і лише ваше «так» записує її в mu.json — з наступної розмови. Відхилену функцію в цій розмові більше не пропонують. Суддя ніколи не пропонує сам, а запуск без нагляду нічого не записує.",
+				"tr-TR": "Bir görev varsayılan olarak kapalı bir özellikten (özetsiz sıkıştırma, akış sırasında düzeltme, yazma korumalı alanı) yararlanabilecekse model onu açmayı önerebilir. mu önce size sorar ve yalnızca evet derseniz mu.json'a yazar; bir sonraki konuşmadan itibaren geçerli olur. Reddettiğiniz bir özellik bu konuşmada yeniden önerilmez. Hakem hiçbir zaman kendiliğinden önermez ve gözetimsiz bir çalıştırma hiçbir şey yazmaz.",
+				"fa-IR": "وقتی کاری می‌تواند از قابلیتی که به‌طور پیش‌فرض خاموش است استفاده کند (فشرده‌سازی بدون خلاصه، اصلاح در میانهٔ خروجی، جعبهٔ شنی نوشتن)، مدل می‌تواند روشن کردنش را پیشنهاد دهد. mu اول از شما می‌پرسد و فقط با موافقت شما آن را در mu.json می‌نویسد، از گفتگوی بعدی. قابلیتی که رد کرده‌اید در این گفتگو دوباره پیشنهاد نمی‌شود. داور هرگز خودش پیشنهاد نمی‌دهد و اجرای بدون ناظر چیزی نمی‌نویسد."
+			},
+			"defaultEnabled": true,
+			"options": []
+		},
+		{
+			"name": "present",
+			"title": {
+				"zh": "交付文件",
+				"en": "Files handed to you",
+				"zh-TW": "交付檔案",
+				"ja-JP": "受け渡しファイル",
+				"ko-KR": "전달된 파일",
+				"de-DE": "Übergebene Dateien",
+				"fr-FR": "Fichiers remis",
+				"es-ES": "Archivos entregados",
+				"pt-BR": "Arquivos entregues",
+				"ru-RU": "Переданные файлы",
+				"uk-UA": "Передані файли",
+				"tr-TR": "Teslim edilen dosyalar",
+				"fa-IR": "فایل‌های تحویلی"
+			},
+			"summary": {
+				"zh": "任务做出了你要的文件（报告、幻灯片、构建产物、导出文件），模型在最后用 present 把它们列给你，最多 8 个，每个都必须真实存在；桌面端显示成一张卡片，点开就能预览。模型提到的现有文件写成可点击的链接，带行号。无人值守的运行和子代理里没有这个工具。",
+				"en": "When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8, each one a file that exists. The desktop app shows them as a card you open each one from. Files the model mentions become links, with the line. Unattended runs and subagents don't have the tool.",
+				"zh-TW": "任務做出了你要的檔案（報告、簡報、建置產物、匯出檔），模型在最後用 present 把它們列給你，最多 8 個，每個都必須真實存在；桌面版顯示成一張卡片，點開就能預覽。模型提到的現有檔案寫成可點擊的連結，附行號。無人值守的執行和子代理裡沒有這個工具。",
+				"ja-JP": "依頼したファイル（レポート、スライド、ビルド成果物、エクスポート）がタスクでできたら、モデルは最後に present でそれを渡します。最大 8 個で、どれも実在するファイルです。デスクトップアプリではカードとして表示され、そこから一つずつ開けます。モデルが触れたファイルは行番号付きのリンクになります。無人の実行とサブエージェントにはこのツールはありません。",
+				"ko-KR": "작업에서 요청한 파일(보고서, 슬라이드, 빌드 결과물, 내보낸 파일)이 만들어지면 모델은 마지막에 present로 그 파일을 건넵니다. 최대 8개이며 모두 실제로 있는 파일입니다. 데스크톱 앱에서는 카드로 보이고 거기서 하나씩 열 수 있습니다. 모델이 언급한 파일은 줄 번호가 붙은 링크가 됩니다. 무인 실행과 하위 에이전트에는 이 도구가 없습니다.",
+				"de-DE": "Wenn eine Aufgabe Dateien erzeugt, um die du gebeten hast (ein Bericht, Folien, ein Build, ein Export), übergibt das Modell sie dir am Ende mit present: bis zu 8, jede eine Datei, die existiert. Die Desktop-App zeigt sie als Karte, aus der du jede öffnest. Dateien, die das Modell erwähnt, werden zu Links mit der Zeile. Unbeaufsichtigte Läufe und Sub-Agenten haben das Tool nicht.",
+				"fr-FR": "Quand une tâche produit des fichiers que vous avez demandés (un rapport, des diapositives, un build, un export), le modèle vous les remet à la fin avec present : jusqu’à 8, chacun un fichier qui existe. L’application de bureau les affiche sous forme de carte d’où vous ouvrez chacun. Les fichiers que le modèle mentionne deviennent des liens, avec la ligne. Les exécutions sans surveillance et les sous-agents n’ont pas cet outil.",
+				"es-ES": "Cuando una tarea produce archivos que pediste (un informe, unas diapositivas, un build, una exportación), el modelo te los entrega al final con present: hasta 8, cada uno un archivo que existe. La aplicación de escritorio los muestra como una tarjeta desde la que abres cada uno. Los archivos que menciona el modelo se convierten en enlaces, con la línea. Las ejecuciones desatendidas y los subagentes no tienen esta herramienta.",
+				"pt-BR": "Quando uma tarefa produz arquivos que você pediu (um relatório, slides, um build, uma exportação), o modelo os entrega a você no fim com present: até 8, cada um um arquivo que existe. O aplicativo de desktop os mostra como um cartão de onde você abre cada um. Os arquivos que o modelo menciona viram links, com a linha. Execuções sem supervisão e subagentes não têm essa ferramenta.",
+				"ru-RU": "Когда задача создаёт файлы, которые вы просили (отчёт, слайды, сборку, экспорт), модель в конце передаёт их вам через present: до 8, и каждый — существующий файл. В приложении для компьютера они показаны карточкой, из которой открывается каждый. Файлы, которые упоминает модель, становятся ссылками с номером строки. В запусках без присмотра и у субагентов этого инструмента нет.",
+				"uk-UA": "Коли завдання створює файли, які ви просили (звіт, слайди, збірку, експорт), модель наприкінці передає їх вам через present: до 8, і кожен — наявний файл. У застосунку для комп’ютера вони показані карткою, з якої відкривається кожен. Файли, які згадує модель, стають посиланнями з номером рядка. У запусках без нагляду та в субагентів цього інструмента немає.",
+				"tr-TR": "Bir görev istediğiniz dosyaları (bir rapor, slaytlar, bir derleme, bir dışa aktarma) ürettiğinde model sonunda bunları present ile size teslim eder: en fazla 8 tane ve her biri gerçekten var olan bir dosya. Masaüstü uygulaması bunları her birini açabileceğiniz bir kart olarak gösterir. Modelin andığı dosyalar satır numarasıyla bağlantıya dönüşür. Gözetimsiz çalıştırmalarda ve alt ajanlarda bu araç yoktur.",
+				"fa-IR": "وقتی کاری فایل‌هایی را که خواسته بودید (گزارش، اسلاید، خروجی ساخت، فایل خروجی) می‌سازد، مدل در پایان آن‌ها را با present به شما تحویل می‌دهد: حداکثر ۸ فایل که همه واقعاً وجود دارند. برنامهٔ دسکتاپ آن‌ها را به شکل کارتی نشان می‌دهد که هر کدام را از آن باز می‌کنید. فایل‌هایی که مدل نام می‌برد با شمارهٔ خط به پیوند تبدیل می‌شوند. اجراهای بدون ناظر و زیرعامل‌ها این ابزار را ندارند."
+			},
+			"defaultEnabled": true,
+			"options": []
 		},
 		{
 			"name": "compaction",

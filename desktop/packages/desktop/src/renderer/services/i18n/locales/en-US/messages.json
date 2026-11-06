@@ -132,5 +132,9 @@
   },
   "rewind": {
     "action": "Go back to before this message"
+  },
+  "deliverables": {
+    "title": "Files for you ({{count}})",
+    "open": "Open {{name}}"
   }
 }

@@ -132,5 +132,9 @@
   },
   "rewind": {
     "action": "Zum Stand vor dieser Nachricht zurück"
+  },
+  "deliverables": {
+    "title": "Dateien für dich ({{count}})",
+    "open": "{{name}} öffnen"
   }
 }

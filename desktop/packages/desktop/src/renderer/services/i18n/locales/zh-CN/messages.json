@@ -132,5 +132,9 @@
   },
   "rewind": {
     "action": "回到这条消息之前"
+  },
+  "deliverables": {
+    "title": "交给你的文件（{{count}}）",
+    "open": "打开 {{name}}"
   }
 }

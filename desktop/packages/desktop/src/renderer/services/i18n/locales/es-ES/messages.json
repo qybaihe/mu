@@ -132,5 +132,9 @@
   },
   "rewind": {
     "action": "Volver a antes de este mensaje"
+  },
+  "deliverables": {
+    "title": "Archivos para ti ({{count}})",
+    "open": "Abrir {{name}}"
   }
 }

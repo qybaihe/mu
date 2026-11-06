@@ -703,6 +703,7 @@ const DESCRIBED: HarnessManifest = {
 						"find_capability",
 						"hive",
 						"ask_user",
+						"present",
 						"mu-browser",
 					],
 					label: {
@@ -988,7 +989,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "计划模式", en: "Plan mode" },
 			summary: {
 				zh: "/plan 进入计划模式：代理只看、只查、只问，不改任何东西，最后交出一份以「# Plan」开头的计划；你批准后才动手，计划的步骤记进任务清单。改文件、会改东西的命令、子代理都会被拦下。工具列表和系统提示都不变，提示缓存不会因为切换而失效。",
-				en: "/plan enters plan mode: the agent only reads, searches and asks, changes nothing, and ends with a plan under \"# Plan\". It starts once you approve it, and the plan's steps go on the task's checklist. Edits, commands that change things and sub-agents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.",
+				en: "/plan enters plan mode: the agent only reads, searches and asks. It changes nothing and ends with a plan under \"# Plan\". Once you approve the plan, the agent starts on it, and the plan's steps go on the task's checklist. Edits, commands that change things and subagents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.",
 			},
 			defaultEnabled: true,
 			options: [],
@@ -1341,6 +1342,26 @@ const DESCRIBED: HarnessManifest = {
 					},
 				},
 			],
+		},
+		{
+			name: "featureOffers",
+			title: { zh: "推荐默认关闭的功能", en: "Offers to turn features on" },
+			summary: {
+				zh: "任务用得上某个默认关闭的功能（免摘要压缩、流中纠偏、写入沙箱）时，模型可以提议打开它：mu 先问你，你同意了才写进 mu.json，下一个会话起生效。你拒绝过的，这次对话里不会再提。判定器不会自己提议，无人值守的运行里什么都不写。",
+				en: "When a task would benefit from a feature that's off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first. The feature is written to mu.json only if you say yes, and it takes effect in the next session. A feature you decline isn't offered again in this session. The judge never offers one on its own, and an unattended run writes nothing.",
+			},
+			defaultEnabled: true,
+			options: [],
+		},
+		{
+			name: "present",
+			title: { zh: "交付文件", en: "Files handed to you" },
+			summary: {
+				zh: "任务做出了你要的文件（报告、幻灯片、构建产物、导出文件），模型在最后用 present 把它们列给你，最多 8 个，每个都必须真实存在；桌面端显示成一张卡片，点开就能预览。模型提到的现有文件写成可点击的链接，带行号。无人值守的运行和子代理里没有这个工具。",
+				en: "When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8, each one a file that exists. The desktop app shows them as a card you open each one from. Files the model mentions become links, with the line. Unattended runs and subagents don't have the tool.",
+			},
+			defaultEnabled: true,
+			options: [],
 		},
 		{
 			name: "compaction",

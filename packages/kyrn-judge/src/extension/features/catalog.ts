@@ -13,8 +13,8 @@ const CAPABILITY_MESSAGE = "kyrn.capabilities";
 
 /**
  * Left out of the request in an unattended run (`unattended.ts`): sub-agents and their patches, the browser and its
- * skill, file location by the judge, lessons for a later session, the ways into what is hidden, and questions for a
- * user who is not there. In benchmark runs they were next to never called, and each one is in every request. `find_capability` stays when an MCP server is
+ * skill, file location by the judge, lessons for a later session, the ways into what is hidden, and questions and
+ * files for a user who is not there. In benchmark runs they were next to never called, and each one is in every request. `find_capability` stays when an MCP server is
  * installed (`unattendedFindWithMcp`): nothing else reaches one there.
  */
 export const UNATTENDED_HIDDEN: readonly string[] = [
@@ -27,6 +27,7 @@ export const UNATTENDED_HIDDEN: readonly string[] = [
 	"find_capability",
 	"hive",
 	"ask_user",
+	"present",
 	"mu-browser",
 ];
 
@@ -40,12 +41,13 @@ function line(capability: Capability): string {
 }
 
 /** The user's own servers first: a request names them ("my open Linear issues") more often than a pack. */
-const KINDS: readonly CapabilityKind[] = ["mcp", "pack", "lsp", "tool"];
+const KINDS: readonly CapabilityKind[] = ["mcp", "pack", "lsp", "tool", "feature"];
 const KIND_NAMES: Readonly<Record<CapabilityKind, string>> = {
 	mcp: "MCP server",
 	pack: "pack",
 	lsp: "language server",
 	tool: "tool",
+	feature: "feature, off by default",
 };
 const LISTED = 20;
 
@@ -127,13 +129,19 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 	if (options.subagentsInherit) {
 		runtime.capabilitiesOpen = () => (chosen ? catalog.history().map((record) => record.id) : undefined);
 	}
+	/**
+	 * What the judge may open for a turn: the hidden capabilities, without mu's features that are off by default. Only
+	 * the user turns one of those on, when the model offers it (features/feature-offers.ts).
+	 */
+	const disclosable = (): readonly Capability[] =>
+		catalog.hidden().filter((capability) => capability.kind !== "feature");
 	const disclose = (words: string, candidates: readonly Capability[], signal?: AbortSignal) =>
 		runtime.engine.decide(capabilityDisclosure, { userMessage: words, capabilities: candidates }, { signal });
 	/** The question asked the moment the message arrived, alongside preflight. */
 	let early: { turn: number; decision: ReturnType<typeof disclose> } | undefined;
 	runtime.atTurnStart((words) => {
 		if (!asks()) return;
-		const candidates = catalog.hidden();
+		const candidates = disclosable();
 		if (candidates.length === 0) return;
 		const decision = disclose(words, candidates);
 		decision.catch(() => {});
@@ -209,7 +217,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 			}
 			const started = early?.turn === runtime.userTurns ? early : undefined;
 			early = undefined;
-			const candidates = catalog.hidden();
+			const candidates = disclosable();
 			const opened: Capability[] = [];
 			if (candidates.length > 0 && asks()) {
 				const pending = started?.decision ?? disclose(userWords(event.prompt), candidates, ctx.signal);
@@ -250,7 +258,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 			query: Type.Optional(Type.String({ description: "Words to look for in capability names and descriptions" })),
 			open: Type.Optional(Type.String({ description: "Id of the capability to open, as listed by this tool" })),
 		}),
-		execute: async (_toolCallId, params) => {
+		execute: async (_toolCallId, params, _signal, _onUpdate, ctx) => {
 			if (params.open) {
 				const known = catalog.get(params.open);
 				if (!known) {
@@ -261,6 +269,16 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 								text: `No capability has the id "${params.open}". Call this tool without "open" to list them.`,
 							},
 						],
+						details: { opened: undefined, matches: [] } satisfies FindDetails as FindDetails,
+					};
+				}
+				// A feature that is off by default is not opened here: the user is asked whether to turn it on.
+				if (known.kind === "feature") {
+					const text =
+						(await runtime.offerFeature?.(params.open, ctx, "model")) ??
+						`${known.title} is off, and only the user can turn it on.`;
+					return {
+						content: [{ type: "text", text }],
 						details: { opened: undefined, matches: [] } satisfies FindDetails as FindDetails,
 					};
 				}
@@ -319,6 +337,11 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
 			const [verb, id] = args.trim().split(/\s+/);
+			if (verb === "open" && id && catalog.get(id)?.kind === "feature") {
+				const said = (await runtime.offerFeature?.(id, ctx, "user")) ?? `"${id}" cannot be turned on here.`;
+				ctx.ui.notify(said, "info");
+				return;
+			}
 			if (verb === "open" && id) {
 				const capability = await open(id, "user").catch(() => undefined);
 				applyLoadout();
@@ -331,7 +354,16 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 			const history = new Map(catalog.history().map((record) => [record.id, record]));
 			const rows = catalog.list().map((capability) => {
 				const record = history.get(capability.id);
-				const state = capability.exposure === "always" ? "always" : record ? `open (${record.by})` : "hidden";
+				const state =
+					capability.kind === "feature"
+						? runtime.featuresTurnedOn.has(capability.id)
+							? "on next conv."
+							: "off"
+						: capability.exposure === "always"
+							? "always"
+							: record
+								? `open (${record.by})`
+								: "hidden";
 				return `${state.padEnd(16)} ${capability.id} · ${capability.title}`;
 			});
 			ctx.ui.notify(rows.length > 0 ? rows.join("\n") : "No capabilities registered yet.", "info");
