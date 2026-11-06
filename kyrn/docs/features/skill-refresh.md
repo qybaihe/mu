@@ -13,7 +13,7 @@ Rewriting the system prompt each time would put the skill in the list, but it ch
 With each message of the user, the skills feature reads again the folders pi finds skills in without being told:
 
 - `<agent dir>/skills` (where `/skills accept` installs) and `~/.agents/skills`;
-- in a trusted project only, the project's `.mu/skills` (where `/skills accept --project` installs) and the `.agents/skills` folders from the working directory up to the repository's root. pi does not load an untrusted project's skills, and neither does this.
+- in a trusted project only, the project's `.pi/skills` (where `/skills accept --project` installs) and the `.agents/skills` folders from the working directory up to the repository's root. pi does not load an untrusted project's skills, and neither does this.
 
 What changed is told to the model in one `kyrn.skills-changed` message, after the user's message. The system prompt is not touched:
 
