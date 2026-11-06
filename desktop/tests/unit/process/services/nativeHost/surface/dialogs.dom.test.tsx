@@ -318,7 +318,7 @@ describe('a question of mu’s ask_user', () => {
       </I18nextProvider>
     );
     expect(screen.getByTestId('native-questions-open')).toHaveTextContent(
-      'mu has a question for you that is still waiting.'
+      'mu has a question waiting for you.'
     );
     await act(async () => {
       fireEvent.click(screen.getByTestId('native-questions-answer'));
