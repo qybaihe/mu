@@ -340,6 +340,7 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | `/mu mode <point> <off\|shadow\|active>` | 切換某一個判定點 |
 | `/frame` | 任務框架：目標、你的約束及其出處、驗收條件 |
 | `/goal <condition>` | 一直做到條件成立；`/goal clear` 結束 |
+| `/plan [task]` | 先出計畫：代理只看、只問，你批准計畫後才動手；`/plan off` 退出 |
 | `/permissions` | 全部放行 / 判定模式 / 最小權限 |
 | `/board` | 開啟或關閉人話看板 |
 | `/remember`、`/lessons`、`/forget` | 記一條經驗、列出經驗、讓一條退役 |

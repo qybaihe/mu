@@ -7,7 +7,7 @@ order of the table in `packages/kyrn-judge/src/extension/kyrn-judge.ts`, and pi 
 order they were registered, except that `tool_call` handlers registered as final run after all the others. So
 the order under each event is the order its handlers run in. `kernel` is what mu registers around the features.
 
-The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `permissions`, `admission`, `forgetting`, `recall`, `askUser`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `recovery`.
+The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `plan`, `permissions`, `admission`, `forgetting`, `recall`, `askUser`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `recovery`.
 
 ## Events
 
@@ -18,20 +18,22 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 3. `frame`
 4. `memory`
 5. `procedures`
-6. `monitor`
-7. `deadline`
-8. `lsp`
-9. `goal`
-10. `completion`
-11. `continuation`
-12. `board`
-13. `checkpoint`
+6. `plan`
+7. `monitor`
+8. `deadline`
+9. `lsp`
+10. `goal`
+11. `completion`
+12. `continuation`
+13. `board`
+14. `checkpoint`
 
 ### `agent_settled`
 
-1. `ttsr` (off by default)
-2. `watchdog`
-3. `hive`
+1. `plan`
+2. `ttsr` (off by default)
+3. `watchdog`
+4. `hive`
 
 ### `agent_start`
 
@@ -53,13 +55,14 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 5. `skills`
 6. `catalog`
 7. `injection`
-8. `askUser`
-9. `monitor`
-10. `notify`
-11. `hive`
-12. `inherit`
-13. `mcp`
-14. `packs`
+8. `plan`
+9. `askUser`
+10. `monitor`
+11. `notify`
+12. `hive`
+13. `inherit`
+14. `mcp`
+15. `packs`
 
 ### `before_provider_request`
 
@@ -149,40 +152,43 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 1. `kernel` ×2
 2. `frame`
-3. `permissions`
-4. `admission`
-5. `forgetting`
-6. `compaction` (off by default)
-7. `lsp`
-8. `goal`
-9. `board`
-10. `checkpoint`
-11. `warmup`
-12. `swarm`
-13. `inherit`
-14. `mcp`
-15. `confine` (off by default)
-16. `sandbox` (off by default)
-17. `packs`
-18. `googleLogin`
-19. `recovery`
+3. `plan`
+4. `permissions`
+5. `admission`
+6. `forgetting`
+7. `compaction` (off by default)
+8. `lsp`
+9. `goal`
+10. `board`
+11. `checkpoint`
+12. `warmup`
+13. `swarm`
+14. `inherit`
+15. `mcp`
+16. `confine` (off by default)
+17. `sandbox` (off by default)
+18. `packs`
+19. `googleLogin`
+20. `recovery`
 
 ### `session_tree`
 
 1. `frame`
-2. `forgetting`
-3. `goal`
+2. `plan`
+3. `forgetting`
+4. `goal`
 
 ### `tool_call`
 
 1. `injection`, final
 2. `guard`, final
 3. `constraints`, final
-4. `permissions`, final
-5. `monitor`, final
-6. `lsp`, final
-7. `checkpoint`, final
-8. `recovery`, final
+4. `plan`, final
+5. `permissions`, final
+6. `monitor`, final
+7. `lsp`, final
+8. `checkpoint`, final
+9. `recovery`, final
 
 ### `tool_execution_end`
 
@@ -263,6 +269,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 | `/forget` | `memory` |
 | `/skills` | `procedures` |
 | `/capabilities` | `catalog` |
+| `/plan` | `plan` |
 | `/permissions` | `permissions` |
 | `/answer` | `askUser` |
 | `/lsp` | `lsp` |
@@ -309,6 +316,7 @@ is marked: two features that set it in the same turn decide between them by the 
 
 | field | set by | read by |
 |---|---|---|
+| `addChecklist` | `extension/features/frame.ts` | `extension/features/plan.ts` |
 | `capabilitiesOpen` | `extension/features/catalog.ts` | `extension/features/swarm.ts` |
 | `deadlineAt` | `extension/features/deadline.ts` | `extension/features/deadline.ts`, `extension/features/watchdog.ts` |
 | `enabled` | `extension/kyrn-judge.ts` | `extension/features/commands.ts`, `extension/features/welcome.ts`, `extension/runtime.ts` |
@@ -327,6 +335,7 @@ is marked: two features that set it in the same turn decide between them by the 
 | `onProgress` | `extension/features/preflight.ts` | `extension/runtime.ts` |
 | `onTurnBegin` | `extension/features/frame.ts` | `extension/runtime.ts` |
 | `permissionMode` | `extension/features/permissions.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/guard.ts`, `extension/features/swarm.ts` |
+| `planMode` | `extension/features/plan.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/plan.ts` |
 | `questionsOpen` | `extension/features/ask-user.ts` | `extension/features/continuation.ts` |
 | `skillsHidden` | `extension/features/skills.ts` | `extension/features/swarm.ts` |
 | `stateDir` | `extension/kyrn-judge.ts` | `extension/features/tool-descriptions.ts` |

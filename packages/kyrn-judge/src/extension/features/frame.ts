@@ -462,6 +462,22 @@ export function registerFrame(runtime: KyrnRuntime): void {
 		}),
 	);
 
+	// Plan mode puts an approved plan's steps here, as the user's: they approved them (features/plan.ts).
+	runtime.addChecklist = (texts) => {
+		const current = state();
+		let frame = current.frame;
+		if (!frame) return 0;
+		let added = 0;
+		for (const text of texts) {
+			const changed = addItem(frame, text, "user");
+			if ("error" in changed) continue;
+			frame = changed.frame;
+			added++;
+		}
+		if (added > 0) commit({ frame, unmerged: current.unmerged }, "progress");
+		return added;
+	};
+
 	// The to-do list is the frame's acceptance criteria: one list, so "done" means what the user asked for.
 	const checklist = (frame: Frame | undefined): string =>
 		frame && frame.acceptance.length > 0

@@ -36,7 +36,8 @@ export function registerCompletion(runtime: KyrnRuntime): void {
 		failOpen<AgentEndEvent, undefined>(async (event, ctx) => {
 			runtime.touch(ctx);
 			// With a goal running, its own check sends the agent back to work, with these same facts. One voice is enough.
-			if (runtime.goalActive || runtime.harnessAbort) return undefined;
+			// In plan mode nothing was changed, and a plan's open steps are not a claim that the work is done.
+			if (runtime.goalActive || runtime.harnessAbort || runtime.planMode) return undefined;
 			const turn = runtime.turn;
 			const unverified = turn.editedFiles.size > 0 && !turn.ranCommandAfterLastEdit;
 			// The to-do list is the task frame's acceptance criteria: "done" with one of them open is a claim too.
