@@ -1303,7 +1303,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "向你提问", en: "Questions for you" },
 			summary: {
 				zh: "遇到只有你能拍板、请求里又没说清的事，模型可以用 ask_user 一次问你一到四个问题，每题给几个选项，你也可以自己写答案。每题最多等一段时间；没人回答，代理就先做不依赖答案的事，问题留着，输入 /answer 再答。无人值守的运行和子代理里没有这个工具。",
-				en: "When a decision is yours to make and the request does not settle it, the model can ask you one to four questions with ask_user, each with options to pick from, or you answer in your own words. Each question waits a while; if nobody answers, the agent carries on with what does not depend on it, and /answer brings the questions back. Unattended runs and sub-agents don't have the tool.",
+				en: "When a decision is yours to make and your request doesn't settle it, the model can ask you one to four questions with ask_user. Each has options to pick from, and you can always answer in your own words. Each question waits a while: if nobody answers, the agent carries on with what doesn't depend on it, and /answer brings the questions back. Unattended runs and subagents don't have the tool.",
 			},
 			defaultEnabled: true,
 			options: [
