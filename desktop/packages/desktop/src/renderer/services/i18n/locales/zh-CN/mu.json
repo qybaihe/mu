@@ -1053,6 +1053,14 @@
       "countdown": "{{seconds}} 秒后关闭，之后 mu 会不等你的回答继续。",
       "more": "后面还有：{{count}} 个"
     },
+    "question": {
+      "position": "第 {{index}} 题，共 {{count}} 题",
+      "pickAny": "可多选",
+      "other": "都不是，我自己写",
+      "ownWords": "你自己的回答",
+      "skip": "跳过",
+      "send": "发送"
+    },
     "host": {
       "output": "mu 最后的输出",
       "restartHint": "发送一条消息即可重新启动 mu。"

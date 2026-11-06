@@ -1053,6 +1053,14 @@
       "countdown": "{{seconds}} 秒後關閉，之後 mu 會不等你的回答繼續。",
       "more": "後面還有：{{count}} 個"
     },
+    "question": {
+      "position": "第 {{index}} 題，共 {{count}} 題",
+      "pickAny": "可複選",
+      "other": "都不是，我自己寫",
+      "ownWords": "你自己的回答",
+      "skip": "略過",
+      "send": "送出"
+    },
     "host": {
       "output": "mu 最後的輸出",
       "restartHint": "傳送一則訊息即可重新啟動 mu。"

@@ -152,6 +152,30 @@ export type ViewPermission = {
   toolCallId?: string;
 };
 
+/**
+ * A question the model asked with mu's ask_user (its `question.asked` frame), for a card in place of the dialog that
+ * asks it: the question in full, its options with what each one means, and what that dialog offers.
+ *
+ * A pick-one question is a `select` of `choices`, the last of which opens an `input` for the person's own words; a
+ * pick-any question is an `input` that takes the numbers of the options picked (`1,3`) or the person's own words.
+ */
+export type ViewQuestion = {
+  /** `question-<n>`: one per question mu asks, from `question.asked` to `question.resolved`. */
+  id: string;
+  /** The ask_user call. */
+  toolCallId?: string;
+  /** Which question of the call, from 0, and how many the call asks. */
+  index: number;
+  count: number;
+  question: string;
+  /** A short label for it. */
+  header?: string;
+  options: { label: string; description?: string }[];
+  multiSelect: boolean;
+  /** A pick-one question: the select's options, in order. The last one opens a line for the person's own words. */
+  choices?: string[];
+};
+
 /** A dialog pi waits on: an extension UI request of method select, confirm, input or editor. */
 export type ViewDialog = {
   id: string;
@@ -174,6 +198,11 @@ export type ViewDialog = {
   inRun: boolean;
   /** A select that is mu's permission question: what mu said about it. */
   permission?: ViewPermission;
+  /**
+   * A dialog that asks a question of mu's ask_user: what mu said about it. An `input` of a pick-one question is the line
+   * for the person's own words, after they chose that in its select.
+   */
+  question?: ViewQuestion;
 };
 
 /** What only a live run has, gone once it settles: a reloaded view has none of it. */
@@ -190,6 +219,8 @@ export type ViewLive = {
   retry?: { attempt: number; maxAttempts: number; delayMs: number; error: string };
   /** The permission question mu announced (`permissions.request`), until its select dialog opens or it is resolved. */
   permission?: ViewPermission;
+  /** The question of ask_user mu announced (`question.asked`), until mu says how it ended (`question.resolved`). */
+  question?: ViewQuestion;
   compacting: boolean;
 };
 

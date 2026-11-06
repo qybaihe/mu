@@ -26,6 +26,7 @@ import {
   clockOf,
   nextNumber,
   readPermission,
+  readQuestion,
   takeCheckpointOff,
   takeJob,
   takeJudgeNotice,
@@ -53,6 +54,7 @@ import {
   type ViewAssistantMessage,
   type ViewBlock,
   type ViewDialog,
+  type ViewQuestion,
   type ViewGoal,
   type ViewImage,
   type ViewJudgment,
@@ -207,7 +209,7 @@ function withLive(view: NativeView, live: ViewLive): NativeView {
 }
 
 /** The live part without one of its fields. */
-function liveWithout(live: ViewLive, key: 'classifying' | 'progress' | 'retry' | 'permission'): ViewLive {
+function liveWithout(live: ViewLive, key: 'classifying' | 'progress' | 'retry' | 'permission' | 'question'): ViewLive {
   const { [key]: _dropped, ...rest } = live;
   return rest;
 }
@@ -495,6 +497,7 @@ function openDialog(view: NativeView, record: PiRecord, method: DialogMethod): N
     options && asked && asked.answers.length === options.length && asked.answers.every((a, i) => a === options[i])
       ? asked
       : undefined;
+  const question = permission ? undefined : askedBy(view.live.question, method, asText(record.title), options);
   const dialog: ViewDialog = {
     id,
     method,
@@ -506,10 +509,38 @@ function openDialog(view: NativeView, record: PiRecord, method: DialogMethod): N
     ...(timeout !== undefined ? { timeout } : {}),
     inRun: isRunning(view.status),
     ...(permission ? { permission } : {}),
+    ...(question ? { question } : {}),
   };
+  // The question stays announced until mu says how it ended: a pick-one question may open a second dialog.
   const asking = stepOver(view).live;
   const live = permission ? liveWithout(asking, 'permission') : asking;
   return { ...view, live, dialogs: [...view.dialogs.filter((open) => open.id !== id), dialog] };
+}
+
+/**
+ * The question of ask_user a dialog asks, when it asks the one mu announced: a select of exactly its choices, or a
+ * line whose title starts with the question's (pick-any, or the person's own words after the select).
+ */
+function askedBy(
+  question: ViewQuestion | undefined,
+  method: DialogMethod,
+  title: string,
+  options: string[] | undefined
+): ViewQuestion | undefined {
+  if (!question) return undefined;
+  if (method === 'select') {
+    const choices = question.choices;
+    return !question.multiSelect &&
+      options &&
+      choices &&
+      options.length === choices.length &&
+      options.every((option, at) => option === choices[at])
+      ? question
+      : undefined;
+  }
+  if (method !== 'input') return undefined;
+  const asked = question.header ? `${question.header}: ${question.question}` : question.question;
+  return title.startsWith(asked) ? question : undefined;
 }
 
 function uiRequest(view: NativeView, record: PiRecord): NativeView {
@@ -555,6 +586,20 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
       if (!permission) return shown;
       const asking = stepOver(shown);
       return withLive(asking, { ...asking.live, permission });
+    }
+    case 'question.asked': {
+      const question = readQuestion(frame.payload);
+      if (!question) return shown;
+      const asking = stepOver(shown);
+      return withLive(asking, { ...asking.live, question });
+    }
+    case 'question.resolved': {
+      // Answered, skipped, out of time or stopped: pi stops waiting on the dialog, and may say nothing of it.
+      const id = asText(frame.payload.id);
+      if (!id) return shown;
+      const dialogs = shown.dialogs.filter((dialog) => dialog.question?.id !== id);
+      const live = shown.live.question?.id === id ? liveWithout(shown.live, 'question') : shown.live;
+      return { ...withLive(shown, live), dialogs };
     }
     case 'permissions.resolved': {
       // Answered, or given up when the run was stopped (mu then says `deny` and pi says nothing of the dialog).

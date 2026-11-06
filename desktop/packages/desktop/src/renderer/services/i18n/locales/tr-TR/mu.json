@@ -1047,6 +1047,14 @@
       "countdown": "{{seconds}} sn içinde kapanır; ardından mu yanıtınız olmadan devam eder.",
       "more": "Bundan sonra bekleyen: {{count}}"
     },
+    "question": {
+      "position": "Soru {{index}} / {{count}}",
+      "pickAny": "Birden fazla seçilebilir",
+      "other": "Başka bir şey",
+      "ownWords": "Kendi yanıtınız",
+      "skip": "Atla",
+      "send": "Gönder"
+    },
     "host": {
       "output": "mu'nun son çıktısı",
       "restartHint": "mu'yu yeniden başlatmak için bir mesaj gönderin."

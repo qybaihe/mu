@@ -1047,6 +1047,14 @@
       "countdown": "Se cierra en {{seconds}} s; después mu sigue sin tu respuesta.",
       "more": "En espera después de esta: {{count}}"
     },
+    "question": {
+      "position": "Pregunta {{index}} de {{count}}",
+      "pickAny": "Elige las que quieras",
+      "other": "Otra cosa",
+      "ownWords": "Tu propia respuesta",
+      "skip": "Omitir",
+      "send": "Enviar"
+    },
     "host": {
       "output": "Última salida de mu",
       "restartHint": "Envía un mensaje para volver a iniciar mu."

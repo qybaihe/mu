@@ -1053,6 +1053,14 @@
       "countdown": "Closes in {{seconds}}s, then mu continues without your answer.",
       "more": "{{count}} more waiting"
     },
+    "question": {
+      "position": "Question {{index}} of {{count}}",
+      "pickAny": "Pick any",
+      "other": "Something else",
+      "ownWords": "Your own answer",
+      "skip": "Skip",
+      "send": "Send"
+    },
     "host": {
       "output": "mu's last output",
       "restartHint": "Send a message to start mu again."

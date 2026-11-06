@@ -1047,6 +1047,14 @@
       "countdown": "{{seconds}} 秒後に閉じます。その後 mu は回答なしで続けます。",
       "more": "この後に待っているもの: {{count}} 件"
     },
+    "question": {
+      "position": "{{count}} 問中 {{index}} 問目",
+      "pickAny": "複数選択可",
+      "other": "どれでもない（自分で書く）",
+      "ownWords": "自分の回答",
+      "skip": "スキップ",
+      "send": "送信"
+    },
     "host": {
       "output": "mu の最後の出力",
       "restartHint": "メッセージを送ると mu がもう一度起動します。"
