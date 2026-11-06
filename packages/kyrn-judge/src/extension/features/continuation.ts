@@ -98,7 +98,8 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 		"agent_end",
 		failOpen<AgentEndEvent, undefined>(async (event, ctx) => {
 			runtime.touch(ctx);
-			if (runtime.goalActive || runtime.harnessAbort) return undefined;
+			// A plan says what will be done; in plan mode that is what it should say (features/plan.ts).
+			if (runtime.goalActive || runtime.harnessAbort || runtime.planMode) return undefined;
 			const turn = runtime.turn;
 			const answeredNudge = nudgedIn === turn;
 			nudgedIn = undefined;

@@ -29,6 +29,8 @@ Before each dialog mu presents a `question.asked` frame with the question in ful
 
 Each dialog waits `waitMs` (default 120 000 ms; 0 waits until answered). Esc skips that question and the ones after it.
 
+Plan mode asks for approval of a plan the same way (`askQuestions`, see [plan-mode.md](plan-mode.md)), with no time limit and no `toolCallId` in its frames.
+
 ## What the model is told
 
 | outcome | when | the result says |

@@ -433,6 +433,23 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 		summary: "Where the whole of a tool output mu cut is kept, for recall to read the rest.",
 	},
 	{
+		type: "kyrn.plan",
+		kind: "entry",
+		version: 1,
+		writers: [features("plan")],
+		readers: [],
+		summary:
+			"Plan mode turned on or off, or a plan the user approved, with how many of its steps went on the checklist (kyrn/docs/features/plan-mode.md).",
+	},
+	{
+		type: "kyrn.plan",
+		kind: "message",
+		version: 1,
+		writers: [features("plan")],
+		readers: [],
+		summary: "What plan mode means, given to the model when it is turned on, and that it is off when it is left.",
+	},
+	{
 		type: "kyrn.question",
 		kind: "entry",
 		version: 1,

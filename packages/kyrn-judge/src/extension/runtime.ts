@@ -199,6 +199,16 @@ export class KyrnRuntime {
 	goalActive = false;
 	/** Sets of questions the model asked with ask_user that nobody answered in time and that still wait for /answer. */
 	questionsOpen = 0;
+	/**
+	 * Plan mode is on (`/plan`, features/plan.ts): nothing changes until the user approves a plan, and the checks that
+	 * send the agent back to work leave a plan as it is.
+	 */
+	planMode = false;
+	/**
+	 * Puts items on the task frame's checklist, as the user's; how many went on. Set by the frame feature, when it is on
+	 * and there is a task: an approved plan's steps go here.
+	 */
+	addChecklist: ((texts: readonly string[]) => number) | undefined;
 	/** The harness itself cut the run that is ending (mid-stream correction), and will start the next one. Not the user's Esc. */
 	harnessAbort = false;
 	/**
