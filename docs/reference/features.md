@@ -215,7 +215,7 @@ On by default: yes.
 
 ## featureOffers
 
-**Offers of features that are off.** When a task would use a feature that is off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first, and only your yes writes it to mu.json, for the next conversation. One you declined isn't offered again in this conversation. The judge never offers one by itself, and an unattended run writes nothing.
+**Offers to turn features on.** When a task would benefit from a feature that's off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first. The feature is written to mu.json only if you say yes, and it takes effect in the next session. A feature you decline isn't offered again in this session. The judge never offers one on its own, and an unattended run writes nothing.
 
 On by default: yes.
 

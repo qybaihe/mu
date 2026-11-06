@@ -156,14 +156,14 @@ export function registerFeatureOffers(runtime: KyrnRuntime, configDir: string | 
 					label: say({ zh: "打开", en: "Turn it on" }),
 					description: say({
 						zh: `下一个会话起生效：${words.summary}`,
-						en: `From the next conversation on: ${words.summary}`,
+						en: `From the next session: ${words.summary}`,
 					}),
 				},
 				{
 					label: say({ zh: "先不用", en: "Not now" }),
 					description: say({
 						zh: "保持关闭；这次对话里不会再提",
-						en: "It stays off, and mu won't offer it again in this conversation",
+						en: "It stays off, and mu won't offer it again in this session",
 					}),
 				},
 			],
