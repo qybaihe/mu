@@ -13,8 +13,8 @@ const CAPABILITY_MESSAGE = "kyrn.capabilities";
 
 /**
  * Left out of the request in an unattended run (`unattended.ts`): sub-agents and their patches, the browser and its
- * skill, file location by the judge, lessons for a later session, the ways into what is hidden, and questions for a
- * user who is not there. In benchmark runs they were next to never called, and each one is in every request. `find_capability` stays when an MCP server is
+ * skill, file location by the judge, lessons for a later session, the ways into what is hidden, and questions and
+ * files for a user who is not there. In benchmark runs they were next to never called, and each one is in every request. `find_capability` stays when an MCP server is
  * installed (`unattendedFindWithMcp`): nothing else reaches one there.
  */
 export const UNATTENDED_HIDDEN: readonly string[] = [
@@ -27,6 +27,7 @@ export const UNATTENDED_HIDDEN: readonly string[] = [
 	"find_capability",
 	"hive",
 	"ask_user",
+	"present",
 	"mu-browser",
 ];
 

@@ -8805,6 +8805,34 @@
 			"uk-UA": "Якщо ніхто не відповів вчасно, питання лишається відкритим, а агент продовжує роботу; 0 — чекати, доки ви відповісте.",
 			"tr-TR": "Zamanında kimse yanıtlamazsa soru açık kalır ve ajan devam eder; 0, siz yanıtlayana kadar bekler.",
 			"fa-IR": "اگر کسی به‌موقع پاسخ ندهد، پرسش باز می‌ماند و عامل ادامه می‌دهد؛ ۰ یعنی تا پاسخ شما صبر کند."
+		},
+		"features[name=present].title": {
+			"en": "Files handed to you",
+			"zh-TW": "交付檔案",
+			"ja-JP": "受け渡しファイル",
+			"ko-KR": "전달된 파일",
+			"de-DE": "Übergebene Dateien",
+			"fr-FR": "Fichiers remis",
+			"es-ES": "Archivos entregados",
+			"pt-BR": "Arquivos entregues",
+			"ru-RU": "Переданные файлы",
+			"uk-UA": "Передані файли",
+			"tr-TR": "Teslim edilen dosyalar",
+			"fa-IR": "فایل‌های تحویلی"
+		},
+		"features[name=present].summary": {
+			"en": "When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8, each one a file that exists. The desktop app shows them as a card you open each one from. Files the model mentions become links, with the line. Unattended runs and subagents don't have the tool.",
+			"zh-TW": "任務做出了你要的檔案（報告、簡報、建置產物、匯出檔），模型在最後用 present 把它們列給你，最多 8 個，每個都必須真實存在；桌面版顯示成一張卡片，點開就能預覽。模型提到的現有檔案寫成可點擊的連結，附行號。無人值守的執行和子代理裡沒有這個工具。",
+			"ja-JP": "依頼したファイル（レポート、スライド、ビルド成果物、エクスポート）がタスクでできたら、モデルは最後に present でそれを渡します。最大 8 個で、どれも実在するファイルです。デスクトップアプリではカードとして表示され、そこから一つずつ開けます。モデルが触れたファイルは行番号付きのリンクになります。無人の実行とサブエージェントにはこのツールはありません。",
+			"ko-KR": "작업에서 요청한 파일(보고서, 슬라이드, 빌드 결과물, 내보낸 파일)이 만들어지면 모델은 마지막에 present로 그 파일을 건넵니다. 최대 8개이며 모두 실제로 있는 파일입니다. 데스크톱 앱에서는 카드로 보이고 거기서 하나씩 열 수 있습니다. 모델이 언급한 파일은 줄 번호가 붙은 링크가 됩니다. 무인 실행과 하위 에이전트에는 이 도구가 없습니다.",
+			"de-DE": "Wenn eine Aufgabe Dateien erzeugt, um die du gebeten hast (ein Bericht, Folien, ein Build, ein Export), übergibt das Modell sie dir am Ende mit present: bis zu 8, jede eine Datei, die existiert. Die Desktop-App zeigt sie als Karte, aus der du jede öffnest. Dateien, die das Modell erwähnt, werden zu Links mit der Zeile. Unbeaufsichtigte Läufe und Sub-Agenten haben das Tool nicht.",
+			"fr-FR": "Quand une tâche produit des fichiers que vous avez demandés (un rapport, des diapositives, un build, un export), le modèle vous les remet à la fin avec present : jusqu’à 8, chacun un fichier qui existe. L’application de bureau les affiche sous forme de carte d’où vous ouvrez chacun. Les fichiers que le modèle mentionne deviennent des liens, avec la ligne. Les exécutions sans surveillance et les sous-agents n’ont pas cet outil.",
+			"es-ES": "Cuando una tarea produce archivos que pediste (un informe, unas diapositivas, un build, una exportación), el modelo te los entrega al final con present: hasta 8, cada uno un archivo que existe. La aplicación de escritorio los muestra como una tarjeta desde la que abres cada uno. Los archivos que menciona el modelo se convierten en enlaces, con la línea. Las ejecuciones desatendidas y los subagentes no tienen esta herramienta.",
+			"pt-BR": "Quando uma tarefa produz arquivos que você pediu (um relatório, slides, um build, uma exportação), o modelo os entrega a você no fim com present: até 8, cada um um arquivo que existe. O aplicativo de desktop os mostra como um cartão de onde você abre cada um. Os arquivos que o modelo menciona viram links, com a linha. Execuções sem supervisão e subagentes não têm essa ferramenta.",
+			"ru-RU": "Когда задача создаёт файлы, которые вы просили (отчёт, слайды, сборку, экспорт), модель в конце передаёт их вам через present: до 8, и каждый — существующий файл. В приложении для компьютера они показаны карточкой, из которой открывается каждый. Файлы, которые упоминает модель, становятся ссылками с номером строки. В запусках без присмотра и у субагентов этого инструмента нет.",
+			"uk-UA": "Коли завдання створює файли, які ви просили (звіт, слайди, збірку, експорт), модель наприкінці передає їх вам через present: до 8, і кожен — наявний файл. У застосунку для комп’ютера вони показані карткою, з якої відкривається кожен. Файли, які згадує модель, стають посиланнями з номером рядка. У запусках без нагляду та в субагентів цього інструмента немає.",
+			"tr-TR": "Bir görev istediğiniz dosyaları (bir rapor, slaytlar, bir derleme, bir dışa aktarma) ürettiğinde model sonunda bunları present ile size teslim eder: en fazla 8 tane ve her biri gerçekten var olan bir dosya. Masaüstü uygulaması bunları her birini açabileceğiniz bir kart olarak gösterir. Modelin andığı dosyalar satır numarasıyla bağlantıya dönüşür. Gözetimsiz çalıştırmalarda ve alt ajanlarda bu araç yoktur.",
+			"fa-IR": "وقتی کاری فایل‌هایی را که خواسته بودید (گزارش، اسلاید، خروجی ساخت، فایل خروجی) می‌سازد، مدل در پایان آن‌ها را با present به شما تحویل می‌دهد: حداکثر ۸ فایل که همه واقعاً وجود دارند. برنامهٔ دسکتاپ آن‌ها را به شکل کارتی نشان می‌دهد که هر کدام را از آن باز می‌کنید. فایل‌هایی که مدل نام می‌برد با شمارهٔ خط به پیوند تبدیل می‌شوند. اجراهای بدون ناظر و زیرعامل‌ها این ابزار را ندارند."
 		}
 	}
 }

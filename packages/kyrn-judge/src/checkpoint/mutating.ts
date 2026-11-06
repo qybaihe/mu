@@ -27,6 +27,7 @@ const READ_ONLY_TOOLS: ReadonlySet<string> = new Set([
 	"bg_output",
 	"recall",
 	"ask_user",
+	"present",
 ]);
 
 /** Redirection, chaining, substitution, a second line: anything that lets a command do more than it says first. */

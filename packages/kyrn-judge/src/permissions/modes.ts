@@ -98,6 +98,7 @@ const LOOKING: ReadonlySet<string> = new Set([
 	"bg_stop",
 	"recall",
 	"ask_user",
+	"present",
 	"conflicts_list",
 	"conflicts_show",
 	"sg_search",
