@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { type Context, fauxAssistantMessage } from "@earendil-works/pi-ai";
+import { type Context, fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
 import { CONFIG_DIR_NAME, type ExtensionUIContext, type Skill } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,7 +10,7 @@ import { createHarness, type Harness } from "../../coding-agent/test/suite/harne
 import { createTestExtensionsResult, createTestResourceLoader } from "../../coding-agent/test/utilities.ts";
 import { parseConfig } from "../src/config.ts";
 import { refreshMessage, SkillRefresh, skillFolders } from "../src/extension/features/skill-refresh.ts";
-import { SKILLS_CHANGED_MESSAGE } from "../src/extension/features/skills.ts";
+import { SKILL_READ_ENTRY, SKILLS_CHANGED_MESSAGE, type SkillReadLabel } from "../src/extension/features/skills.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { parseSkill, SkillDrafts } from "../src/memory/skill-drafts.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
@@ -51,6 +51,9 @@ function writeSkill(root: string, name: string, description = `Works with ${name
 		disableModelInvocation: false,
 	};
 }
+
+const yes: Answer = { type: "boolean", probability: 0.95 };
+const no: Answer = { type: "boolean", probability: 0.05 };
 
 describe("skills installed or removed during a session", () => {
 	const harnesses: Harness[] = [];
@@ -123,7 +126,13 @@ describe("skills installed or removed during a session", () => {
 						? [String(entry.content)]
 						: [],
 				);
-		return { harness, notes, requests, reply, changed };
+		const labels = () =>
+			harness.sessionManager
+				.getEntries()
+				.flatMap((entry) =>
+					entry.type === "custom" && entry.customType === SKILL_READ_ENTRY ? [entry.data as SkillReadLabel] : [],
+				);
+		return { harness, notes, requests, reply, changed, labels };
 	}
 
 	it("tells the agent of a skill accepted mid-session with the next message, and leaves the prompt as it was", async () => {
@@ -176,6 +185,65 @@ describe("skills installed or removed during a session", () => {
 		session.harness.setResponses([session.reply(fauxAssistantMessage("Ok."))]);
 		await session.harness.session.prompt("and tomorrow");
 		expect(session.changed()).toHaveLength(1);
+	});
+
+	it("labels a read of a skill's file with how it was shown and what the first verdict said", async () => {
+		const agentDir = temp();
+		const calendar = writeSkill(join(agentDir, "skills"), "calendar");
+		const sheet = writeSkill(join(agentDir, "skills"), "spreadsheet");
+		// The first verdict hides the calendar and keeps the spreadsheet.
+		const session = await start(
+			[calendar, sheet],
+			agentDir,
+			(questions): Record<string, Answer> => (questions.includes("skill_0") ? { skill_0: no, skill_1: yes } : {}),
+			{ skills: { minSkills: 1 } },
+		);
+		session.harness.setResponses([
+			session.reply(
+				fauxAssistantMessage([fauxToolCall("read", { path: sheet.filePath })], { stopReason: "toolUse" }),
+			),
+			session.reply(
+				fauxAssistantMessage([fauxToolCall("read", { path: calendar.filePath })], { stopReason: "toolUse" }),
+			),
+			// Read again in the same turn: one label is enough.
+			session.reply(
+				fauxAssistantMessage([fauxToolCall("read", { path: calendar.filePath })], { stopReason: "toolUse" }),
+			),
+			session.reply(fauxAssistantMessage("The budget has a total row now.")),
+		]);
+		await session.harness.session.prompt("Add a total row to the budget sheet.");
+		expect(session.requests[0].system).toContain(sheet.filePath);
+		expect(session.requests[0].system).not.toContain(calendar.filePath);
+
+		const labels = session.labels();
+		expect(labels.map(({ name, listed, hid, turn }) => ({ name, listed, hid, turn }))).toEqual([
+			{ name: "spreadsheet", listed: "prompt", hid: false, turn: 1 },
+			{ name: "calendar", listed: "hidden", hid: true, turn: 1 },
+		]);
+		// Both name the same verdict, the one in the judge's ledger.
+		expect(labels[0].verdict).toEqual(expect.any(String));
+		expect(labels[1].verdict).toBe(labels[0].verdict);
+	});
+
+	it("labels a skill installed mid-session as added, with no verdict about it", async () => {
+		const agentDir = temp();
+		const calendar = writeSkill(join(agentDir, "skills"), "calendar");
+		const session = await start([calendar], agentDir);
+		session.harness.setResponses([session.reply(fauxAssistantMessage("Hello."))]);
+		await session.harness.session.prompt("hello");
+
+		const notes = writeSkill(join(agentDir, "skills"), "notes", "Keeps meeting notes in notes/.");
+		session.harness.setResponses([
+			session.reply(
+				fauxAssistantMessage([fauxToolCall("read", { path: notes.filePath })], { stopReason: "toolUse" }),
+			),
+			session.reply(fauxAssistantMessage("Noted.")),
+		]);
+		await session.harness.session.prompt("write down what we decided");
+		expect(session.changed()[0]).toContain(
+			`- notes: Keeps meeting notes in notes/. (read ${notes.filePath} to use it)`,
+		);
+		expect(session.labels()).toEqual([{ name: "notes", path: notes.filePath, turn: 2, listed: "added" }]);
 	});
 
 	it("says nothing with refresh off", async () => {

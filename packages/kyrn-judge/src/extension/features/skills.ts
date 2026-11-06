@@ -1,3 +1,5 @@
+import { realpathSync } from "node:fs";
+import type { ToolResultEvent } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import type { Decision } from "../../decision.ts";
 import { type SkillCandidate, type SkillDisclosureOutcome, skillDisclosure } from "../../decisions/skill-disclosure.ts";
@@ -8,13 +10,42 @@ import {
 	LISTED_ADDED,
 	type ListedSkill,
 	refreshMessage,
+	resolvedPath,
 	SkillRefresh,
 	scanSkillFolders,
+	skillAt,
 	skillFolders,
 } from "./skill-refresh.ts";
 
 /** The message that tells the model which skills were installed or removed during the session. */
 export const SKILLS_CHANGED_MESSAGE = "kyrn.skills-changed";
+/** A label: the model read a skill's file, and how mu had shown it that skill. */
+export const SKILL_READ_ENTRY = "kyrn.skill-read";
+
+/**
+ * How the model knew of the skill it read: in the system prompt's list (`prompt`); kept out of it by the first verdict
+ * and never shown again (`hidden`), listed by `find_skill` (`found`), or announced by a later verdict (`announced`);
+ * or installed during the session and announced then (`added`).
+ */
+export type SkillListing = "prompt" | "hidden" | "found" | "announced" | "added";
+
+export interface SkillReadLabel {
+	readonly name: string;
+	readonly path: string;
+	/** The user turn it was read in. */
+	readonly turn: number;
+	readonly listed: SkillListing;
+	/**
+	 * The ledger id of the session's first skills.disclosure verdict, when the judge answered it and the skill was among
+	 * those it was asked about: the verdict that chose the prompt's list, or in shadow would have.
+	 */
+	readonly verdict?: string;
+	/** Whether that verdict said to leave the skill out. A skill the model then read is a miss. */
+	readonly hid?: boolean;
+	/** The ledger id of the later verdict that announced it. */
+	readonly announcedBy?: string;
+}
+
 interface HiddenSkill {
 	name: string;
 	description: string;
@@ -54,6 +85,9 @@ const listedOf = (skills: readonly PromptSkill[]): ListedSkill[] =>
  * the user or the agent wrote) is missing from the prompt, and a deleted one is still in it. With each message of the
  * user the folders pi finds skills in are read again (`refresh`), and what changed is told in one message: the prompt
  * stays as it was, and so does its cached prefix. Not in a sub-agent, whose list is loaded when it starts.
+ *
+ * A read of a skill's file is a label (`kyrn.skill-read`): how mu had shown the model that skill, and what the first
+ * verdict said about it. A skill the judge kept out and the model read anyway is a miss, measured on real work.
  */
 export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void {
 	const options = runtime.options("skills", {
@@ -76,6 +110,12 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	const inherited = inheritedNames(SKILLS_HIDDEN_ENV);
 	/** The first verdict, when it came too late for its turn: the skills it was asked about, and what it said once it came. */
 	let late: { skills: readonly PromptSkill[]; decision?: Decision<SkillDisclosureOutcome> } | undefined;
+	/** The first verdict, in any mode, once it came, and the skills it was asked about: what a skill's read is labelled with. */
+	let first: { asked: ReadonlySet<string>; decision?: Decision<SkillDisclosureOutcome> } | undefined;
+	/** The later verdicts that announced a hidden skill, by its name. */
+	const announcedBy = new Map<string, string>();
+	/** Hidden skills `find_skill` listed. */
+	const found = new Set<string>();
 	/** The prompt's whole list as pi loaded it, before this feature hid any. */
 	let loaded: readonly ListedSkill[] = [];
 	/** Skills installed during the session that the model was told of, by name. */
@@ -223,6 +263,14 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				decided = true;
 				runtime.progress("choosing which skills this session needs", "skills");
 				const work = started?.first ? started.decision : disclose(userWords(event.prompt), visible, ctx.signal);
+				const asked: NonNullable<typeof first> = { asked: new Set(visible.map((skill) => skill.name)) };
+				first = asked;
+				work.then(
+					(settled) => {
+						asked.decision = settled;
+					},
+					() => {},
+				);
 				const decision = await settle(work);
 				if (decision) hide(decision, visible);
 				else if (mode === "active" && options.applyLate) {
@@ -253,6 +301,7 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				const skill = hidden.get(name);
 				if (!skill) continue;
 				skill.announced = true;
+				if (again.ledgerId) announcedBy.set(name, again.ledgerId);
 				lines.push(`- ${skill.name}: ${skill.description} (read ${skill.filePath} to use it)`);
 			}
 			return {
@@ -279,6 +328,7 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				const text = `${skill.name} ${skill.description}`.toLowerCase();
 				return words.length === 0 || words.some((word) => text.includes(word));
 			});
+			for (const skill of matches) found.add(skill.name);
 			const text =
 				matches.length === 0
 					? "No hidden skills match."
@@ -288,4 +338,58 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			return { content: [{ type: "text", text }], details: { matches: matches.map((skill) => skill.name) } };
 		},
 	});
+
+	/** Real paths, through links: a skill's own is asked again on every read of a markdown file. */
+	const realPaths = new Map<string, string | undefined>();
+	const realOf = (path: string): string | undefined => {
+		if (!realPaths.has(path)) {
+			let real: string | undefined;
+			try {
+				real = realpathSync(path);
+			} catch {
+				real = undefined;
+			}
+			realPaths.set(path, real);
+		}
+		return realPaths.get(path);
+	};
+	/** Each skill once per turn: the label is what was read, not how often. */
+	const labelled = new Set<string>();
+	pi.on(
+		"tool_result",
+		failOpen((event: ToolResultEvent, ctx) => {
+			if (event.toolName !== "read" || event.isError) return undefined;
+			const path = (event.input as { path?: unknown } | undefined)?.path;
+			if (typeof path !== "string") return undefined;
+			const skill = skillAt(resolvedPath(path, ctx.cwd), [...loaded, ...added.values()], realOf);
+			if (!skill) return undefined;
+			const key = `${runtime.userTurns}\0${skill.name}`;
+			if (labelled.has(key)) return undefined;
+			labelled.add(key);
+			const shown = hidden.get(skill.name);
+			const listed: SkillListing = added.has(skill.name)
+				? "added"
+				: !shown
+					? "prompt"
+					: shown.announced
+						? "announced"
+						: found.has(skill.name)
+							? "found"
+							: "hidden";
+			const verdict = first?.decision;
+			const judged = verdict?.judged && verdict.ledgerId && first?.asked.has(skill.name) ? verdict : undefined;
+			const label: SkillReadLabel = {
+				name: skill.name,
+				path: skill.filePath,
+				turn: runtime.userTurns,
+				listed,
+				...(judged?.ledgerId
+					? { verdict: judged.ledgerId, hid: judged.judged?.hide.includes(skill.name) ?? false }
+					: {}),
+				...(announcedBy.has(skill.name) ? { announcedBy: announcedBy.get(skill.name) } : {}),
+			};
+			pi.appendEntry(SKILL_READ_ENTRY, label);
+			return undefined;
+		}),
+	);
 }

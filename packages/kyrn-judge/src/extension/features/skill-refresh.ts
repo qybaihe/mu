@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { CONFIG_DIR_NAME, loadSkillsFromDir } from "@earendil-works/pi-coding-agent";
 
@@ -119,4 +120,27 @@ export function refreshMessage(change: SkillChange): string | undefined {
 		parts.push(`Skills removed during this session: their files are gone, so do not use them: ${names}.`);
 	}
 	return parts.length > 0 ? parts.join("\n\n") : undefined;
+}
+
+/** A path as the read tool resolves it: `~` is the home folder, a leading `@` is dropped, the rest is from `cwd`. */
+export function resolvedPath(path: string, cwd: string): string {
+	const bare = path.startsWith("@") ? path.slice(1) : path;
+	const expanded = bare === "~" ? homedir() : bare.startsWith("~/") ? join(homedir(), bare.slice(2)) : bare;
+	return resolve(cwd, expanded);
+}
+
+/**
+ * The skill whose file this is, by path and then through links: `realOf` gives a file's real path, or undefined for one
+ * that is not there. Only a markdown file can be one.
+ */
+export function skillAt<T extends ListedSkill>(
+	path: string,
+	skills: readonly T[],
+	realOf: (path: string) => string | undefined,
+): T | undefined {
+	if (!path.toLowerCase().endsWith(".md")) return undefined;
+	const exact = skills.find((skill) => skill.filePath === path);
+	if (exact) return exact;
+	const real = realOf(path);
+	return real === undefined ? undefined : skills.find((skill) => realOf(skill.filePath) === real);
 }
