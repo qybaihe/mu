@@ -150,6 +150,109 @@ interface Asked {
 	readonly askedAt: number;
 }
 
+/** How asking ended: every question answered, or the first one skipped, out of time, or stopped. */
+export type AskEnded = "answered" | "skipped" | "timeout" | "stopped";
+
+/** Numbers the questions asked in this process, for the frames' ids. */
+let asked = 0;
+
+/**
+ * Asks `questions` from the first one `from` does not answer on, one dialog each, each waiting `waitMs` (0: until
+ * answered), with a `question.asked` frame before each dialog and a `question.resolved` one after it. Stops at the first
+ * question skipped, out of time or stopped (`signal`), and says which of those it was. ask_user asks with it, and so
+ * does plan mode, for its approval (features/plan.ts).
+ */
+export async function askQuestions(
+	runtime: KyrnRuntime,
+	ctx: ExtensionContext,
+	questions: readonly Question[],
+	options: {
+		readonly toolCallId?: string;
+		readonly from?: readonly QuestionAnswer[];
+		readonly waitMs: number;
+		readonly signal?: AbortSignal;
+	},
+): Promise<{ answers: QuestionAnswer[]; ended: AskEnded }> {
+	const { toolCallId, waitMs, signal } = options;
+	const answers = [...(options.from ?? [])];
+	const other = say({ zh: "都不是，我自己写", en: "Something else (type it)" });
+	for (let index = answers.length; index < questions.length; index++) {
+		const question = questions[index];
+		const id = `question-${++asked}`;
+		const position = questions.length > 1 ? ` (${index + 1}/${questions.length})` : "";
+		const title = `${question.header ? `${question.header}: ` : ""}${question.question}${position}`;
+		const choices = question.options.map(choiceText);
+		const pickAny = question.multiSelect === true && question.options.length > 0;
+		runtime.present("question.asked", {
+			id,
+			...(toolCallId ? { toolCallId } : {}),
+			index,
+			count: questions.length,
+			question: question.question,
+			...(question.header ? { header: question.header } : {}),
+			options: question.options,
+			multiSelect: pickAny,
+			// What the dialog that follows offers, in its order: a client that shows this as a card answers the dialog
+			// with one of these, or, for a pick-any question, with the numbers of the options picked.
+			dialog: pickAny ? "input" : "select",
+			...(pickAny ? {} : { choices: [...choices, other] }),
+		});
+		const startedAt = Date.now();
+		const timedOut = () => waitMs > 0 && Date.now() - startedAt >= waitMs - 50;
+		const dialog = { ...(signal ? { signal } : {}), ...(waitMs > 0 ? { timeout: waitMs } : {}) };
+		let answer: QuestionAnswer | undefined;
+		if (pickAny) {
+			const typed = await ctx.ui.input(
+				[
+					`${title} ${say({ zh: "（可多选）", en: "(pick any)" })}`,
+					...choices.map((choice, at) => `${at + 1}. ${choice}`),
+					say({
+						zh: "输入选项编号，比如 1,3；也可以直接写你的回答。",
+						en: "Type the numbers, like 1,3, or your own answer.",
+					}),
+				].join("\n"),
+				"1,3",
+				dialog,
+			);
+			if (typed?.trim()) {
+				const picks = readPicks(typed, question.options);
+				answer =
+					typeof picks === "string"
+						? { question: question.question, selected: [], custom: picks }
+						: { question: question.question, selected: picks };
+			}
+		} else {
+			const picked = await ctx.ui.select(title, question.options.length > 0 ? [...choices, other] : [other], dialog);
+			if (picked !== undefined && picked !== other) {
+				const at = choices.indexOf(picked);
+				if (at >= 0) answer = { question: question.question, selected: [question.options[at].label] };
+			} else if (picked === other) {
+				const typed = await ctx.ui.input(title, undefined, dialog);
+				if (typed?.trim()) {
+					answer = { question: question.question, selected: [], custom: typed.trim() };
+				}
+			}
+		}
+		const ended = answer
+			? undefined
+			: signal?.aborted
+				? ("stopped" as const)
+				: timedOut()
+					? ("timeout" as const)
+					: ("skipped" as const);
+		runtime.present("question.resolved", {
+			id,
+			...(toolCallId ? { toolCallId } : {}),
+			index,
+			outcome: answer ? "answered" : ended,
+			...(answer ? { answer } : {}),
+		});
+		if (!answer) return { answers, ended: ended ?? "skipped" };
+		answers.push(answer);
+	}
+	return { answers, ended: "answered" };
+}
+
 /**
  * `ask_user`: the model asks the user one to four questions, each with options to pick from and room for an answer of
  * their own. The terminal asks them one after another with the dialogs every client has (a select, or for a pick-any
@@ -180,7 +283,6 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 	let skippedTurn = -1;
 	/** One set of questions at a time: two calls in one reply would otherwise open their dialogs over each other. */
 	let queue: Promise<unknown> = Promise.resolve();
-	let asked = 0;
 
 	const showOpen = (ctx: ExtensionContext): void => {
 		if (!ctx.hasUI) return;
@@ -199,99 +301,13 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 		runtime.questionsOpen = 0;
 	};
 
-	/**
-	 * Asks the questions from `from` on, one dialog each. Stops at the first one skipped, timed out or stopped, and says
-	 * which of those it was.
-	 */
-	const askEach = async (
+	const askEach = (
 		toolCallId: string,
 		questions: readonly Question[],
 		from: readonly QuestionAnswer[],
 		ctx: ExtensionContext,
 		signal: AbortSignal | undefined,
-	): Promise<{ answers: QuestionAnswer[]; ended: "answered" | "skipped" | "timeout" | "stopped" }> => {
-		const answers = [...from];
-		const other = say({ zh: "都不是，我自己写", en: "Something else (type it)" });
-		for (let index = answers.length; index < questions.length; index++) {
-			const question = questions[index];
-			const id = `question-${++asked}`;
-			const position = questions.length > 1 ? ` (${index + 1}/${questions.length})` : "";
-			const title = `${question.header ? `${question.header}: ` : ""}${question.question}${position}`;
-			const choices = question.options.map(choiceText);
-			const pickAny = question.multiSelect === true && question.options.length > 0;
-			runtime.present("question.asked", {
-				id,
-				toolCallId,
-				index,
-				count: questions.length,
-				question: question.question,
-				...(question.header ? { header: question.header } : {}),
-				options: question.options,
-				multiSelect: pickAny,
-				// What the dialog that follows offers, in its order: a client that shows this as a card answers the dialog
-				// with one of these, or, for a pick-any question, with the numbers of the options picked.
-				dialog: pickAny ? "input" : "select",
-				...(pickAny ? {} : { choices: [...choices, other] }),
-			});
-			const startedAt = Date.now();
-			const timedOut = () => waitMs > 0 && Date.now() - startedAt >= waitMs - 50;
-			const dialog = { ...(signal ? { signal } : {}), ...(waitMs > 0 ? { timeout: waitMs } : {}) };
-			let answer: QuestionAnswer | undefined;
-			if (pickAny) {
-				const typed = await ctx.ui.input(
-					[
-						`${title} ${say({ zh: "（可多选）", en: "(pick any)" })}`,
-						...choices.map((choice, at) => `${at + 1}. ${choice}`),
-						say({
-							zh: "输入选项编号，比如 1,3；也可以直接写你的回答。",
-							en: "Type the numbers, like 1,3, or your own answer.",
-						}),
-					].join("\n"),
-					"1,3",
-					dialog,
-				);
-				if (typed?.trim()) {
-					const picks = readPicks(typed, question.options);
-					answer =
-						typeof picks === "string"
-							? { question: question.question, selected: [], custom: picks }
-							: { question: question.question, selected: picks };
-				}
-			} else {
-				const picked = await ctx.ui.select(
-					title,
-					question.options.length > 0 ? [...choices, other] : [other],
-					dialog,
-				);
-				if (picked !== undefined && picked !== other) {
-					const at = choices.indexOf(picked);
-					if (at >= 0) answer = { question: question.question, selected: [question.options[at].label] };
-				} else if (picked === other) {
-					const typed = await ctx.ui.input(title, undefined, dialog);
-					if (typed?.trim()) {
-						answer = { question: question.question, selected: [], custom: typed.trim() };
-					}
-				}
-			}
-			const ended = answer
-				? undefined
-				: signal?.aborted
-					? ("stopped" as const)
-					: timedOut()
-						? ("timeout" as const)
-						: ("skipped" as const);
-			runtime.present("question.resolved", {
-				id,
-				toolCallId,
-				index,
-				outcome: answer ? "answered" : ended,
-				...(answer ? { answer } : {}),
-			});
-			if (!answer) return { answers, ended: ended ?? "skipped" };
-			answers.push(answer);
-		}
-		return { answers, ended: "answered" };
-	};
+	) => askQuestions(runtime, ctx, questions, { toolCallId, from, waitMs, signal });
 
 	const record = (data: QuestionRecord): void => pi.appendEntry(QUESTION_ENTRY, data);
 
