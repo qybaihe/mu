@@ -150,7 +150,7 @@ describe("skills installed or removed during a session", () => {
 		session.harness.setResponses([session.reply(fauxAssistantMessage("Hello."))]);
 		await session.harness.session.prompt("hello");
 		await session.harness.session.prompt("/skills accept release-to-npm");
-		expect(session.notes.at(-1)).toContain("The agent hears of it with your next message");
+		expect(session.notes.at(-1)).toContain("The agent learns about it with your next message");
 		const installed = join(agentDir, "skills", "release-to-npm", "SKILL.md");
 
 		session.harness.setResponses([session.reply(fauxAssistantMessage("Released."))]);

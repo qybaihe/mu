@@ -53,7 +53,7 @@ On by default: yes. Decision points: `skills.disclosure`.
 | `applyLate` | `true` | Apply a late first verdict from the next turn. When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description. |
 | `subagentsInherit` | `true` | Subagents take this session's choice. A subagent hides the skills this session hides and doesn't ask the judge again. Until this session has decided, a subagent asks the judge itself, as before. |
 | `askEarly` | `true` | Ask as soon as the message arrives. Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done. |
-| `refresh` | `true` | Tell the agent of skills installed mid-session. Skills installed or removed during a session (such as one /skills accept installs) are told to the agent in a message with your next one. The system prompt stays as it is, and so does its cached prefix. Off: they wait for the next session or /reload. |
+| `refresh` | `true` | Tell the agent about skills added mid-session. When a skill is installed or removed during a session (for example by /skills accept), mu tells the agent with your next message. The system prompt stays the same, so its cached prefix is kept. Off: the change waits for the next session or /reload. |
 
 ## catalog
 

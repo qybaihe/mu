@@ -32,7 +32,7 @@ Skills removed during this session: their files are gone, so do not use them: ca
 - A skill only a person can call (`disable-model-invocation`) is never told: the model doesn't see it in the prompt either.
 - Not in a sub-agent, whose list is loaded when it starts.
 
-`/skills accept` says so: "The agent hears of it with your next message; it is listed in the system prompt from the next session (or after /reload)." With `features.skills.refresh: false`, or for `--project` in an untrusted project, it says what it said before: from the next session.
+`/skills accept` says so: "The agent learns about it with your next message. From the next session (or after /reload), it's listed in the system prompt." With `features.skills.refresh: false`, or for `--project` in an untrusted project, it says what it said before: from the next session.
 
 A skill is not watched while a run is going. The folders are read once per message of the user, which costs a few directory listings.
 
