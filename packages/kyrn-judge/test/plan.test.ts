@@ -180,7 +180,7 @@ describe("plan mode", () => {
 				title: "Plan: Start on the plan above?",
 				options: [
 					"Approve and start — Plan mode ends and the agent carries it out; its steps go on the task's checklist",
-					"Keep planning — Stay in plan mode; choose something else to say what to change",
+					'Keep planning — Stay in plan mode; pick "Something else" to say what to change',
 					"Something else (type it)",
 				],
 			},

@@ -130,7 +130,7 @@ On by default: yes. Decision points: `tool.approval`.
 
 ## plan
 
-**Plan mode.** /plan enters plan mode: the agent only reads, searches and asks, changes nothing, and ends with a plan under "# Plan". It starts once you approve it, and the plan's steps go on the task's checklist. Edits, commands that change things and sub-agents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.
+**Plan mode.** /plan enters plan mode: the agent only reads, searches and asks. It changes nothing and ends with a plan under "# Plan". Once you approve the plan, the agent starts on it, and the plan's steps go on the task's checklist. Edits, commands that change things and subagents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.
 
 On by default: yes.
 

@@ -145,7 +145,7 @@ export function registerPlan(runtime: KyrnRuntime): void {
 					label: say({ zh: "继续规划", en: "Keep planning" }),
 					description: say({
 						zh: "留在计划模式；选「都不是」可以写下要改哪里",
-						en: "Stay in plan mode; choose something else to say what to change",
+						en: 'Stay in plan mode; pick "Something else" to say what to change',
 					}),
 				},
 			],
@@ -177,7 +177,7 @@ export function registerPlan(runtime: KyrnRuntime): void {
 			const words = args.trim();
 			if (words === "off") {
 				if (!runtime.planMode) {
-					ctx.ui.notify(say({ zh: "现在不在计划模式。", en: "Plan mode is not on." }), "info");
+					ctx.ui.notify(say({ zh: "现在不在计划模式。", en: "Plan mode is off." }), "info");
 					return;
 				}
 				leave(ctx);
