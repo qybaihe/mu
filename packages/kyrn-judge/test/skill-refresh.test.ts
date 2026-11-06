@@ -29,6 +29,9 @@ description: Cut a patch release of this package and publish it to npm.
 ## Check
 npm view shows the version.`;
 
+/** Text as it stands inside the JSON of a request: a Windows path's backslashes are doubled there. */
+const inJson = (text: string) => JSON.stringify(text).slice(1, -1);
+
 const dirs: string[] = [];
 const temp = () => {
 	const dir = mkdtempSync(join(tmpdir(), "mu-skill-refresh-"));
@@ -154,10 +157,12 @@ describe("skills installed or removed during a session", () => {
 		await session.harness.session.prompt("cut a patch release");
 		const [first, second] = session.requests;
 		expect(second.messages).toContain(
-			`Skills installed during this session, which the system prompt does not list:\\n- release-to-npm: Cut a patch release of this package and publish it to npm. (read ${installed} to use it)`,
+			inJson(
+				`Skills installed during this session, which the system prompt does not list:\n- release-to-npm: Cut a patch release of this package and publish it to npm. (read ${installed} to use it)`,
+			),
 		);
 		// The prompt, and so its cached prefix, is the one the session started with.
-		expect(first.system).toContain(calendar.filePath);
+		expect(first.system).toContain(inJson(calendar.filePath));
 		expect(second.system).toBe(first.system);
 		expect(second.system).not.toContain("release-to-npm");
 
@@ -212,8 +217,8 @@ describe("skills installed or removed during a session", () => {
 			session.reply(fauxAssistantMessage("The budget has a total row now.")),
 		]);
 		await session.harness.session.prompt("Add a total row to the budget sheet.");
-		expect(session.requests[0].system).toContain(sheet.filePath);
-		expect(session.requests[0].system).not.toContain(calendar.filePath);
+		expect(session.requests[0].system).toContain(inJson(sheet.filePath));
+		expect(session.requests[0].system).not.toContain(inJson(calendar.filePath));
 
 		const labels = session.labels();
 		expect(labels.map(({ name, listed, hid, turn }) => ({ name, listed, hid, turn }))).toEqual([
@@ -306,10 +311,12 @@ describe("SkillRefresh", () => {
 	it("reads a project's own folders only once it is trusted", () => {
 		const cwd = temp();
 		mkdirSync(join(cwd, ".git"));
-		expect(skillFolders("/agent", "/home", cwd, false)).toEqual(["/agent/skills", "/home/.agents/skills"]);
-		expect(skillFolders("/agent", "/home", cwd, true)).toEqual([
-			"/agent/skills",
-			"/home/.agents/skills",
+		const agent = join(tmpdir(), "agent");
+		const home = join(tmpdir(), "home");
+		const own = [join(agent, "skills"), join(home, ".agents", "skills")];
+		expect(skillFolders(agent, home, cwd, false)).toEqual(own);
+		expect(skillFolders(agent, home, cwd, true)).toEqual([
+			...own,
 			join(cwd, CONFIG_DIR_NAME, "skills"),
 			join(cwd, ".agents", "skills"),
 		]);
