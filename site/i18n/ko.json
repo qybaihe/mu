@@ -39,7 +39,8 @@
     "term_label": "mu 명령줄 녹화",
     "term_note": "이 녹화에서 코딩 모델의 답은 미리 써 둔 것이고, 판정기의 답은 실시간이에요.",
     "star_cta_h2": "mu가 쓸모 있다면 GitHub에서 Star를 눌러 주세요",
-    "star_cta_button": "GitHub에서 Star 누르기"
+    "star_cta_button": "GitHub에서 Star 누르기",
+    "edit_page": "GitHub에서 이 페이지 편집"
   },
   "home": {
     "h1": "에이전트의 결정은 대부분<wbr> <em>코드가 아니에요</em>",

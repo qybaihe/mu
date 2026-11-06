@@ -213,6 +213,9 @@ html:lang(zh) .ent-status b, html:lang(ja) .ent-status b { margin-right: 4px; }
 .docs-toc a { display: block; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); color: var(--muted); line-height: 1.45; text-decoration: none; transition: color 160ms var(--ease), border-color 160ms var(--ease); }
 .docs-toc a:hover { color: var(--text); }
 .docs-toc a.on { border-left-color: #c4b5fb; color: var(--text); }
+.docs-edit { margin-top: 48px; font-size: 13.5px; }
+.docs-edit a { color: var(--muted); text-decoration: none; transition: color 160ms var(--ease); }
+.docs-edit a:hover { color: var(--text); }
 .docs-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); }
 .docs-pager a {
   display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px;

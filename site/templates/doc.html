@@ -19,6 +19,9 @@
       <div class="prose intro" style="--d: 300ms">
 {{ doc.body }}
       </div>
+      <div class="docs-edit">
+        <a href="{{ doc.edit_url }}">{{ L.ui.edit_page }}</a>
+      </div>
       <nav class="docs-pager" aria-label="{{ U.prev | e }} / {{ U.next | e }}">
         {% if doc.prev %}<a class="prev" href="{{ url(L, doc.prev.page) }}"><span>{{ U.prev }}</span>{{ doc.prev.title }}</a>{% else %}<span></span>{% endif %}
         {% if doc.next %}<a class="next" href="{{ url(L, doc.next.page) }}"><span>{{ U.next }}</span>{{ doc.next.title }}</a>{% endif %}
