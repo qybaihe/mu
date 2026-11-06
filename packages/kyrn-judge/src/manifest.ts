@@ -1333,6 +1333,16 @@ const DESCRIBED: HarnessManifest = {
 			],
 		},
 		{
+			name: "featureOffers",
+			title: { zh: "推荐默认关闭的功能", en: "Offers of features that are off" },
+			summary: {
+				zh: "任务用得上某个默认关闭的功能（免摘要压缩、流中纠偏、写入沙箱）时，模型可以提议打开它：mu 先问你，你同意了才写进 mu.json，下一个会话起生效。你拒绝过的，这次对话里不会再提。判定器不会自己提议，无人值守的运行里什么都不写。",
+				en: "When a task would use a feature that is off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first, and only your yes writes it to mu.json, for the next conversation. One you declined isn't offered again in this conversation. The judge never offers one by itself, and an unattended run writes nothing.",
+			},
+			defaultEnabled: true,
+			options: [],
+		},
+		{
 			name: "compaction",
 			title: { zh: "免摘要压缩", en: "Summary-free compaction" },
 			summary: {

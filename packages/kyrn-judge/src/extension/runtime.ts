@@ -209,6 +209,14 @@ export class KyrnRuntime {
 	 * and there is a task: an approved plan's steps go here.
 	 */
 	addChecklist: ((texts: readonly string[]) => number) | undefined;
+	/**
+	 * Offers a feature that is off by default (`feature:<name>` in the catalog) to the user: asks them, when the model
+	 * offers it, and writes it to the config file on their yes. What the model is told comes back. Set by
+	 * features/feature-offers.ts where a config file can be written.
+	 */
+	offerFeature: ((id: string, ctx: ExtensionContext, by: "model" | "user") => Promise<string>) | undefined;
+	/** The `feature:<name>` entries the user turned on in this conversation: on from the next one. */
+	readonly featuresTurnedOn = new Set<string>();
 	/** The harness itself cut the run that is ending (mid-stream correction), and will start the next one. Not the user's Esc. */
 	harnessAbort = false;
 	/**

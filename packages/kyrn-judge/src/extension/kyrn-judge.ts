@@ -38,6 +38,7 @@ import { type ConfineDeps, registerConfine } from "./features/confine.ts";
 import { registerConstraints } from "./features/constraints.ts";
 import { registerContinuation } from "./features/continuation.ts";
 import { registerDeadline } from "./features/deadline.ts";
+import { registerFeatureOffers } from "./features/feature-offers.ts";
 import { registerForgetting } from "./features/forgetting.ts";
 import { registerFrame } from "./features/frame.ts";
 import { registerFreeJevNotice } from "./features/free-jev.ts";
@@ -164,6 +165,7 @@ export type FeatureName =
 	| "recall"
 	| "askUser"
 	| "plan"
+	| "featureOffers"
 	| "interrupted"
 	| "prefix";
 
@@ -322,6 +324,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["web", registerWeb],
 		["packs", registerPacks],
 		["googleLogin", registerGoogleLogin],
+		// Adds mu's default-off features to the catalog, which is first read when a turn starts.
+		["featureOffers", (shared) => registerFeatureOffers(shared, roots?.agentDir)],
 		// Last: its tool_call handler marks a call as started, so every check that may stop the call comes first.
 		["recovery", registerRecovery],
 	];
