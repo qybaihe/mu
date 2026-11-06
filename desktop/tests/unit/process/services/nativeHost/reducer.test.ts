@@ -8,6 +8,7 @@ import {
   fromEntries,
   OUTCOME_ENTRY,
   PRESENTATION_STATUS_KEY,
+  QUESTIONS_OPEN_STATUS,
   readPresentation,
   reduce,
   reduceAll,
@@ -711,5 +712,118 @@ describe('readPresentation', () => {
     expect(readPresentation({ ...frame('progress', {}), statusText: '{not json' })).toBeUndefined();
     expect(readPresentation({ ...frame('progress', {}), statusText: JSON.stringify({ version: 1 }) })).toBeUndefined();
     expect(readPresentation({ type: 'message_end' })).toBeUndefined();
+  });
+});
+
+// ── a question of ask_user ──────────────────────────────────────────────────
+
+const QUESTION_CHOICES = ['SQLite (Recommended) — One file', 'Postgres', 'Something else (type it)'];
+const questionSelect = (id: string, options: string[] = QUESTION_CHOICES): PiRecord => ({
+  type: 'extension_ui_request',
+  id,
+  method: 'select',
+  title: 'Database: Which database? (1/2)',
+  options,
+  timeout: 120000,
+});
+const questionInput = (id: string, title = 'Database: Which database? (1/2)'): PiRecord => ({
+  type: 'extension_ui_request',
+  id,
+  method: 'input',
+  title,
+});
+
+describe('a question of mu’s ask_user', () => {
+  const asked = (extra: Json = {}): PiRecord =>
+    frame('question.asked', {
+      id: 'question-1',
+      toolCallId: 'call_ask',
+      index: 0,
+      count: 2,
+      question: 'Which database?',
+      header: 'Database',
+      options: [{ label: 'SQLite (Recommended)', description: 'One file' }, { label: 'Postgres' }],
+      multiSelect: false,
+      dialog: 'select',
+      choices: QUESTION_CHOICES,
+      ...extra,
+    });
+  const resolved = (outcome: string): PiRecord =>
+    frame('question.resolved', { id: 'question-1', toolCallId: 'call_ask', index: 0, outcome }, 1, 2);
+
+  it('asks the select mu announced as the question, and the line for the person’s own words after it', () => {
+    const announced = reduceAll([{ type: 'agent_start' }, asked()]);
+    expect(announced.live.question).toEqual({
+      id: 'question-1',
+      toolCallId: 'call_ask',
+      index: 0,
+      count: 2,
+      question: 'Which database?',
+      header: 'Database',
+      options: [{ label: 'SQLite (Recommended)', description: 'One file' }, { label: 'Postgres' }],
+      multiSelect: false,
+      choices: QUESTION_CHOICES,
+    });
+    const picking = reduceAll([questionSelect('d1')], announced);
+    expect(picking.dialogs).toEqual([
+      expect.objectContaining({
+        id: 'd1',
+        method: 'select',
+        options: QUESTION_CHOICES,
+        question: announced.live.question,
+      }),
+    ]);
+    // "Something else": pi's next dialog is the line for the person's words, the same question.
+    const typing = reduceAll(
+      [{ type: 'extension_ui_response', id: 'd1', value: QUESTION_CHOICES[2] }, questionInput('d2')],
+      picking
+    );
+    expect(typing.dialogs).toEqual([
+      expect.objectContaining({ id: 'd2', method: 'input', question: announced.live.question }),
+    ]);
+    const done = reduceAll([{ type: 'extension_ui_response', id: 'd2', value: 'MySQL' }, resolved('answered')], typing);
+    expect(done.dialogs).toEqual([]);
+    expect(done.live.question).toBeUndefined();
+  });
+
+  it('closes the card when mu stops waiting, though pi says nothing of the dialog', () => {
+    const open = reduceAll([{ type: 'agent_start' }, asked(), questionSelect('d1')]);
+    expect(open.dialogs).toHaveLength(1);
+    expect(reduceAll([resolved('timeout')], open).dialogs).toEqual([]);
+  });
+
+  it('leaves a dialog that is not the one announced as it is', () => {
+    const other = reduceAll([{ type: 'agent_start' }, asked(), questionSelect('d1', ['Yes', 'No'])]);
+    expect(other.dialogs[0].question).toBeUndefined();
+    const elsewhere = reduceAll([questionInput('d2', 'Name of the branch')], other);
+    expect(elsewhere.dialogs[1].question).toBeUndefined();
+    // A pick-one question whose choices are not its options and one more is not taken.
+    expect(reduceAll([asked({ choices: ['SQLite (Recommended) — One file'] })]).live.question).toBeUndefined();
+    expect(reduceAll([asked({ index: 4 })]).live.question).toBeUndefined();
+  });
+
+  it('asks a pick-any question with its line', () => {
+    const view = reduceAll([
+      { type: 'agent_start' },
+      asked({ multiSelect: true, dialog: 'input', choices: undefined, header: undefined, question: 'Which parts?' }),
+      questionInput('d1', 'Which parts? (2/2) (pick any)\n1. Auth\n2. Billing'),
+    ]);
+    expect(view.dialogs[0].question).toMatchObject({ question: 'Which parts?', multiSelect: true });
+    expect(view.dialogs[0].question?.choices).toBeUndefined();
+  });
+
+  it('says mu waits on questions nobody answered in time, until mu clears its status', () => {
+    const status = (words?: string): PiRecord => ({
+      type: 'extension_ui_request',
+      id: 'st',
+      method: 'setStatus',
+      statusKey: QUESTIONS_OPEN_STATUS,
+      ...(words ? { statusText: words } : {}),
+    });
+    const waiting = reduceAll([status('mu has a question for you: type /answer')]);
+    expect(waiting.host.questionsOpen).toBe(true);
+    expect(reduceAll([status()], waiting).host.questionsOpen).toBeUndefined();
+    // Not in the session file: a reloaded conversation has no live host.
+    expect(durable(waiting).host.questionsOpen).toBeUndefined();
   });
 });

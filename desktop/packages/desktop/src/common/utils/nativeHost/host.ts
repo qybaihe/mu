@@ -16,6 +16,7 @@ import type {
   ViewJob,
   ViewNotice,
   ViewPermission,
+  ViewQuestion,
   ViewSession,
   ViewUsage,
 } from './view.ts';
@@ -375,6 +376,45 @@ export function readPermission(payload: JsonObject): ViewPermission | undefined 
     ...(flagCode ? { flagCode } : {}),
     ...(grantLabel ? { grantLabel } : {}),
     ...(toolCallId ? { toolCallId } : {}),
+  };
+}
+
+/** At most this many options a question of ask_user has, and this many questions a call asks: what mu sends. */
+const QUESTION_OPTIONS = 6;
+const QUESTIONS = 4;
+
+/**
+ * mu's `question.asked`: none without the question, or with a pick-one question whose dialog choices are not its
+ * options and one more (the line for the person's own words). Sizes past what mu sends are not taken.
+ */
+export function readQuestion(payload: JsonObject): ViewQuestion | undefined {
+  const id = callId(payload.id);
+  const question = asText(payload.question).trim();
+  const index = asNumber(payload.index);
+  const count = asNumber(payload.count);
+  if (!id || !question || index === undefined || count === undefined) return undefined;
+  if (!Number.isSafeInteger(index) || !Number.isSafeInteger(count) || index < 0 || count > QUESTIONS || index >= count)
+    return undefined;
+  const options = asList(payload.options)
+    .map(asObject)
+    .map((option) => ({ label: asText(option.label), description: asText(option.description) }))
+    .filter((option) => option.label);
+  if (options.length > QUESTION_OPTIONS) return undefined;
+  const multiSelect = payload.multiSelect === true;
+  const choices = asList(payload.choices).map(asText);
+  if (!multiSelect && (choices.length !== options.length + 1 || choices.some((choice) => !choice))) return undefined;
+  const header = asText(payload.header).trim();
+  const toolCallId = callId(payload.toolCallId);
+  return {
+    id,
+    ...(toolCallId ? { toolCallId } : {}),
+    index,
+    count,
+    question,
+    ...(header ? { header } : {}),
+    options: options.map(({ label, description }) => Object.assign({ label }, description ? { description } : {})),
+    multiSelect,
+    ...(multiSelect ? {} : { choices }),
   };
 }
 
