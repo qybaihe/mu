@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
@@ -14,6 +14,8 @@ import {
   type NativeHostState,
 } from '../../../packages/desktop/src/process/services/nativeHost/NativeHost.ts';
 import { forkWithNode } from '../../../packages/desktop/src/process/services/nativeHost/nodeFork.ts';
+import { deliverables } from '../../../packages/desktop/src/renderer/pages/conversation/Messages/acp/MessageDeliverables.tsx';
+import { toMessages } from '../../../packages/desktop/src/renderer/pages/native/utils/toMessages.ts';
 import { PLAIN_TEXT, startFakeModel } from '../../e2e/mu-conversation/fakeModel.mjs';
 import { createHostWorld, hostEnvironment, launcherFs } from './hostWorld.mjs';
 
@@ -96,7 +98,7 @@ describe.skipIf(skip !== undefined)(`the native host on a mu checkout${skip ? ` 
     const records: PiRecord[] = [];
     host.subscribe((record) => records.push(record));
     host.start();
-    return { host, records };
+    return { host, records, world };
   }
 
   it(
@@ -126,6 +128,30 @@ describe.skipIf(skip !== undefined)(`the native host on a mu checkout${skip ? ` 
         .map((line) => JSON.parse(line) as unknown);
       // What only the live host says (its activity, the session as pi described it) is not in the file.
       expect(fromEntries(session)).toStrictEqual(durable(live));
+    },
+    TURN_MS
+  );
+
+  it(
+    'shows the files mu’s present handed over as their card',
+    async () => {
+      const { host, records, world } = await start(true);
+      await host.request({ type: 'get_state' });
+      mkdirSync(join(world.project, 'out'), { recursive: true });
+      writeFileSync(join(world.project, 'out', 'report.md'), '# Report\n');
+      const settled = next(host, (record) => record.type === 'agent_settled');
+      await host.request({ type: 'prompt', message: 'E2E:PRESENT out/report.md' });
+      await settled;
+      const view = reduceAll(records);
+      const reply = JSON.stringify(view.messages.at(-1));
+      expect(reply).toContain('PRESENT-SAW: Presented to the user (1 file):');
+      expect(reply).toContain('- report.md (out/report.md, 9 B)');
+      const delivered = toMessages(view, { conversationId: 'c1', words: { retried: String, compacted: String } })
+        .map(deliverables)
+        .filter(Boolean);
+      expect(delivered).toEqual([
+        { files: [{ path: realpathSync(join(world.project, 'out', 'report.md')), name: 'report.md', bytes: 9 }] },
+      ]);
     },
     TURN_MS
   );
