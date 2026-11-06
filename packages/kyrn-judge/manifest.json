@@ -4397,7 +4397,7 @@
 			"name": "featureOffers",
 			"title": {
 				"zh": "推荐默认关闭的功能",
-				"en": "Offers of features that are off",
+				"en": "Offers to turn features on",
 				"zh-TW": "推薦預設關閉的功能",
 				"ja-JP": "オフの機能の提案",
 				"ko-KR": "꺼진 기능 제안",
@@ -4412,7 +4412,7 @@
 			},
 			"summary": {
 				"zh": "任务用得上某个默认关闭的功能（免摘要压缩、流中纠偏、写入沙箱）时，模型可以提议打开它：mu 先问你，你同意了才写进 mu.json，下一个会话起生效。你拒绝过的，这次对话里不会再提。判定器不会自己提议，无人值守的运行里什么都不写。",
-				"en": "When a task would use a feature that is off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first, and only your yes writes it to mu.json, for the next conversation. One you declined isn't offered again in this conversation. The judge never offers one by itself, and an unattended run writes nothing.",
+				"en": "When a task would benefit from a feature that's off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first. The feature is written to mu.json only if you say yes, and it takes effect in the next session. A feature you decline isn't offered again in this session. The judge never offers one on its own, and an unattended run writes nothing.",
 				"zh-TW": "任務用得上某個預設關閉的功能（免摘要壓縮、串流中糾偏、寫入沙箱）時，模型可以提議開啟它：mu 會先問你，你同意了才寫進 mu.json，下一個會話起生效。你拒絕過的，這次對話裡不會再提。判定器不會自己提議，無人值守的執行裡什麼都不寫。",
 				"ja-JP": "既定でオフの機能（要約なしの圧縮、出力途中の修正、書き込みサンドボックス）がタスクに役立つとき、モデルはそれをオンにするよう提案できます。mu はまずあなたにたずね、あなたが承諾したときだけ mu.json に書き込み、次の会話から有効になります。断った機能はこの会話では二度と提案されません。判定器が自分から提案することはなく、無人の実行では何も書き込みません。",
 				"ko-KR": "기본으로 꺼져 있는 기능(요약 없는 압축, 출력 중 바로잡기, 쓰기 샌드박스)이 작업에 쓸모 있을 때 모델은 그 기능을 켜자고 제안할 수 있습니다. mu가 먼저 묻고, 동의할 때만 mu.json에 기록하며 다음 대화부터 적용됩니다. 거절한 기능은 이 대화에서 다시 제안하지 않습니다. 판정기가 스스로 제안하는 일은 없고, 무인 실행에서는 아무것도 기록하지 않습니다.",

@@ -1,4 +1,4 @@
-# Offers of features that are off
+# Offers to turn features on
 
 Some of mu's features are off by default, and someone who has never opened the settings does not know they are there. When a task would use one, the model can offer it, and the user turns it on with one answer.
 
