@@ -1047,6 +1047,16 @@
       "countdown": "Se ferme dans {{seconds}} s ; mu continue ensuite sans votre réponse.",
       "more": "En attente après celle-ci : {{count}}"
     },
+    "question": {
+      "position": "Question {{index}} sur {{count}}",
+      "pickAny": "Plusieurs choix possibles",
+      "other": "Autre chose",
+      "ownWords": "Votre propre réponse",
+      "skip": "Passer",
+      "send": "Envoyer",
+      "waiting": "mu a une question pour vous qui attend encore une réponse.",
+      "answer": "Répondre"
+    },
     "host": {
       "output": "Dernière sortie de mu",
       "restartHint": "Envoyez un message pour redémarrer mu."

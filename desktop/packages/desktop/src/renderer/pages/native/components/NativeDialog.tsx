@@ -1,8 +1,9 @@
 /**
- * A dialog pi waits on, shown above the send box: mu's permission question as the transcript's permission card, any
- * other choice as its buttons, a line to type (`input`) or a text to edit (`editor`). A dialog with a time limit says
- * how long it has and closes itself when the time is up (pi then goes on with its default). An answer closes it at
- * once; one that does not go through brings it back, and the screen says why.
+ * A dialog pi waits on, shown above the send box: mu's permission question as the transcript's permission card, a
+ * question of mu's ask_user as its question card, any other choice as its buttons, a line to type (`input`) or a text
+ * to edit (`editor`). A dialog with a time limit says how long it has and closes itself when the time is up (pi then
+ * goes on with its default). An answer closes it at once; one that does not go through brings it back, and the screen
+ * says why.
  */
 import { Button, Input } from '@arco-design/web-react';
 import React, { useMemo, useState } from 'react';
@@ -12,6 +13,7 @@ import type { DialogAnswer, ViewDialog } from '@/common/utils/nativeHost';
 import { PermissionRequestPanel } from '@/renderer/pages/conversation/Messages/components/MessagePermission/PermissionRequestPanel';
 import { useDialogDeadline } from '../hooks/useDialogDeadline';
 import { dialogChoices, permissionCard } from '../utils/dialogCard';
+import QuestionCard from './composer/NativeQuestion';
 
 type Answer = (answer: DialogAnswer) => Promise<void>;
 
@@ -181,14 +183,15 @@ const NativeDialog: React.FC<Props> = ({ conversationId, dialog, more, onAnswer,
     // The permission card says an answer that did not go through; the screen says why.
     if (result.ok === false) throw new Error(result.message);
   };
-  const body =
-    dialog.method === 'input' || dialog.method === 'editor' ? (
-      <TextDialog dialog={dialog} answer={answer} />
-    ) : dialog.permission ? (
-      <PermissionDialog dialog={dialog} answer={answer} />
-    ) : (
-      <ChoiceDialog dialog={dialog} answer={answer} />
-    );
+  const body = dialog.question ? (
+    <QuestionCard dialog={dialog} question={dialog.question} answer={answer} />
+  ) : dialog.method === 'input' || dialog.method === 'editor' ? (
+    <TextDialog dialog={dialog} answer={answer} />
+  ) : dialog.permission ? (
+    <PermissionDialog dialog={dialog} answer={answer} />
+  ) : (
+    <ChoiceDialog dialog={dialog} answer={answer} />
+  );
   return (
     <div className='flex flex-col gap-6px' data-testid='native-dialog' data-method={dialog.method}>
       {body}
