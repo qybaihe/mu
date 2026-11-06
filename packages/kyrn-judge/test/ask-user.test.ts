@@ -13,6 +13,7 @@ import {
 import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
 import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
+import type { Answer, JudgeRequest } from "../src/types.ts";
 import { attended } from "./attended.ts";
 
 const DATABASE = {
@@ -273,6 +274,30 @@ describe("ask_user", () => {
 		interactive.harness.setResponses([fauxAssistantMessage("Done.")]);
 		await interactive.harness.session.prompt("Hello.");
 		expect(interactive.harness.session.getActiveToolNames()).toContain("ask_user");
+	});
+
+	it("while questions are open, a go-ahead verdict does not send the agent back", async () => {
+		const yes: Answer = { type: "boolean", probability: 0.95 };
+		const no: Answer = { type: "boolean", probability: 0.03 };
+		const provider = new MockJudgeProvider((request: JudgeRequest): Record<string, Answer> => {
+			if (!("promised" in request.questions)) return {};
+			return { promised: no, asks_go_ahead: yes, work_requested: yes, beyond_request: no, irreversible: no };
+		});
+		const { harness } = await start({
+			steps: ["wait"],
+			provider,
+			only: ["askUser", "continuation"],
+			features: { askUser: { waitMs: 30 } },
+		});
+		harness.setResponses([
+			ask([DATABASE]),
+			fauxAssistantMessage("Routes are in. Should I wire the database once you pick one?"),
+			fauxAssistantMessage("unused"),
+		]);
+		await harness.session.prompt("Build the backend.");
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(provider.calls.filter((call) => "promised" in call.questions)).toHaveLength(1);
+		expect(harness.getPendingResponseCount()).toBe(1);
 	});
 });
 

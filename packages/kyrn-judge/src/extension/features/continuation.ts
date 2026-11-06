@@ -62,6 +62,9 @@ function madeCall(event: AgentEndEvent): boolean {
  * the agent answered the nudge "The work is already complete", the judge said the same again, and the second nudge sent
  * the agent searching / for test files (4 extra requests). A go-ahead and an ending with no message are not limited
  * this way. An interactive session is unchanged: someone is there to say "keep going".
+ *
+ * While questions the model asked with ask_user are still open (nobody answered in time, see features/ask-user.ts), a
+ * go-ahead verdict does not send the agent back: the answer it waits for is the user's to give.
  */
 export function registerContinuation(runtime: KyrnRuntime): void {
 	const options = runtime.options("continuation", {
@@ -134,6 +137,8 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 				nudgedIn = turn;
 				return undefined;
 			}
+			// Waiting on questions the user has not answered yet is not asking for a go-ahead on work they asked for.
+			if (decision.outcome === "go_ahead" && runtime.questionsOpen > 0) return undefined;
 			if (decision.outcome === "promised" && isUnattended(ctx)) {
 				const promised = promisedNudges.get(turn) ?? 0;
 				if (promised >= options.unattendedPromised) return undefined;
