@@ -324,6 +324,7 @@ Node 22.19 以降が必要です。`mu -p "prompt"` は 1 回だけ実行して�
 | `/mu mode <point> <off\|shadow\|active>` | 一つの判定ポイントを切り替える |
 | `/frame` | タスクフレーム：目標、あなたの制約とその出どころ、受け入れ条件 |
 | `/goal <condition>` | 条件が満たされるまで作業を続ける。`/goal clear` で終了 |
+| `/plan [task]` | 先に計画する。エージェントは読む・たずねるだけで、計画を承認すると作業を始める。`/plan off` で終了 |
 | `/permissions` | フルアクセス / 判定モード / 最小権限 |
 | `/board` | わかりやすいボードのオン・オフ |
 | `/remember`、`/lessons`、`/forget` | 教訓を一つ残す、一覧する、一つを廃止する |

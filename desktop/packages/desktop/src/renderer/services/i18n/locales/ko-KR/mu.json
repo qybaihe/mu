@@ -1047,6 +1047,16 @@
       "countdown": "{{seconds}}초 후에 닫힙니다. 그 뒤 mu는 답변 없이 계속합니다.",
       "more": "이 다음에 대기 중: {{count}}개"
     },
+    "question": {
+      "position": "{{count}}개 중 {{index}}번째 질문",
+      "pickAny": "여러 개 선택 가능",
+      "other": "직접 입력",
+      "ownWords": "직접 쓴 답",
+      "skip": "건너뛰기",
+      "send": "보내기",
+      "waiting": "mu의 질문이 아직 답을 기다리고 있습니다.",
+      "answer": "답하기"
+    },
     "host": {
       "output": "mu의 마지막 출력",
       "restartHint": "메시지를 보내면 mu가 다시 시작됩니다."

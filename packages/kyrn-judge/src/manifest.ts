@@ -975,6 +975,16 @@ const DESCRIBED: HarnessManifest = {
 			],
 		},
 		{
+			name: "plan",
+			title: { zh: "计划模式", en: "Plan mode" },
+			summary: {
+				zh: "/plan 进入计划模式：代理只看、只查、只问，不改任何东西，最后交出一份以「# Plan」开头的计划；你批准后才动手，计划的步骤记进任务清单。改文件、会改东西的命令、子代理都会被拦下。工具列表和系统提示都不变，提示缓存不会因为切换而失效。",
+				en: "/plan enters plan mode: the agent only reads, searches and asks, changes nothing, and ends with a plan under \"# Plan\". It starts once you approve it, and the plan's steps go on the task's checklist. Edits, commands that change things and sub-agents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.",
+			},
+			defaultEnabled: true,
+			options: [],
+		},
+		{
 			name: "constraints",
 			title: { zh: "硬约束把关", en: "Hard constraint gate" },
 			summary: {

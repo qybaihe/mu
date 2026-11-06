@@ -3152,6 +3152,41 @@
 			]
 		},
 		{
+			"name": "plan",
+			"title": {
+				"zh": "计划模式",
+				"en": "Plan mode",
+				"zh-TW": "計畫模式",
+				"ja-JP": "プランモード",
+				"ko-KR": "계획 모드",
+				"de-DE": "Planmodus",
+				"fr-FR": "Mode plan",
+				"es-ES": "Modo plan",
+				"pt-BR": "Modo de plano",
+				"ru-RU": "Режим плана",
+				"uk-UA": "Режим плану",
+				"tr-TR": "Plan modu",
+				"fa-IR": "حالت برنامه‌ریزی"
+			},
+			"summary": {
+				"zh": "/plan 进入计划模式：代理只看、只查、只问，不改任何东西，最后交出一份以「# Plan」开头的计划；你批准后才动手，计划的步骤记进任务清单。改文件、会改东西的命令、子代理都会被拦下。工具列表和系统提示都不变，提示缓存不会因为切换而失效。",
+				"en": "/plan enters plan mode: the agent only reads, searches and asks, changes nothing, and ends with a plan under \"# Plan\". It starts once you approve it, and the plan's steps go on the task's checklist. Edits, commands that change things and sub-agents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.",
+				"zh-TW": "/plan 進入計畫模式：代理只看、只查、只問，不改任何東西，最後交出一份以「# Plan」開頭的計畫；你批准後才動手，計畫的步驟記進任務清單。改檔案、會改東西的指令、子代理都會被擋下。工具清單和系統提示都不變，提示快取不會因為切換而失效。",
+				"ja-JP": "/plan でプランモードに入ります。エージェントは読む・調べる・たずねるだけで何も変更せず、最後に「# Plan」で始まるプランを出します。あなたが承認してから作業を始め、プランの手順はタスクのチェックリストに入ります。ファイルの編集、何かを変えるコマンド、サブエージェントは拒否されます。ツール一覧とシステムプロンプトは変わらないので、切り替えでプロンプトキャッシュが無効になりません。",
+				"ko-KR": "/plan으로 계획 모드에 들어갑니다. 에이전트는 읽고, 찾아보고, 묻기만 하며 아무것도 바꾸지 않고, 마지막에 \"# Plan\"으로 시작하는 계획을 내놓습니다. 승인하면 그때 작업을 시작하고, 계획의 단계는 작업 체크리스트에 들어갑니다. 파일 편집, 무언가를 바꾸는 명령, 하위 에이전트는 거부됩니다. 도구 목록과 시스템 프롬프트는 그대로라 전환해도 프롬프트 캐시가 깨지지 않습니다.",
+				"de-DE": "/plan startet den Planmodus: Der Agent liest, sucht und fragt nur, ändert nichts und endet mit einem Plan unter „# Plan“. Er legt erst los, wenn du ihn freigibst, und die Schritte des Plans kommen auf die Checkliste der Aufgabe. Bearbeitungen, Befehle, die etwas ändern, und Sub-Agenten werden abgelehnt. Tool-Liste und Systemprompt bleiben gleich, der Prompt-Cache übersteht den Wechsel also.",
+				"fr-FR": "/plan active le mode plan : l’agent ne fait que lire, chercher et demander, ne change rien, et termine par un plan sous « # Plan ». Il ne commence qu’une fois le plan approuvé, et les étapes du plan vont dans la liste de contrôle de la tâche. Les modifications, les commandes qui changent quelque chose et les sous-agents sont refusés. La liste des outils et le prompt système restent les mêmes : le cache du prompt survit au changement.",
+				"es-ES": "/plan activa el modo plan: el agente solo lee, busca y pregunta, no cambia nada y termina con un plan bajo «# Plan». Empieza cuando lo apruebas, y los pasos del plan van a la lista de comprobación de la tarea. Se rechazan las ediciones, los comandos que cambian algo y los subagentes. La lista de herramientas y el prompt del sistema no cambian, así que la caché del prompt sobrevive al cambio.",
+				"pt-BR": "/plan entra no modo de plano: o agente só lê, pesquisa e pergunta, não muda nada e termina com um plano sob \"# Plan\". Ele começa quando você aprova, e as etapas do plano vão para a lista de verificação da tarefa. Edições, comandos que mudam algo e subagentes são recusados. A lista de ferramentas e o prompt de sistema não mudam, então o cache do prompt sobrevive à troca.",
+				"ru-RU": "/plan включает режим плана: агент только читает, ищет и спрашивает, ничего не меняет и в конце выдаёт план под «# Plan». Работу он начинает после вашего одобрения, а шаги плана попадают в чек-лист задачи. Правки, команды, которые что-то меняют, и субагенты отклоняются. Список инструментов и системный промпт не меняются, поэтому кеш промпта переживает переключение.",
+				"uk-UA": "/plan вмикає режим плану: агент лише читає, шукає й питає, нічого не змінює і наприкінці дає план під «# Plan». До роботи він береться після вашого схвалення, а кроки плану потрапляють у чек-лист завдання. Правки, команди, що щось змінюють, і субагенти відхиляються. Список інструментів і системний промпт не змінюються, тож кеш промпту переживає перемикання.",
+				"tr-TR": "/plan ile plan moduna girilir: ajan yalnızca okur, arar ve sorar, hiçbir şeyi değiştirmez ve sonunda \"# Plan\" başlıklı bir plan sunar. Siz onayladığınızda işe başlar; planın adımları görevin kontrol listesine eklenir. Düzenlemeler, bir şeyi değiştiren komutlar ve alt ajanlar reddedilir. Araç listesi ve sistem istemi aynı kalır, böylece istem önbelleği geçişte bozulmaz.",
+				"fa-IR": "/plan حالت برنامه‌ریزی را روشن می‌کند: عامل فقط می‌خواند، جست‌وجو می‌کند و می‌پرسد، چیزی را تغییر نمی‌دهد و در پایان برنامه‌ای زیر «# Plan» ارائه می‌کند. پس از تأیید شما کار را شروع می‌کند و گام‌های برنامه به فهرست بررسی کار اضافه می‌شوند. ویرایش‌ها، فرمان‌هایی که چیزی را تغییر می‌دهند و زیرعامل‌ها رد می‌شوند. فهرست ابزارها و پیام سیستمی تغییر نمی‌کنند، پس حافظهٔ نهان پیام با این تغییر از بین نمی‌رود."
+			},
+			"defaultEnabled": true,
+			"options": []
+		},
+		{
 			"name": "constraints",
 			"title": {
 				"zh": "硬约束把关",

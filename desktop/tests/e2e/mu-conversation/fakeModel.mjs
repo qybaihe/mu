@@ -12,6 +12,7 @@
 //   E2E:BG <command>     calls `bg_start` with <command> (named e2e-bg); once the result is back, says BG-STARTED
 //   E2E:SLOW [<n>]       a long reply, one chunk every 200 ms, for stopping in the middle; <n> chunks (150 without it)
 //   E2E:ECHO <text>      replies <text>
+//   E2E:ASK              calls mu's `ask_user` with ASK_QUESTIONS; once the answer is back, says ASK-SAW and what it was
 //   E2E:PRESENT <path>   calls mu's `present` with <path>; once the result is back, says PRESENT-SAW and what it was
 //
 // Anything else (a request mu makes for itself) gets a short neutral reply; the board's writer gets the JSON it asks
@@ -40,6 +41,23 @@ export const BOARD_REPLY = {
   confirm: [],
   note: 'E2E-BOARD-NOTE: 写了一个文件。',
 };
+
+/** What E2E:ASK asks: a pick-one question with a header, then a pick-any one. */
+export const ASK_QUESTIONS = [
+  {
+    question: 'Which database should the app use?',
+    header: 'Database',
+    options: [
+      { label: 'SQLite (Recommended)', description: 'One file, nothing to run' },
+      { label: 'Postgres', description: 'A server to run' },
+    ],
+  },
+  {
+    question: 'Which parts should I set up now?',
+    options: [{ label: 'Auth' }, { label: 'Billing' }, { label: 'Admin panel' }],
+    multiSelect: true,
+  },
+];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -82,7 +100,7 @@ export function planReply(messages) {
   if (/You are the voice of a coding session's status board/.test(system)) {
     return { scenario: 'board', kind: 'text', chunks: [JSON.stringify(BOARD_REPLY)] };
   }
-  const marker = /E2E:(PLAIN|WRITE|BASH|BG|SLOW|ECHO|PRESENT)(?:[ \t]+([^\n]*))?/.exec(user);
+  const marker = /E2E:(PLAIN|WRITE|BASH|BG|SLOW|ECHO|ASK|PRESENT)(?:[ \t]+([^\n]*))?/.exec(user);
   if (!marker) return { scenario: 'other', kind: 'text', chunks: ['OK.'] };
   const [, name, rawArgument = ''] = marker;
   const argument = rawArgument.trim();
@@ -129,6 +147,11 @@ export function planReply(messages) {
         return { scenario: 'bg', kind: 'tool', tool: 'bg_start', args: { command: argument, name: 'e2e-bg' } };
       }
       return { scenario: 'bg', kind: 'text', chunks: ['BG-STARTED: ', lastResult.slice(0, 300)], result: lastResult };
+    case 'ASK':
+      if (results.length === 0) {
+        return { scenario: 'ask', kind: 'tool', tool: 'ask_user', args: { questions: ASK_QUESTIONS } };
+      }
+      return { scenario: 'ask', kind: 'text', chunks: ['ASK-SAW: ', lastResult.slice(0, 600)], result: lastResult };
     case 'PRESENT':
       if (results.length === 0) {
         return { scenario: 'present', kind: 'tool', tool: 'present', args: { files: [{ path: argument }] } };

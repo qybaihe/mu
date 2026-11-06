@@ -61,6 +61,7 @@ import { registerNudgeOutcomes } from "./features/nudge-outcome.ts";
 import { registerOpenAIKeyNotice } from "./features/openai-key.ts";
 import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
+import { registerPlan } from "./features/plan.ts";
 import { registerPrefix } from "./features/prefix.ts";
 import { registerPreflight } from "./features/preflight.ts";
 import { registerPresent } from "./features/present.ts";
@@ -164,6 +165,7 @@ export type FeatureName =
 	| "recall"
 	| "askUser"
 	| "present"
+	| "plan"
 	| "interrupted"
 	| "prefix";
 
@@ -267,6 +269,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["injection", registerInjection],
 		["guard", registerGuard],
 		["constraints", registerConstraints],
+		// After the constraint gate and before the permission gate: plan mode refuses a call nobody is asked about.
+		["plan", registerPlan],
 		// After the constraint gate: a call the user ruled out is stopped before anyone is asked to allow it.
 		["permissions", (shared) => registerPermissions(shared, roots)],
 		["admission", registerAdmission],
