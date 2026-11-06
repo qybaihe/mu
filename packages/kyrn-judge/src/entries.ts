@@ -319,6 +319,15 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 			"A capability opened, and who opened it: one the model had to ask for is the label the disclosure decision is measured by.",
 	},
 	{
+		type: "kyrn.skill-read",
+		kind: "entry",
+		version: 1,
+		writers: [features("skills")],
+		readers: [],
+		summary:
+			"The model read a skill's file: how mu had shown it that skill, and what the first skill-disclosure verdict said of it. A skill the judge kept out and the model read is a miss.",
+	},
+	{
 		type: "kyrn.capabilities",
 		kind: "message",
 		version: 1,
@@ -554,6 +563,14 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 		writers: [features("skills")],
 		readers: [],
 		summary: "The skills that apply to the task.",
+	},
+	{
+		type: "kyrn.skills-changed",
+		kind: "message",
+		version: 1,
+		writers: [features("skills")],
+		readers: [],
+		summary: "Skills installed or removed during the session, which the system prompt's list does not show.",
 	},
 	{
 		type: "mu.import",

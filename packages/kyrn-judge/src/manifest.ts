@@ -650,6 +650,16 @@ const DESCRIBED: HarnessManifest = {
 						en: "Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done.",
 					},
 				},
+				{
+					key: "refresh",
+					kind: "boolean",
+					default: true,
+					label: { zh: "会话中途装的技能告诉代理", en: "Tell the agent of skills installed mid-session" },
+					help: {
+						zh: "会话中途装上或删掉的技能（比如 /skills accept 装的），在你发下一条消息时用一条消息告诉代理。系统提示词不变，缓存的前缀也不受影响。关掉则要等下次会话或 /reload。",
+						en: "Skills installed or removed during a session (such as one /skills accept installs) are told to the agent in a message with your next one. The system prompt stays as it is, and so does its cached prefix. Off: they wait for the next session or /reload.",
+					},
+				},
 			],
 		},
 		{

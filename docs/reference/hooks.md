@@ -52,7 +52,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 2. `preflight`
 3. `frame`
 4. `memory`
-5. `skills`
+5. `skills` ×2
 6. `catalog`
 7. `injection`
 8. `plan`
@@ -211,13 +211,14 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 1. `preflight`
 2. `memory`
 3. `procedures`
-4. `injection` ×2
-5. `admission`
-6. `monitor`
-7. `lsp`
-8. `completion`
-9. `inherit`
-10. `mcp`
+4. `skills`
+5. `injection` ×2
+6. `admission`
+7. `monitor`
+8. `lsp`
+9. `completion`
+10. `inherit`
+11. `mcp`
 
 ### `turn_end`
 

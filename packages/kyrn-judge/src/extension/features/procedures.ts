@@ -250,11 +250,21 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 					return;
 				}
 				runtime.present("skill.installed", { name: draft.name, path: result.path });
+				// The skills feature tells the agent of it with the next message (`skills.refresh`), where pi would load it
+				// itself: a project's own skills only once the project is trusted.
+				const heard =
+					runtime.options("skills", { enabled: true, refresh: true }).refresh &&
+					(!project || ctx.isProjectTrusted());
 				ctx.ui.notify(
-					say({
-						zh: `已安装技能「${draft.name}」：${result.path}。下次会话起生效（或 /reload 之后）。`,
-						en: `Installed the skill "${draft.name}" at ${result.path}. It takes effect in the next session (or after /reload).`,
-					}),
+					heard
+						? say({
+								zh: `已安装技能「${draft.name}」：${result.path}。你发下一条消息时代理就会知道它，从下次会话起（或 /reload 之后）它会列在系统提示词里。`,
+								en: `Installed the skill "${draft.name}" at ${result.path}. The agent hears of it with your next message; it is listed in the system prompt from the next session (or after /reload).`,
+							})
+						: say({
+								zh: `已安装技能「${draft.name}」：${result.path}。下次会话起生效（或 /reload 之后）。`,
+								en: `Installed the skill "${draft.name}" at ${result.path}. It takes effect in the next session (or after /reload).`,
+							}),
 					"info",
 				);
 				return;

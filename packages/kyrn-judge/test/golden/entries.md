@@ -36,7 +36,9 @@ without one.
 | `kyrn.recovery` | message | src/extension/features/recovery.ts | - | Which calls an interruption left without a result, and what to check before running them again. |
 | `kyrn.rewind` | message | src/extension/features/checkpoint.ts | - | The lesson of a rewind, for the model to start over with. |
 | `kyrn.rewound` | entry | src/extension/features/checkpoint.ts | - | A rewind that happened, with the snapshot that undoes it. |
+| `kyrn.skill-read` | entry | src/extension/features/skills.ts | - | The model read a skill's file: how mu had shown it that skill, and what the first skill-disclosure verdict said of it. A skill the judge kept out and the model read is a miss. |
 | `kyrn.skills` | message | src/extension/features/skills.ts | - | The skills that apply to the task. |
+| `kyrn.skills-changed` | message | src/extension/features/skills.ts | - | Skills installed or removed during the session, which the system prompt's list does not show. |
 | `kyrn.steer` | message | src/extension/features/checkpoint.ts; src/extension/features/monitor.ts | - | A short correction while the agent works: it loops or drifts, its approach looks like a dead end, or the files are back at a checkpoint. |
 | `kyrn.subagent-session` | entry | src/extension/features/swarm.ts | - | Ties a sub-agent's own session file to the delegate or hive call that started it (kyrn/docs/features/subagent-sessions.md). |
 | `kyrn.swarm` | message | src/extension/features/swarm-child.ts | - | Asks a sub-agent to wrap up and report. |
@@ -900,7 +902,15 @@ A message. No schema: no other program reads it.
 
 A entry. No schema: no other program reads it.
 
+## kyrn.skill-read v1
+
+A entry. No schema: no other program reads it.
+
 ## kyrn.skills v1
+
+A message. No schema: no other program reads it.
+
+## kyrn.skills-changed v1
 
 A message. No schema: no other program reads it.
 
