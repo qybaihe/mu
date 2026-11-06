@@ -387,6 +387,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/mu mode <point> <off\|shadow\|active>` | Switch one decision point's mode |
 | `/frame` | Show the task frame: the goal, your constraints with their source and the acceptance criteria |
 | `/goal <condition>` | Keep working until the condition holds; `/goal clear` ends it |
+| `/plan [task]` | Plan first: the agent only looks and asks, and starts once you approve its plan; `/plan off` leaves |
 | `/permissions` | Choose Full access, Judge mode or Ask first |
 | `/board` | Turn the plain-language board on or off |
 | `/remember`, `/lessons`, `/forget` | Keep a lesson, list lessons, retire one |

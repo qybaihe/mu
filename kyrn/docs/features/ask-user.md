@@ -25,9 +25,11 @@ One question after another, with the dialogs every client has, so the terminal, 
 - **Pick one**: a select with each option (`label — description`) and "Something else (type it)", which opens a line for the user's own words.
 - **Pick any** (`multiSelect`): a line with the options numbered in its title. The user types `1,3` (any separator), or their own answer. Anything that is not only numbers of options is taken as their own words.
 
-Before each dialog mu presents a `question.asked` frame with the question in full, and a `question.resolved` frame after it (see below). A client can show the question as a card from the frame and answer the dialog from the card.
+Before each dialog mu presents a `question.asked` frame with the question in full, and a `question.resolved` frame after it (see below). A client can show the question as a card from the frame and answer the dialog from the card. The desktop app does (`desktop/…/native/components/composer/NativeQuestion.tsx`): options with their descriptions, a line for one's own words, Skip, and, while questions nobody answered in time wait, a line above the send box whose Answer button sends `/answer`.
 
 Each dialog waits `waitMs` (default 120 000 ms; 0 waits until answered). Esc skips that question and the ones after it.
+
+Plan mode asks for approval of a plan the same way (`askQuestions`, see [plan-mode.md](plan-mode.md)), with no time limit and no `toolCallId` in its frames.
 
 ## What the model is told
 

@@ -324,6 +324,7 @@ Node 22.19 이상이 필요해요. `mu -p "prompt"`는 한 번 실행하고 결�
 | `/mu mode <point> <off\|shadow\|active>` | 판정 지점 하나를 전환하기 |
 | `/frame` | 작업 프레임: 목표, 여러분의 제약과 그 출처, 인수 조건 |
 | `/goal <condition>` | 조건이 충족될 때까지 계속 작업하기, `/goal clear`로 끝내기 |
+| `/plan [task]` | 먼저 계획하기: 에이전트는 읽고 묻기만 하고, 계획을 승인하면 작업을 시작, `/plan off`로 나가기 |
 | `/permissions` | 전체 접근 / 판정 모드 / 최소 권한 |
 | `/board` | 쉬운 말 보드 켜고 끄기 |
 | `/remember`, `/lessons`, `/forget` | 교훈 하나 남기기, 목록 보기, 하나 사용 중지하기 |

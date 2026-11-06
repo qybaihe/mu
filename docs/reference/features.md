@@ -129,6 +129,12 @@ On by default: yes. Decision points: `tool.approval`.
 | `mode` | `judge` | Mode for new conversations. Once you pick a mode with /permissions, your latest choice is used. One of `full` (Full access), `judge` (Judge mode), `ask` (Ask first). |
 | `readOnlyChains` | `true` | Read-only command chains go ahead. Commands made only of read-only commands joined by ;, &&, \|\| or \| (such as pwd && ls -la; git status) run without asking the judge or you, like a single read-only command. They may throw output away with 2>/dev/null or 2>&1; a redirect that writes a file, sed -i, tee or find with -exec or -delete is not read-only. Off: only a single read-only command or pipeline goes ahead. |
 
+## plan
+
+**Plan mode.** /plan enters plan mode: the agent only reads, searches and asks, changes nothing, and ends with a plan under "# Plan". It starts once you approve it, and the plan's steps go on the task's checklist. Edits, commands that change things and sub-agents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.
+
+On by default: yes.
+
 ## constraints
 
 **Hard constraint gate.** Checks each change or command against your hard constraints first; subagents follow them too.
