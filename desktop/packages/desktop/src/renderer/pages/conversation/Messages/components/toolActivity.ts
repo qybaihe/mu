@@ -77,11 +77,25 @@ const HOME = /^(?:\/Users\/[^/]+|\/home\/[^/]+|[A-Za-z]:\\Users\\[^\\]+)(?=[/\\]
 /** A path as a row shows it: the home folder as `~`, the rest as it is. The whole path stays in the row's tooltip. */
 export const shortPath = (path: string): string => path.replace(HOME, '~');
 
+const labelCache = new WeakMap<
+  NormalizedToolCall,
+  { name: string; input?: string; description?: string; label: ToolLabel }
+>();
+
 /** What a call line shows: its verb and its target, else the call's own description. */
 export const toolLabel = (item: NormalizedToolCall): ToolLabel => {
+  const hit = labelCache.get(item);
+  if (hit && hit.name === item.name && hit.input === item.input && hit.description === item.description) {
+    return hit.label;
+  }
   const named = inputTarget(item.input);
-  if (!named) return { verb: item.name, target: item.description || undefined };
-  return named.path ? { verb: item.name, target: named.text, path: true } : { verb: item.name, target: named.text };
+  const label: ToolLabel = !named
+    ? { verb: item.name, target: item.description || undefined }
+    : named.path
+      ? { verb: item.name, target: named.text, path: true }
+      : { verb: item.name, target: named.text };
+  labelCache.set(item, { name: item.name, input: item.input, description: item.description, label });
+  return label;
 };
 
 /** An error said in one line: the first line of the output that carries words, cut to something a row can hold. */
@@ -214,9 +228,21 @@ export function localUrls(text: string, max = LOCAL_URL_MAX): string[] {
   return found;
 }
 
+const urlsCache = new WeakMap<
+  NormalizedToolCall,
+  { name: string; denied?: boolean; output?: string; urls: string[] }
+>();
+
 /** The local web addresses in a call's output, when the call ran a command. */
-export const toolLocalUrls = (item: NormalizedToolCall): string[] =>
-  item.denied || !item.output || !printsCommandOutput(item.name) ? [] : localUrls(item.output);
+export const toolLocalUrls = (item: NormalizedToolCall): string[] => {
+  const hit = urlsCache.get(item);
+  if (hit && hit.name === item.name && hit.denied === item.denied && hit.output === item.output) {
+    return hit.urls;
+  }
+  const urls = item.denied || !item.output || !printsCommandOutput(item.name) ? [] : localUrls(item.output);
+  urlsCache.set(item, { name: item.name, denied: item.denied, output: item.output, urls });
+  return urls;
+};
 
 /** The local web addresses a stretch's commands printed, once each. They stay visible while the group is closed. */
 export function toolActivityLocalUrls(tools: NormalizedToolCall[]): string[] {
@@ -264,11 +290,20 @@ export function toolLiveTail(
   { lines = LIVE_TAIL_LINES, chars = LIVE_TAIL_CHARS }: { lines?: number; chars?: number } = {}
 ): string | undefined {
   if (!output) return undefined;
-  const trimmed = output.replace(/\r\n/g, '\n').trimEnd();
-  if (!trimmed.trim()) return undefined;
-  const allLines = trimmed.split('\n');
-  const tailLines = allLines.length > lines ? allLines.slice(allLines.length - lines).join('\n') : trimmed;
-  if (tailLines.length <= chars) return tailLines;
+  let end = output.length;
+  while (end > 0 && /\s/.test(output[end - 1])) end -= 1;
+  if (end === 0 || lines <= 0 || chars <= 0) return undefined;
+  let newline = end;
+  for (let i = 0; i < lines; i += 1) {
+    newline = newline > 0 ? output.lastIndexOf('\n', newline - 1) : -1;
+    if (newline < 0) break;
+  }
+  const lineStart = newline < 0 ? 0 : newline + 1;
+  // At most `lines - 1` CRLF pairs exist in `[lineStart, end)`, so slicing `chars + lines` characters from `end`
+  // is guaranteed to cover the last `chars` characters after CRLF normalization without copying huge stdout logs.
+  const sliceStart = Math.max(lineStart, end - chars - lines);
+  const tailLines = output.slice(sliceStart, end).replace(/\r\n/g, '\n');
+  if (sliceStart === lineStart && tailLines.length <= chars) return tailLines;
   return `…${tailLines.slice(tailLines.length - chars)}`;
 }
 
@@ -326,11 +361,26 @@ const splitNormalizedLines = (value: string): string[] => {
   return normalized.length === 0 ? [] : normalized.split('\n');
 };
 
+const diffCache = new WeakMap<
+  NormalizedToolCall,
+  { name: string; denied?: boolean; input?: string; summary: ToolDiffSummary | undefined }
+>();
+
 /**
  * Extracts `+N / -M` line counts and a compact unified diff preview from an `edit` or `write` tool call's JSON input.
  * Returns undefined when the tool is not a file edit/write or carries no diffable text.
  */
 export function toolDiffSummary(item: NormalizedToolCall): ToolDiffSummary | undefined {
+  const hit = diffCache.get(item);
+  if (hit && hit.name === item.name && hit.denied === item.denied && hit.input === item.input) {
+    return hit.summary;
+  }
+  const summary = computeToolDiffSummary(item);
+  diffCache.set(item, { name: item.name, denied: item.denied, input: item.input, summary });
+  return summary;
+}
+
+function computeToolDiffSummary(item: NormalizedToolCall): ToolDiffSummary | undefined {
   if (item.denied || !item.input || toolActivityKind(item.name) !== 'edit') return undefined;
   let parsed: unknown;
   try {

@@ -42,6 +42,20 @@ const elapsedSeconds = (startedAt: number): number => Math.max(0, Math.floor((Da
 export const THOUGHT_TAIL_CHARS = 120;
 
 export function thoughtTail(text: string, limit = THOUGHT_TAIL_CHARS): string {
+  // Slice a bounded suffix window first when the thought is long so streaming frames do not copy and collapse the
+  // entire multi-kilobyte reasoning text just to render the last 120 characters.
+  const windowChars = Math.max(limit * 4, 512);
+  if (text.length > windowChars) {
+    const suffix = text
+      .slice(text.length - windowChars)
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (suffix.length > limit) {
+      const tail = suffix.slice(suffix.length - limit);
+      const space = tail.indexOf(' ');
+      return `…${space > 0 && space < 24 ? tail.slice(space + 1) : tail}`;
+    }
+  }
   const value = text.replace(/\s+/g, ' ').trim();
   if (value.length <= limit) return value;
   const tail = value.slice(value.length - limit);

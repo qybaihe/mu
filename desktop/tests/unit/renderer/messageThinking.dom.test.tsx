@@ -11,6 +11,7 @@ import type { IMessageThinking } from '@/common/chat/chatLib';
 import MessageThinking, {
   THOUGHT_TAIL_CHARS,
   ThoughtHistory,
+  thoughtTail,
 } from '@/renderer/pages/conversation/Messages/components/MessageThinking';
 
 vi.mock('react-i18next', () => ({
@@ -111,6 +112,9 @@ describe('MessageThinking', () => {
     expect(stream).toHaveTextContent('the newest sentence.');
     expect(stream.textContent?.startsWith('…')).toBe(true);
     expect(stream.textContent!.length).toBeLessThanOrEqual(THOUGHT_TAIL_CHARS + 1);
+
+    const multiKilobyte = `${'reasoning step\n\n'.repeat(400)}final check   before   answering\n`;
+    expect(thoughtTail(multiKilobyte, 40)).toBe('…step final check before answering');
   });
 
   it('folds to one line saying how long it thought, once the thought is no longer live', () => {
