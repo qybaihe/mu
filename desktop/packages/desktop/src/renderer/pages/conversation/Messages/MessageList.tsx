@@ -288,6 +288,8 @@ const rowTestId = (message: TMessage, native: boolean): string => {
 
 // Image preview context
 export const ImagePreviewContext = createContext<{ inPreviewGroup: boolean }>({ inPreviewGroup: false });
+const IMAGE_PREVIEW_ACTIONS_LAYOUT = ['zoomIn', 'zoomOut', 'originalSize', 'rotateLeft', 'rotateRight'];
+const IN_PREVIEW_GROUP_VALUE = { inPreviewGroup: true } as const;
 
 const MessageListSkeleton: React.FC<{ rowWidthClass: string }> = ({ rowWidthClass }) => {
   const rows = [
@@ -1127,8 +1129,8 @@ const MessageList: React.FC<{
   return (
     <div className='relative flex-1 h-full'>
       {/* Use PreviewGroup to wrap all messages for cross-message image preview */}
-      <Image.PreviewGroup actionsLayout={['zoomIn', 'zoomOut', 'originalSize', 'rotateLeft', 'rotateRight']}>
-        <ImagePreviewContext.Provider value={{ inPreviewGroup: true }}>
+      <Image.PreviewGroup actionsLayout={IMAGE_PREVIEW_ACTIONS_LAYOUT}>
+        <ImagePreviewContext.Provider value={IN_PREVIEW_GROUP_VALUE}>
           <div
             ref={setScrollerRef}
             data-testid='message-list-scroller'

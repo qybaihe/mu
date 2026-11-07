@@ -26,6 +26,7 @@ import type {
 import type {
   NativeView,
   ViewAssistantMessage,
+  ViewBlock,
   ViewImage,
   ViewMessage,
   ViewNotice,
@@ -229,6 +230,8 @@ function errorRow(conversationId: string, id: string, at: number, content: strin
   };
 }
 
+type CachedRow = { key: string; row: TMessage };
+
 type Context = {
   conversationId: string;
   words: MessageWords;
@@ -239,48 +242,101 @@ type Context = {
   /** Its bash-missing line was said by an earlier message. */
   bashSaid: boolean;
   at: number;
+  blockCache: WeakMap<ViewBlock, CachedRow>;
+  memoRow: <T extends TMessage>(id: string, sig: string, build: () => T) => T;
 };
 
 function assistantRows(message: ViewAssistantMessage, context: Context): TMessage[] {
-  const { conversationId, at } = context;
+  const { conversationId, at, blockCache, memoRow } = context;
   const rows: TMessage[] = [];
-  if (message.retries)
+  if (message.retries) {
+    const retries = message.retries;
+    const id = `${message.id}:retried`;
     rows.push(
-      noticeRow(conversationId, `${message.id}:retried`, at, context.words.retried(message.retries), { level: 'info' })
+      memoRow(id, `retried|${at}|${retries}`, () =>
+        noticeRow(conversationId, id, at, context.words.retried(retries), { level: 'info' })
+      )
     );
+  }
   message.blocks.forEach((block, index) => {
     const id = `${message.id}:${index}`;
     if (block.type === 'text') {
-      if (block.text.trim()) rows.push(textRow(conversationId, id, message.id, at, 'left', block.text));
+      if (!block.text.trim()) return;
+      const blockKey = `${message.id}|${index}|${at}`;
+      const hit = blockCache.get(block);
+      if (hit?.key === blockKey) {
+        rows.push(hit.row);
+        return;
+      }
+      const row = memoRow(id, `text|${at}|${block.text}`, () =>
+        textRow(conversationId, id, message.id, at, 'left', block.text)
+      );
+      blockCache.set(block, { key: blockKey, row });
+      rows.push(row);
       return;
     }
     if (block.type === 'thinking') {
       // Only the thinking the provider shows: a redacted block has none.
       if (block.redacted || !block.text.trim()) return;
       const live = context.thinking && index === message.blocks.length - 1;
-      const row: IMessageThinking = {
+      const status = live ? 'thinking' : 'done';
+      const blockKey = `${message.id}|${index}|${at}|${status}`;
+      const hit = blockCache.get(block);
+      if (hit?.key === blockKey) {
+        rows.push(hit.row);
+        return;
+      }
+      const row = memoRow<IMessageThinking>(id, `thinking|${at}|${status}|${block.text}`, () => ({
         id,
         msg_id: message.id,
         conversation_id: conversationId,
         type: 'thinking',
         position: 'left',
         created_at: at,
-        content: { content: block.text, status: live ? 'thinking' : 'done' },
-      };
+        content: { content: block.text, status },
+      }));
+      blockCache.set(block, { key: blockKey, row });
       rows.push(row);
       return;
     }
-    rows.push(toolRow(conversationId, message, block, context.open, at));
+    const ended = block.status === 'done' || block.status === 'error';
+    const status: ToolUpdate['status'] = ended || context.open ? TOOL_STATUS[block.status] : 'failed';
+    const blockKey = `${message.id}|${at}|${status}`;
+    const hit = blockCache.get(block);
+    if (hit?.key === blockKey) {
+      rows.push(hit.row);
+      return;
+    }
+    const toolId = `${message.id}:${block.id}`;
+    const row =
+      !block.result && !block.partial
+        ? memoRow(toolId, `tool|${at}|${status}|${block.name}|${JSON.stringify(block.args)}`, () =>
+            toolRow(conversationId, message, block, context.open, at)
+          )
+        : toolRow(conversationId, message, block, context.open, at);
+    blockCache.set(block, { key: blockKey, row });
+    rows.push(row);
   });
   const noBash = message.blocks.some(
     (block) => block.type === 'tool' && block.status === 'error' && NO_BASH.test(block.result?.text ?? '')
   );
-  if (noBash && !context.bashSaid)
-    rows.push(noticeRow(conversationId, `${message.id}:bash`, at, BASH_MISSING_TITLE, { notice: 'bash_missing' }));
-  if (message.stopReason === 'aborted')
-    rows.push(noticeRow(conversationId, `${message.id}:stopped`, at, STOPPED_TITLE, { notice: 'stopped' }));
-  if (message.stopReason === 'error')
-    rows.push(errorRow(conversationId, `${message.id}:error`, at, failureText(message.errorMessage)));
+  if (noBash && !context.bashSaid) {
+    const id = `${message.id}:bash`;
+    rows.push(
+      memoRow(id, `bash|${at}`, () => noticeRow(conversationId, id, at, BASH_MISSING_TITLE, { notice: 'bash_missing' }))
+    );
+  }
+  if (message.stopReason === 'aborted') {
+    const id = `${message.id}:stopped`;
+    rows.push(
+      memoRow(id, `stopped|${at}`, () => noticeRow(conversationId, id, at, STOPPED_TITLE, { notice: 'stopped' }))
+    );
+  }
+  if (message.stopReason === 'error') {
+    const id = `${message.id}:error`;
+    const content = failureText(message.errorMessage);
+    rows.push(memoRow(id, `error|${at}|${content}`, () => errorRow(conversationId, id, at, content)));
+  }
   return rows;
 }
 
@@ -311,14 +367,28 @@ type Cached = { key: string; rows: TMessage[] };
  */
 export function createMessageMapper(): (view: NativeView, options: MessageOptions) => TMessage[] {
   let cache = new WeakMap<ViewMessage, Cached>();
+  let blockCache = new WeakMap<ViewBlock, CachedRow>();
   let noticeCache = new WeakMap<ViewNotice, Cached>();
+  let rowById = new Map<string, CachedRow>();
+  let lastRows: TMessage[] | undefined;
   let cachedFor: { conversationId: string; words: MessageWords } | undefined;
+
+  const memoRow = <T extends TMessage>(id: string, sig: string, build: () => T): T => {
+    const hit = rowById.get(id);
+    if (hit?.key === sig) return hit.row as T;
+    const row = build();
+    rowById.set(id, { key: sig, row });
+    return row;
+  };
 
   return (view, options) => {
     const { conversationId, words, outgoing } = options;
     if (cachedFor?.conversationId !== conversationId || cachedFor.words !== words) {
       cache = new WeakMap();
+      blockCache = new WeakMap();
       noticeCache = new WeakMap();
+      rowById = new Map();
+      lastRows = undefined;
       cachedFor = { conversationId, words };
     }
     const running = isRunning(view);
@@ -354,7 +424,7 @@ export function createMessageMapper(): (view: NativeView, options: MessageOption
       if (message.role === 'user' || message.role === 'assistant') at = Math.max(at, message.timestamp);
       const open = running && index === lastAssistant;
       const thinking = open && view.status === 'thinking' && message.role === 'assistant' && message.streaming;
-      const key = `${at}|${open}|${thinking}|${bashSaid}`;
+      const key = message.role === 'assistant' ? `${at}|${open}|${thinking}|${bashSaid}` : `${at}`;
       const hit = cache.get(message);
       let own: TMessage[];
       if (hit?.key === key) own = hit.rows;
@@ -383,7 +453,17 @@ export function createMessageMapper(): (view: NativeView, options: MessageOption
               level: 'info',
             }),
           ];
-        } else own = assistantRows(message, { conversationId, words, open, thinking, bashSaid, at });
+        } else
+          own = assistantRows(message, {
+            conversationId,
+            words,
+            open,
+            thinking,
+            bashSaid,
+            at,
+            blockCache,
+            memoRow,
+          });
         cache.set(message, { key, rows: own });
       }
       rows.push(...own, ...notices(message.id, at));
@@ -393,34 +473,54 @@ export function createMessageMapper(): (view: NativeView, options: MessageOption
 
     // A prompt pi refused ran nothing: no message failed, the run did.
     const last = lastAssistant >= 0 ? view.messages[lastAssistant] : undefined;
-    if (view.status === 'error' && !(last?.role === 'assistant' && last.stopReason === 'error'))
-      rows.push(errorRow(conversationId, 'refused', at, view.error || MODEL_FAILED));
+    if (view.status === 'error' && !(last?.role === 'assistant' && last.stopReason === 'error')) {
+      const content = view.error || MODEL_FAILED;
+      rows.push(memoRow('refused', `refused|${at}|${content}`, () => errorRow(conversationId, 'refused', at, content)));
+    }
 
     if (outgoing) {
       const sentAt = Math.max(at, outgoing.at);
-      rows.push(textRow(conversationId, outgoing.id, outgoing.id, sentAt, 'right', outgoing.text, outgoing.images));
+      rows.push(
+        outgoing.images?.length
+          ? textRow(conversationId, outgoing.id, outgoing.id, sentAt, 'right', outgoing.text, outgoing.images)
+          : memoRow(outgoing.id, `outgoing|${sentAt}|${outgoing.text}`, () =>
+              textRow(conversationId, outgoing.id, outgoing.id, sentAt, 'right', outgoing.text)
+            )
+      );
     }
     const classifying = view.live.classifying;
     if (classifying) {
-      rows.push({
-        id: `jev:classifying:${classifying.turn}`,
-        conversation_id: conversationId,
-        type: 'acp_tool_call',
-        position: 'left',
-        created_at: Math.max(at, outgoing?.at ?? 0),
-        content: {
-          session_id: conversationId,
-          update: {
-            sessionUpdate: 'tool_call',
-            tool_call_id: `jev:native:turn-${classifying.turn}`,
-            status: 'in_progress',
-            title: 'Judge · Classifying',
-            kind: 'execute',
-            rawOutput: { preflight: 'pending', ...(classifying.judge ? { judge: classifying.judge } : {}) },
-          },
-        },
-      });
+      const id = `jev:classifying:${classifying.turn}`;
+      const classifyingAt = Math.max(at, outgoing?.at ?? 0);
+      rows.push(
+        memoRow<IMessageAcpToolCall>(
+          id,
+          `classifying|${classifyingAt}|${classifying.turn}|${classifying.judge ?? ''}`,
+          () => ({
+            id,
+            conversation_id: conversationId,
+            type: 'acp_tool_call',
+            position: 'left',
+            created_at: classifyingAt,
+            content: {
+              session_id: conversationId,
+              update: {
+                sessionUpdate: 'tool_call',
+                tool_call_id: `jev:native:turn-${classifying.turn}`,
+                status: 'in_progress',
+                title: 'Judge · Classifying',
+                kind: 'execute',
+                rawOutput: { preflight: 'pending', ...(classifying.judge ? { judge: classifying.judge } : {}) },
+              },
+            },
+          })
+        )
+      );
     }
+    if (lastRows && lastRows.length === rows.length && rows.every((row, index) => row === lastRows![index])) {
+      return lastRows;
+    }
+    lastRows = rows;
     return rows;
   };
 }

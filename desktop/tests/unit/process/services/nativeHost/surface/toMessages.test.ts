@@ -341,6 +341,74 @@ describe('rows written by hand', () => {
     // Other words (another language) give new rows.
     expect(map(after, { ...options, words: { retried: () => '', compacted: () => '' } })[0]).not.toBe(second[0]);
   });
+
+  it('keeps finished blocks in the active assistant message and the row list reference stable while later blocks stream or settle', () => {
+    const map = createMessageMapper();
+    const step1 = reduceAll([
+      { type: 'agent_start' },
+      ended(user('inspect and explain')),
+      { type: 'message_start', message: reply([]) },
+      delta({ type: 'thinking_start', contentIndex: 0 }),
+      delta({ type: 'thinking_delta', contentIndex: 0, delta: 'Checking files first' }),
+      delta({ type: 'thinking_end', contentIndex: 0, content: 'Checking files first' }),
+      delta({ type: 'toolcall_start', contentIndex: 1, id: 'c1', toolName: 'read' }),
+      delta({
+        type: 'toolcall_end',
+        contentIndex: 1,
+        toolCall: { id: 'c1', name: 'read', arguments: { path: 'src/a.ts' } },
+      }),
+      delta({ type: 'text_start', contentIndex: 2 }),
+      delta({ type: 'text_delta', contentIndex: 2, delta: 'Part 1' }),
+    ]);
+    const rows1 = map(step1, options);
+    expect(rows1.map(brief)).toEqual([
+      'person: inspect and explain',
+      'thinking (done): Checking files first',
+      'call read pending: ',
+      'mu: Part 1',
+    ]);
+
+    // Streaming more text in block 2 keeps the user row, finished thinking block 0, and tool block 1 identical.
+    const step2 = reduce(step1, delta({ type: 'text_delta', contentIndex: 2, delta: ' and Part 2' }));
+    const rows2 = map(step2, options);
+    expect(rows2[0]).toBe(rows1[0]);
+    expect(rows2[1]).toBe(rows1[1]);
+    expect(rows2[2]).toBe(rows1[2]);
+    expect(rows2[3]).not.toBe(rows1[3]);
+    expect(brief(rows2[3])).toBe('mu: Part 1 and Part 2');
+
+    // text_end and message_end with the same block content keep every row and the array reference itself identical.
+    const step3 = reduceAll(
+      [
+        delta({ type: 'text_end', contentIndex: 2, content: 'Part 1 and Part 2' }),
+        ended(
+          reply(
+            [
+              { type: 'thinking', thinking: 'Checking files first' },
+              toolCall('c1', 'read', { path: 'src/a.ts' }),
+              text('Part 1 and Part 2'),
+            ],
+            { stopReason: 'toolUse' }
+          )
+        ),
+      ],
+      step2
+    );
+    const rows3 = map(step3, options);
+    expect(rows3).toBe(rows2);
+
+    // Completing tool c1 updates only the tool row; thinking block 0 and text block 2 keep their exact references.
+    const step4 = reduce(step3, ended(toolResult('c1', 'contents of a.ts', false, { toolName: 'read' })));
+    const rows4 = map(step4, options);
+    expect(rows4[0]).toBe(rows3[0]);
+    expect(rows4[1]).toBe(rows3[1]);
+    expect(rows4[2]).not.toBe(rows3[2]);
+    expect(rows4[3]).toBe(rows3[3]);
+
+    // Settling the agent run or receiving non-transcript frames keeps the entire row array reference unchanged.
+    const step5 = reduceAll([frame('progress', { step: 'Reviewing' }), { type: 'agent_settled' }], step4);
+    expect(map(step5, options)).toBe(rows4);
+  });
 });
 
 describe('Laya, gone from mu', () => {

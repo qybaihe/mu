@@ -213,6 +213,12 @@ describe('a running command shows its newest lines', () => {
     expect(toolLiveTail('x'.repeat(50) + 'END', { chars: 10 })).toBe('…xxxxxxxEND');
   });
 
+  it('extracts the last lines from a large CRLF stdout log without losing line boundaries', () => {
+    const hugePrefix = Array.from({ length: 500 }, (_, index) => `step ${index + 1}: ${'x'.repeat(80)}`).join('\r\n');
+    const output = `${hugePrefix}\r\nfinal-1\r\nfinal-2\r\nfinal-3\r\n  \r\n`;
+    expect(toolLiveTail(output, { lines: 3, chars: 100 })).toBe('final-1\nfinal-2\nfinal-3');
+  });
+
   it('takes the tail of the call still running in a group', () => {
     const tools = [
       call('read', 'completed', { path: 'a.ts' }, 'file'),
@@ -251,6 +257,19 @@ describe('a file edit says how many lines it changed', () => {
     expect(
       toolDiffSummary({ ...call('edit', 'completed', { path: 'a.ts', oldText: 'a', newText: 'b' }), denied: true })
     ).toBeUndefined();
+  });
+
+  it('reuses cached label, local URL list, and diff summary references for an unchanged tool call', () => {
+    const editItem = call('edit', 'completed', {
+      path: 'src/a.ts',
+      oldText: 'const x = 1;\n',
+      newText: 'const x = 2;\n',
+    });
+    expect(toolLabel(editItem)).toBe(toolLabel(editItem));
+    expect(toolDiffSummary(editItem)).toBe(toolDiffSummary(editItem));
+
+    const bashItem = call('bash', 'completed', { command: 'npm run dev' }, 'ready on http://localhost:5173/');
+    expect(toolLocalUrls(bashItem)).toBe(toolLocalUrls(bashItem));
   });
 });
 
