@@ -930,10 +930,13 @@ const MessageList: React.FC<{
     },
     [handleWheel, requestEarlier]
   );
-  const handleListPointerDown = useCallback(() => {
-    if (keptPlaceRef.current?.drawnAt) keptPlaceRef.current = undefined;
-    handlePointerDown();
-  }, [handlePointerDown]);
+  const handleListPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (keptPlaceRef.current?.drawnAt) keptPlaceRef.current = undefined;
+      handlePointerDown(event);
+    },
+    [handlePointerDown]
+  );
 
   useEffect(() => {
     if (!targetMessageId || processedList.length === 0) {
@@ -1139,6 +1142,7 @@ const MessageList: React.FC<{
           >
             <div
               ref={setContentRef}
+              className='message-list-content'
               data-testid='message-list-content'
               style={{
                 overflowAnchor: 'none',
@@ -1159,14 +1163,25 @@ const MessageList: React.FC<{
 
       {/* Released from the bottom: one small pill offers the way back, and nothing else moves. */}
       {showScrollButton && (
-        <div className='absolute bottom-16px left-50% transform -translate-x-50% z-100'>
+        <div className='absolute bottom-16px left-50% transform -translate-x-50% z-100 jump-to-latest-pill'>
           <button
             type='button'
             data-testid='jump-to-latest'
-            className='flex items-center gap-6px h-28px ps-10px pe-8px rd-999px bg-base cursor-pointer border-1 border-solid border-3 text-12px text-t-secondary hover:text-t-primary transition-colors duration-150'
+            className='flex items-center gap-6px h-28px ps-10px pe-8px rd-999px bg-base cursor-pointer border-1 border-solid border-3 text-12px text-t-secondary hover:text-t-primary transition-all duration-150'
+            style={{ boxShadow: 'var(--mu-shadow-2)' }}
             onClick={handleScrollButtonClick}
             aria-label={t('messages.scrollToBottom')}
           >
+            {isProcessing && (
+              <span
+                className='size-6px rd-full shrink-0'
+                style={{
+                  backgroundColor: 'rgb(var(--primary-6))',
+                  animation: 'jump-pill-pulse 1.4s ease-in-out infinite',
+                }}
+                aria-hidden='true'
+              />
+            )}
             {t('messages.scrollToBottom')}
             <Down theme='outline' size='12' fill={iconColors.secondary} style={{ display: 'block' }} />
           </button>

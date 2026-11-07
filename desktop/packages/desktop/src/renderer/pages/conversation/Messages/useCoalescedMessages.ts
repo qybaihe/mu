@@ -6,23 +6,44 @@ import type { TMessage } from '@/common/chat/chatLib';
  *
  * A reply and a thought arrive a few characters at a time, and each chunk replaces the whole list. Redrawing per
  * chunk costs more the faster the model is, and nothing on screen can move more often than the screen does. So a
- * chunk that only adds to the text of the last row waits for the next frame and takes every chunk after it along.
+ * chunk that only grows one row in place waits for the next frame and takes every chunk after it along: the text of a
+ * reply, a thought still thinking, a tool call still in progress, a terminal still printing.
  *
  * Everything else lands at once — a row added or removed, a tool call changing state, a permission request, the
- * reader's own message. Only the two kinds of row that grow letter by letter are ever a frame late.
+ * reader's own message. Only rows that are still growing are ever a frame late.
  */
 
-const STREAMS = new Set(['text', 'thinking']);
+/** Whether a single row only grew in place during active streaming (text/thinking chunk or live tool output). */
+const isStreamingRowUpdate = (prev: TMessage | undefined, next: TMessage): boolean => {
+  if (!prev || prev.id !== next.id || prev.type !== next.type) return false;
+  if (prev.type === 'text' && next.type === 'text') return prev.position === next.position;
+  if (prev.type === 'thinking' && next.type === 'thinking') {
+    return prev.content.status === 'thinking' && next.content.status === 'thinking';
+  }
+  if (prev.type === 'acp_tool_call' && next.type === 'acp_tool_call') {
+    return (
+      prev.content?.update?.status === 'in_progress' &&
+      next.content?.update?.status === 'in_progress' &&
+      prev.content?.update?.tool_call_id === next.content?.update?.tool_call_id
+    );
+  }
+  if (prev.type === 'acp_terminal_output' && next.type === 'acp_terminal_output') {
+    return !prev.content?.exit_status && !next.content?.exit_status;
+  }
+  return false;
+};
 
-/** Whether `next` only adds to the text of the row that is already last: the one case worth holding for a frame. */
+/** Whether `next` only updates a live streaming row in place: the case worth holding for the next animation frame. */
 const isStreamedChunk = (current: TMessage[], next: TMessage[]): boolean => {
   if (current.length === 0 || current.length !== next.length) return false;
-  const last = next[next.length - 1];
-  if (!STREAMS.has(last.type) || last.id !== current[current.length - 1]?.id) return false;
-  for (let index = 0; index < current.length - 1; index++) {
-    if (current[index] !== next[index]) return false;
+  let changedIndex = -1;
+  for (let index = 0; index < current.length; index++) {
+    if (current[index] === next[index]) continue;
+    if (changedIndex !== -1) return false;
+    changedIndex = index;
   }
-  return true;
+  if (changedIndex === -1) return false;
+  return isStreamingRowUpdate(current[changedIndex], next[changedIndex]);
 };
 
 export function useCoalescedMessages(list: TMessage[]): TMessage[] {

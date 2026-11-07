@@ -421,4 +421,41 @@ describe('useAutoScroll', () => {
       inline: 'nearest',
     });
   });
+
+  it('does not treat clicking an inline button as manual scroll intervention', () => {
+    const scroller = createScroller({ scrollTop: 600 });
+    const content = createContent();
+    const { result } = renderHook(() =>
+      useAutoScroll({
+        messages: [createLeftMessage('hello')],
+        itemCount: 1,
+      })
+    );
+
+    attachElements(result, scroller, content);
+    act(() => {
+      vi.runAllTimers();
+    });
+    vi.mocked(scroller.scrollTo).mockClear();
+
+    const button = document.createElement('button');
+    act(() => {
+      result.current.handlePointerDown({
+        target: button,
+      } as unknown as React.PointerEvent<HTMLDivElement>);
+    });
+    // Within the programmatic guard window, a layout-clamp scroll after clicking a disclosure button keeps auto-follow.
+    fireScroll(result.current.handleScroll, scroller, 560);
+
+    scroller.scrollHeight = 1080;
+    act(() => {
+      resizeObserverCallback?.([], {} as ResizeObserver);
+      vi.runAllTimers();
+    });
+
+    expect(scroller.scrollTo).toHaveBeenCalledWith({
+      top: 680,
+      behavior: 'auto',
+    });
+  });
 });

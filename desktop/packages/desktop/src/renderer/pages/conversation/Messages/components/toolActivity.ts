@@ -1,3 +1,4 @@
+import { diffLines } from 'diff';
 import type { NormalizedToolCall, NormalizedToolStatus } from '@/common/chat/normalizeToolCall';
 
 /**
@@ -248,4 +249,148 @@ export function clipOutput(
   const head = rows.length > lines ? rows.slice(0, lines).join('\n') : value;
   if (head.length <= chars) return { text: head, clipped: head.length < value.length };
   return { text: head.slice(0, chars), clipped: true };
+}
+
+/** Maximum lines and characters shown in the live streaming terminal tail while a command runs. */
+export const LIVE_TAIL_LINES = 5;
+export const LIVE_TAIL_CHARS = 360;
+
+/**
+ * The newest lines of a running command's streaming output, bounded to a compact window so the row never jumps in
+ * height while stdout streams. Returns undefined when there is no printable output yet.
+ */
+export function toolLiveTail(
+  output?: string,
+  { lines = LIVE_TAIL_LINES, chars = LIVE_TAIL_CHARS }: { lines?: number; chars?: number } = {}
+): string | undefined {
+  if (!output) return undefined;
+  const trimmed = output.replace(/\r\n/g, '\n').trimEnd();
+  if (!trimmed.trim()) return undefined;
+  const allLines = trimmed.split('\n');
+  const tailLines = allLines.length > lines ? allLines.slice(allLines.length - lines).join('\n') : trimmed;
+  if (tailLines.length <= chars) return tailLines;
+  return `…${tailLines.slice(tailLines.length - chars)}`;
+}
+
+/** The live streaming output tail of whichever tool call in a group is currently running. */
+export function runningToolLiveTail(tools: NormalizedToolCall[]): string | undefined {
+  for (let index = tools.length - 1; index >= 0; index--) {
+    const item = tools[index];
+    if (isLive(item.status) && !item.denied && item.output) {
+      const tail = toolLiveTail(item.output);
+      if (tail) return tail;
+    }
+  }
+  return undefined;
+}
+
+// ── inline diff summary for file edits & writes ─────────────────────────────
+
+export type ToolDiffLine = { kind: 'add' | 'del' | 'ctx' | 'hunk'; text: string };
+
+export type ToolDiffSummary = {
+  additions: number;
+  deletions: number;
+  lines: ToolDiffLine[];
+};
+
+const MAX_DIFF_PREVIEW_LINES = 24;
+
+type EditPair = { oldText: string; newText: string };
+
+const extractEditPairs = (record: Record<string, unknown>): EditPair[] => {
+  if (Array.isArray(record.edits)) {
+    return record.edits.flatMap((entry): EditPair[] => {
+      if (typeof entry !== 'object' || entry === null) return [];
+      const item = entry as Record<string, unknown>;
+      if (typeof item.oldText === 'string' && typeof item.newText === 'string') {
+        return [{ oldText: item.oldText, newText: item.newText }];
+      }
+      if (typeof item.old_string === 'string' && typeof item.new_string === 'string') {
+        return [{ oldText: item.old_string, newText: item.new_string }];
+      }
+      return [];
+    });
+  }
+  if (typeof record.oldText === 'string' && typeof record.newText === 'string') {
+    return [{ oldText: record.oldText, newText: record.newText }];
+  }
+  if (typeof record.old_string === 'string' && typeof record.new_string === 'string') {
+    return [{ oldText: record.old_string, newText: record.new_string }];
+  }
+  return [];
+};
+
+const splitNormalizedLines = (value: string): string[] => {
+  const normalized = value.replace(/\r\n/g, '\n').replace(/\n$/, '');
+  return normalized.length === 0 ? [] : normalized.split('\n');
+};
+
+/**
+ * Extracts `+N / -M` line counts and a compact unified diff preview from an `edit` or `write` tool call's JSON input.
+ * Returns undefined when the tool is not a file edit/write or carries no diffable text.
+ */
+export function toolDiffSummary(item: NormalizedToolCall): ToolDiffSummary | undefined {
+  if (item.denied || !item.input || toolActivityKind(item.name) !== 'edit') return undefined;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(item.input);
+  } catch {
+    return undefined;
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return undefined;
+  const record = parsed as Record<string, unknown>;
+
+  const pairs = extractEditPairs(record);
+  if (pairs.length > 0) {
+    let additions = 0;
+    let deletions = 0;
+    const lines: ToolDiffLine[] = [];
+
+    pairs.forEach((pair, pairIndex) => {
+      if (pairIndex > 0 && lines.length < MAX_DIFF_PREVIEW_LINES) {
+        lines.push({ kind: 'hunk', text: '  ⋯' });
+      }
+      const changes = diffLines(pair.oldText.replace(/\r\n/g, '\n'), pair.newText.replace(/\r\n/g, '\n'));
+      for (const change of changes) {
+        const partLines = splitNormalizedLines(change.value);
+        if (change.added) {
+          additions += partLines.length;
+          for (const line of partLines) {
+            if (lines.length < MAX_DIFF_PREVIEW_LINES) lines.push({ kind: 'add', text: `+ ${line}` });
+          }
+        } else if (change.removed) {
+          deletions += partLines.length;
+          for (const line of partLines) {
+            if (lines.length < MAX_DIFF_PREVIEW_LINES) lines.push({ kind: 'del', text: `- ${line}` });
+          }
+        } else if (partLines.length > 0 && lines.length < MAX_DIFF_PREVIEW_LINES) {
+          lines.push({ kind: 'ctx', text: `  ${partLines[0]}` });
+          if (partLines.length > 2 && lines.length < MAX_DIFF_PREVIEW_LINES) {
+            lines.push({ kind: 'hunk', text: '  ⋯' });
+          }
+          if (partLines.length > 1 && lines.length < MAX_DIFF_PREVIEW_LINES) {
+            lines.push({ kind: 'ctx', text: `  ${partLines[partLines.length - 1]}` });
+          }
+        }
+      }
+    });
+
+    if (additions === 0 && deletions === 0) return undefined;
+    return { additions, deletions, lines };
+  }
+
+  if (typeof record.content === 'string' && record.content.length > 0) {
+    const contentLines = splitNormalizedLines(record.content);
+    if (contentLines.length === 0) return undefined;
+    const lines: ToolDiffLine[] = contentLines
+      .slice(0, MAX_DIFF_PREVIEW_LINES)
+      .map((line) => ({ kind: 'add', text: `+ ${line}` }));
+    if (contentLines.length > MAX_DIFF_PREVIEW_LINES) {
+      lines.push({ kind: 'hunk', text: `  ⋯ +${contentLines.length - MAX_DIFF_PREVIEW_LINES}` });
+    }
+    return { additions: contentLines.length, deletions: 0, lines };
+  }
+
+  return undefined;
 }

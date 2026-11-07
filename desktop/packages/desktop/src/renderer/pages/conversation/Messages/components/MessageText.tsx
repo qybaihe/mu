@@ -357,7 +357,7 @@ const MessageText: React.FC<{
                 ? { borderRadius: '12px 12px 4px 12px', color: 'var(--text-primary)' }
                 : isTeammateMessage
                   ? {
-                      borderRadius: '0 8px 8px 8px',
+                      borderRadius: '4px 12px 12px 12px',
                       ...(teammateColor ? { borderLeft: `3px solid ${teammateColor}` } : {}),
                     }
                   : undefined),

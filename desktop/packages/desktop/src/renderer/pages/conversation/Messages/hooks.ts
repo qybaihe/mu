@@ -528,7 +528,9 @@ export const useMergeLiveMessage = () => {
       return newList;
     });
 
-    rafRef.current = setTimeout(flush);
+    if (pendingRef.current.length > 0) {
+      rafRef.current = setTimeout(flush);
+    }
   }, []);
 
   useEffect(() => {

@@ -18,7 +18,7 @@ import type { TMessage } from '@/common/chat/chatLib';
 
 const PROGRAMMATIC_SCROLL_GUARD_MS = 150;
 const AT_BOTTOM_THRESHOLD_PX = 100;
-const FOLLOW_BOTTOM_THRESHOLD_PX = 4;
+const FOLLOW_BOTTOM_THRESHOLD_PX = 24;
 
 interface UseAutoScrollOptions {
   messages: TMessage[];
@@ -37,7 +37,7 @@ interface UseAutoScrollReturn {
   handleContentRef: (ref: HTMLDivElement | null) => void;
   handleScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   handleWheel: (e: React.WheelEvent<HTMLDivElement>) => void;
-  handlePointerDown: () => void;
+  handlePointerDown: (e?: React.PointerEvent<HTMLDivElement>) => void;
   showScrollButton: boolean;
   scrollToBottom: (behavior?: ScrollBehavior) => void;
   scrollElementIntoView: (element: HTMLElement | null, options?: ScrollElementIntoViewOptions) => void;
@@ -179,7 +179,10 @@ export function useAutoScroll({ messages, itemCount, onContentResize }: UseAutoS
     }
   }, []);
 
-  const handlePointerDown = useCallback(() => {
+  const handlePointerDown = useCallback((e?: React.PointerEvent<HTMLDivElement>) => {
+    const target = e?.target as HTMLElement | null | undefined;
+    // Clicking an inline disclosure or action button inside the transcript is not a scrollbar drag.
+    if (target?.closest?.('button, a, [role="button"]')) return;
     userInputActiveRef.current = true;
   }, []);
 

@@ -510,4 +510,62 @@ describe('a call still marked running', () => {
     expect(screen.getByRole('button', { name: 'bash · tools.status.canceled' })).toHaveTextContent('npm test');
     expect(screen.getByRole('button', { name: 'bash · tools.status.executing' })).toHaveTextContent('npm run build');
   });
+
+  it('streams the newest lines of a running command’s output under the row, then folds it away on completion', () => {
+    const lines = ['line 1', 'line 2', 'line 3', 'line 4', 'line 5', 'line 6', 'line 7'].join('\n');
+    const { rerender } = render(
+      <MessageToolGroupSummary messages={[tool('bash', 'running', { command: 'npm test' }, lines)]} live />
+    );
+
+    const tail = screen.getByTestId('tool-live-tail');
+    expect(tail).toHaveTextContent('line 3');
+    expect(tail).toHaveTextContent('line 7');
+    expect(tail).not.toHaveTextContent('line 1');
+
+    // Once completed, the live tail steps aside and output waits for an explicit click.
+    rerender(<MessageToolGroupSummary messages={[tool('bash', 'completed', { command: 'npm test' }, lines)]} live />);
+    expect(screen.queryByTestId('tool-live-tail')).toBeNull();
+  });
+
+  it('surfaces the running command’s live output tail under a folded activity group until opened', () => {
+    render(
+      <MessageToolGroupSummary
+        messages={[
+          tool('read', 'completed', { path: 'src/app.ts' }),
+          tool('bash', 'running', { command: 'npm test' }, 'PASS src/a.test.ts\nRUNNING src/b.test.ts'),
+        ]}
+        live
+      />
+    );
+
+    expect(screen.getByTestId('tool-live-tail')).toHaveTextContent('RUNNING src/b.test.ts');
+    fireEvent.click(screen.getByRole('button', { name: /2 steps/ }));
+    // Opening the group hands the live tail to the running row itself.
+    expect(screen.getByTestId('tool-live-tail')).toHaveTextContent('RUNNING src/b.test.ts');
+  });
+
+  it('shows +N / -M diff stats on an edit call and renders an inline diff view when opened', () => {
+    render(
+      <MessageToolGroupSummary
+        messages={[
+          tool('edit', 'completed', {
+            path: 'src/app.ts',
+            edits: [{ oldText: 'const a = 1;\nconst b = 2;\n', newText: 'const a = 1;\nconst b = 3;\nconst c = 4;\n' }],
+          }),
+        ]}
+        live
+      />
+    );
+
+    const stats = screen.getByTestId('tool-call-diff-stats');
+    expect(stats).toHaveTextContent('+2');
+    expect(stats).toHaveTextContent('-1');
+    expect(screen.queryByTestId('tool-call-diff-view')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'edit · tools.status.success' }));
+    const diffView = screen.getByTestId('tool-call-diff-view');
+    expect(diffView).toHaveTextContent('- const b = 2;');
+    expect(diffView).toHaveTextContent('+ const b = 3;');
+    expect(diffView).toHaveTextContent('+ const c = 4;');
+  });
 });

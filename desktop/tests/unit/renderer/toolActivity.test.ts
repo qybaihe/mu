@@ -4,13 +4,16 @@ import {
   ACTIVITY_FOLD_MIN,
   clipOutput,
   localUrls,
+  runningToolLiveTail,
   shouldFoldActivity,
   summarizeToolActivity,
   toolActivityDenied,
   toolActivityErrors,
   toolActivityLocalUrls,
+  toolDiffSummary,
   toolErrorLine,
   toolLabel,
+  toolLiveTail,
   toolLocalUrls,
 } from '@/renderer/pages/conversation/Messages/components/toolActivity';
 import { toolKind } from '@/renderer/pages/conversation/Messages/components/ToolKindIcon';
@@ -192,6 +195,62 @@ describe('long output is clipped, not dumped', () => {
   it('cuts a single enormous line by characters', () => {
     const clip = clipOutput('x'.repeat(5000), { chars: 100 });
     expect(clip).toEqual({ text: 'x'.repeat(100), clipped: true });
+  });
+});
+
+describe('a running command shows its newest lines', () => {
+  it('keeps the last lines only, so the row does not grow while stdout streams', () => {
+    const output = Array.from({ length: 9 }, (_, index) => `line ${index + 1}`).join('\n');
+    expect(toolLiveTail(output, { lines: 3 })).toBe('line 7\nline 8\nline 9');
+  });
+
+  it('says nothing before the command printed anything', () => {
+    expect(toolLiveTail(undefined)).toBeUndefined();
+    expect(toolLiveTail('  \n \n')).toBeUndefined();
+  });
+
+  it('cuts a long last line from its start, keeping what was printed last', () => {
+    expect(toolLiveTail('x'.repeat(50) + 'END', { chars: 10 })).toBe('…xxxxxxxEND');
+  });
+
+  it('takes the tail of the call still running in a group', () => {
+    const tools = [
+      call('read', 'completed', { path: 'a.ts' }, 'file'),
+      call('bash', 'running', { command: 'npm test' }, 'PASS a\nRUN b'),
+    ];
+    expect(runningToolLiveTail(tools)).toBe('PASS a\nRUN b');
+    expect(runningToolLiveTail([call('bash', 'completed', { command: 'ls' }, 'a\nb')])).toBeUndefined();
+  });
+});
+
+describe('a file edit says how many lines it changed', () => {
+  it('counts added and removed lines across every edit of the call', () => {
+    const summary = toolDiffSummary(
+      call('edit', 'completed', {
+        path: 'a.ts',
+        edits: [
+          { oldText: 'const a = 1;\n', newText: 'const a = 2;\n' },
+          { oldText: 'x\n', newText: 'x\ny\n' },
+        ],
+      })
+    );
+    expect(summary).toMatchObject({ additions: 2, deletions: 1 });
+    expect(summary?.lines).toContainEqual({ kind: 'del', text: '- const a = 1;' });
+    expect(summary?.lines).toContainEqual({ kind: 'add', text: '+ const a = 2;' });
+  });
+
+  it('reads a written file as every line added', () => {
+    expect(toolDiffSummary(call('write', 'completed', { path: 'a.ts', content: 'one\ntwo\n' }))).toMatchObject({
+      additions: 2,
+      deletions: 0,
+    });
+  });
+
+  it('has nothing to say for a call that edits no file, or was refused', () => {
+    expect(toolDiffSummary(call('bash', 'completed', { command: 'ls' }))).toBeUndefined();
+    expect(
+      toolDiffSummary({ ...call('edit', 'completed', { path: 'a.ts', oldText: 'a', newText: 'b' }), denied: true })
+    ).toBeUndefined();
   });
 });
 

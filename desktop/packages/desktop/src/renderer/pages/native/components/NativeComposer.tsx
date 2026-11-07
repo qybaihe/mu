@@ -13,7 +13,7 @@
  * which the person can end; beside the send button, how full the model's context is.
  */
 import { Button } from '@arco-design/web-react';
-import type { TMessage } from '@/common/chat/chatLib';
+import type { IMessageText, TMessage } from '@/common/chat/chatLib';
 import { ANSWER_COMMAND } from '@/common/utils/nativeHost';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -34,7 +34,14 @@ import { useNativeModels } from '../hooks/useNativeModels';
 import { contextUsageOf, goalOnScreen, showsContextRing } from '../utils/composerLines';
 import { useNativeClient } from '../utils/nativeClient';
 import { isWorking } from '../utils/statusRow';
-import { mentionPath, permissionState, runsCommand, sendBoxMessages, withFiles } from './composer/composerModel';
+import {
+  mentionPath,
+  permissionState,
+  runsCommand,
+  sameSendBoxMessages,
+  sendBoxMessages,
+  withFiles,
+} from './composer/composerModel';
 import { NativeAttachButton, NativeAttachmentList } from './composer/NativeAttachments';
 import NativeJobs from './composer/NativeJobs';
 import NativeModelChip from './composer/NativeModelChip';
@@ -155,7 +162,14 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   const dialogs = view.dialogs.filter((dialog) => !closed.has(dialog.id));
   const { steering, followUp } = view.host.queue;
   const context = useMemo(() => ({ conversation_id: id, workspace: cwd, type: 'acp' as const }), [cwd, id]);
-  const rows = useMemo(() => sendBoxMessages(view.messages, id), [id, view.messages]);
+  // The view changes with every token of a reply; the send box only needs new rows when their words change.
+  const prevRowsRef = useRef<IMessageText[]>([]);
+  const rows = useMemo(() => {
+    const next = sendBoxMessages(view.messages, id);
+    if (sameSendBoxMessages(prevRowsRef.current, next)) return prevRowsRef.current;
+    prevRowsRef.current = next;
+    return next;
+  }, [id, view.messages]);
   const goal = useMemo(() => goalOnScreen(view, host), [host, view]);
   // Questions of ask_user nobody answered in time: `/answer` asks them again, a run going or not.
   const answerQuestions = useCallback(() => {
