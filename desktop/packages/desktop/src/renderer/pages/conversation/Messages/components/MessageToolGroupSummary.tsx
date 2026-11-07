@@ -164,7 +164,46 @@ const ClippedOutput: React.FC<{ text: string }> = ({ text }) => {
   );
 };
 
-const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
+const ToolImagePreview: React.FC<{ imagePath: string }> = ({ imagePath }) => {
+  const { t } = useTranslation();
+  const [messageApi, messageContext] = Message.useMessage();
+  const handleDownloadImage = useCallback(
+    async (path: string) => {
+      try {
+        await downloadFileFromPath(path, getAcpImageFileName(path));
+        messageApi.success(t('acp.image.download_success'));
+      } catch (error) {
+        console.error('[MessageToolGroupSummary] Failed to download image:', error);
+        messageApi.error(t('acp.image.download_error'));
+      }
+    },
+    [messageApi, t]
+  );
+
+  return (
+    <div className={styles.imagePreview}>
+      {messageContext}
+      <LocalImageView
+        src={imagePath}
+        alt={getAcpImageFileName(imagePath)}
+        className='max-w-full max-h-320px object-contain rounded'
+      />
+      <Tooltip content={t('acp.image.download')}>
+        <Button
+          aria-label={t('acp.image.download_aria')}
+          className={styles.downloadImage}
+          type='secondary'
+          size='mini'
+          shape='circle'
+          icon={<Download theme='outline' size='14' />}
+          onClick={() => void handleDownloadImage(imagePath)}
+        />
+      </Tooltip>
+    </div>
+  );
+};
+
+const ToolItemDetail = React.memo(function ToolItemDetail({ item }: { item: NormalizedToolCall }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [fullItem, setFullItem] = useState<NormalizedToolCall | null>(null);
@@ -197,19 +236,6 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
   const diffSummary = useMemo(() => toolDiffSummary(displayItem), [displayItem]);
   const hasDetail = Boolean(displayItem.input || output || item.truncated || item.imagePath);
   const urls = useMemo(() => toolLocalUrls(displayItem), [displayItem]);
-  const [messageApi, messageContext] = Message.useMessage();
-  const handleDownloadImage = useCallback(
-    async (path: string) => {
-      try {
-        await downloadFileFromPath(path, getAcpImageFileName(path));
-        messageApi.success(t('acp.image.download_success'));
-      } catch (error) {
-        console.error('[MessageToolGroupSummary] Failed to download image:', error);
-        messageApi.error(t('acp.image.download_error'));
-      }
-    },
-    [messageApi, t]
-  );
 
   const loadFullItem = async () => {
     if (!item.truncated || fullItem || loadingFull || !item.conversationId || !item.messageId) return;
@@ -272,7 +298,6 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
           }
         : {})}
     >
-      {messageContext}
       {displayItem.hive ? (
         <>
           <HiveToolCard
@@ -376,29 +401,10 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
           )}
         </div>
       )}
-      {item.imagePath && (
-        <div className={styles.imagePreview}>
-          <LocalImageView
-            src={item.imagePath}
-            alt={getAcpImageFileName(item.imagePath)}
-            className='max-w-full max-h-320px object-contain rounded'
-          />
-          <Tooltip content={t('acp.image.download')}>
-            <Button
-              aria-label={t('acp.image.download_aria')}
-              className={styles.downloadImage}
-              type='secondary'
-              size='mini'
-              shape='circle'
-              icon={<Download theme='outline' size='14' />}
-              onClick={() => void handleDownloadImage(item.imagePath)}
-            />
-          </Tooltip>
-        </div>
-      )}
+      {item.imagePath && <ToolImagePreview imagePath={item.imagePath} />}
     </div>
   );
-};
+});
 
 const ToolRows: React.FC<{ tools: NormalizedToolCall[] }> = ({ tools }) => (
   <>
@@ -502,11 +508,12 @@ const MessageToolGroupSummary: React.FC<{
   const { t, i18n } = useTranslation();
   const tools = useMemo(() => {
     const calls = normalizeToolMessages(messages);
-    for (const call of calls) {
+    return calls.map((call) => {
       const over = !live || (call.messageId !== undefined && stale?.has(call.messageId));
-      if (over && (call.status === 'running' || call.status === 'pending')) call.status = 'canceled';
-    }
-    return calls;
+      return over && (call.status === 'running' || call.status === 'pending')
+        ? Object.assign({}, call, { status: 'canceled' as const })
+        : call;
+    });
   }, [messages, live, stale]);
   if (!tools.length) return null;
   // A sub-agent run is its own panel, never a step in a fold.

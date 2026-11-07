@@ -253,15 +253,34 @@ export function normalizeToolCall(message: IMessageToolCall): NormalizedToolCall
 
 export type ToolMessage = IMessageToolGroup | IMessageAcpToolCall | IMessageToolCall;
 
+/**
+ * Each tool message in a group is normalized once for its current `content` reference: while the last tool in a group
+ * streams output, the completed tool messages before it keep their `NormalizedToolCall` objects without re-formatting
+ * inputs or re-parsing outputs on every frame.
+ */
+const normalizedByMessage = new WeakMap<
+  ToolMessage,
+  { content: ToolMessage['content']; calls: NormalizedToolCall[] }
+>();
+
+function normalizeOneMessage(message: ToolMessage): NormalizedToolCall[] {
+  const cached = normalizedByMessage.get(message);
+  if (cached && cached.content === message.content) return cached.calls;
+  let calls: NormalizedToolCall[] = [];
+  if (message.type === 'tool_group') calls = normalizeToolGroup(message);
+  else if (message.type === 'acp_tool_call') {
+    const call = normalizeAcpToolCall(message);
+    if (call) calls = [call];
+  } else if (message.type === 'tool_call') {
+    const call = normalizeToolCall(message);
+    if (call) calls = [call];
+  }
+  normalizedByMessage.set(message, { content: message.content, calls });
+  return calls;
+}
+
 export function normalizeToolMessages(messages: ToolMessage[]): NormalizedToolCall[] {
-  return messages
-    .flatMap((m) => {
-      if (m.type === 'tool_group') return normalizeToolGroup(m);
-      if (m.type === 'acp_tool_call') return normalizeAcpToolCall(m);
-      if (m.type === 'tool_call') return normalizeToolCall(m);
-      return undefined;
-    })
-    .filter((item): item is NormalizedToolCall => item !== undefined);
+  return messages.flatMap(normalizeOneMessage);
 }
 
 export function hasRunningToolMessages(messages: ToolMessage[]): boolean {

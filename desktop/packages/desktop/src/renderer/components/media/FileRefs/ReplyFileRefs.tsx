@@ -25,7 +25,7 @@ import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview
 import { isPanelPreviewable } from '@/renderer/pages/conversation/Preview/fileUtils';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { openFileRef, requestFileRefs, revealFileRef, revealPlatform, useFileRefAnswers } from './fileRefStore';
-import { findFileRefs } from './findFileRefs';
+import { findFileRefs, type ReplyFileRef } from './findFileRefs';
 
 type ReplyFileRefsValue = {
   cwd: string;
@@ -226,7 +226,20 @@ export function ReplyFileRefs({
   cwd?: string;
   children: React.ReactNode;
 }) {
-  const refs = useMemo(() => findFileRefs(markdown), [markdown]);
+  const prevRefs = useRef<ReplyFileRef[]>([]);
+  const refs = useMemo(() => {
+    const next = findFileRefs(markdown);
+    const prev = prevRefs.current;
+    // Keep the previous array while the reply streams words that add no new file reference, so the context below does
+    // not wake every inline code span in blocks that have already settled.
+    if (
+      prev.length === next.length &&
+      prev.every((item, index) => item.ref === next[index].ref && item.strength === next[index].strength)
+    )
+      return prev;
+    prevRefs.current = next;
+    return next;
+  }, [markdown]);
   const keys = useMemo(() => refs.map((item) => item.ref), [refs]);
   const answers = useFileRefAnswers(cwd, keys);
 

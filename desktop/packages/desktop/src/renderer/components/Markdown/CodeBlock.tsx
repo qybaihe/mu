@@ -7,7 +7,7 @@
 import { Message } from '@arco-design/web-react';
 import { Copy, Down, Up } from '@icon-park/react';
 import katex from 'katex';
-import React, { useContext, useRef, useState } from 'react';
+import React, { useContext, useRef, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { muCodeTheme } from './muCodeTheme';
@@ -85,23 +85,57 @@ const HighlightedCode = React.memo(function HighlightedCode({ code, language, ap
   );
 });
 
-function CodeBlock(props: CodeBlockProps) {
+/**
+ * One observer of the document's `data-theme` attribute shared across every fenced code block on screen, instead of
+ * one `MutationObserver` per block (and per inline `<code>` span).
+ */
+const themeListeners = new Set<() => void>();
+let themeObserver: MutationObserver | undefined;
+
+const subscribeDocumentTheme = (listener: () => void): (() => void) => {
+  themeListeners.add(listener);
+  if (!themeObserver && typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+    themeObserver = new MutationObserver(() => {
+      for (const notify of themeListeners) notify();
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+  return () => {
+    themeListeners.delete(listener);
+    if (themeListeners.size === 0) {
+      themeObserver?.disconnect();
+      themeObserver = undefined;
+    }
+  };
+};
+
+const getDocumentTheme = (): 'light' | 'dark' =>
+  typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+
+function InlineCode({
+  children,
+  className,
+  rest,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  rest: Record<string, unknown>;
+}) {
+  const fileSlots = useContext(MarkdownFileSlotsContext);
+  const code = (
+    <code {...rest} className={className}>
+      {children}
+    </code>
+  );
+  // A surface that draws some spans its own way (a reply's file references) gets the span and the plain code.
+  return fileSlots ? <fileSlots.InlineCode code={String(children)}>{code}</fileSlots.InlineCode> : code;
+}
+
+function FencedCodeBlock(props: CodeBlockProps & { language: string }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const fileSlots = useContext(MarkdownFileSlotsContext);
-  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(
-    () => (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light'
-  );
-
-  React.useEffect(() => {
-    const update = () => {
-      setCurrentTheme((document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light');
-    };
-    const observer = new MutationObserver(update);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => observer.disconnect();
-  }, []);
+  const currentTheme = useSyncExternalStore(subscribeDocumentTheme, getDocumentTheme, () => 'light' as const);
 
   const toggleExpanded = () => {
     const willCollapse = expanded;
@@ -113,52 +147,7 @@ function CodeBlock(props: CodeBlockProps) {
     }
   };
 
-  const {
-    children,
-    className,
-    node: _node,
-    hiddenCodeCopyButton: _h,
-    codeStyle: _c,
-    diagramPanZoom: _dpz,
-    ...rest
-  } = props;
-  // The label as written, whole (`c++`, `c#`), without a `:path` a model may add after it (```ts:src/a.ts).
-  const match = /language-([^\s:]+)/.exec(className || '');
-  const language = match?.[1] || 'text';
-
-  // KaTeX math blocks
-  if (language === 'latex' || language === 'math' || language === 'tex') {
-    const latexSource = String(children).replace(/\n$/, '');
-    const isFullDocument = /\\(documentclass|begin\{document\}|usepackage)\b/.test(latexSource);
-    if (!isFullDocument) {
-      try {
-        const html = katex.renderToString(latexSource, { displayMode: true, throwOnError: false });
-        return <div className='katex-display' dangerouslySetInnerHTML={{ __html: html }} />;
-      } catch {
-        // fall through
-      }
-    }
-  }
-
-  if (language === 'mermaid') {
-    return <MermaidBlock code={formatCode(children)} style={props.codeStyle} enablePanZoom={props.diagramPanZoom} />;
-  }
-
-  if (language === 'wavedrom' || language === 'wavejson') {
-    return <WavedromBlock code={formatCode(children)} style={props.codeStyle} enablePanZoom={props.diagramPanZoom} />;
-  }
-
-  // Inline code (single line)
-  if (!String(children).includes('\n')) {
-    const code = (
-      <code {...rest} className={className}>
-        {children}
-      </code>
-    );
-    // A surface that draws some spans its own way (a reply's file references) gets the span and the plain code.
-    return fileSlots ? <fileSlots.InlineCode code={String(children)}>{code}</fileSlots.InlineCode> : code;
-  }
-
+  const { children, language } = props;
   const formattedContent = formatCode(children);
   const totalLines = formattedContent.split('\n').length;
   const canCollapse = totalLines > PREVIEW_LINES;
@@ -303,6 +292,54 @@ function CodeBlock(props: CodeBlockProps) {
       </div>
     </div>
   );
+}
+
+function CodeBlock(props: CodeBlockProps) {
+  const {
+    children,
+    className,
+    node: _node,
+    hiddenCodeCopyButton: _h,
+    codeStyle: _c,
+    diagramPanZoom: _dpz,
+    ...rest
+  } = props;
+  // The label as written, whole (`c++`, `c#`), without a `:path` a model may add after it (```ts:src/a.ts).
+  const match = /language-([^\s:]+)/.exec(className || '');
+  const language = match?.[1] || 'text';
+
+  // KaTeX math blocks
+  if (language === 'latex' || language === 'math' || language === 'tex') {
+    const latexSource = String(children).replace(/\n$/, '');
+    const isFullDocument = /\\(documentclass|begin\{document\}|usepackage)\b/.test(latexSource);
+    if (!isFullDocument) {
+      try {
+        const html = katex.renderToString(latexSource, { displayMode: true, throwOnError: false });
+        return <div className='katex-display' dangerouslySetInnerHTML={{ __html: html }} />;
+      } catch {
+        // fall through
+      }
+    }
+  }
+
+  if (language === 'mermaid') {
+    return <MermaidBlock code={formatCode(children)} style={props.codeStyle} enablePanZoom={props.diagramPanZoom} />;
+  }
+
+  if (language === 'wavedrom' || language === 'wavejson') {
+    return <WavedromBlock code={formatCode(children)} style={props.codeStyle} enablePanZoom={props.diagramPanZoom} />;
+  }
+
+  // Inline code (single line)
+  if (!String(children).includes('\n')) {
+    return (
+      <InlineCode className={className} rest={rest}>
+        {children}
+      </InlineCode>
+    );
+  }
+
+  return <FencedCodeBlock {...props} language={language} />;
 }
 
 export default CodeBlock;
