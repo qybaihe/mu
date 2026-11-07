@@ -211,9 +211,6 @@
   color: var(--text-secondary);
   opacity: 0.65;
 }
-.runningText {
-  animation: textPulse 1.8s ease-in-out infinite;
-}
 /* A failed step says what went wrong where it stands, with no click and no box. */
 .callError {
   margin: 0 8px 4px 32px;
@@ -417,18 +414,8 @@
     opacity: 1;
   }
 }
-@keyframes textPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.62;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .breathing :global(.arco-badge-status-dot),
-  .runningText,
   .detailPanel,
   .activityBody,
   .liveTail {

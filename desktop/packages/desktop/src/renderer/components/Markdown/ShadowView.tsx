@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import ReactDOM from 'react-dom';
 import { addImportantToAll } from '@renderer/utils/theme/customCssProcessor';
 import { ipcBridge } from '@/common';
@@ -22,6 +22,17 @@ export const createInitStyle = (
   isMobile?: boolean
 ) => {
   const style = document.createElement('style');
+  style.innerHTML = initStyleCss(currentTheme, cssVars, customCss, isMobile);
+  return style;
+};
+
+/** The text of the shadow tree's base style (see createInitStyle). */
+const initStyleCss = (
+  currentTheme = 'light',
+  cssVars?: Record<string, string>,
+  customCss?: string,
+  isMobile?: boolean
+): string => {
   // Inject external CSS variables into Shadow DOM for dark mode support
   const cssVarsDeclaration = cssVars
     ? Object.entries(cssVars)
@@ -35,7 +46,7 @@ export const createInitStyle = (
   // compact reply; mobile spacing is left untouched (tuned separately).
   const paragraphMargin = isMobile ? '16px' : '12px';
 
-  style.innerHTML = `
+  return `
   /* Shadow DOM CSS variable definitions */
   :host {
     ${cssVarsDeclaration}
@@ -384,7 +395,28 @@ export const createInitStyle = (
   /* User Custom CSS (injected into Shadow DOM) */
   ${customCss || ''}
   `;
-  return style;
+};
+
+/**
+ * Every message on screen draws with the same base style, and each used to parse its own copy of it (some 18 KB) in a
+ * `<style>` of its own: opening a conversation parsed it once a message. Where the browser takes a constructed sheet,
+ * the messages share one, parsed once for each text it has. A person's CSS with an `@import`, which such a sheet
+ * cannot hold, keeps the `<style>`.
+ */
+const ADOPTS_SHEETS =
+  typeof CSSStyleSheet !== 'undefined' &&
+  typeof ShadowRoot !== 'undefined' &&
+  'replaceSync' in CSSStyleSheet.prototype &&
+  'adoptedStyleSheets' in ShadowRoot.prototype;
+
+let sharedSheet: { css: string; sheet: CSSStyleSheet } | undefined;
+
+const sharedSheetFor = (css: string): CSSStyleSheet => {
+  if (sharedSheet?.css === css) return sharedSheet.sheet;
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(css);
+  sharedSheet = { css, sheet };
+  return sheet;
 };
 
 // Cache for KaTeX stylesheet to share across Shadow DOM instances
@@ -507,46 +539,84 @@ const subscribeToTheme = (listener: () => void): (() => void) => {
   };
 };
 
+/**
+ * The person's own CSS, asked of the main process once for every message on screen, with one listener for its changes.
+ * Opening a conversation mounts up to a window of messages at once; each used to ask on its own, and to draw its style
+ * a second time when its answer came.
+ */
+let customCssValue = '';
+let customCssAsked = false;
+const customCssListeners = new Set<() => void>();
+let stopCustomCss: (() => void) | undefined;
+
+const takeCustomCss = (theme: { css?: string } | null | undefined): void => {
+  const next = theme?.css ? addImportantToAll(theme.css) : '';
+  if (next === customCssValue) return;
+  customCssValue = next;
+  for (const notify of customCssListeners) notify();
+};
+
+const subscribeToCustomCss = (listener: () => void): (() => void) => {
+  customCssListeners.add(listener);
+  if (!customCssAsked) {
+    customCssAsked = true;
+    ipcBridge.theme.requestCurrent
+      .invoke()
+      .then(takeCustomCss)
+      .catch(() => {});
+    stopCustomCss = ipcBridge.theme.changed.on(takeCustomCss);
+  }
+  return () => {
+    customCssListeners.delete(listener);
+    if (customCssListeners.size > 0) return;
+    // Nothing on screen reads it: stop listening, and ask again when something does.
+    stopCustomCss?.();
+    stopCustomCss = undefined;
+    customCssAsked = false;
+  };
+};
+
+const readCustomCss = (): string => customCssValue;
+
 const ShadowView = ({ children }: { children: React.ReactNode }) => {
   const [root, setRoot] = useState<ShadowRoot | null>(null);
   const styleRef = React.useRef<HTMLStyleElement | null>(null);
-  const [customCss, setCustomCss] = useState<string>('');
+  const sheetRef = React.useRef<CSSStyleSheet | null>(null);
+  const customCss = useSyncExternalStore(subscribeToCustomCss, readCustomCss);
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
-
-  React.useEffect(() => {
-    let mounted = true;
-    const applyCss = (t: { css?: string } | null) => {
-      if (!mounted) return;
-      setCustomCss(t?.css ? addImportantToAll(t.css) : '');
-    };
-    ipcBridge.theme.requestCurrent
-      .invoke()
-      .then(applyCss)
-      .catch(() => {});
-    const off = ipcBridge.theme.changed.on((t) => applyCss(t));
-    return () => {
-      mounted = false;
-      off?.();
-    };
-  }, []);
 
   // Update CSS variables and custom styles in Shadow DOM
   const updateStyles = React.useCallback(
     (shadowRoot: ShadowRoot) => {
       const { theme: currentTheme, cssVars } = readTheme();
+      const css = initStyleCss(currentTheme, cssVars, customCss, isMobile);
+      // KaTeX's own styles, so math in a message draws as it should.
+      const katexSheet = getKatexStyleSheet();
+
+      if (ADOPTS_SHEETS && !customCss.includes('@import')) {
+        styleRef.current?.remove();
+        styleRef.current = null;
+        const sheet = sharedSheetFor(css);
+        const others = shadowRoot.adoptedStyleSheets.filter(
+          (each) => each !== sheetRef.current && each !== sheet && each !== katexSheet
+        );
+        shadowRoot.adoptedStyleSheets = [sheet, ...others, ...(katexSheet ? [katexSheet] : [])];
+        sheetRef.current = sheet;
+        return;
+      }
 
       // Remove old style and add new style
-      if (styleRef.current) {
-        styleRef.current.remove();
+      if (sheetRef.current) {
+        shadowRoot.adoptedStyleSheets = shadowRoot.adoptedStyleSheets.filter((each) => each !== sheetRef.current);
+        sheetRef.current = null;
       }
-      const newStyle = createInitStyle(currentTheme, cssVars, customCss, isMobile);
+      styleRef.current?.remove();
+      const newStyle = document.createElement('style');
+      newStyle.innerHTML = css;
       styleRef.current = newStyle;
       shadowRoot.appendChild(newStyle);
 
-      // Inject KaTeX styles into Shadow DOM using adoptedStyleSheets
-      // This allows math expressions to render correctly
-      const katexSheet = getKatexStyleSheet();
       if (katexSheet && !shadowRoot.adoptedStyleSheets.includes(katexSheet)) {
         shadowRoot.adoptedStyleSheets = [...shadowRoot.adoptedStyleSheets, katexSheet];
       }

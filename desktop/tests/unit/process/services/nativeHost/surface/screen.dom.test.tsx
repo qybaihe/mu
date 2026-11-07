@@ -186,6 +186,8 @@ describe('the native conversation page', () => {
     await waitFor(() => expect(phase()).toHaveTextContent('Working'));
     expect(phase()).toHaveAttribute('data-working', 'true');
     expect(phase()).not.toHaveClass('sr-only');
+    // The status line by the composer is what moves while a turn runs; the header's dot stays still.
+    expect(phase().querySelector('.animate-pulse')).toBeNull();
     act(() => host.play('c1', [{ type: 'agent_settled' }]));
     await waitFor(() => expect(phase()).toHaveTextContent('Ready'));
     expect(phase()).toHaveClass('sr-only');

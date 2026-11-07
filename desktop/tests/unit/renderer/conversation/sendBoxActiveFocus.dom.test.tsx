@@ -151,6 +151,8 @@ describe('SendBox while a run is going', () => {
     const { rerender } = render(<SendBoxHarness loading onStop={vi.fn().mockResolvedValue(undefined)} />);
     expect(screen.getByTestId('sendbox-stop-btn')).toBeInTheDocument();
     expect(screen.queryByTestId('sendbox-send-btn')).toBeNull();
+    // A square says stop; it does not also breathe beside the status line.
+    expect(screen.getByTestId('sendbox-stop-btn')).not.toHaveClass('bg-animate');
 
     rerender(<SendBoxHarness loading initialValue='steer this' onStop={vi.fn().mockResolvedValue(undefined)} />);
     fireEvent.change(screen.getByTestId('sendbox-input'), { target: { value: 'steer this' } });

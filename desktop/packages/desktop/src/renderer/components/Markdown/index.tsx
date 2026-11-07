@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
+import ReactMarkdown, { defaultUrlTransform, type Components, type Options } from 'react-markdown';
 
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
@@ -29,6 +29,7 @@ import {
   resolveLocalFileLinkReference,
   resolveRelativeFileLinkReference,
   resolveWebLinkHref,
+  splitMarkdownBlocks,
 } from './markdownUtils';
 import type { LocalFileLinkReference } from './markdownUtils';
 
@@ -39,6 +40,25 @@ const isLocalFilePath = (src: string): boolean => {
 };
 
 const transformUrl = (url: string) => (resolveLocalFileLinkPath(url) ? url : defaultUrlTransform(url));
+
+type MarkdownBlockProps = {
+  text: string;
+  components: Components;
+  rehypePlugins: Options['rehypePlugins'];
+};
+
+/** One top-level block of the text, parsed again only when its own text (or how it is drawn) changes. */
+const MarkdownBlock = React.memo(({ text, components, rehypePlugins }: MarkdownBlockProps) => (
+  <ReactMarkdown
+    remarkPlugins={MARKDOWN_REMARK_PLUGINS}
+    rehypePlugins={rehypePlugins}
+    components={components}
+    urlTransform={transformUrl}
+  >
+    {text}
+  </ReactMarkdown>
+));
+MarkdownBlock.displayName = 'MarkdownBlock';
 
 type MarkdownViewProps = {
   children: string;
@@ -160,20 +180,30 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
 
     const rehypePlugins = useMemo(() => (allowHtml ? [rehypeRaw, rehypeKatex] : [rehypeKatex]), [allowHtml]);
 
-    // The same element while the text and the components are the same, so React skips the markdown when this view
+    // One parse a block (markdownUtils.ts, splitMarkdownBlocks): a reply that grows parses again only its last block.
+    // Raw HTML can span blank lines, so a view that allows it is parsed whole.
+    const blocks = useMemo(
+      () =>
+        allowHtml || typeof normalizedChildren !== 'string'
+          ? [normalizedChildren]
+          : splitMarkdownBlocks(normalizedChildren),
+      [allowHtml, normalizedChildren]
+    );
+
+    // The same elements while the text and the components are the same, so React skips the markdown when this view
     // renders for anything else (the preview panel above, a new translation function).
     const rendered = useMemo(
-      () => (
-        <ReactMarkdown
-          remarkPlugins={MARKDOWN_REMARK_PLUGINS}
-          rehypePlugins={rehypePlugins}
-          components={components}
-          urlTransform={transformUrl}
-        >
-          {normalizedChildren}
-        </ReactMarkdown>
-      ),
-      [components, normalizedChildren, rehypePlugins]
+      () =>
+        blocks.map((block, index) => (
+          <MarkdownBlock
+            // Blocks only grow at the end, so a block's place is who it is.
+            key={index}
+            text={block}
+            components={components}
+            rehypePlugins={rehypePlugins}
+          />
+        )),
+      [blocks, components, rehypePlugins]
     );
 
     return (

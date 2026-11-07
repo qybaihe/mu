@@ -106,8 +106,7 @@
     transition: none;
   }
   .stream,
-  .body,
-  .summaryActive {
+  .body {
     animation: none;
   }
 }
@@ -126,20 +125,6 @@
 
 .summary {
   white-space: nowrap;
-}
-
-.summaryActive {
-  animation: thinkingTextPulse 1.8s ease-in-out infinite;
-}
-
-@keyframes thinkingTextPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.62;
-  }
 }
 
 @media (max-width: 767px) {

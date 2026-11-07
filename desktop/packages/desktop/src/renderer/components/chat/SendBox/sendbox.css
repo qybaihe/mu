@@ -242,43 +242,6 @@ body[arco-theme='dark'] .sendbox-panel .send-button-custom--disabled svg * {
   border-radius: 2px;
 }
 
-.sendbox-stop-button.bg-animate,
-.sendbox-stop-button.arco-btn.bg-animate,
-.sendbox-stop-button.arco-btn-secondary.bg-animate {
-  animation: sendbox-stop-breathe 1.4s ease-in-out infinite alternate;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sendbox-stop-button.bg-animate,
-  .sendbox-stop-button.arco-btn.bg-animate,
-  .sendbox-stop-button.arco-btn-secondary.bg-animate {
-    animation: none;
-  }
-}
-
-.sendbox-stop-button.bg-animate .arco-icon,
-.sendbox-stop-button.bg-animate svg {
-  color: #fff !important;
-  fill: #fff !important;
-}
-
-/* Breathe via color + a soft glow ring only — NO transform: scale(). On narrow
-   mobile the panel is single-line (~50px) with overflow:hidden + rounded corners;
-   a scaled-up button plus an 8px glow pushed the button's footprint past the
-   panel's straight edge, so the glow's top/bottom got clipped along the corner
-   arc (#13). Dropping the scale and trimming the glow to 6px keeps the whole
-   footprint inside the panel at every common width. */
-/* Only the ring breathes: declarations marked !important are dropped inside @keyframes, so the fill stays put. */
-@keyframes sendbox-stop-breathe {
-  0% {
-    box-shadow: 0 0 0 0 var(--mu-ring);
-  }
-
-  100% {
-    box-shadow: 0 0 0 6px var(--mu-ring);
-  }
-}
-
 /* Input placeholder color */
 ::placeholder {
   color: #a1a2aa !important;

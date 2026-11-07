@@ -168,11 +168,8 @@ const NativeHeader: React.FC<{
           data-phase={host.phase}
           data-working={up ? String(working) : undefined}
         >
-          <span
-            className={up ? 'size-6px rd-full animate-pulse' : 'size-6px rd-full'}
-            style={{ background: DOT[host.phase] }}
-            aria-hidden='true'
-          />
+          {/* Still: the status line by the composer is the one mark that moves while a turn runs. */}
+          <span className='size-6px rd-full' style={{ background: DOT[host.phase] }} aria-hidden='true' />
           {t(words)}
         </span>
       </div>
