@@ -8,7 +8,7 @@
  * IPC Bridge → HTTP/WS adapter.
  *
  * This file replaces the original IPC bridge calls with HTTP REST and WebSocket
- * calls routed to aioncore. Electron-native operations (window controls,
+ * calls routed to the backend. Electron-native operations (window controls,
  * native dialogs, auto-update, devtools, zoom, CDP, deep links) remain as IPC.
  */
 
@@ -271,7 +271,7 @@ export const auth = {
    * Which user id the backend attributes THIS client's requests to.
    *
    * Deliberately not `GET /api/auth/user`: the auth router builds its own
-   * `AuthState` whose identity mode is only ever `AionPro` or `UserSession`, so
+   * `AuthState` whose identity mode is only ever the hosted one or `UserSession`, so
    * in local identity mode that endpoint answers 401 while every ordinary route
    * is happily serving an injected default user. `/api/system/current-user`
    * sits behind the ORDINARY auth middleware, so it reports the same identity
@@ -293,12 +293,12 @@ export const conversation = {
   ),
   createWithConversation: withResponseMap(
     httpPost<TChatConversation, { conversation: TChatConversation }>('/api/conversations/clone', (p) => {
-      const isAionrs = p.conversation.type === 'aionrs';
+      const isBuiltinAgent = p.conversation.type === BUILTIN_AGENT;
       const { model: _rawModel, ...rest } = p.conversation as TChatConversation & {
         model?: TProviderWithModel;
       };
       const clonedConversation: Record<string, unknown> = { ...rest };
-      if (isAionrs) {
+      if (isBuiltinAgent) {
         const model = toApiModelOptional(_rawModel);
         if (model) clonedConversation.model = model;
       }
@@ -699,7 +699,7 @@ export const application = {
   ),
   getPath: bridge.buildProvider<string, { name: 'desktop' | 'home' | 'downloads' }>('app.get-path'),
   // Electron-local: copies cache dir + persists to ProcessEnv, paired with restart.
-  // The backend reads AIONUI_*_DIR env vars on boot, so it does not own this config.
+  // The backend reads its folders from its environment on boot (see buildSpawnEnv), so it does not own this config.
   updateSystemInfo: bridge.buildProvider<void, { cacheDir: string; workDir: string; logDir?: string }>(
     'update-system-info'
   ),
@@ -733,6 +733,15 @@ export const application = {
   reportBrowserWebContentsId: bridge.buildProvider<IBridgeResponse<void>, { webContentsId: number }>(
     'app.report-browser-webcontents-id'
   ),
+  /**
+   * A picture of part of an in-app browser page, as base64 PNG: the element the person picked to show mu. The area is
+   * in the page's CSS pixels. Null when there is nothing to take; main takes pictures of `<webview>` pages only.
+   */
+  pictureOfBrowserArea: bridge.buildProvider<
+    string | null,
+    // No area: all of the page that is on screen.
+    { webContentsId: number; area?: { x: number; y: number; width: number; height: number } }
+  >('app.picture-of-browser-area'),
   getStartOnBootStatus: bridge.buildProvider<IBridgeResponse<IStartOnBootStatus>, void>('app.get-start-on-boot-status'),
   setStartOnBoot: bridge.buildProvider<IBridgeResponse<IStartOnBootStatus>, { enabled: boolean }>(
     'app.set-start-on-boot'
@@ -747,7 +756,7 @@ export const application = {
   ),
   devToolsStateChanged: bridge.buildEmitter<{ isOpen: boolean }>('app.devtools-state-changed'),
   /** The application menu's items the page carries out: 新会话 (⌘N) and 设置… (⌘,). */
-  menuCommand: bridge.buildEmitter<{ command: 'newChat' | 'openSettings' }>('app.menu-command'),
+  menuCommand: bridge.buildEmitter<{ command: 'newChat' | 'openSettings' | 'shortcuts' }>('app.menu-command'),
 };
 
 // ---------------------------------------------------------------------------
@@ -1040,7 +1049,7 @@ export const googleAuth = {
 };
 
 // ---------------------------------------------------------------------------
-// Google subscription status (Google OAuth provider path, used by aionrs)
+// Google subscription status (Google OAuth provider path, used by the built-in agent)
 // ---------------------------------------------------------------------------
 
 export const google = {
@@ -1524,6 +1533,8 @@ export const systemSettings = {
     cronNotificationEnabled: p.enabled,
   })),
   getKeepAwake: httpGetClientSetting<boolean>('keepAwake'),
+  /** Hold the computer awake (no idle sleep; the display may still turn off) while `on`, or let it sleep again. */
+  keepAwakeWhileRunning: bridge.buildProvider<void, { on: boolean }>('system-settings:keep-awake-while-running'),
   setKeepAwake: httpPut<void, { enabled: boolean }>('/api/settings/client', (p) => ({ keepAwake: p.enabled })),
   /**
    * Saves the language to the backend and makes the main process follow it (`syncMainLanguage`). The main process
@@ -1566,13 +1577,15 @@ export type INotificationOptions = {
   body: string;
   icon?: string;
   conversation_id?: string;
-  /** The conversation is a native one (its page is not an AionCore conversation's): a click opens that page. */
+  /** The conversation is a native one (its page is not a backend conversation's): a click opens that page. */
   native?: boolean;
 };
 
 export const notification = {
   show: bridge.buildProvider<void, INotificationOptions>('notification.show'),
   clicked: bridge.buildEmitter<{ conversation_id?: string; native?: boolean }>('notification.clicked'),
+  /** The number on the app's Dock icon (macOS) or launcher entry (Linux): conversations waiting for the person. */
+  badge: bridge.buildProvider<void, { count: number }>('notification.badge'),
 };
 
 // ---------------------------------------------------------------------------
@@ -1776,7 +1789,7 @@ export interface IConfirmMessageParams {
 }
 
 export interface ICreateConversationParams {
-  type?: 'acp' | 'aionrs';
+  type?: 'acp' | BuiltinAgent;
   id?: string;
   name?: string;
   model?: TProviderWithModel;
@@ -2067,6 +2080,7 @@ export const extensions = {
 // ---------------------------------------------------------------------------
 
 import type { HubExtensionStatus, IHubAgentItem } from '@/common/types/agent/hub';
+import { BUILTIN_AGENT, type BuiltinAgent } from '@/common/platform/backendNames';
 export const hub = {
   getExtensionList: httpGet<IHubAgentItem[], void>('/api/hub/extensions'),
   install: httpPost<void, { name: string }>('/api/hub/install'),
@@ -2271,7 +2285,7 @@ export const sidebar = {
         if (p.limit) params.set('limit', String(p.limit));
         for (const w of p.win ?? []) params.append('win', w);
         // Flip the read to the archive slice. The archived page reuses this same
-        // grouped read model — only the backend `archived_at` predicate changes.
+        // grouped read model — only the backend's `archived_at` predicate changes.
         if (p.archived) params.set('archived', 'true');
         const qs = params.toString();
         return `/api/sidebar${qs ? `?${qs}` : ''}`;

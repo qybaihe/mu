@@ -157,6 +157,14 @@ describe("FooterComponent width handling", () => {
 		}
 	});
 
+	it("says no model rather than the agent's unknown placeholder", () => {
+		const session = createSession({ sessionName: "", modelId: "unknown", provider: "unknown" });
+		const footer = new FooterComponent(session, createFooterData(1));
+		const statsLine = stripAnsi(footer.render(120)[1]);
+		expect(statsLine).toMatch(/no model$/);
+		expect(statsLine).not.toContain("unknown");
+	});
+
 	it("shows the physical model a virtual model routed to", () => {
 		const session = createSession({
 			sessionName: "",

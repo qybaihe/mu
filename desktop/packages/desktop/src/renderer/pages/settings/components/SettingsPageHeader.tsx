@@ -18,6 +18,9 @@
 
 import classNames from 'classnames';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { useInRouterContext, useLocation } from 'react-router-dom';
+import { SETTINGS_GROUPS, SETTINGS_PAGES, isSettingsRouteActive } from '../settingsNav';
 import SettingsPageWrapper, { SETTINGS_PAGE_STICKY_TOP } from './SettingsPageWrapper';
 
 export type SettingsPageTab = {
@@ -42,6 +45,28 @@ type SettingsPageHeaderProps = {
   'data-testid'?: string;
 };
 
+/**
+ * The small mono line above a settings page's title: the rail's group the page is in ("Kernel"), or "Settings" for a
+ * page the rail lists elsewhere (an extension's). Drawn from an attribute, so the title block's text and what a screen
+ * reader says stay the page's own; the rail already says the group.
+ */
+const GroupEyebrow: React.FC = () => {
+  const { t } = useTranslation();
+  const { pathname } = useLocation();
+  if (!pathname.startsWith('/settings/')) return null;
+  const page = SETTINGS_PAGES.find((each) => isSettingsRouteActive(pathname, each.route));
+  const group = page && SETTINGS_GROUPS.find((each) => each.id === page.group);
+  return (
+    <div
+      className='settings-page-eyebrow'
+      data-testid='settings-page-group'
+      data-group={page?.group}
+      data-label={t(group ? group.labelKey : 'settings.title')}
+      aria-hidden='true'
+    />
+  );
+};
+
 const SettingsPageHeader: React.FC<SettingsPageHeaderProps> = ({
   title,
   description,
@@ -52,14 +77,21 @@ const SettingsPageHeader: React.FC<SettingsPageHeaderProps> = ({
   sticky = true,
   'data-testid': dataTestId,
 }) => {
+  const inRouter = useInRouterContext();
   return (
     <div
       data-testid={dataTestId}
-      className={classNames('bg-1', sticky && ['sticky top-0 z-10', SETTINGS_PAGE_STICKY_TOP])}
+      className={classNames(
+        'settings-page-header',
+        sticky && ['settings-page-header--sticky sticky top-0 z-10', SETTINGS_PAGE_STICKY_TOP]
+      )}
     >
+      {inRouter ? <GroupEyebrow /> : null}
       {/* As tall as a search box or a button, with or without them: the title sits at one height on every page. */}
       <div className='flex min-h-34px items-center justify-between gap-8px sm:gap-16px'>
-        <h1 className='m-0 min-w-0 flex-1 text-18px md:text-20px font-600 leading-[1.3] text-t-primary'>{title}</h1>
+        <h1 className='settings-page-title m-0 min-w-0 flex-1 text-20px md:text-22px font-600 text-t-primary'>
+          {title}
+        </h1>
         {actions ? <div className='shrink-0 flex flex-wrap items-center justify-end gap-8px'>{actions}</div> : null}
       </div>
       {description ? (

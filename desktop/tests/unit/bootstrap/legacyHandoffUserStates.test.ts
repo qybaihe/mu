@@ -57,7 +57,7 @@ describe('legacy handoff user-state matrix', () => {
   });
 
   it('covers unrecoverable backend DB failures by keeping data migration classification', () => {
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('The backend exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {

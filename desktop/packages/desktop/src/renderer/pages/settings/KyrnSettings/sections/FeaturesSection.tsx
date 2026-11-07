@@ -71,7 +71,7 @@ export default function CoreFeaturesSection({ settings, manifest, onChange, onDe
   );
 
   return (
-    <SectionShell id='features' title={t('mu.sections.coreFeatures')} description={t('mu.features.lead')}>
+    <SectionShell id='features' title={t('mu.sections.coreFeatures')}>
       {!manifest ? <Alert type='warning' content={t('mu.harness.tooOld')} /> : null}
       {manifest && !features.length ? <div className={styles.empty}>{t('mu.features.none')}</div> : null}
       {features.length ? (

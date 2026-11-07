@@ -177,6 +177,54 @@ describe('runBackendMigrations', () => {
     expect(configFileSetMock).not.toHaveBeenCalledWith('tools.imageGenerationModel', expect.anything());
   });
 
+  it('writes an image server set up by an earlier version under the current setting names', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const legacyEnv = {
+      AIONUI_IMG_PROVIDER_ID: 'provider-1',
+      AIONUI_IMG_PLATFORM: 'gemini',
+      AIONUI_IMG_BASE_URL: 'https://generativelanguage.googleapis.com',
+      AIONUI_IMG_API_KEY: 'provider-key',
+      AIONUI_IMG_MODEL: 'gemini-image',
+    };
+    const server = imageServer();
+    listServersMock.mockResolvedValue([{ ...server, transport: { ...server.transport, env: legacyEnv } }]);
+
+    await runBackendMigrations(configFile as never);
+
+    expect(updateServerMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'image-server-id',
+        data: expect.objectContaining({ transport: expect.objectContaining({ env: imageEnv }) }),
+      })
+    );
+  });
+
+  it('renames the old setting names in place when the image provider cannot be resolved', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    httpRequestMock.mockImplementation(async (method: string, path: string) =>
+      method === 'GET' && path === '/api/providers' ? [] : undefined
+    );
+    const server = imageServer();
+    listServersMock.mockResolvedValue([
+      {
+        ...server,
+        transport: { ...server.transport, env: { AIONUI_IMG_PLATFORM: 'gemini', AIONUI_IMG_MODEL: 'gemini-image' } },
+      },
+    ]);
+
+    await runBackendMigrations(configFile as never);
+
+    expect(updateServerMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'image-server-id',
+        data: expect.objectContaining({
+          transport: expect.objectContaining({ env: { MU_IMG_PLATFORM: 'gemini', MU_IMG_MODEL: 'gemini-image' } }),
+        }),
+      })
+    );
+  });
+
   it('does not sync the built-in image MCP server when bootstrap makes no effective change', async () => {
     const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
     listServersMock.mockResolvedValue([imageServer()]);

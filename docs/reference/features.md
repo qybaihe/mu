@@ -24,10 +24,11 @@ On by default: yes. Decision points: `input.preflight`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `thinking` | `false` | Set the thinking level from the verdict (a switch loses the cache). |
+| `thinking` | `false` | Set the thinking level from the verdict (changing it invalidates the prompt cache). |
 | `hints` | `true` | Give the model a one-line hint. |
 | `show` | `true` | Show the wait and the verdict. |
-| `waitMs` | `4000` ms | Wait at most. After this the turn starts without the verdict. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, the turn starts without the verdict. Counted from when the message arrives, like the waits of the skill, capability and lesson questions, which are asked alongside. Range 500 to 30000. |
+| `unattended` | `false` | Also judge messages in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: nobody reads the hint there, and every message would wait for the judge and pay for it. |
 
 ## interjection
 
@@ -37,57 +38,79 @@ On by default: yes. Decision points: `input.interjection`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `waitMs` | `1500` ms | Wait at most. Range 200 to 10000. |
+| `waitMs` | `1500` ms | Wait at most `1500` ms. Range 200 to 10000. |
 
 ## skills
 
-**Skill disclosure.** Chooses which skill descriptions a session carries.
+**Skill disclosure.** Chooses which skill descriptions go into the prompt.
 
 On by default: yes. Decision points: `skills.disclosure`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `minSkills` | `4` | Do not filter below this many skills. Range 1 to 100. |
-| `waitMs` | `4000` ms | Wait at most. Range 500 to 30000. |
+| `minSkills` | `4` | Don't filter below this many skills. Range 1 to 100. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. Range 500 to 30000. |
+| `applyLate` | `true` | Apply a late first verdict from the next turn. When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description. |
+| `subagentsInherit` | `true` | Subagents take this session's choice. A subagent hides the skills this session hides and doesn't ask the judge again. Until this session has decided, a subagent asks the judge itself, as before. |
+| `askEarly` | `true` | Ask as soon as the message arrives. Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done. |
+| `refresh` | `true` | Tell the agent about skills added mid-session. When a skill is installed or removed during a session (for example by /skills accept), mu tells the agent with your next message. The system prompt stays the same, so its cached prefix is kept. Off: the change waits for the next session or /reload. |
 
 ## catalog
 
-**Capability catalog.** Install a lot, expose little: packs and MCP servers stay hidden and open per task.
+**Capability catalog.** Install a lot, expose little: packs and MCP servers stay hidden until a task needs them.
 
 On by default: yes. Decision points: `capability.disclosure`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `waitMs` | `4000` ms | Wait at most. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. Range 500 to 30000. |
+| `askUnattended` | `false` | Also choose capabilities in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait. |
+| `unattendedHidden` | `delegate`, `apply_patch_from`, `browse`, `locate`, `remember`, `find_skill`, `find_capability`, `hive`, `ask_user`, `present`, `mu-browser` | Tools and skills left out of unattended runs. List them by name. One-shot runs almost never use these, yet every request carries them. Anything you call by its command (such as /hive) stays in. Empty keeps them all. |
+| `unattendedFindWithMcp` | `true` | Keep find_capability in unattended runs when an MCP server is installed. Unattended means a one-shot mu --print or json-mode run. Nobody asks the judge there, so without find_capability an MCP server that isn't always open can't be reached. On: with such a server installed, find_capability stays, lists what's installed, and the model opens what it needs. With packs alone it's left out, and requests stay as they were. |
+| `subagentsInherit` | `true` | Subagents take this session's capabilities. A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Until this session has chosen, a subagent asks the judge itself, as before. |
 
 ## frame
 
-**Task frame and to-do list.** Keeps what you actually want: the goal, your hard constraints (your own words, with their source), the current subgoal and the acceptance items. Those items are the to-do list the model ticks with the todo tool. Every goal-relevance judgment reads it, and it rewinds with the session.
+**Task frame and to-do list.** Keeps track of what you actually want: the goal, your hard constraints (in your own words, with their source), the current subgoal and the acceptance criteria. The acceptance criteria are the to-do list the model checks off with the todo tool. Every goal-related verdict reads the frame, and it rewinds with the session.
 
 On by default: yes. Decision points: `task.frame`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `waitMs` | `3000` ms | A turn waits for its frame at most. Counted from the arrival of the message. A late update is not dropped: the turn starts on the previous version plus the raw message, and the update lands when it is ready. Range 0 to 30000. |
-| `writerTimeoutMs` | `20000` ms | Time limit for writing a frame. On a timeout or a malformed reply the last version stays and is marked stale, goal-based filtering holds back, and the next message retries. Range 1000 to 120000. |
-| `show` | `true` | Show frame updates in the chat. |
+| `waitMs` | `3000` ms | Wait for the task frame at most `3000` ms. Counted from when the message arrives. A late update isn't dropped: the turn starts with the previous version plus the raw message, and the update applies when it's ready. Range 0 to 30000. |
+| `writerTimeoutMs` | `20000` ms | Time limit for writing a frame. On a timeout or malformed reply, the last version stays and is marked stale, goal-based filtering holds back, and the next message tries again. Range 1000 to 120000. |
+| `show` | `true` | Show frame updates in the conversation. |
 
 ## memory
 
-**Lessons.** Learns from your corrections, from the agent getting itself unstuck, and from what the model and sub-agents found; merges each lesson with the kept ones before storing it, brings the relevant ones along next time, and retires those nobody follows. /lessons shows them, /forget retires one.
+**Lessons.** Learns from your corrections, from the agent getting itself unstuck and from what the model and subagents find. Merges each new lesson with existing ones before saving it, brings relevant lessons into later turns and retires those that are never followed. /lessons lists them; /forget retires one.
 
 On by default: yes. Decision points: `memory.recall`, `memory.capture`, `memory.outcome`, `memory.worth`, `memory.merge`, `memory.applied`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `path` | empty | Lessons file. Empty uses the default location. |
-| `maxCandidates` | `24` | Judge at most. The most followed, then the most recently stored or confirmed, come first. Range 1 to 200. |
-| `maxInjected` | `5` | Bring in at most. Range 0 to 20. |
-| `waitMs` | `4000` ms | Wait for the recall at most. Counted from the arrival of the message; picking lessons for sub-agents waits as long. Range 0 to 30000. |
-| `retireAfter` | `8` | Retire after this many recalls never followed. 0 never retires a lesson by itself. Range 0 to 100. |
-| `mergeNeighbours` | `6` | Compare with this many similar lessons. Picked by shared words, asked in one request; 0 stores without merging. Range 0 to 16. |
-| `outcome` | `true` | Learn from the agent getting unstuck. Needs the writer model or the conversation's model to put the lesson into words. |
+| `path` | empty | Lessons file. Leave empty for the default location. |
+| `maxCandidates` | `24` | Judge at most `24`. The most followed come first, then the most recently saved or confirmed. Range 1 to 200. |
+| `maxInjected` | `5` | Bring in at most `5`. Range 0 to 20. |
+| `waitMs` | `3000` ms | Wait for recall at most `3000` ms. Counted from when the message arrives; picking lessons for subagents uses the same limit. Range 0 to 30000. |
+| `retireAfter` | `8` | Retire after this many recalls without being followed. 0 never retires lessons automatically. Range 0 to 100. |
+| `mergeNeighbours` | `6` | Compare with this many similar lessons. Chosen by shared words and judged in one request; 0 saves without merging. Range 0 to 16. |
+| `outcome` | `true` | Learn from the agent getting unstuck. Needs the writer model or the main model to word the lesson. |
 | `applied` | `true` | Check at the end of a turn whether lessons were followed. |
+| `unattendedWrites` | `false` | Also learn new lessons in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: kept lessons are still read, but nothing is learned from corrections, ways out or subagent reports. The capability catalog leaves out the remember tool. |
+
+## procedures
+
+**Procedures as skills.** When a long, successful run was a reusable procedure, drafts it as a skill for you to review: /skills lists the drafts, and /skills show, accept and reject read, install or discard one. Nothing is installed without your approval.
+
+On by default: yes. Decision points: `skill.capture`.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `minSteps` | `6` | Minimum steps. Runs with fewer steps aren't considered. Range 2 to 100. |
+| `minCommands` | `2` | Minimum commands. Runs with fewer shell commands aren't considered: a procedure has to do something. Range 0 to 50. |
+| `maxPending` | `3` | Max pending drafts per project. Once a project has this many pending drafts, no more are made until you review them. Range 1 to 20. |
+| `unattended` | `false` | Also draft skills in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: a draft needs someone to review it, and writing one keeps the run going for another model call. |
 
 ## guard
 
@@ -97,66 +120,111 @@ On by default: yes. Decision points: `tool.risk`.
 
 ## permissions
 
-**Permission modes.** Full access, Jev approves, or minimal permissions, switched any time with /permissions. When a step needs your permission the status bar asks; allow it once or for the whole conversation. While it is on, it also handles the risky command guard.
+**Permission modes.** Full access, Judge mode or Ask first; switch any time with /permissions. When a step needs your permission, the status bar asks; allow it once or for the whole conversation. While this feature is on, it also takes over the risky command guard.
 
 On by default: yes. Decision points: `tool.approval`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `mode` | `jev` | Mode of a new conversation. Once you pick one with /permissions, your last pick is used. One of `full` (Full access), `jev` (Jev approves), `ask` (Minimal permissions). |
+| `mode` | `judge` | Mode for new conversations. Once you pick a mode with /permissions, your latest choice is used. One of `full` (Full access), `judge` (Judge mode), `ask` (Ask first). |
+| `readOnlyChains` | `true` | Read-only command chains go ahead. Commands made only of read-only commands joined by ;, &&, \|\| or \| (such as pwd && ls -la; git status) run without asking the judge or you, like a single read-only command. They may throw output away with 2>/dev/null or 2>&1; a redirect that writes a file, sed -i, tee or find with -exec or -delete is not read-only. Off: only a single read-only command or pipeline goes ahead. |
+
+## plan
+
+**Plan mode.** /plan enters plan mode: the agent only reads, searches and asks. It changes nothing and ends with a plan under "# Plan". Once you approve the plan, the agent starts on it, and the plan's steps go on the task's checklist. Edits, commands that change things and subagents are refused. The tool list and the system prompt stay the same, so the prompt cache survives the switch.
+
+On by default: yes.
 
 ## constraints
 
-**Hard constraint gate.** Checks a change or a command against your hard constraints first; sub-agents work under them too.
+**Hard constraint gate.** Checks each change or command against your hard constraints first; subagents follow them too.
 
 On by default: yes. Decision points: `tool.constraint`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `maxConstraints` | `6` | Constraints checked per call at most. The newest ones are used. Range 1 to 20. |
-| `waitMs` | `5000` ms | Wait at most. Range 500 to 30000. |
+| `maxConstraints` | `6` | Max constraints checked per call. The newest ones are used. Range 1 to 20. |
+| `waitMs` | `5000` ms | Wait at most `5000` ms. Range 500 to 30000. |
+| `skipReadOnly` | `true` | Skip read-only commands. Read-only shell commands (ls, git status, cat … \| grep …, and chains of them) aren't checked against your constraints, just like the read and grep tools. |
 
 ## injection
 
-**Injection screening.** Withholds instructions aimed at an AI before the model reads web pages, search results and MCP answers.
+**Injection screening.** Withholds instructions aimed at an AI before the model reads web pages, search results, MCP responses and what shell commands fetch from other machines, and removes MCP tools whose descriptions contain such instructions.
 
-On by default: yes. Decision points: `tool.injection`.
+On by default: yes. Decision points: `tool.injection`, `tool.description`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `tools` | `web_fetch`, `web_search`, `browse`, `mcp__*` | Tools screened. Tool names, or a prefix ending in *; mcp__* is every MCP server. |
-| `waitMs` | `6000` ms | Wait at most. After this only plain injection phrases are withheld, by rule; the verdict is still recorded. Range 500 to 30000. |
+| `tools` | `web_fetch`, `web_search`, `browse`, `mcp__*` | Tools screened. Tool names, or a prefix ending in *; mcp__* covers every MCP server. |
+| `fetchCommands` | `curl`, `wget`, `gh`, `glab`, `lynx`, `w3m`, `Invoke-WebRequest`, `Invoke-RestMethod`, `iwr`, `irm` | Fetching commands. When a bash or PowerShell command runs one of these programs, its output is screened unless every address it's given is on this machine (localhost); gh and glab output is always screened. Empty: no shell output is screened. |
+| `proseWords` | `6` | Minimum words in a row to ask the judge. A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't sent to the judge; only the rules check it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged. Range 0 to 50. |
+| `waitMs` | `6000` ms | Wait at most `6000` ms. After this, rules withhold only obvious injection phrases; the verdict is still recorded. Range 500 to 30000. |
+| `descriptions` | `true` | Screen MCP tool descriptions. MCP tools whose descriptions ask the AI to do more than use the tool are removed from the list (tool.description). |
+| `descriptionWaitMs` | `8000` ms | Wait for tool description verdicts at most `8000` ms. How long a turn waits for verdicts on MCP tools it hasn't seen before. After this, rules decide until the verdict arrives. Range 500 to 30000. |
 
 ## admission
 
-**Tool output admission.** Controls how long tool output enters the context.
+**Tool output admission.** Decides which parts of long tool output enter the context.
 
 On by default: yes. Decision points: `tool.admission`, `tool.admission.test-log`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `minChars` | `4000` chars | Only filter output longer than. Range 500 to 200000. |
+| `minChars` | `4000` chars | Only filter output longer than `4000` chars. Range 500 to 200000. |
 | `chunkChars` | `1200` chars | Chunk size. Range 200 to 20000. |
 | `maxChunks` | `48` | Judge at most this many chunks. Range 4 to 400. |
-| `batchChunks` | `16` | Chunks per request. A hosted judge takes many chunks in one request, the state billed once; the local judge takes one at a time. Range 1 to 32. |
-| `waitMs` | `4000` ms | Wait at most. After this the output goes in whole; the verdict is only recorded. Range 500 to 30000. |
-| `passThrough` | `read`, `edit`, `write` | Never filter these tools. |
-| `testLog` | `off` | Test log trimming. One of `off` (Off), `rules` (Drop exact repeats only (lossless)), `jev` (Also let the judge select from the rest). |
-| `agentEnv` | `true` | Tell test runners an agent is reading. Vitest and others then print failures and the summary only. |
+| `batchChunks` | `16` | Chunks per request. The judge takes many chunks in one request, with the shared context billed once. Range 1 to 32. |
+| `waitMs` | `2000` ms | Wait at most `2000` ms. After this, the full output goes in; the verdict is only recorded. Range 500 to 30000. |
+| `passThrough` | `read`, `edit`, `write`, `delegate`, `hive`, `web_fetch`, `recall` | Never filter these tools. |
+| `printCommands` | `cat`, `sed -n`, `head`, `tail`, `nl`, `less`, `bat`, `grep`, `rg`, `od`, `xxd`, `git show`, `git diff`, `readelf`, `objdump` | Never filter file prints. When a bash command only prints a file with these programs (after a cd, or piped through them), its output goes in whole, as with read: the model asked to see that file. Build, test, background-job and other output is still judged. Empty: all of it is judged. |
+| `testLog` | `off` | Test log trimming. One of `off` (Off), `rules` (Drop exact repeats only (lossless)), `jev` (Also let the judge pick from the rest). |
+| `agentEnv` | `true` | Tell test runners an agent is reading. Vitest and other runners then print only failures and the summary. |
 
 ## forgetting
 
-**Forgetting stale results.** Replaces stale results with tombstones when the context gets tight.
+**Forgetting stale results.** Replaces stale results with placeholders when the context gets tight.
 
 On by default: yes. Decision points: `context.forget`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `thresholds` | `50`, `70`, `85` | Trigger thresholds (context use %). |
-| `minChars` | `6000` chars | Only results longer than. Range 500 to 200000. |
+| `minChars` | `6000` chars | Only results longer than `6000` chars. Range 500 to 200000. |
 | `minAgeTurns` | `2` | At least this many turns old. Range 0 to 50. |
 | `maxPerBatch` | `12` | Judge at most per batch. Range 1 to 100. |
-| `waitMs` | `4000` ms | Wait at most. This request waits this long; verdicts that come later apply at the next request. Range 500 to 30000. |
+| `waitMs` | `4000` ms | Wait at most `4000` ms. The current request waits this long; later verdicts apply from the next request on. Range 500 to 30000. |
+
+## recall
+
+**Read back shortened output.** Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command or fetching the page again: old results forgetting replaced, noise admission archived, the rest of a page web_fetch cut. Only this conversation; the rest of a page goes through the injection screen first.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `maxChars` | `20000` chars | Max text per recall call. Range 1000 to 200000. |
+
+## askUser
+
+**Questions for you.** When a decision is yours to make and your request doesn't settle it, the model can ask you one to four questions with ask_user. Each has options to pick from, and you can always answer in your own words. Each question waits a while: if nobody answers, the agent carries on with what doesn't depend on it, and /answer brings the questions back. Unattended runs and subagents don't have the tool.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `waitMs` | `120000` ms | Wait per question. When nobody answers in time, the question stays open and the agent carries on; 0 waits until you answer. Range 0 to 3600000. |
+
+## featureOffers
+
+**Offers to turn features on.** When a task would benefit from a feature that's off by default (summary-free compaction, mid-stream correction, the write sandbox), the model can offer to turn it on. mu asks you first. The feature is written to mu.json only if you say yes, and it takes effect in the next session. A feature you decline isn't offered again in this session. The judge never offers one on its own, and an unattended run writes nothing.
+
+On by default: yes.
+
+## present
+
+**Files handed to you.** When a task produces files you asked for (a report, a deck, a build, an export), the model hands them to you with present at the end: up to 8 files, each of which must exist. The desktop app shows them on a card, and you open each one from there. When the model mentions a file that exists, it links to it, down to the line. Unattended runs and subagents don't have the tool.
+
+On by default: yes.
 
 ## compaction
 
@@ -167,193 +235,239 @@ On by default: no. Decision points: `context.compact`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `keepThreshold` | `0.5` | Keep threshold. Range 0 to 1. |
-| `minChars` | `600` chars | Keep anything shorter than. Range 100 to 20000. |
+| `minChars` | `600` chars | Keep anything shorter than `600` chars. Range 100 to 20000. |
 | `headChars` | `300` chars | Head kept when pruning. Range 0 to 5000. |
 | `targetRatio` | `0.5` | Target share of the original. Range 0.05 to 1. |
 | `maxWindowShare` | `0.25` | At most this share of the window. Range 0.05 to 0.9. |
-| `freeChars` | `24000` chars | Histories this small are not squeezed. Range 0 to 500000. |
+| `freeChars` | `24000` chars | Leave histories smaller than this alone. Range 0 to 500000. |
 | `maxJudged` | `120` | Judge at most this many passages. Range 10 to 1000. |
 
 ## checkpoint
 
-**Checkpoints and rewind.** Before the first change of every turn that edits files, snapshots the working tree into mu's own shadow git directory, never touching your repository. /rewind takes files and conversation back, /rewind undo takes the rewind back.
+**Checkpoints and rewind.** Before the first file change in each turn, snapshots the working tree into mu's own shadow git directory, without touching your repository. /rewind restores files and the conversation; /rewind undo reverses a rewind.
 
 On by default: yes. Decision points: `turn.rewind`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `dir` | empty | Where snapshots are kept. Empty means mu/checkpoints in the mu home, one shadow repository per project. |
+| `dir` | empty | Where snapshots are kept. Empty means mu/checkpoints in mu's home folder, with one shadow repository per project. |
 | `keep` | `50` | Snapshots kept per project. Range 1 to 1000. |
 | `maxAgeDays` | `14` days | Days a snapshot is kept. Range 1 to 365. |
 | `maxFileMb` | `5` MB | Largest file in a snapshot. Larger files stay out of snapshots, and a rewind never touches them. Range 1 to 1024. |
-| `maxFiles` | `5000` files | Most files a snapshot takes in. With more files to take in, the session goes without checkpoints and says so once. Your home folder and mu's own folders are never snapshotted. Range 100 to 1000000. |
-| `maxTotalMb` | `200` MB | Most a snapshot takes in, in all. With more to take in, the session goes without checkpoints and says so once. Range 1 to 100000. |
+| `maxFiles` | `5000` files | Max files per snapshot. With more files than this, mu runs without checkpoints and tells you once. Your home folder and mu's own folders are never snapshotted. Range 100 to 1000000. |
+| `maxTotalMb` | `200` MB | Max total snapshot size. Above this, mu runs without checkpoints and tells you once. Range 1 to 100000. |
 | `ignore` | none | Extra paths to ignore. gitignore patterns, one per line. The project's own .gitignore and the built-in list (node_modules, build outputs and so on) always apply. |
-| `timeoutMs` | `30000` ms | Longest a snapshot may take. Past this the turn goes without a checkpoint; the tool call still runs. Range 1000 to 600000. |
+| `timeoutMs` | `30000` ms | Max time for a snapshot. Past this, the turn runs without a checkpoint; the tool call still runs. Range 1000 to 600000. |
 | `propose` | `true` | Propose a rewind at a dead end. |
-| `confirmSeconds` | `120` s | How long a proposal waits for you. Unanswered, the run carries on. 0 waits forever. Range 0 to 3600. |
+| `confirmSeconds` | `120` s | How long a proposal waits for you. If you don't answer, the run continues. 0 waits forever. Range 0 to 3600. |
+| `unattended` | `false` | Also take checkpoints in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: nobody is there to confirm a rewind, so no file would ever be put back, and the snapshot and scan after every change would only slow down each step. At a dead end the model is still told to step back. |
 
 ## monitor
 
-**Drift monitor.** Notices drift from the goal and going in circles.
+**Drift monitor.** Catches drift from the goal and the agent going in circles.
 
 On by default: yes. Decision points: `turn.drift`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `every` | `6` | Check every this many tool calls. Range 1 to 100. |
-| `repeats` | `3` | Repeats that count as a loop. Range 2 to 20. |
-| `window` | `8` | Window. Range 2 to 100. |
+| `every` | `6` | Tool calls between checks. Range 1 to 100. |
+| `minMinutes` | `3` min | At least this long between checks. A check needs both: the tool calls above, and this long since the last check. Range 0 to 60. |
+| `maxMinutes` | `10` min | Check at least this often. A check comes after this long whatever happened, so a long reply with no tool call is checked too. Range 1 to 120. |
+| `stuckMinutes` | `10` min | No progress for this long before a drift steer. It also takes two drift readings in a row, each at least 90% sure. Progress is a new file written, more tests passing, a different error, a command of a minute or more that succeeds, or an item ticked. Range 0 to 120. |
+| `cooldownMinutes` | `15` min | At least this long between two steers. The judge's steers (on drift or a loop) wait this long after the monitor's last steer, including one from the loop rule. Range 0 to 240. |
+| `repeats` | `3` | Repeats that count as a loop. Only the same input with the same result counts as the same call; paging through a file does not. A call that was refused and never ran counts by its input alone. The monitor says so at this many, and again 2 and 5 repeats later, more plainly each time. Range 2 to 20. |
+| `window` | `8` | Recent calls checked. Range 2 to 100. |
+| `unattended` | `false` | Also check for drift in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default. The rule that catches going in circles still applies. |
 
 ## lsp
 
-**Language server diagnostics.** Uses the language servers already installed here (installs none), keeps only what an edit newly introduced, and lets the judge pick the moment to tell the model.
+**Language servers.** Uses language servers already installed on this machine (it installs none). It keeps only the diagnostics an edit newly introduced and lets the judge decide when to tell the model. Its lsp tool, opened when a task needs it, finds definitions, references and implementations and shows a symbol's type.
 
 On by default: yes. Decision points: `diagnostics.delivery`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `builtin` | `true` | Use the built-in table of well-known servers. Well-known servers for TypeScript, Python, Go, Rust and C/C++, looked up on PATH only. Your own go under features.lsp.servers in mu.json. |
+| `builtin` | `true` | Use the built-in list of well-known servers. Well-known servers for TypeScript, Python, Go, Rust and C/C++, found on PATH only. Add your own under features.lsp.servers in mu.json. |
 | `editTools` | `edit`, `write` | Tools that count as editing a file. |
-| `subAgents` | `false` | Sub-agents start language servers too. Off by default: one set of servers per sub-agent is heavy on the machine. |
-| `settleMs` | `1500` ms | Wait for the server after an edit, at most. Past this nothing waits: late diagnostics are handled at the next edit or when the turn ends. Range 0 to 10000. |
-| `turnEndSettleMs` | `3000` ms | Wait at the end of a turn, at most. Range 0 to 30000. |
+| `subAgents` | `false` | Subagents start language servers too. Off by default: a set of servers per subagent is heavy on the machine. |
+| `settleMs` | `1500` ms | Wait for the server after an edit, at most `1500` ms. Past this, nothing waits: late diagnostics are handled at the next edit or when the turn ends. Range 0 to 10000. |
+| `turnEndSettleMs` | `3000` ms | Wait at the end of a turn, at most `3000` ms. Range 0 to 30000. |
 | `quietMs` | `250` ms | Silence that counts as the server being done. Range 20 to 5000. |
-| `baselineMs` | `5000` ms | Wait for the pre-edit diagnostics, at most. Waited for in the background, never blocking a tool. Past it, the first report is not called new. Range 100 to 60000. |
-| `maxItems` | `10` | Diagnostics told at once, at most. Range 1 to 100. |
-| `maxServers` | `4` | Servers running at once, at most. Range 1 to 16. |
-| `waitMs` | `4000` ms | Wait for the judge, at most. Range 500 to 30000. |
+| `baselineMs` | `5000` ms | Wait for the pre-edit diagnostics, at most `5000` ms. Waited for in the background, never blocking a tool. Past this, the first report isn't treated as new. Range 100 to 60000. |
+| `maxItems` | `10` | Diagnostics reported at once, at most `10`. Range 1 to 100. |
+| `maxServers` | `4` | Servers running at once, at most `4`. Range 1 to 16. |
+| `waitMs` | `4000` ms | Wait for the judge, at most `4000` ms. Range 500 to 30000. |
+| `navigation` | `true` | The lsp navigation tool. Definitions, references, implementations and types, from the same server processes as the diagnostics. It's in the capability catalog and opened when a task needs it, so it isn't in every request. |
+| `navigationResults` | `30` | Max places listed per answer. Range 1 to 200. |
 
 ## ttsr
 
-**Mid-stream correction (experiment).** Semantic TTSR: the judge, not a regular expression, notices the output going astray, cuts it, shows the rule and lets the model carry on. Off by default; when on, every stretch of output costs one more judge call.
+**Mid-stream correction.** The judge, not a regular expression, notices when output goes astray, cuts it off, shows the rule and lets the model continue. Off by default; when on, every stretch of output costs one more judge call.
 
 On by default: no. Decision points: `output.drift`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `rules` | none | Rules to hold at all times. One per line, in plain words, e.g. “Answer in Chinese”, “No placeholder implementations”. Your hard constraints from the task frame are added automatically. |
+| `rules` | none | Rules to follow at all times. One per line, in plain words, e.g. “Answer in Chinese”, “No placeholder implementations”. Your hard constraints from the task frame are added automatically. |
 | `segmentChars` | `600` | Characters of output per check. Range 200 to 5000. |
-| `maxRules` | `4` | Rules checked per call at most. When there are more, the ones you said last stay. Range 1 to 12. |
-| `maxInterrupts` | `2` | Cuts at most between two of your messages. Range 1 to 10. |
+| `maxRules` | `4` | Rules checked per call at most `4`. When there are more, the most recent ones are used. Range 1 to 12. |
+| `maxInterrupts` | `2` | Max cuts between two of your messages. Range 1 to 10. |
+
+## deadline
+
+**Run deadline.** When mu knows when the run has to be done, a reply that only thinks is cut sooner (see Long-thinking retry), and the model is told how many minutes are left when 50% and 80% of the time has passed; the second time it is also asked to get the requested result in place (files written, services running) before polishing. No judge is asked. Without a time budget, nothing changes.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `budgetS` | `0` s | Time budget for a run. Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Subagents ignore the budget. |
+| `notices` | `true` | Tell the model how much time is left. One line at 50% and one at 80%. Tool calls under way are not interrupted; the model reads it before its next step. |
+
+## watchdog
+
+**Long-thinking retry.** When a reply has done nothing but think for too long, with no text and no tool call yet, it's cut off and retried at the same reasoning effort. The retry is told how far the reasoning got and asked to act on it first. The retry itself is never cut off.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `thinkingMs` | `600000` ms | Cut a reply after thinking this long. With a run deadline (see Run deadline, MU_TIME_BUDGET_S) the cut can come sooner: after at most half the time left when the reply started, and never under a minute. |
+| `maxCuts` | `3` | Max cuts between two of your messages. Range 1 to 10. |
 
 ## goal
 
-**Goal mode.** After /goal <condition> the agent keeps working until the condition holds (/goal alone asks for it). Each time it wants to stop, a model reads the evidence: met, or the next step. It stops by itself when you interrupt, a model call fails, it idles or goes in circles, or its allowance runs out; your next message picks it up again.
+**Goal mode.** After /goal <condition>, the agent keeps working until the condition holds (/goal alone asks for one). Each time it wants to stop, a model reads the evidence and decides: met, or the next step. It pauses on its own when you interrupt, a model call fails, it idles or goes in circles, or it reaches its limits; your next message resumes it.
 
 On by default: yes. Decision points: `goal.met`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `checker` | `model` | Who checks whether the goal holds. A model reads the goal, what the run did, the last test run and the closing message, and gives a verdict and the next step; Jev only when it gives no answer. Either way an open acceptance item or an unverified edit means not yet. One of `model` (A model (recommended)), `jev` (The Jev judge). |
-| `checkModel` | empty | Model for the check. As provider/model. Empty: the session's current model. |
-| `checkThinking` | `off` | Thinking level of the check. One of `off` (Off), `minimal` (Minimal), `low` (Low), `medium` (Medium), `high` (High). |
-| `checkTimeoutMs` | `90000` ms | Longest wait for the check. After that, Jev decides, and failing that the facts alone. Range 5000 to 600000. |
-| `stallLimit` | `2` | Runs without progress before it stops. The check found the agent repeating itself. The first time it is told to change course; at this count the goal pauses for you. Range 1 to 10. |
-| `maxContinuations` | `20` | Continuations at most. Counted from your last message. Range 1 to 200. |
+| `checker` | `model` | Who checks whether the goal is met. A model reads the goal, what the run did, the last test run and the closing message, then gives a verdict and the next step; the judge steps in only when the model doesn't answer. Either way, an open acceptance item or an unverified edit means not yet. One of `model` (A model (recommended)), `jev` (The judge). |
+| `checkModel` | empty | Model for the check. As provider/model. Empty: the current model. |
+| `checkThinking` | `off` | Thinking level for the check. One of `off` (Off), `minimal` (Minimal), `low` (Low), `medium` (Medium), `high` (High). |
+| `checkTimeoutMs` | `90000` ms | Max wait for the check. If the check takes longer, the judge decides; if the judge can't, only the facts count. Range 5000 to 600000. |
+| `stallLimit` | `2` | Runs without progress before pausing. Runs where the check finds the agent repeating itself. The first time, the agent is told to change course; at this count, the goal pauses for you. Range 1 to 10. |
+| `maxContinuations` | `20` | Max continuations. Counted from your last message. Range 1 to 200. |
 | `maxMinutes` | `180` min | Longest automatic run. Counted from your last message. Range 5 to 1440. |
-| `idleLimit` | `2` | Idle runs before it stops. Runs in a row that ended without a single tool call: the agent is going nowhere. Range 1 to 10. |
+| `idleLimit` | `2` | Idle runs before pausing. Runs in a row that ended without a single tool call: the agent is going nowhere. Range 1 to 10. |
 
 ## board
 
-**Plain-language board.** Tells you in plain words how far the work is, what is happening now and what waits on you, and keeps a running account: a line for every step as it happens, and what the agent says or finds retold at once by a plain-speaking model, with Jev deciding what is worth telling; a finished run is summed up once more, with the account kept. For you only, never in the model's context. Switched per project (/board on, /board off); the first time, you pick the model that writes it (/board model changes it).
+**Plain-language board.** Tells you in plain words how far along the work is, what's happening now and what's waiting on you. It keeps a running account: a line for each step as it happens, plus what the agent says or finds, retold right away by a plain-speaking model, with the judge deciding what's worth telling. A finished run gets a summary, and the account is kept. For you only; never in the model's context. Turned on per project (/board on, /board off); the first time, you pick the model that writes it (/board model changes it).
 
 On by default: yes. Decision points: `board.read`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `defaultOn` | `false` | On for projects not switched yet. Off by default: each update of the board costs a model call. |
-| `model` | empty | Model that writes the board. As provider/model; set here, nobody is asked. Empty: you pick one the first time the board is switched on (Claude Opus 4.6 recommended, then Gemini 3.8 Flash), kept in mu/board.json; none picked: the writer model, else the session's. |
-| `language` | `auto` | Language of the board. One of `auto` (The one you write in), `zh` (Chinese), `en` (English). |
-| `everyTools` | `5` | Tool calls between two looks. Range 1 to 100. |
-| `minIntervalMs` | `20000` ms | Shortest gap between two looks while it works. When the agent stops it always looks, whatever this says. Range 0 to 600000. |
+| `defaultOn` | `false` | On in projects you haven't set it for. Off by default: each board update costs a model call. |
+| `model` | empty | Model that writes the board. As provider/model; if set here, you won't be asked. Empty: you pick one the first time you turn the board on (Claude Opus 4.6 recommended, then Gemini 3.8 Flash), saved in mu/board.json. If none is picked: the writer model, else the current model. |
+| `language` | `auto` | Board language. Auto: what the model writes follows the language of your messages; the board's fixed lines follow the app's language. One of `auto` (The one you write in), `zh` (Chinese), `en` (English). |
+| `everyTools` | `5` | Tool calls between checks. Range 1 to 100. |
+| `minIntervalMs` | `20000` ms | Minimum time between checks while it works. When the agent stops, the board always checks, regardless of this setting. Range 0 to 600000. |
 | `maxSteps` | `10` | Latest tool calls read each time. Range 3 to 50. |
-| `narrateTimeoutMs` | `60000` ms | Longest wait for the writer. After that, fixed sentences are used. Range 5000 to 300000. |
+| `narrateTimeoutMs` | `60000` ms | Max wait for the writer. This is the limit when a run ends. Mid-run the writer gets 20 s at most, since a later update would already be out of date. After that, stock phrases are used. Range 5000 to 300000. |
+| `stallMs` | `60000` ms | Time before a long step counts as stuck. When a command runs this long, or a subagent has no output for this long, the board adds a line saying it's still running, updates that line at 3 and 10 times this, and checks again each time. 0 turns this off. Range 0 to 3600000. |
+| `maxStaleMs` | `15000` ms | Oldest the board gets while things keep happening. When something new happens while the judge is still reading, the board usually waits for the next check. If it's already older than this, it's rewritten anyway, so a busy agent can't keep it out of date. Range 0 to 300000. |
+| `unattended` | `false` | Also in one-shot runs. Nobody watches the board in mu --print or json mode, so by default it isn't written there, saving the judge and writer calls. |
+| `followAlways` | `false` | Check on subagents on a timer. By default the board checks only when a subagent starts, finishes or fails. On: it checks at every interval, changed or not. |
 
 ## completion
 
-**Completion check.** Checks that something verified the work before it is called done.
+**Completion check.** Checks that something verified the work before it's called done.
 
 On by default: yes. Decision points: `turn.completion`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `waitMs` | `3000` ms | Wait at most. After this there is no nudge; the verdict is only recorded. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
 
 ## continuation
 
-**Carry on after stopping short.** Sends a run that stopped short of what it said it would do back to it.
+**Continue after stopping short.** Sends the agent back to work when a run stops short of what it said it would do.
 
 On by default: yes. Decision points: `turn.continue`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `maxNudges` | `2` | Most nudges per message. Range 1 to 5. |
-| `waitMs` | `3000` ms | Wait at most. After this there is no nudge; the verdict is only recorded. Range 500 to 30000. |
+| `maxNudges` | `2` | Max nudges per message. Range 1 to 5. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
+| `unattendedPromised` | `1` | Unattended: nudges for work it said it would do. Unattended means a one-shot mu --print or json-mode run. There, a run is sent back at most this many times per message for work it said it would do; Max nudges per message still caps all nudges together. When the judge mistook a finished "Done. Created …" for a promise, the second nudge cost a benchmark run 4 more requests. Range 0 to 5. |
+| `promisedAfterToolless` | `false` | Unattended: nudge again after an answer without a tool call. Off by default: when the agent answered the last nudge without calling a tool ("The work is already complete"), it answered by stopping, and isn't told again that it said it would do more. A run that stops without a message is still sent back. |
 
 ## notify
 
-**Notification routing.** Decides when events are told to the model.
+**Notification routing.** Decides when to tell the model about events.
 
 On by default: yes. Decision points: `notify.routing`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `budgetThresholds` | `70`, `85` | Context budget notices (%). |
+| `unjudged` | `now` | Without a verdict, context budget notices. Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run. One of `now` (Now), `next_turn` (Next turn), `drop` (Never). |
+| `unattended` | `false` | Also ask the judge about notices in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: notices follow their own rules, as they do in shadow mode (the default), where the verdict is only recorded. |
 
 ## warming
 
-**Cache warming.** Refreshes the prompt cache before it expires when that pays off.
+**Cache warming.** Refreshes the prompt cache before it expires, when that pays off.
 
 On by default: yes. Decision points: `cache.warming`.
 
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, pi's own estimate decides, and the judge call is canceled. Range 500 to 30000. |
+
 ## warmup
 
-**Judge connection warm-up.** While the session is in use, one tiny question keeps the judge's connection warm: the questions before a turn skip 1-3 s of connecting.
+**Judge connection warm-up.** While mu is in use, a tiny question keeps the judge's connection warm, so the questions before a turn skip 1–3 s of connection setup.
 
 On by default: yes.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `intervalMs` | `50000` ms | Every. The server drops a connection idle for about 90 s; stay under that. Range 10000 to 85000. |
-| `idleMs` | `900000` ms | Stop after this much quiet. Range 60000 to 7200000. |
+| `intervalMs` | `50000` ms | Every `50000` ms. The server drops connections idle for about 90 s; stay below that. Range 10000 to 85000. |
+| `idleMs` | `900000` ms | Stop after this much inactivity. Range 60000 to 7200000. |
+| `nearby` | `false` | Also keep a judge on this machine or network warm. Off by default for a judge at localhost, 127.0.0.1, a local network address or host.docker.internal: a new connection there costs next to nothing, and on a server that answers one question at a time a probe would queue in front of real ones. |
+| `unattended` | `false` | Also keep the connection warm in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: there a probe every 50 s costs more than the connection setup it saves, under a tenth of a second on a short route. |
 
 ## swarm
 
-**Sub-agents.** Delegates tasks to sub-agents with roles.
+**Subagents.** Delegates tasks to subagents with roles.
 
 On by default: yes. Decision points: `swarm.routing`, `swarm.patch`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `models` | none | Model ladder (cheapest to strongest). Empty means every sub-agent uses the session's model. |
-| `maxTasks` | `6` | Tasks per call at most. Range 1 to 32. |
+| `models` | none | Model ladder (cheapest to strongest). Empty means every subagent uses the main agent's model. |
+| `maxTasks` | `6` | Max tasks per call. Range 1 to 32. |
 | `concurrency` | `3` | Running at once. Range 1 to 16. |
 | `defaultAgent` | `worker` | Default role. |
 | `agentsDir` | empty | Folder with your own roles. Empty uses <agent dir>/agents. |
-| `isolation` | `worktree` | Sub-agents that edit files. Isolated changes come back as a patch that the main agent applies with apply_patch_from, or not. Outside a git repository it falls back to editing in place. One of `worktree` (Edit in a git worktree of its own), `none` (Edit in place). |
-| `carryUncommitted` | `true` | Carry uncommitted changes over. The sub-agent starts from the files as the main agent sees them, not from the last commit. |
-| `patchPreviewLines` | `30` | Lines of patch preview. The beginning of the patch shown with the sub-agent's report. Range 0 to 400. |
+| `isolation` | `worktree` | Subagents that edit files. Isolated changes come back as a patch, which the main agent may apply with apply_patch_from. Outside a git repository, subagents edit in place. One of `worktree` (Edit in its own git worktree), `none` (Edit in place). |
+| `carryUncommitted` | `true` | Carry over uncommitted changes. The subagent starts from the files as the main agent sees them, not from the last commit. |
+| `patchPreviewLines` | `30` | Lines of patch preview. The start of the patch, shown with the subagent's report. Range 0 to 400. |
 
 ## hive
 
-**Hive.** Several bees work one hard task in parallel; the judge gates what passes between them. /hive <question> starts one yourself; the agent also starts one when a problem resists a direct attempt.
+**Hive.** Several bees work on one hard task in parallel, and the judge decides what passes between them. Start one yourself with /hive <question>; the agent also starts one when a problem resists a direct attempt.
 
 On by default: yes. Decision points: `hive.publish`, `hive.deliver`, `hive.relate`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `maxNotesPerBee` | `12` | Notes per bee at most. Range 1 to 100. |
-| `maxDeliveriesPerBee` | `10` | Deliveries per bee at most. Range 1 to 100. |
+| `maxNotesPerBee` | `12` | Max notes per bee. Range 1 to 100. |
+| `maxDeliveriesPerBee` | `10` | Max deliveries per bee. Range 1 to 100. |
 | `checkpointEvery` | `4` | Ask for findings after this many silent tool calls. 0 turns this off. Range 0 to 50. |
-| `lastCall` | `true` | One last hearing while writing the report. |
-| `maxRelatedPerNote` | `6` | Earlier findings a new one is held against, at most. Only those sharing words with it. 0 turns corrections off. Range 0 to 30. |
-| `verifyConflicts` | `1` | Verifier bees for unsettled disputes, at most. 0 adds none; both sides stay in the report. Range 0 to 3. |
-| `verifyAfterSeconds` | `60` | Seconds a dispute may stand before a verifier is added. Range 0 to 600. |
+| `lastCall` | `true` | Deliver findings once more while writing the report. |
+| `maxRelatedPerNote` | `2` | Max earlier findings to compare a new one against. Only those sharing words with it. 0 turns corrections off. Range 0 to 30. |
+| `publishMarked` | `true` | Publish marked findings directly. What a bee says starting with FOUND: or DEAD END: goes on the board without asking the judge. |
+| `publishToolOutputs` | `false` | Consider tool output for the board too. By default only what a bee says is considered. |
+| `verifyConflicts` | `1` | Max verifier bees for unsettled disputes. 0 adds none; both sides stay in the report. Range 0 to 3. |
+| `verifyAfterSeconds` | `60` | Seconds before a verifier joins an open dispute. Range 0 to 600. |
 
 ## locate
 
-**File location.** The locate tool: find files by description.
+**File locator.** The locate tool: find files by description.
 
 On by default: yes. Decision points: `files.locate`.
 
@@ -370,7 +484,7 @@ On by default: yes. Decision points: `judge.items`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `maxItems` | `500` | Most items per call. Range 10 to 5000. |
+| `maxItems` | `500` | Max items per call. Range 10 to 5000. |
 
 ## browser
 
@@ -381,53 +495,59 @@ On by default: yes. Decision points: `browser.step`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `headless` | `true` | Run headless. |
-| `maxSteps` | `40` | Steps per run at most. Range 1 to 200. |
+| `maxSteps` | `40` | Max steps per run. Range 1 to 200. |
 | `textChars` | `4000` chars | Page text read per step. Range 500 to 50000. |
-| `embedded` | `true` | Use the desktop app's browser panel when it is running. Every step is then visible and can be paused, stopped or taken over; without the app mu's own browser is used. |
+| `embedded` | `true` | Use the desktop app's browser panel when it's running. Every step is then visible and can be paused, stopped or taken over; without the app, mu uses its own browser. |
 | `profileDir` | empty | Browser profile folder. Empty uses mu's own folder. |
 
 ## background
 
-**Background commands.** bg_start / bg_output / bg_stop: dev servers and long builds without blocking the turn. Whether the end of a job interrupts is decided by notification routing; every job stops with the session.
+**Background commands.** bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. You can start one yourself with `/jobs start [--name <label>] <command>` (the desktop's Run button sends this for a package.json script); when it ends, the agent is told, along with the fact that you started it. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run.
 
 On by default: yes.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `maxJobs` | `8` | Jobs running at the same time. Range 1 to 32. |
-| `bufferChars` | `262144` chars | Output kept in memory per job. The newest is kept; the log file has everything. |
-| `maxOutputChars` | `20000` chars | Most that one bg_output returns. |
-| `killGraceMs` | `3000` ms | Wait before a job is killed by force. SIGTERM first (taskkill without /F on Windows), force after this long. |
+| `bufferChars` | `262144` chars | Output kept in memory per job. The newest output is kept; the log file has everything. |
+| `maxOutputChars` | `20000` chars | Max output per bg_output call. |
+| `killGraceMs` | `3000` ms | Wait before force-killing a job. SIGTERM first (taskkill without /F on Windows), then force after this long. |
 | `logDir` | empty | Log directory. Empty means ~/.mu/jobs/<session id>, cleared after 7 days. |
 | `inheritShell` | `true` | Use the foreground shell settings. Reads shellPath and shellCommandPrefix from settings.json, like the bash tool. |
-| `wakeWhenIdle` | `false` | A finished job may wake an idle agent. Only a verdict of "now" starts a turn; when off the notice is only appended. |
+| `wakeWhenIdle` | `false` | A finished job may wake an idle agent. Only a notice delivered "now" starts a turn; when off, the notice is only appended. |
+| `unjudged` | `now` | Without a verdict, a job's end or watched line. Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run. One of `now` (Now), `next_turn` (Next turn), `drop` (Never). |
+| `keepOnExit` | `headless` | Jobs still running when the session ends. Unattended means a one-shot mu --print or json run, where a service the task asked for must still be up after the run. One of `headless` (Keep in unattended runs), `always` (Always keep), `never` (Always stop). |
 
 ## web
 
-**Web reading and search.** web_fetch reads a page as text (time and size limits, internal addresses refused, page text labelled untrusted); web_search uses a source that answers from mainland China without a key.
+**Web reading and search.** web_fetch reads a page as text (with time and size limits, internal addresses refused and page text labeled untrusted); web_search uses a source that works from mainland China without a key.
 
 On by default: yes.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `search` | `so` | Search source. so (360), sogou, bing-cn, searxng:<base url>, or a URL with {query} in it. |
-| `searchFallback` | `true` | Try the other built-in sources on failure. Applies to a verification page, no results, or results unrelated to the query. |
-| `maxChars` | `20000` chars | Most that one web_fetch returns. |
-| `timeoutMs` | `20000` ms | Time limit of one request. |
+| `search` | `so` | Search source. so (360), sogou, bing-cn, tavily, searxng:<base url>, or a URL with {query} in it. With TAVILY_API_KEY set in the environment, Tavily is asked first and this source is the fallback. |
+| `searchFallback` | `true` | Try the other built-in sources on failure. Applies when a source returns a verification page, no results, or results unrelated to the query. |
+| `maxChars` | `20000` chars | Max text per web_fetch call. |
+| `timeoutMs` | `20000` ms | Time limit per request. |
 | `maxBytes` | `2000000` bytes | Download limit. |
 | `maxRedirects` | `5` | Redirects followed. Range 0 to 20. |
-| `allowLoopback` | `true` | Allow this machine's dev servers. Only when the URL itself says localhost or 127.0.0.1; a redirect from the web is always refused. |
-| `allowPrivate` | `false` | Allow private network addresses. 10/8, 172.16/12, 192.168/16, link-local and the like. Refused by default so a page cannot steer the reader into the local network. |
+| `allowLoopback` | `true` | Allow this machine's dev servers. Only when the URL itself names localhost or 127.0.0.1; a redirect from the web is always refused. |
+| `allowPrivate` | `false` | Allow private network addresses. 10/8, 172.16/12, 192.168/16, link-local and similar. Refused by default so a page can't steer the reader into your local network. |
 
 ## welcome
 
-**Welcome screen.** The welcome box in the terminal and the identity note.
+**Welcome screen.** The terminal's welcome screen and the identity note for the model.
 
 On by default: yes.
 
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `unattended` | `false` | Full identity note in unattended runs and subagents. Unattended means a one-shot mu --print or json-mode run. Off by default: there and in subagents the note leaves out commands to type and tools the run may not have, and pi's list of docs becomes one line with the path. That saves about 375 tokens per request. |
+
 ## inherit
 
-**Inherit existing setup.** Uses the rules, skills and MCP servers you already set up for Claude Code, Cursor and Codex, read-only. Always-on rules join the prompt; a rule scoped to file patterns is handed over once, with the result of the first tool that touches a matching file; the rest are listed by description. Project content is only used for a trusted project.
+**Inherit existing setup.** Uses the rules, skills and MCP servers you've already set up for Claude Code, Cursor and Codex, read-only. Always-on rules join the prompt; a rule scoped to file patterns is passed along once, with the result of the first tool that touches a matching file; the rest are listed by description. Project content is used only in trusted projects.
 
 On by default: yes.
 
@@ -439,12 +559,13 @@ On by default: yes.
 | `rules` | `true` | Inherit rules. |
 | `skills` | `true` | Inherit skills. |
 | `mcp` | `true` | Inherit MCP servers. When off, only the servers under mcp.servers in mu.json are used. |
-| `maxRuleChars` | `4000` chars | Most of one file-scoped rule handed over. The rest stays in the file for the model to read. Range 500 to 20000. |
-| `maxAlwaysChars` | `16000` chars | Budget for always-on rules. Always-on rules that do not fit are listed by description instead, so rules cannot bloat the prompt. Range 0 to 100000. |
+| `folders` | `true` | AGENTS.md and CLAUDE.md in subfolders. Instructions in a folder below the project folder, such as one package's AGENTS.md in a monorepo, are passed to the model once, with the result of the first tool that reads or changes a file there. The project folder's own are loaded by pi at the start. Those inside node_modules are left out. |
+| `maxRuleChars` | `4000` chars | Max size of a file-scoped rule passed along. The rest stays in the file for the model to read. Range 500 to 20000. |
+| `maxAlwaysChars` | `16000` chars | Budget for always-on rules. Always-on rules that don't fit are listed by description instead, so they can't bloat the prompt. Range 0 to 100000. |
 
 ## mcp
 
-**MCP servers.** MCP servers are connected by pi's own client (stdio and Streamable HTTP, OAuth sign-in, managed with /mcp). Each server mu takes over from Claude Code, Cursor, Codex and mu.json is a catalog entry that stays hidden: it starts and its tools are handed to the model only when the judge finds the task needs it or the model asks through find_capability. Tool lists are cached, so the judge has a description before a server ever ran. A server defined by a project asks before its first start, and again when its definition changes. "exposure": "always" under mcp.servers in mu.json keeps a server open. Servers added with mu mcp add are pi's: they connect with the session, and tool_search loads their tools when needed.
+**MCP servers.** MCP servers connect through pi's own client (stdio and Streamable HTTP, OAuth sign-in, managed with /mcp). Each server mu inherits from Claude Code, Cursor, Codex or mu.json is a hidden catalog entry: it starts, and its tools reach the model, only when the judge finds the task needs it or the model asks through find_capability. Tool lists are cached, so the judge has a description even before a server has run. A server defined by a project asks before its first start, and again when its definition changes. "exposure": "always" under mcp.servers in mu.json keeps a server open. Servers added with mu mcp add belong to pi: they connect with the session, and tool_search loads their tools when needed.
 
 On by default: yes.
 
@@ -455,38 +576,83 @@ On by default: yes.
 
 ## packs
 
-**Capability packs.** Tool packs that ship with mu and stay hidden until a task needs them; a missing program gives an install hint.
+**Capability packs.** Tool packs that ship with mu and stay hidden until a task needs them; if a required program is missing, mu shows how to install it.
 
 On by default: yes. Decision points: `review.triage`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `astGrep` | `true` | ast-grep structural search and rewrite. Finds and changes code by syntax, not text. Needs ast-grep on this machine. |
-| `maxResults` | `50` | Matches one search returns. Range 1 to 500. |
-| `maxDiffChars` | `12000` chars | Most diff one result carries. Range 1000 to 200000. |
-| `astGrepCommand` | empty | Path of ast-grep. Empty: ast-grep, then sg, from PATH. |
-| `github` | `true` | GitHub through gh. No tools, one skill that teaches gh for PRs, issues, checks and releases. Needs gh on this machine. |
-| `ghCommand` | empty | Path of gh. Empty: gh from PATH. |
-| `commit` | `true` | /commit: split the change into commits. A model proposes the groups and the messages; commits are made only after you confirm the plan, all or none. Never pushes. |
+| `astGrep` | `true` | ast-grep structural search and rewrite. Finds and changes code by syntax, not text. Requires ast-grep on this machine. |
+| `maxResults` | `50` | Max matches per search. Range 1 to 500. |
+| `maxDiffChars` | `12000` chars | Max diff per result. Range 1000 to 200000. |
+| `astGrepCommand` | empty | ast-grep path. Empty: ast-grep, then sg, from PATH. |
+| `github` | `true` | GitHub through gh. No tools; a skill that teaches gh for PRs, issues, checks and releases. Requires gh on this machine. |
+| `ghCommand` | empty | gh path. Empty: gh from PATH. |
+| `commit` | `true` | /commit: split changes into commits. A model proposes the groups and messages; commits are made only after you confirm the plan, all or none. Never pushes. |
 | `maxPlanChars` | `60000` | Characters of the change the model reads. Range 5000 to 400000. |
-| `review` | `true` | /review, with findings sorted P0 to P3. |
-| `conflicts` | `true` | Conflict resolution. When a merge, rebase or cherry-pick stops on conflicts: both sides and their base per file, the resolution written block by block and the file marked resolved. Never commits, never runs --continue. |
+| `review` | `true` | /review, with findings ranked P0 to P3. |
+| `conflicts` | `true` | Conflict resolution. When a merge, rebase or cherry-pick stops on conflicts, shows both sides and their base for each file, writes the resolution block by block and marks the file resolved. Never commits and never runs --continue. |
 | `maxSideLines` | `80` | Lines shown per side of a conflict block. Range 10 to 1000. |
-| `maxConflictChars` | `20000` | Characters of one file's conflicts shown. Range 2000 to 200000. |
-| `maxFindings` | `40` | Findings sorted per triage at most. The rest are still reported, just not sorted. Range 5 to 200. |
-| `debugger` | `true` | Debugger: breakpoints, stepping, variables. Runs a program under a debugger, stopped at breakpoints or an uncaught exception, with the call stack and variables. debugpy for Python, delve for Go, lldb-dap for compiled programs, each if installed; add your own under debugAdapters in mu.json. One run at a time, ended with the session. |
+| `maxConflictChars` | `20000` | Max characters of conflicts shown per file. Range 2000 to 200000. |
+| `maxFindings` | `40` | Max findings ranked per triage. The rest are still reported, just not ranked. Range 5 to 200. |
+| `debugger` | `true` | Debugger: breakpoints, stepping, variables. Runs a program under a debugger and stops at breakpoints or uncaught exceptions, showing the call stack and variables. Uses debugpy for Python, delve for Go and lldb-dap for compiled programs, if installed; add your own under debugAdapters in mu.json. One run at a time; it ends with the session. |
 | `maxFrames` | `20` | Frames shown at a stop. Range 1 to 200. |
 | `maxVariables` | `50` | Variables listed per scope. Range 5 to 1000. |
-| `debugOutputChars` | `4000` chars | Program output one result carries. Only the tail is kept when there is more. Range 500 to 100000. |
-| `debugWaitMs` | `30000` ms | Longest wait for the program to stop. If it has neither stopped nor ended by then, the model is told it still runs, and can pause it to see where, or wait more. Range 1000 to 600000. |
+| `debugOutputChars` | `4000` chars | Max program output per result. When there's more, only the end is kept. Range 500 to 100000. |
+| `debugWaitMs` | `30000` ms | Max wait for the program to stop. If it hasn't stopped or exited by then, the model is told it's still running, and can pause it to see where it is, or keep waiting. Range 1000 to 600000. |
 
 ## googleLogin
 
-**Sign in with Google (experimental).** Adds two entries to /login: Gemini CLI's sign-in for the Gemini models, and Antigravity's for Gemini, Claude and GPT-OSS. These are Google's logins for its own tools; another program using them may break Google's terms and get the account limited or suspended, so the sign-in states the risk first and goes on only if you agree. The official routes need none of this: a Gemini API key (provider google) and Vertex AI (provider google-vertex, signed in with gcloud).
+**Sign in with Google (experimental).** Adds two entries to /login: Gemini CLI's sign-in for the Gemini models, and Antigravity's for Gemini, Claude and GPT-OSS. These are Google's sign-ins for its own tools; using them from another program may violate Google's terms and get the account limited or suspended, so mu explains the risk first and continues only if you agree. The official routes need none of this: a Gemini API key (provider google) or Vertex AI (provider google-vertex, signed in with gcloud).
 
 On by default: yes.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `geminiCli` | `true` | Gemini CLI sign-in. The Gemini models, on the free tier for a personal account or on a Code Assist licence. |
-| `antigravity` | `true` | Antigravity sign-in. Gemini, Claude and GPT-OSS; once signed in, the list follows what the account can use. |
+| `geminiCli` | `true` | Gemini CLI sign-in. The Gemini models, on the free tier for a personal account or with a Code Assist license. |
+| `antigravity` | `true` | Antigravity sign-in. Gemini, Claude and GPT-OSS; once you're signed in, the list shows what the account can use. |
+
+## recovery
+
+**Interrupted tool calls.** When mu is killed, the machine sleeps or the app quits while tool calls run, reopening the session tells the model and you which calls have no result: which never started, which only read, and which started with an outcome nobody knows. For those, the model is told to check the outside state or ask you first, so a git push, a publish or a migration does not run twice. Before each call that may change something starts, the session gets a marker.
+
+On by default: yes.
+
+## interrupted
+
+**Replies you stop.** When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after "stop, and expand your second point" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) aren't given back: those say what they cut.
+
+On by default: yes.
+
+## prefix
+
+**Prompt cache watch.** Each request to the model is compared with the one before it. When it no longer starts with what was sent before, the provider can't reuse its prompt cache for the rest, so the session records what changed (the model, the system prompt and tools, or the first message that differs) and which of mu's decisions acted in between, each with what it declares it does to the cache. Only hashes, positions and roles are kept, and nothing is sent anywhere.
+
+On by default: yes.
+
+## confine
+
+**Write sandbox (experimental).** The agent's bash commands, background jobs and the programs it debugs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. In every permission mode, Full access included, the judge decides, and asks you when it's unsure (in Ask first, you decide). It's never allowed for the whole conversation.
+
+On by default: no.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `writable` | none | More folders commands may write. For example, a cache mu doesn't know about. The home folder itself and ~/.mu never become writable this way. |
+
+## sandbox
+
+**Nebius sandbox (experimental).** bash, read, write and edit run in a Nebius Token Factory sandbox VM instead of on this machine: the project is copied in at the start, and every command continues from the files the previous one left. Changes come back here only through /sandbox pull, after you have seen the diff and agreed. Needs NEBIUS_API_KEY and NEBIUS_PROJECT_ID; MU_SANDBOX=nebius also turns it on.
+
+On by default: no.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `image` | `tag:ubuntu:latest` | Base image. An image UUID, tag:<name>, or docker://<reference> (imported on first use). Needs bash and tar; pulling needs git, which apt-get or apk installs when missing. |
+| `baseUrl` | `https://api.tokenfactory.nebius.com/sandboxes/v1` | API address. |
+| `workdir` | `/workspace` | Project folder in the sandbox. |
+| `shell` | `/bin/bash` | Shell commands run in. |
+| `timeoutS` | `600` s | Time limit of a command that sets none. |
+| `seedTimeoutS` | `900` s | Time limit of copying the project in. |
+| `maxSeedMB` | `100` MB | Largest project copied in. |
+| `outputBytes` | `1048576` bytes | Output kept per command. For stdout and for stderr each, at most 10 MiB. Range 1024 to 10485760. |

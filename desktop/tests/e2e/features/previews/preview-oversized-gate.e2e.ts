@@ -51,7 +51,7 @@ type BackendWindow = Window & { __backendPort?: number };
 async function createProjectConversation(page: import('@playwright/test').Page, workspace: string): Promise<string> {
   const conversationId = await page.evaluate(async (ws) => {
     const port = (window as BackendWindow).__backendPort;
-    if (!port) throw new Error('window.__backendPort is not available — is aioncore running?');
+    if (!port) throw new Error('window.__backendPort is not available — is the backend running?');
 
     const created = await fetch(`http://127.0.0.1:${port}/api/conversations`, {
       method: 'POST',
@@ -104,7 +104,7 @@ test.describe('Preview — oversized gate (Explorer entry point)', () => {
   let conversationId: string | null = null;
 
   test.beforeAll(() => {
-    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-e2e-oversized-'));
+    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'mu-e2e-oversized-'));
     // One byte over the ceiling: the gate uses `>`, so this is the smallest file
     // that must be rejected.
     fs.writeFileSync(path.join(workspace, 'over-ceiling.md'), 'x'.repeat(TEXT_CEILING_BYTES + 1));

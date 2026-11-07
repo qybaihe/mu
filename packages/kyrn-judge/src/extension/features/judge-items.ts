@@ -32,7 +32,7 @@ export function describeAnswers(question: string, items: readonly string[], answ
 	const missing = rows.filter((row) => row.probability === null).map((row) => row.number);
 	const line = (row: (typeof rows)[number]) =>
 		`#${row.number}  ${(row.probability as number).toFixed(2)}  ${clip(row.item, 160)}`;
-	const out = [`Jev answered ${answered.length} of ${items.length} items: ${clip(question, 200)}`];
+	const out = [`The judge answered ${answered.length} of ${items.length} items: ${clip(question, 200)}`];
 	out.push(`yes (p >= ${DEFAULT_THRESHOLDS.yes}): ${yes.length}`, ...yes.map(line));
 	if (unsure.length > 0) out.push(`unsure: ${unsure.length}`, ...unsure.map(line));
 	out.push(`no (p <= ${DEFAULT_THRESHOLDS.no}): ${no.length}${no.length > 0 ? ` (${range(no)})` : ""}`);
@@ -55,7 +55,7 @@ export function registerJudgeItems(runtime: KyrnRuntime): void {
 		name: "judge_items",
 		label: "Judge items",
 		description:
-			"Ask Jev, a fast yes/no classifier, one question about each of many items at once (file paths, log lines, findings, URLs, short texts); each item gets the probability of yes. For sorting or filtering many items by a plain criterion instead of reading them all yourself; not for reasoning, arithmetic or writing.",
+			"Ask the judge model, a fast yes/no classifier, one question about each of many items at once (file paths, log lines, findings, URLs, short texts); each item gets the probability of yes. For sorting or filtering many items by a plain criterion instead of reading them all yourself; not for reasoning, arithmetic or writing.",
 		parameters: Type.Object({
 			question: Type.String({ description: "A yes/no question about ONE item, e.g. 'Is this test about login?'" }),
 			items: Type.Array(Type.String(), { description: "The items, one string each" }),
@@ -87,7 +87,7 @@ export function registerJudgeItems(runtime: KyrnRuntime): void {
 				...(decision.judged ?? batches[index].items.map(() => null)),
 			]);
 			if (answers.every((answer) => answer === null)) {
-				throw new Error("Jev did not answer (the judge is unreachable or switched off). Read the items yourself.");
+				throw new Error("The judge didn't answer (it's unreachable or switched off). Read the items yourself.");
 			}
 			const cut = params.items.length > items.length ? `\n(only the first ${items.length} items were asked)` : "";
 			return {
@@ -102,7 +102,7 @@ export function registerJudgeItems(runtime: KyrnRuntime): void {
 		kind: "tool",
 		title: "Judge many items",
 		description:
-			"Ask Jev one yes/no question about each of many items (files, log lines, findings, URLs) and get a probability per item, to sort or filter them without reading them all.",
+			"Ask the judge model one yes/no question about each of many items (files, log lines, findings, URLs) and get a probability per item, to sort or filter them without reading them all.",
 		tools: ["judge_items"],
 		exposure: "judged",
 	});

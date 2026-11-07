@@ -7,10 +7,11 @@
 import type { IProvider, TProviderWithModel } from '@/common/config/storage';
 import RuntimeSelectorPill from '@/renderer/components/agent/RuntimeSelectorPill';
 import { modelLevelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/ModelLevelMenu';
-import { filterModelMenu, modelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/modelMenu';
+import { levelsOf, modelMenu, visibleModelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/modelMenu';
 import { iconColors } from '@/renderer/styles/colors';
 import { getModelDisplayLabel } from '@/renderer/utils/model/agentLogo';
 import type { AgentRuntimeDerivedOption } from '@/renderer/utils/model/agentRuntimeCatalog';
+import { useChooseModels } from '@/renderer/hooks/agent/useChooseModels';
 import { useModelNames } from '@/renderer/hooks/agent/useModelNames';
 import { useProviderNames } from '@/renderer/hooks/agent/useProviderNames';
 import { modelDisplayName, providerDisplayName } from '@/renderer/utils/model/providerName';
@@ -64,11 +65,13 @@ type AcpModelChipProps = {
   label: string;
   defaultModel?: string;
   onMakeDefault?: (model: string) => void;
+  /** Opens where the models the menu offers are chosen, on the account of the model shown. */
+  onChooseModels?: (model?: string | null) => void;
 };
 
 /**
  * The model · thinking chip of the home page: the same pill and the same menu as a conversation's, fed by the models
- * the agent reported last. The model picked here opens to the thinking levels; the pick is kept for the next send.
+ * the agent reported last, with the thinking levels under the list. The pick is kept for the next send.
  */
 const AcpModelChip: React.FC<AcpModelChipProps> = ({
   info,
@@ -79,36 +82,44 @@ const AcpModelChip: React.FC<AcpModelChipProps> = ({
   label,
   defaultModel,
   onMakeDefault,
+  onChooseModels,
 }) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const current = selected ?? defaultModel ?? info.current_model_id;
   const names = useProviderNames();
-  const groups = useMemo(
+  const all = useMemo(
     () =>
-      filterModelMenu(
-        modelMenu(
-          {
-            currentValue: current,
-            options: info.available_models.map((model) => ({
-              value: model.id,
-              label: model.label,
-              description: model.description,
-            })),
-          },
-          thoughtLevel,
-          {},
-          (id) => providerDisplayName(t, id, names)
-        ),
-        query
+      modelMenu(
+        {
+          currentValue: current,
+          options: info.available_models.map((model) => ({
+            value: model.id,
+            label: model.label,
+            description: model.description,
+          })),
+        },
+        thoughtLevel,
+        {},
+        (id) => providerDisplayName(t, id, names)
       ),
-    [current, info.available_models, thoughtLevel, query, t, names]
+    [current, info.available_models, thoughtLevel, t, names]
+  );
+  const shown = useMemo(
+    () => visibleModelMenu(all, { query, showAll, keep: [current, defaultModel] }),
+    [all, current, defaultModel, query, showAll]
   );
 
-  const pick = (model: string, level?: string) => {
+  const close = () => {
     setVisible(false);
     setQuery('');
+    setShowAll(false);
+  };
+
+  const pick = (model: string, level?: string) => {
+    close();
     if (model !== current) onSelect(model);
     if (level) onThoughtLevelSelect?.(level);
   };
@@ -120,23 +131,35 @@ const AcpModelChip: React.FC<AcpModelChipProps> = ({
       position='br'
       popupVisible={visible}
       onVisibleChange={(open) => {
-        setVisible(open);
-        if (!open) setQuery('');
+        if (open) setVisible(true);
+        else close();
       }}
       droplist={modelLevelMenu(t, {
-        groups,
+        groups: shown.groups,
         total: info.available_models.length,
         query,
         onQuery: setQuery,
         current,
         level: thoughtLevel?.currentValue,
+        levels: levelsOf(all, current),
+        hidden: shown.hidden,
+        showAll,
+        onShowAll: setShowAll,
         onPick: pick,
         defaultModel,
         ...(onMakeDefault && current
           ? {
               onMakeDefault: () => {
-                setVisible(false);
+                close();
                 onMakeDefault(current);
+              },
+            }
+          : {}),
+        ...(onChooseModels
+          ? {
+              onChooseModels: () => {
+                close();
+                onChooseModels(current);
               },
             }
           : {}),
@@ -171,6 +194,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const chooseModels = useChooseModels();
   const names = useModelNames();
   // A send without a pick starts on the default model: that is what the chip names until one is picked.
   const shownAcpModel = selectedAcpModel ?? defaultModel ?? null;
@@ -233,7 +257,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
   });
 
   if (isGeminiMode) {
-    // Provider-grouped models (e.g. aionrs). Build groups + a composite-id lookup
+    // Provider-grouped models (e.g. built-in agent). Build groups + a composite-id lookup
     // so the shared model list can search across providers and map back on select.
     const providerModelGroups: RuntimeSelectorModelGroup[] = [];
     const providerModelLookup = new Map<string, { provider: IProvider; modelName: string }>();
@@ -324,6 +348,7 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
         label={combinedAcpButtonLabel}
         defaultModel={defaultModel}
         onMakeDefault={onMakeDefault}
+        onChooseModels={chooseModels}
       />
     );
   }

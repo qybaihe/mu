@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { DEFAULT_CONFIG } from "../src/config.ts";
 import type { DecisionMode } from "../src/decision.ts";
-import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
+import { FULL_OUTPUT_ENTRY, type FullOutputRecord } from "../src/extension/full-output.ts";
+import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
 
@@ -90,6 +91,7 @@ describe("test-log admission in a session", () => {
 		command: string,
 		provider = notNeeded(),
 		mode: DecisionMode = "active",
+		only: FeatureName[] = ["preflight", "admission"],
 	): Promise<Harness> {
 		const harness = await createHarness({
 			tools: [runTests],
@@ -97,7 +99,7 @@ describe("test-log admission in a session", () => {
 				createKyrnJudgeExtension({
 					provider,
 					mode,
-					only: ["preflight", "admission"],
+					only,
 					config: { ...DEFAULT_CONFIG, features: { admission } },
 				}),
 			],
@@ -141,6 +143,23 @@ describe("test-log admission in a session", () => {
 		const archive = /full output: (\S+)\]/.exec(result.text)?.[1] ?? "";
 		expect(existsSync(archive)).toBe(true);
 		expect(readFileSync(archive, "utf8")).toBe(failingRun);
+	});
+
+	it("rules, with recall: the pointer is a recall call, and the entry beside the result names the archive", async () => {
+		const harness = await run({ testLog: "rules" }, "vitest run sider", notNeeded(), "active", [
+			"preflight",
+			"admission",
+			"recall",
+		]);
+		const result = toolResult(harness);
+		expect(result.text.trimEnd()).toMatch(/full output: recall\(\{ id: "[^"]+" \}\)\]$/);
+		const record = harness.sessionManager
+			.getBranch()
+			.flatMap((entry) =>
+				entry.type === "custom" && entry.customType === FULL_OUTPUT_ENTRY ? [entry.data as FullOutputRecord] : [],
+			)[0];
+		expect(record).toMatchObject({ kind: "archive" });
+		expect(readFileSync(record.path, "utf8")).toBe(failingRun);
 	});
 
 	it("rules: leaves a verbose passing run alone, because which names matter depends on the goal", async () => {

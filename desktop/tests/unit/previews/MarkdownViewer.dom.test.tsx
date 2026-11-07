@@ -31,10 +31,6 @@ vi.mock('@/common/chat/chatLib', () => ({
   joinPath: (base: string, rel: string) => `${base}/${rel}`,
 }));
 
-vi.mock('@/renderer/hooks/chat/useAutoScroll', () => ({
-  useAutoScroll: () => {},
-}));
-
 vi.mock('@/renderer/hooks/ui/useTextSelection', () => ({
   useTextSelection: () => ({ selectedText: '', selectionPosition: null, clearSelection: vi.fn() }),
 }));
@@ -239,10 +235,10 @@ describe('MarkdownViewer', () => {
   });
 
   it('keeps remote links as browser anchors', () => {
-    render(<MarkdownViewer content='[docs](https://aionui.com/docs)' />);
+    render(<MarkdownViewer content='[docs](https://example.com/docs)' />);
 
     const link = screen.getByRole('link', { name: 'docs' });
-    expect(link).toHaveAttribute('href', 'https://aionui.com/docs');
+    expect(link).toHaveAttribute('href', 'https://example.com/docs');
   });
 
   it('sanitizes raw HTML in preview mode (drops <script>, keeps benign markup)', () => {

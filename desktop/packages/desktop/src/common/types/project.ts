@@ -8,8 +8,8 @@
  * Project Explorer HTTP control-plane DTOs (stage3 contract
  * `explorer-stage3-be-http-contract.md`). The control plane (project metadata:
  * roots / display_path / runtime_status) is HTTP; the data plane (directory
- * contents) is the WS `fs/*` monitor. These shapes mirror the backend
- * `aionui-api-types/project` DTOs 1:1 — no absolute path / canonical / folder_id
+ * contents) is the WS `fs/*` monitor. These shapes mirror the
+ * backend's api-types `project` DTOs 1:1 — no absolute path / canonical / folder_id
  * is ever sent to the front-end (it only ever deals in `{ pe_id, relative_path }`).
  */
 

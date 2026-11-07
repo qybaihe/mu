@@ -6,7 +6,7 @@
 //   `%APPDATA%` and every dotfile an agent or tool touches are the test's own. On Windows, Electron's
 //   `app.getPath('home')` still names the account's own folder (Windows answers it, not the environment); the test
 //   prints the app's folders at its first start.
-// - AIONUI_E2E_USER_DATA_DIR moves Electron's user data and logs (configureChromium.ts).
+// - MU_E2E_USER_DATA_DIR moves Electron's user data and logs (configureChromium.ts).
 // - MU_AGENT_DIR is a folder of its own, apart from `<home>/.mu/agent`, so the test also shows that every part of the
 //   app and of mu uses the one the person named.
 // - The checkout's build runs the harness through a view of the checkout (links) whose own `.env` is the test's: a
@@ -123,20 +123,20 @@ export function findHarnessSource(desktopRoot) {
   );
 }
 
-/** The AionCore binary: AIONUI_BACKEND_BIN, the bundled one in this checkout or the main one, or `aioncore` on PATH. */
+/** The backend binary: MU_BACKEND_BIN, the bundled one in this checkout or the main one, or `aioncore` on PATH. */
 export function findBackend(desktopRoot) {
-  if (process.env.AIONUI_BACKEND_BIN) return resolve(process.env.AIONUI_BACKEND_BIN);
+  if (process.env.MU_BACKEND_BIN) return resolve(process.env.MU_BACKEND_BIN);
   const name = process.platform === 'win32' ? 'aioncore.exe' : 'aioncore';
   const key = `${process.platform}-${process.arch}`;
   for (const root of [desktopRoot, mainCheckout(desktopRoot)]) {
-    const candidate = join(root, 'resources', 'bundled-aioncore', key, name);
+    const candidate = join(root, 'resources', 'bundled-backend', key, name);
     if (existsSync(candidate)) return candidate;
   }
   for (const dir of (process.env.PATH ?? '').split(delimiter).filter(Boolean)) {
     if (existsSync(join(dir, name))) return join(dir, name);
   }
   throw new Error(
-    'No aioncore binary found. Set AIONUI_BACKEND_BIN, or put it in resources/bundled-aioncore/<platform>-<arch>/.'
+    'No backend binary found. Set MU_BACKEND_BIN, or put it in resources/bundled-backend/<platform>-<arch>/.'
   );
 }
 
@@ -246,10 +246,10 @@ export function profileEnv({ platform = process.platform, env = process.env, pat
     NODE_ENV: 'production',
     // The app's own E2E switches: its user data in the profile, no mu:// registration, no tray, no update checks, no
     // single-instance lock, no devtools.
-    AIONUI_E2E_TEST: '1',
-    AIONUI_E2E_USER_DATA_DIR: paths.userData,
-    AIONUI_DISABLE_AUTO_UPDATE: '1',
-    AIONUI_DISABLE_DEVTOOLS: '1',
+    MU_E2E_TEST: '1',
+    MU_E2E_USER_DATA_DIR: paths.userData,
+    MU_DISABLE_AUTO_UPDATE: '1',
+    MU_DISABLE_DEVTOOLS: '1',
     // The backend's Node.js runtime (about 50 MB from nodejs.org) is declined, as a person can decline it. A packaged
     // app carries it, and never asks.
     MU_NODE_RUNTIME: 'later',
@@ -257,7 +257,7 @@ export function profileEnv({ platform = process.platform, env = process.env, pat
   });
   if (checkout) {
     Object.assign(result, {
-      AIONUI_BACKEND_BIN: checkout.backend,
+      MU_BACKEND_BIN: checkout.backend,
       KYRN_DESKTOP_ROOT: checkout.desktopRoot,
       MU_ROOT: checkout.harness,
       KYRN_ROOT: checkout.harness,

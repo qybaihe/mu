@@ -135,7 +135,7 @@ const ContextUsageIndicator: React.FC<ContextUsageIndicatorProps> = ({
     <>
       {tokenUsage.cost && (
         <div className='text-12px text-t-secondary mt-4px'>
-          {t('conversation.contextUsage.sessionCostApprox', 'Session cost ≈ {{cost}}', {
+          {t('conversation.contextUsage.sessionCostApprox', 'Conversation cost ≈ {{cost}}', {
             cost: formatCostAmount(tokenUsage.cost, locale),
           })}
         </div>

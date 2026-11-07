@@ -4,6 +4,7 @@ import { Right } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import {
+  defaultModeOf,
   localized,
   type DecisionInfo,
   type DecisionMode,
@@ -39,9 +40,10 @@ type DetailsSectionProps = {
 
 /**
  * One area of the details: every feature that acts there, one row each with its switch and the way to its options,
- * and under it, indented, each decision point it asks the judge, with a switch for whether Jev's verdict there takes
- * effect. A point of a feature that is off is not asked: its row is greyed and says so. A point whose feature the
- * harness does not describe is a row of its own. The context page starts with the compaction settings.
+ * and under it, indented, each decision point it asks the judge, with a switch for whether the judge's verdict there
+ * takes effect; the feature's sentence says what they are about, so they have none of their own. A point of a feature
+ * that is off is not asked: its row is greyed, its switch disabled. A point whose feature the harness does not describe
+ * is a row of its own, with its sentence. The context page starts with the compaction settings.
  */
 export default function DetailsSection({
   area,
@@ -80,10 +82,12 @@ export default function DetailsSection({
   const decisionRow = (decision: DecisionInfo, feature: FeatureInfo | undefined, off: boolean) => {
     const point = say(decision.title);
     const own = settings.decisionModes[decision.id];
+    // What the point does without a setting of its own: a built-in mode of its own, else the default mode.
+    const fallback = defaultModeOf(decision, settings.mode);
     // Under its feature the row needs no name when the point is the feature's own: it is the judge's say in it.
     const title =
-      feature && say(feature.title) === point ? t('mu.details.askJev') : t('mu.details.askJevAbout', { point });
-    const label = t('mu.details.askJevAbout', { point });
+      feature && say(feature.title) === point ? t('mu.details.askJudge') : t('mu.details.askJudgeAbout', { point });
+    const label = t('mu.details.askJudgeAbout', { point });
     return (
       <div
         key={decision.id}
@@ -92,16 +96,23 @@ export default function DetailsSection({
       >
         <div className={classNames(styles.plainMain, feature && styles.nestedMain, off && styles.plainMuted)}>
           <div className={styles.plainText}>
-            <div className={feature ? styles.nestedTitle : styles.plainTitle}>{feature ? title : point}</div>
-            <OneLine text={say(decision.summary)} />
-            {off ? <div className={styles.plainNote}>{t('mu.details.featureOff')}</div> : null}
+            <div className={feature ? styles.nestedTitle : styles.plainTitle}>
+              <span>{feature ? title : point}</span>
+              {/* The point as the judge's lines in a conversation name it: the diamond, then its id in mono. Drawn from an
+              attribute, so the row still reads, and is named, by its plain sentence. */}
+              <span className={styles.point} data-point={decision.id} aria-hidden='true'>
+                <span className={styles.judgeMark} />
+              </span>
+            </div>
+            {/* Under its feature, whose sentence says what it does, the point needs none of its own. */}
+            {feature ? null : <OneLine text={say(decision.summary)} />}
           </div>
           <div className={styles.plainControl}>
             <Switch
               size='small'
               aria-label={label}
               disabled={off}
-              checked={shownMode(own ?? settings.mode) === 'active'}
+              checked={shownMode(own ?? fallback) === 'active'}
               onChange={(on) => setMode(decision.id, on ? 'active' : 'off')}
             />
             {own ? (
@@ -113,7 +124,7 @@ export default function DetailsSection({
                 onClick={() => setMode(decision.id, undefined)}
               >
                 {t('mu.decisions.useDefault', {
-                  mode: t(shownMode(settings.mode) === 'active' ? 'mu.modes.active' : 'mu.modes.off'),
+                  mode: t(shownMode(fallback) === 'active' ? 'mu.modes.active' : 'mu.modes.off'),
                 })}
               </Button>
             ) : null}
@@ -124,11 +135,7 @@ export default function DetailsSection({
   };
 
   return (
-    <SectionShell
-      id={`details-${area}`}
-      title={t(`mu.pages.details.${area}`)}
-      description={t(area === 'context' ? 'mu.context.lead' : 'mu.details.lead')}
-    >
+    <SectionShell id={`details-${area}`} title={t(`mu.pages.details.${area}`)}>
       {area === 'context' ? <ContextRows settings={settings} base={base} onChange={onChange} /> : null}
       {!manifest ? <Alert type='warning' content={t('mu.harness.tooOld')} /> : null}
       {manifest && !rows.length ? <div className={styles.empty}>{t('mu.features.none')}</div> : null}

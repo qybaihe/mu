@@ -14,6 +14,7 @@ import {
   httpDelete,
   selectAssistantForBackend,
 } from '../helpers';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 test.describe.configure({ timeout: 240_000 });
 
@@ -118,7 +119,7 @@ async function runModeVerificationCycle(
   }
 }
 
-const BACKENDS = ['aionrs', 'codex', 'claude'] as const;
+const BACKENDS = [BUILTIN_AGENT, 'codex', 'claude'] as const;
 
 test.describe('Guid Mode → Conversation Sync', () => {
   for (const backend of BACKENDS) {

@@ -48,7 +48,7 @@ const board = (patch: Json = {}) => JSON.stringify({ version: 1, projects: { '/w
 
 describe('the permission mode of a new conversation', () => {
   it('is the last pick, else what mu.json says, else the harness default', () => {
-    using(undefined, {}, (f) => expect(f.store.read().permissions).toEqual({ mode: 'jev', from: 'default' }));
+    using(undefined, {}, (f) => expect(f.store.read().permissions).toEqual({ mode: 'judge', from: 'default' }));
     const config = { features: { permissions: { mode: 'ask' } } };
     using(config, {}, (f) => expect(f.store.read().permissions).toEqual({ mode: 'ask', from: 'config' }));
     using(config, { permissions: picked('full') }, (f) =>
@@ -91,7 +91,7 @@ describe('the permission mode of a new conversation', () => {
   });
 
   it('makes a save stale once it is switched elsewhere', () => {
-    using(undefined, { permissions: picked('jev') }, (f) => {
+    using(undefined, { permissions: picked('judge') }, (f) => {
       const read = f.store.read();
       // A switch in a conversation, typed while the settings were open.
       f.write('mu/permissions.json', picked('ask'));

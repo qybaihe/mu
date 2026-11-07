@@ -33,6 +33,8 @@ vi.mock('@/common', () => ({
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }));
 vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
   usePreviewContext: () => ({ openPreview: vi.fn() }),
+  // A reply's file references read the preview this way (components/media/FileRefs/).
+  useOptionalPreviewContext: () => ({ openPreview: vi.fn() }),
 }));
 vi.mock('@/renderer/components/media/FilePreview', () => ({
   __esModule: true,

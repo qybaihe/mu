@@ -15,6 +15,7 @@ import type {
 	Usage,
 } from "@earendil-works/pi-ai";
 import {
+	type CodemodeOutputItem,
 	type CodemodeResult,
 	CodemodeSandbox,
 	type CodemodeTool,
@@ -53,6 +54,61 @@ const MAX_CONCURRENT_MODEL_CALLS = 4;
  * `InternalError: out of memory` inside the script.
  */
 const CODEMODE_MEMORY_LIMIT_BYTES = 256 * 1024 * 1024;
+// Shared across calls and sessions. Allow one replacement while a cancelled worker is still exiting.
+const DEFAULT_MAX_CODEMODE_WORKERS = 2;
+
+/** `PI_CODEMODE_MAX_WORKERS` if it is a positive integer. Read per call so SDK hosts can set it at runtime. */
+function maxCodemodeWorkers(): number {
+	const value = Number(process.env.PI_CODEMODE_MAX_WORKERS);
+	return Number.isInteger(value) && value > 0 ? value : DEFAULT_MAX_CODEMODE_WORKERS;
+}
+/**
+ * How long a script waits for a free worker before failing. Bounds the wait when every worker is
+ * held by a script that waits on another script, for example an in-process subagent that uses codemode.
+ */
+const CODEMODE_WORKER_WAIT_MS = 60_000;
+let activeCodemodeWorkers = 0;
+/** Scripts waiting for a worker, in arrival order. */
+const codemodeWorkerWaiters: (() => void)[] = [];
+
+/**
+ * Reserve one worker slot, waiting in arrival order while all are taken. Resolves with why it could
+ * not reserve one: the signal aborted, or `timeoutMs` passed.
+ */
+function reserveCodemodeWorker(
+	signal: AbortSignal | undefined,
+	timeoutMs: number,
+): Promise<"reserved" | "aborted" | "timeout"> {
+	if (signal?.aborted) return Promise.resolve("aborted");
+	return new Promise((resolve) => {
+		const settle = (outcome: "reserved" | "aborted" | "timeout") => {
+			clearTimeout(timer);
+			signal?.removeEventListener("abort", onAbort);
+			const index = codemodeWorkerWaiters.indexOf(grant);
+			if (index >= 0) codemodeWorkerWaiters.splice(index, 1);
+			resolve(outcome);
+		};
+		const grant = () => settle("reserved");
+		const onAbort = () => settle("aborted");
+		const timer = setTimeout(() => settle("timeout"), timeoutMs);
+		codemodeWorkerWaiters.push(grant);
+		signal?.addEventListener("abort", onAbort, { once: true });
+		admitCodemodeWorkers();
+	});
+}
+
+/** Give free slots to waiting scripts in arrival order. */
+function admitCodemodeWorkers(): void {
+	while (codemodeWorkerWaiters.length > 0 && activeCodemodeWorkers < maxCodemodeWorkers()) {
+		activeCodemodeWorkers++;
+		codemodeWorkerWaiters.shift()?.();
+	}
+}
+
+function releaseCodemodeWorker(): void {
+	activeCodemodeWorkers--;
+	admitCodemodeWorkers();
+}
 const MODEL_TYPES: ReadonlySet<string> = new Set<ModelType>(["chat", "image", "classifier"]);
 
 function truncateText(text: string, maxChars: number): string {
@@ -98,9 +154,8 @@ function withArticle(word: string): string {
 	return `${/^[aeiou]/.test(word) ? "an" : "a"} ${word}`;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+/** A JSON value from a script, read field by field: values that are not objects have no fields. */
+type ScriptValue = { readonly [key: string]: unknown } | null | undefined;
 
 /** A script value in an error message: `undefined`, `a string`, `an array`, or its keys (`{ prompt }`). */
 function describeValue(value: unknown): string {
@@ -115,7 +170,7 @@ function describeValue(value: unknown): string {
 }
 
 const CLASSIFIER_CONTEXT_SHAPE =
-	'{ state: { ... }, questions: { <id>: { type: "choice", instructions, criteria: { <label>: <meaning> } } | { type: "score", instructions, criteria: [<lowest level>, ..., <highest level>] } | { type: "bool", instructions, criteria: { true: <meaning>, false: <meaning> } } } }';
+	'{ state: { ... }, images?: [{ type: "image", data: <base64>, mimeType }], questions: { <id>: { type: "choice", instructions, criteria: { <label>: <meaning> } } | { type: "score", instructions, criteria: [<lowest level>, ..., <highest level>] } | { type: "bool", instructions, criteria: { true: <meaning>, false: <meaning> } } } }';
 
 /** Check a script's classifier context, so mistakes fail with the expected shape instead of a provider error. */
 function checkClassifierContext(context: unknown): ClassifierContext {
@@ -123,32 +178,57 @@ function checkClassifierContext(context: unknown): ClassifierContext {
 		new Error(
 			`models.classify() ${problem}. Expected context: ${CLASSIFIER_CONTEXT_SHAPE}. See "Classify" in ${CODEMODE_DOCS_PATH}.`,
 		);
-	if (!isRecord(context)) throw fail(`expects a context object as its second argument, got ${describeValue(context)}`);
-	if (!isRecord(context.state)) throw fail(`context.state must be an object, got ${describeValue(context.state)}`);
-	const { questions } = context;
-	if (!isRecord(questions) || Object.keys(questions).length === 0) {
+	if (typeof context !== "object" || context === null || Array.isArray(context)) {
+		throw fail(`expects a context object as its second argument, got ${describeValue(context)}`);
+	}
+	const { state, images, questions } = context as Record<string, unknown>;
+	if (typeof state !== "object" || state === null || Array.isArray(state)) {
+		throw fail(`context.state must be an object, got ${describeValue(state)}`);
+	}
+	if (images !== undefined) {
+		if (!Array.isArray(images)) throw fail(`context.images must be an array, got ${describeValue(images)}`);
+		images.forEach((image: ScriptValue, index) => {
+			if (image?.type !== "image" || typeof image.data !== "string" || typeof image.mimeType !== "string") {
+				throw fail(`context.images[${index}] must be an image block, got ${describeValue(image)}`);
+			}
+		});
+	}
+	if (
+		typeof questions !== "object" ||
+		questions === null ||
+		Array.isArray(questions) ||
+		Object.keys(questions).length === 0
+	) {
 		throw fail(`context.questions must map question IDs to questions, got ${describeValue(questions)}`);
 	}
 	const isStrings = (values: unknown[]) => values.length > 0 && values.every((value) => typeof value === "string");
 	for (const [id, question] of Object.entries(questions)) {
 		const at = `context.questions.${id}`;
-		if (!isRecord(question)) throw fail(`${at} must be a question object, got ${describeValue(question)}`);
-		if (typeof question.instructions !== "string") throw fail(`${at}.instructions must be a string`);
-		const { criteria } = question;
-		if (question.type === "choice") {
-			if (!isRecord(criteria) || !isStrings(Object.values(criteria))) {
+		if (typeof question !== "object" || question === null || Array.isArray(question)) {
+			throw fail(`${at} must be a question object, got ${describeValue(question)}`);
+		}
+		const { type, instructions, criteria } = question as Record<string, unknown>;
+		if (typeof instructions !== "string") throw fail(`${at}.instructions must be a string`);
+		if (type === "choice") {
+			if (
+				typeof criteria !== "object" ||
+				criteria === null ||
+				Array.isArray(criteria) ||
+				!isStrings(Object.values(criteria))
+			) {
 				throw fail(`${at} is a "choice" question, so criteria must map each label to its meaning`);
 			}
-		} else if (question.type === "score") {
+		} else if (type === "score") {
 			if (!Array.isArray(criteria) || !isStrings(criteria)) {
 				throw fail(`${at} is a "score" question, so criteria must list the levels as strings, lowest first`);
 			}
-		} else if (question.type === "bool") {
-			if (!isRecord(criteria) || typeof criteria.true !== "string" || typeof criteria.false !== "string") {
+		} else if (type === "bool") {
+			const labels = criteria as ScriptValue;
+			if (typeof labels?.true !== "string" || typeof labels.false !== "string") {
 				throw fail(`${at} is a "bool" question, so criteria must be { true: string, false: string }`);
 			}
 		} else {
-			throw fail(`${at}.type must be "choice", "score", or "bool", got ${JSON.stringify(question.type)}`);
+			throw fail(`${at}.type must be "choice", "score", or "bool", got ${JSON.stringify(type)}`);
 		}
 	}
 	return context as unknown as ClassifierContext;
@@ -160,21 +240,16 @@ function checkImagesContext(context: unknown): ImagesContext {
 		new Error(
 			`models.generateImages() ${problem}. Expected context: { input: [{ type: "text", text: <prompt> }, ...optional { type: "image", data: <base64>, mimeType } references] }. See "Generate images" in ${CODEMODE_DOCS_PATH}.`,
 		);
-	if (!isRecord(context)) throw fail(`expects a context object as its second argument, got ${describeValue(context)}`);
-	const { input } = context;
+	if (typeof context !== "object" || context === null || Array.isArray(context)) {
+		throw fail(`expects a context object as its second argument, got ${describeValue(context)}`);
+	}
+	const { input } = context as Record<string, unknown>;
 	if (!Array.isArray(input) || input.length === 0) {
 		throw fail(`context.input must be a non-empty array of blocks, got ${describeValue(input)}`);
 	}
-	input.forEach((block: unknown, index) => {
-		if (isRecord(block) && block.type === "text" && typeof block.text === "string") return;
-		if (
-			isRecord(block) &&
-			block.type === "image" &&
-			typeof block.data === "string" &&
-			typeof block.mimeType === "string"
-		) {
-			return;
-		}
+	input.forEach((block: ScriptValue, index) => {
+		if (block?.type === "text" && typeof block.text === "string") return;
+		if (block?.type === "image" && typeof block.data === "string" && typeof block.mimeType === "string") return;
 		throw fail(`context.input[${index}] must be a text or image block, got ${describeValue(block)}`);
 	});
 	return context as unknown as ImagesContext;
@@ -236,6 +311,64 @@ const CHARS_PER_TOKEN = 4;
 function valueText(value: unknown): string {
 	if (typeof value === "string") return value;
 	return JSON.stringify(value) ?? String(value);
+}
+
+/**
+ * Lay out the script's output so the model can tell items apart: providers join adjacent text
+ * blocks with a newline or with nothing. With more than one text item (`text()` or the returned
+ * value), each starts with a `==> text N/M <==` line. `console.*` lines follow all other output in
+ * one `<console_output>` block.
+ */
+function formatOutput(output: readonly CodemodeOutputItem[]): (TextContent | ImageContent)[] {
+	const total = output.filter((item) => item.type === "text" && !item.console).length;
+	const items: (TextContent | ImageContent)[] = [];
+	const consoleLines: string[] = [];
+	let index = 0;
+	for (const item of output) {
+		if (item.type === "image") {
+			items.push(item);
+		} else if (item.console) {
+			consoleLines.push(item.text);
+		} else {
+			index++;
+			items.push({ type: "text", text: total > 1 ? `==> text ${index}/${total} <==\n${item.text}` : item.text });
+		}
+	}
+	if (consoleLines.length > 0) {
+		items.push({ type: "text", text: `<console_output>\n${consoleLines.join("\n")}\n</console_output>` });
+	}
+	return items;
+}
+
+/**
+ * Join adjacent text items into one, each part starting on its own line. The separator check looks
+ * at the last non-empty part, not the joined text: reading the end of a growing concatenation makes
+ * V8 copy it on every item, which is quadratic (#10678).
+ */
+function joinAdjacentText(items: (TextContent | ImageContent)[]): (TextContent | ImageContent)[] {
+	const joined: (TextContent | ImageContent)[] = [];
+	let parts: string[] = [];
+	let lastPart = "";
+	const flush = () => {
+		if (parts.length > 0) joined.push({ type: "text", text: parts.join("") });
+		parts = [];
+		lastPart = "";
+	};
+	for (const item of items) {
+		if (item.type !== "text") {
+			flush();
+			joined.push(item);
+			continue;
+		}
+		if (lastPart !== "" && !lastPart.endsWith("\n")) {
+			parts.push("\n");
+			lastPart = "\n";
+		}
+		parts.push(item.text);
+		if (item.text !== "") lastPart = item.text;
+	}
+	flush();
+	return joined;
 }
 
 function formatCallSummary(calls: readonly CodemodeNestedCall[]): string {
@@ -380,10 +513,15 @@ export async function executeCodemode(
 
 	const snapshot = (): CodemodeToolDetails => ({ calls: calls.map((call) => ({ ...call })) });
 	const publish = () => onUpdate?.({ content: [], details: snapshot() });
+	// Show the script as running before its first nested call, so the row's timer starts.
+	publish();
 
 	const callable = ctx ? getCodemodeCallableTools(ctx.tools) : [];
 	// ALL_TOOLS entries carry the declaration.
-	const samples = new Map(callable.map((tool) => [tool.name, renderToolSample(toCodemodeDeclaration(tool))]));
+	const guidelines = options.getToolGuidelines?.();
+	const samples = new Map(
+		callable.map((tool) => [tool.name, renderToolSample(toCodemodeDeclaration(tool, guidelines?.get(tool.name)))]),
+	);
 	const sandboxTools: CodemodeTool[] = callable.map((tool) => ({
 		name: tool.name,
 		description: samples.get(tool.name),
@@ -413,45 +551,80 @@ export async function executeCodemode(
 		},
 	}));
 
-	const sandbox = new CodemodeSandbox({
-		tools: sandboxTools,
-		globals: [
-			...createDiscoveryGlobals(callable, samples, options),
-			...(options.models && ctx
-				? createModelGlobals(ctx.modelRegistry, toolCallId, calls, publish, addModelUsage, addGeneratedImages)
-				: []),
-		],
-		timeoutMs: sourceOptions.timeoutMs ?? Number.POSITIVE_INFINITY,
-		memoryLimitBytes: CODEMODE_MEMORY_LIMIT_BYTES,
-		wasm: loadQuickJSWasm(getQuickJSWasmPath()),
-		workerUrl: getCodemodeWorkerSpecifier(),
-	});
+	// The wait for a worker counts toward the script's deadline.
+	const deadline = sourceOptions.timeoutMs ?? Number.POSITIVE_INFINITY;
+	const waitStartedAt = performance.now();
+	const admission = await reserveCodemodeWorker(signal, Math.min(deadline, CODEMODE_WORKER_WAIT_MS));
+	const waitedMs = performance.now() - waitStartedAt;
+	if (admission !== "reserved") {
+		const waited = ((performance.now() - startedAt) / 1000).toFixed(1);
+		const reason = signal?.reason;
+		const error =
+			admission === "aborted"
+				? `Script aborted: ${reason instanceof Error ? reason.message : "Execution aborted"}`
+				: deadline <= CODEMODE_WORKER_WAIT_MS
+					? `Script timed out: Execution timed out after ${deadline} ms while waiting for a free codemode worker`
+					: `No codemode worker became free within ${CODEMODE_WORKER_WAIT_MS / 1000} seconds. All ${maxCodemodeWorkers()} workers, shared by every session in this process, are held by other scripts. Retry after they finish.`;
+		return {
+			content: [
+				{ type: "text", text: `Script failed\nWall time ${waited} seconds\nOutput:\n` },
+				{ type: "text", text: `Script error:\n${error}\n\nThe script did not start.` },
+			],
+			details: snapshot(),
+			isError: true,
+		};
+	}
+	// The reservation covers the one worker this script starts. A launch that resumes after the result
+	// settled finds it released and starts no worker.
+	let reserved = true;
 
+	let sandbox: CodemodeSandbox | undefined;
 	let result: CodemodeResult;
 	try {
+		sandbox = new CodemodeSandbox({
+			tools: sandboxTools,
+			globals: [
+				...createDiscoveryGlobals(callable, samples, options),
+				...(options.models && ctx
+					? createModelGlobals(ctx.modelRegistry, toolCallId, calls, publish, addModelUsage, addGeneratedImages)
+					: []),
+			],
+			timeoutMs: Math.max(1, Math.round(deadline - waitedMs)),
+			memoryLimitBytes: CODEMODE_MEMORY_LIMIT_BYTES,
+			wasm: loadQuickJSWasm(getQuickJSWasmPath()),
+			workerUrl: getCodemodeWorkerSpecifier(),
+			acquireWorker: () => {
+				if (!reserved) throw new Error("The script already settled");
+				// From here the sandbox releases the slot when the worker actually exits.
+				reserved = false;
+				return releaseCodemodeWorker;
+			},
+		});
 		const store = ctx ? readCodemodeStore(ctx.sessionManager.getBranch()) : {};
 		result = await sandbox.execute(code, { signal, store });
 	} finally {
-		await sandbox.close();
+		await sandbox?.close();
+		if (reserved) {
+			reserved = false;
+			releaseCodemodeWorker();
+		}
 	}
 	// Calls still marked running were cut off by the script ending, a timeout, or an abort.
 	for (const call of calls) {
 		if (call.status === "running") call.status = "cancelled";
 	}
 
-	const items: (TextContent | ImageContent)[] = result.output.map((item) =>
-		item.type === "text" ? { type: "text", text: item.text } : item,
-	);
+	const scriptOutput = [...result.output];
 	if (result.ok) {
 		const { set, delete: deleted } = result.storeWrites;
 		if (Object.keys(set).length > 0 || deleted.length > 0) {
 			options.appendEntry?.(CODEMODE_STORE_ENTRY_TYPE, { set, delete: deleted });
 		}
 		// pi extension: a returned value is appended like text().
-		if (result.value !== undefined) items.push({ type: "text", text: valueText(result.value) });
-	} else {
-		items.push({ type: "text", text: `Script error:\n${formatError(result, calls)}` });
+		if (result.value !== undefined) scriptOutput.push({ type: "text", text: valueText(result.value) });
 	}
+	const items = formatOutput(scriptOutput);
+	if (!result.ok) items.push({ type: "text", text: `Script error:\n${formatError(result, calls)}` });
 	if (generatedImages > 0 && !items.some((item) => item.type === "image")) {
 		items.push({
 			type: "text",
@@ -459,10 +632,13 @@ export async function executeCodemode(
 		});
 	}
 
-	const truncated = await truncateOutput(items, sourceOptions.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS);
+	const truncated = await truncateOutput(
+		joinAdjacentText(items),
+		sourceOptions.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
+	);
 	// After truncation, which joins the text items and moves images after them, so each path stays
 	// next to its image and is never cut.
-	const output = await saveImages(truncated.items);
+	const output = joinAdjacentText(await saveImages(truncated.items));
 	const wallTime = ((performance.now() - startedAt) / 1000).toFixed(1);
 	const header = `${result.ok ? "Script completed" : "Script failed"}\nWall time ${wallTime} seconds\nOutput:\n`;
 	const details = snapshot();
@@ -476,14 +652,14 @@ export async function executeCodemode(
 }
 
 /**
- * Whether `query` names the namespace: its name, its script identifier (`mcp__dev-radius` is
- * `mcp__dev_radius`), or the part after its last `__` in either form (`dev-radius`, `dev_radius`).
+ * Whether `query` names the namespace: its name or one of its aliases, as written or as the same
+ * script identifier (`dev-radius` and `dev_radius` are both `dev_radius`).
  */
-function isNamespaceName(namespace: string, query: string): boolean {
-	const id = toCodemodeIdentifier(namespace);
+function isNamespaceName(namespace: ToolNamespace, query: string): boolean {
 	const queryId = toCodemodeIdentifier(query);
-	const suffix = (name: string) => (name.includes("__") ? name.slice(name.lastIndexOf("__") + 2) : undefined);
-	return namespace === query || id === queryId || suffix(namespace) === query || suffix(id) === queryId;
+	return [namespace.name, ...(namespace.aliases ?? [])].some(
+		(name) => name === query || toCodemodeIdentifier(name) === queryId,
+	);
 }
 
 /**
@@ -514,7 +690,7 @@ function createDiscoveryGlobals(
 				}
 				const documents = tools.flatMap((tool) => {
 					const toolNamespace = options.getToolNamespace?.(tool.name);
-					if (namespace && (!toolNamespace || !isNamespaceName(toolNamespace.name, namespace))) return [];
+					if (namespace && (!toolNamespace || !isNamespaceName(toolNamespace, namespace))) return [];
 					return [createToolSearchDocument(tool, toolNamespace)];
 				});
 				return ranker.rank(query, documents, limit).map((match) => entry(match.name));
@@ -542,7 +718,7 @@ function createDiscoveryGlobals(
 				const names: string[] = [];
 				for (const tool of tools) {
 					const toolNamespace = options.getToolNamespace?.(tool.name);
-					if (!toolNamespace || !isNamespaceName(toolNamespace.name, name)) continue;
+					if (!toolNamespace || !isNamespaceName(toolNamespace, name)) continue;
 					namespace ??= toolNamespace;
 					names.push(toCodemodeIdentifier(tool.name));
 				}
@@ -586,7 +762,8 @@ function createModelGlobals(
 		run: (resolved: ModelTypeMap[TType], context: TContext) => Promise<TResult>,
 	): Promise<TResult> => {
 		const listHint = `List the ${type} models you can use with models.getAvailableOfType("${type}").`;
-		if (!isRecord(model) || typeof model.provider !== "string" || typeof model.id !== "string") {
+		const given = model as ScriptValue;
+		if (typeof given?.provider !== "string" || typeof given.id !== "string") {
 			// undefined arrives as null: spread arguments cross the sandbox as a JSON array.
 			const undefinedHint =
 				model === undefined || model === null
@@ -596,7 +773,8 @@ function createModelGlobals(
 				`${name}() expects ${withArticle(type)} model as its first argument, got ${describeValue(model)}.${undefinedHint} ${listHint}`,
 			);
 		}
-		const { provider, id } = model;
+		const provider = given.provider;
+		const id = given.id;
 		const ref = `${provider}/${id}`;
 		const resolved = models.getModelOfType(type, provider, id);
 		if (!resolved) {

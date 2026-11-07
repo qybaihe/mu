@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input, InputNumber, InputTag, Switch } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import { checkOption, localized, optionEquals, type OptionInfo, type OptionValue } from '@/common/kyrn/manifest';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import Row from './Row';
@@ -87,7 +87,7 @@ export default function OptionField({ option, value, onChange, disabled, scope }
       break;
     case 'choice':
       control = (
-        <AionSelect
+        <MuSelect
           className={styles.wide}
           size='small'
           aria-label={label}

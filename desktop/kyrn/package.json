@@ -2,7 +2,7 @@
   "name": "kyrn-desktop",
   "version": "0.1.0",
   "private": true,
-  "license": "Apache-2.0",
+  "license": "MIT AND Apache-2.0",
   "type": "module",
   "main": "main/main.mjs",
   "scripts": {

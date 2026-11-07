@@ -175,7 +175,7 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 	{
 		id: "opencode",
 		name: "OpenCode Zen",
-		baseUrls: ["https://opencode.ai/zen/v1"],
+		baseUrls: ["https://opencode.ai/inference/openai/v1"],
 		api: "openai-completions",
 		models: ["kimi-k2.6"],
 		keyPage: "https://opencode.ai/auth",
@@ -188,7 +188,7 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 		name: "OpenAI",
 		baseUrls: ["https://api.openai.com/v1"],
 		api: "openai-responses",
-		models: ["gpt-5.5"],
+		models: ["gpt-6.1-sol"],
 		keyShape: /^sk-(?:proj-|svcacct-|admin-|(?!ant-|or-)[A-Za-z0-9_-]*T3BlbkFJ)/,
 		keyPage: "https://platform.openai.com/api-keys",
 		providers: ["openai"],
@@ -230,6 +230,21 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 		builtIn: true,
 	},
 	{
+		// Not in the app's table yet. Open models, NVIDIA's Nemotron among them; the same key reaches the `nemotron`
+		// judge (Nemotron 3 Ultra on Token Factory). Nemotron 3.5 Super VL: Token Factory retires Nemotron 3 Super
+		// (nvidia/nemotron-3-super-120b-a12b) from Serverless on 2026-11-09 and names it as the replacement.
+		id: "nebius",
+		name: "Nebius Token Factory",
+		baseUrls: ["https://api.tokenfactory.nebius.com/v1"],
+		api: "openai-completions",
+		models: ["nvidia/Nemotron-3.5-Super-VL"],
+		// "v1.", then two base64url parts.
+		keyShape: /^v1\.[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{40,}$/,
+		keyPage: "https://tokenfactory.nebius.com",
+		providers: ["nebius"],
+		builtIn: true,
+	},
+	{
 		id: "ollama",
 		name: "Ollama",
 		baseUrls: ["http://localhost:11434/v1"],
@@ -252,6 +267,19 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 	},
 ];
 
+/** The services an English list starts with, in this order: the ones best known outside China. */
+const FIRST_IN_ENGLISH: readonly string[] = ["openai", "anthropic", "google", "xai", "openrouter", "opencode"];
+
+/**
+ * The services in the order a list shows them in `language`: the table's order in Chinese, and in English the best
+ * known ones first. Ollama and a service of one's own stay last in both.
+ */
+export function servicesInOrder(language: "zh" | "en"): readonly SetupService[] {
+	if (language === "zh") return SETUP_SERVICES;
+	const first = FIRST_IN_ENGLISH.flatMap((id) => SETUP_SERVICES.filter((service) => service.id === id));
+	return [...first, ...SETUP_SERVICES.filter((service) => !FIRST_IN_ENGLISH.includes(service.id))];
+}
+
 export function serviceById(id: string): SetupService | undefined {
 	return SETUP_SERVICES.find((service) => service.id === id);
 }
@@ -264,6 +292,14 @@ export function cleanKey(raw: string): string {
 	let key = raw.trim();
 	if (key.length >= 2 && (key[0] === '"' || key[0] === "'") && key.at(-1) === key[0]) key = key.slice(1, -1).trim();
 	return key;
+}
+
+/**
+ * A Claude subscription token (`claude setup-token`, sk-ant-oat…), not an API key. Anthropic's terms don't let other
+ * apps use a Claude subscription (code.claude.com/docs/en/legal-and-compliance), so mu takes an API key instead.
+ */
+export function isClaudeSubscriptionToken(key: string): boolean {
+	return cleanKey(key).startsWith("sk-ant-oat");
 }
 
 /**

@@ -45,7 +45,7 @@ import { copyText } from '@/renderer/utils/ui/clipboard';
 import { blurActiveElement, shouldBlockMobileInputFocus } from '@/renderer/utils/ui/focus';
 import { formatPrimaryEnterShortcut, isPlatformPrimaryModifier } from '@/renderer/utils/ui/keyboardShortcuts';
 import { Button, Input, Message, Tag, Tooltip } from '@arco-design/web-react';
-import { CloseSmall, Plus, Quote } from '@icon-park/react';
+import { CloseSmall, Pic, Plus, Quote } from '@icon-park/react';
 import { chatFileRefKey } from '@/common/types/chatFile';
 import type { SlashCommandItem } from '@/common/chat/slash/types';
 import { buildSkillSlashCommands, mergeSlashCommands } from '@/common/chat/slash/mergeSlashCommands';
@@ -67,6 +67,7 @@ import { allSupportedExts } from '@renderer/services/FileService';
 import { getConversationInputHistory, isCaretOnFirstLine } from '@/renderer/utils/chat/messageHistory';
 import { commandDescription } from '@/renderer/utils/chat/muCommands';
 import SendArrowIcon from './SendArrowIcon';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 import './sendbox.css';
 
 const constVoid = (): void => undefined;
@@ -223,7 +224,11 @@ function extractBtwQuestion(value: string): string | null {
 const SendBox: React.FC<{
   value?: string;
   onChange?: (value: string) => void;
-  onSend: (message: string) => Promise<void | false>;
+  /**
+   * Sends the message. `extras.images`: the pictures of the elements picked for it (a page's element), for a host that
+   * sends images with a message (a native conversation); others leave them.
+   */
+  onSend: (message: string, extras?: { images?: Array<{ data: string; mimeType: string }> }) => Promise<void | false>;
   onStop?: () => Promise<void>;
   disabled?: boolean;
   /**
@@ -577,7 +582,7 @@ const SendBox: React.FC<{
       // carries a chatRef — the Explorer tree's add-to-chat builds a project
       // ref, and a pe ROOT is a folder whose relative_path is ''. The backend
       // resolves a directory ref to its absolute path (verified in
-      // aionui-project resolve_chat_file_ref: a project ref only requires the
+      // the backend's project crate (resolve_chat_file_ref): a project ref only requires the
       // target to exist, not to be a regular file). Only drop a non-file item
       // that has no ref identity at all.
       if (typeof item !== 'string' && !item.isFile && !item.chatRef) {
@@ -601,7 +606,7 @@ const SendBox: React.FC<{
     if (onSlashBuiltinCommand) {
       commands.push({
         name: 'open',
-        description: t('conversation.workspace.addFile', { defaultValue: 'Add File' }),
+        description: t('conversation.sendbox.openCommand'),
         kind: 'builtin',
         source: 'builtin',
       });
@@ -609,7 +614,7 @@ const SendBox: React.FC<{
     if (conversationContext?.conversation_id) {
       commands.push({
         name: 'copy',
-        description: t('messages.copy', { defaultValue: 'Copy' }),
+        description: t('conversation.sendbox.copyCommand'),
         kind: 'builtin',
         source: 'builtin',
       });
@@ -1099,9 +1104,9 @@ const SendBox: React.FC<{
     targetConversationId === undefined || targetConversationId === conversationContext?.conversation_id;
 
   useAddEventListener(
-    'aionrs.selected.file.append',
+    'builtinAgent.selected.file.append',
     (items: FileSelectionItem[], targetConversationId: string | undefined) => {
-      if (conversationContext?.type === 'aionrs' && acceptsTarget(targetConversationId)) {
+      if (conversationContext?.type === BUILTIN_AGENT && acceptsTarget(targetConversationId)) {
         handleExternalSelectionAppend(items);
       }
     },
@@ -1132,8 +1137,8 @@ const SendBox: React.FC<{
       // here, not to same-type peers on the team route.
       const targetId = conversationContext?.conversation_id;
       switch (conversationContext?.type) {
-        case 'aionrs':
-          emitter.emit('aionrs.selected.file.append', [item], targetId);
+        case BUILTIN_AGENT:
+          emitter.emit('builtinAgent.selected.file.append', [item], targetId);
           break;
         case 'acp':
           emitter.emit('acp.selected.file.append', [item], targetId);
@@ -1610,13 +1615,21 @@ const SendBox: React.FC<{
       finalMessage = `${quotedLines}\n\n${finalMessage}`;
     }
 
-    // 如果有 DOM 片段，附加完整 HTML / If has DOM snippets, append full HTML
+    // 如果有 DOM 片段，附加完整 HTML / If has DOM snippets, append full HTML (after the quote and the text), each in a
+    // fence longer than any run of backticks in it, so what it holds cannot end it. A snippet that is only a picture (a
+    // page's screenshot) has its line alone.
     if (domSnippets.length > 0) {
       const snippetsHtml = domSnippets
-        .map((s) => `\n\n---\nDOM Snippet (${s.tag}):\n\`\`\`html\n${s.html}\n\`\`\``)
+        .map((s) => {
+          const about = s.about ?? `DOM Snippet (${s.tag}):`;
+          if (!s.html) return `\n\n---\n${about}`;
+          const fence = '`'.repeat(Math.max(3, ...(s.html.match(/`+/g) ?? []).map((run) => run.length + 1)));
+          return `\n\n---\n${about}\n${fence}${s.fence ?? 'html'}\n${s.html}\n${fence}`;
+        })
         .join('');
-      finalMessage = input + snippetsHtml;
+      finalMessage += snippetsHtml;
     }
+    const snippetImages = domSnippets.flatMap((s) => (s.image ? [s.image] : []));
 
     // 立即清空输入框，避免异步 onSend 完成后覆盖用户新输入
     // Clear input immediately to prevent async onSend completion from overwriting new user input
@@ -1624,7 +1637,7 @@ const SendBox: React.FC<{
     clearDomSnippets();
     setReplyQuote(null);
 
-    onSend(finalMessage)
+    (snippetImages.length ? onSend(finalMessage, { images: snippetImages }) : onSend(finalMessage))
       .then((result) => {
         if (result === false) {
           setInput(finalMessage);
@@ -1747,7 +1760,7 @@ const SendBox: React.FC<{
       shape='circle'
       type='secondary'
       className='bg-animate sendbox-stop-button'
-      icon={<div className='mx-auto size-12px bg-6'></div>}
+      icon={<div className='mx-auto size-10px sendbox-stop-square'></div>}
       onClick={stopHandler}
       data-testid={testIds?.stop ?? 'sendbox-stop-btn'}
       aria-label={t('conversation.sendbox.stop')}
@@ -2033,8 +2046,11 @@ const SendBox: React.FC<{
                   key={snippet.id}
                   closable
                   closeIcon={<CloseSmall theme='outline' size='12' />}
+                  icon={snippet.image ? <Pic theme='outline' size='12' /> : undefined}
                   onClose={() => removeDomSnippet(snippet.id)}
                   className='text-12px bg-fill-2 rd-4px'
+                  data-testid='sendbox-dom-snippet'
+                  data-picture={snippet.image ? 'true' : undefined}
                 >
                   {snippet.tag}
                 </Tag>

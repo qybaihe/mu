@@ -1,10 +1,10 @@
 {
-  "selectFile": "Select File",
-  "selectDirectory": "Select Directory",
-  "pleaseSelectFile": "Please select a file",
-  "pleaseSelectDirectory": "Please select a directory",
+  "selectFile": "Select file",
+  "selectDirectory": "Select folder",
+  "pleaseSelectFile": "Select a file",
+  "pleaseSelectDirectory": "Select a folder",
   "webFsPicker": {
-    "loadFailed": "Cannot open this directory",
+    "loadFailed": "Can't open this folder",
     "titleDirectory": "Select a folder on the server",
     "titleFile": "Select a file on the server",
     "selectedCount": "{{count}} selected",

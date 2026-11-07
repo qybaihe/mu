@@ -1,4 +1,4 @@
-# AionUi - Project Guide
+# mu desktop: project guide
 
 All contributors (human and AI) must follow [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR. ([Chinese version](CONTRIBUTING.zh.md))
 
@@ -61,7 +61,7 @@ Two process types — never mix their APIs:
 | Renderer | `packages/desktop/src/renderer/` | No Node.js APIs |
 
 Cross-process communication must go through the IPC bridge (`packages/desktop/src/preload/`).
-See [docs/architecture/overview.md](docs/architecture/overview.md) for details.
+See [docs/architecture.md](../docs/architecture.md) and [docs/native-host.md](docs/native-host.md) for details.
 
 ## Testing
 

@@ -1,5 +1,6 @@
 import type { Context } from "@earendil-works/chord";
-import type { Cursor, Page } from "../types.ts";
+import { SessionFailed } from "../errors.ts";
+import type { ConversationId, Cursor, EntryQuery, Page } from "../types.ts";
 
 /** Pending waits by key. Each settles once: through `resolve`, `rejectAll`, or cancellation of its context. */
 export class Waiters<K, T> {
@@ -53,6 +54,26 @@ export async function scanAll<T>(scan: (cursor: Cursor | undefined) => Promise<P
 	return items;
 }
 
-export function closedError(): Error {
-	return new Error("Harness is closed");
+/** What a closed Harness rejects with: `SessionFailed` with the cause when it closed because the Session failed. */
+export function closedError(session: { readonly failure: { readonly error: unknown } | undefined }): Error {
+	const failure = session.failure;
+	return failure === undefined ? new Error("Harness is closed") : new SessionFailed(failure.error);
+}
+
+/** `{ extension }` when the extension is known. */
+export function optionalExtension(extension: string | undefined): { readonly extension?: string } {
+	return extension === undefined ? {} : { extension };
+}
+
+/** The scan of conversation `conversationId`'s history that `query` asks for, without fields an untyped caller added. */
+export function conversationEntries(
+	conversationId: ConversationId,
+	query: Omit<EntryQuery, "conversationId">,
+): EntryQuery {
+	return {
+		conversationId,
+		...(query.minEntryId === undefined ? {} : { minEntryId: query.minEntryId }),
+		...(query.maxEntryId === undefined ? {} : { maxEntryId: query.maxEntryId }),
+		...(query.order === undefined ? {} : { order: query.order }),
+	};
 }

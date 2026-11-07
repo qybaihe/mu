@@ -34,7 +34,7 @@ import {
 import lockfile from "proper-lockfile";
 import { APP_NAME, getAgentDir } from "../../config.ts";
 import { type AuthStorageBackend, FileAuthStorageBackend } from "../../core/auth-storage.ts";
-import { mcpNamespace } from "../../core/mcp-servers.ts";
+import { isClientMetadataDocumentCallback, mcpNamespace } from "../../core/mcp-servers.ts";
 
 const CALLBACK_HOST = "127.0.0.1";
 const CALLBACK_PATH = "/callback";
@@ -44,8 +44,11 @@ const CLIENT_METADATA_BASE_URL = "https://pi.dev/oauth";
 const FALLBACK_REDIRECT_URL = `http://${CALLBACK_HOST}${CALLBACK_PATH}`;
 /** Access tokens this close to expiry are refreshed before they are sent. */
 const REFRESH_SKEW_MS = 30_000;
-/** Bounds each request of a refresh, so it cannot hold the refresh lock or delay shutdown for long. */
-const REFRESH_REQUEST_TIMEOUT_MS = 15_000;
+/**
+ * Bounds each request to the authorization server, so an unresponsive one cannot hold the refresh lock,
+ * delay shutdown, or keep a sign-in waiting for long.
+ */
+const OAUTH_REQUEST_TIMEOUT_MS = 15_000;
 /** A refresh lock that its holder stopped renewing (the process was killed) is taken over after this. */
 const REFRESH_LOCK_STALE_MS = 20_000;
 /** How long to wait for another process's refresh: longer than a stale lock lives. */
@@ -64,7 +67,7 @@ export interface McpOAuthSettings {
 	/** `client_name` for dynamic client registration. Default: `APP_NAME`. */
 	clientName?: string;
 	/** See `McpOAuthConfig.clientRegistration`. */
-	clientRegistration?: "dcr" | "cimd";
+	clientRegistration?: "auto" | "dcr" | "cimd";
 	/** See `McpOAuthConfig.authServerMetadataUrl`. */
 	authServerMetadataUrl?: URL;
 }
@@ -220,6 +223,14 @@ export class McpOAuthCredentialStore {
 	}
 }
 
+/** `fetch` with `OAUTH_REQUEST_TIMEOUT_MS` per request, on top of the request's own signal. */
+function timedFetch(fetch: McpFetch = globalThis.fetch): McpFetch {
+	return (input, init) => {
+		const timeout = AbortSignal.timeout(OAUTH_REQUEST_TIMEOUT_MS);
+		return fetch(input, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout });
+	};
+}
+
 function registeredRedirectUrls(client: OAuthClientInformationMixed | undefined): string[] {
 	return client && "redirect_uris" in client ? client.redirect_uris : [];
 }
@@ -232,23 +243,33 @@ function callbackId(serverUrl: string): string {
 }
 
 /**
- * pi's Client ID Metadata Document, for `clientRegistration: "cimd"`, chosen like Codex chooses its own.
- * The configuration ensures the default callback path. Without the `iss` parameter in authorization
- * responses (RFC 9207), the redirect URI and the document are specific to the MCP server, so a response
- * cannot be mixed up with one from another authorization server (RFC 9700 section 4.4.2.2).
+ * Whether sign-in may identify with pi's Client ID Metadata Document instead of registering. `auto`
+ * registers when the user asked for a client name, the redirect URI is not one the documents list, or
+ * a rebranded build would show up as pi.
+ */
+function offersClientMetadataDocument(settings: McpOAuthSettings): boolean {
+	const registration = settings.clientRegistration ?? "auto";
+	if (registration !== "auto") return registration === "cimd";
+	if (settings.clientId || settings.clientName || APP_NAME !== "pi") return false;
+	return isClientMetadataDocumentCallback(settings.callbackUrl);
+}
+
+/**
+ * pi's Client ID Metadata Document, chosen like Codex chooses its own, or `undefined` when the
+ * authorization server does not support documents for public clients. Without the `iss` parameter in
+ * authorization responses (RFC 9207), the redirect URI and the document are specific to the MCP server,
+ * so a response cannot be mixed up with one from another authorization server (RFC 9700 section 4.4.2.2).
  */
 function clientMetadataDocument(
 	serverUrl: string,
 	redirectUrl: string,
 	metadata: AuthorizationServerMetadata | undefined,
-): OAuthClientMetadataDocument {
+): OAuthClientMetadataDocument | undefined {
 	if (
 		!metadata?.client_id_metadata_document_supported ||
 		!metadata.token_endpoint_auth_methods_supported?.includes("none")
 	) {
-		throw new Error(
-			'The authorization server does not support Client ID Metadata Documents for public clients; remove oauth.clientRegistration "cimd"',
-		);
+		return undefined;
 	}
 	if (metadata.authorization_response_iss_parameter_supported) {
 		return { url: `${CLIENT_METADATA_BASE_URL}/client.json`, redirectUrl };
@@ -270,10 +291,17 @@ function createProvider(
 		serverUrl,
 		redirectUrl,
 		clientMetadata: { client_name: settings.clientName ?? APP_NAME },
-		clientMetadataDocument:
-			settings.clientRegistration === "cimd"
-				? (metadata) => clientMetadataDocument(serverUrl, redirectUrl, metadata)
-				: undefined,
+		clientMetadataDocument: offersClientMetadataDocument(settings)
+			? (metadata) => {
+					const document = clientMetadataDocument(serverUrl, redirectUrl, metadata);
+					if (!document && settings.clientRegistration === "cimd") {
+						throw new Error(
+							'The authorization server does not support Client ID Metadata Documents for public clients; remove oauth.clientRegistration "cimd"',
+						);
+					}
+					return document;
+				}
+			: undefined,
 		clientId: settings.clientId,
 		clientSecret: settings.clientSecret,
 		store,
@@ -321,14 +349,14 @@ export function createMcpAuthProvider(options: {
 					registeredRedirectUrls(state.clientInformation)[0] ??
 					FALLBACK_REDIRECT_URL;
 				const provider = createProvider(serverUrl, store, settings, redirectUrl, () => {});
-				// Refreshes the tokens, or reports that a new sign-in is needed.
+				// Refreshes the tokens, or reports that a new sign-in is needed. Not cancellable: a refresh the
+				// server answered may have rotated the refresh token, so its answer must be saved.
 				const result = await authorizeMcp(provider, {
 					serverUrl,
 					resourceMetadataUrl: challenge?.resourceMetadataUrl,
 					authorizationServerMetadataUrl: settings.authServerMetadataUrl,
 					scope: challenge?.scope,
-					fetch: (input, init) =>
-						fetch(input, { ...init, signal: AbortSignal.timeout(REFRESH_REQUEST_TIMEOUT_MS) }),
+					fetch: timedFetch(fetch),
 				});
 				if (result === "REDIRECT") throw new McpOAuthAuthorizationRequiredError();
 			})
@@ -367,8 +395,8 @@ export interface McpSignInPrompt {
 	showAuthorizationUrl(url: URL): void;
 	/**
 	 * Ask for the redirect URL from the browser address bar, for when the browser cannot reach the
-	 * loopback callback (for example over SSH). Aborted once the callback arrives. Resolves to
-	 * `undefined` or an empty string when the user cancels.
+	 * loopback callback (for example over SSH). Aborted once the callback arrives or the sign-in is
+	 * cancelled. Resolves to `undefined` or an empty string when the user cancels.
 	 */
 	promptForRedirectUrl(signal: AbortSignal): Promise<string | undefined>;
 }
@@ -401,16 +429,21 @@ function responseFromRedirectUrl(input: string, state: string, redirectUrl: URL)
 	return { code, iss: url.searchParams.get("iss") ?? undefined };
 }
 
-/** Wait for the browser callback or a pasted redirect URL, whichever comes first. */
+/**
+ * Wait for the browser callback or a pasted redirect URL, whichever comes first. Aborting `signal`
+ * aborts the prompt, which then cancels the sign-in.
+ */
 async function waitForAuthorizationResponse(
 	callback: OAuthCallbackServer,
 	state: string,
 	redirectUrl: URL,
 	prompt: McpSignInPrompt,
+	signal: AbortSignal | undefined,
 ): Promise<AuthorizationResponse> {
 	const controller = new AbortController();
+	const promptSignal = signal ? AbortSignal.any([controller.signal, signal]) : controller.signal;
 	const fromBrowser = callback.waitForCallback(state, redirectUrl.pathname);
-	const fromUser = prompt.promptForRedirectUrl(controller.signal).then((input) => {
+	const fromUser = prompt.promptForRedirectUrl(promptSignal).then((input) => {
 		if (!input?.trim()) throw new McpSignInCancelledError();
 		return responseFromRedirectUrl(input, state, redirectUrl);
 	});
@@ -451,7 +484,8 @@ async function listenForCallback(
 
 /**
  * Sign in to an MCP server. Uses the stored refresh token when possible; otherwise runs the browser
- * authorization code flow. Tokens are saved to `store`.
+ * authorization code flow. Tokens are saved to `store`. Aborting `signal` stops the sign-in at any
+ * step with `McpSignInCancelledError`; requests to the authorization server are also time-limited.
  */
 export async function signInMcpServer(options: {
 	serverUrl: string;
@@ -459,8 +493,10 @@ export async function signInMcpServer(options: {
 	settings: McpOAuthSettings;
 	challenge?: OAuthChallenge;
 	prompt: McpSignInPrompt;
+	signal?: AbortSignal;
 }): Promise<void> {
-	const { serverUrl, store, settings } = options;
+	const { serverUrl, store, settings, signal } = options;
+	if (signal?.aborted) throw new McpSignInCancelledError();
 	const stored = await store.load();
 	const stepUp = options.challenge?.error === "insufficient_scope";
 	const callbackOptions = callbackSettings(settings);
@@ -468,11 +504,11 @@ export async function signInMcpServer(options: {
 	const registered = registeredRedirectUrls(stored?.clientInformation)[0];
 	const preferredPort =
 		callbackOptions.port ?? (registered ? Number(new URL(registered).port) || undefined : undefined);
-	const cimd = settings.clientRegistration === "cimd";
+	const offersDocument = offersClientMetadataDocument(settings);
 	const callback = await listenForCallback(
 		callbackOptions,
 		// The redirect URI of a server-specific Client ID Metadata Document.
-		cimd ? [`${CALLBACK_PATH}/${callbackId(serverUrl)}`] : [],
+		offersDocument ? [`${CALLBACK_PATH}/${callbackId(serverUrl)}`] : [],
 		preferredPort,
 		callbackOptions.port !== undefined,
 	);
@@ -482,11 +518,15 @@ export async function signInMcpServer(options: {
 			const next: McpOAuthState = { ...stored };
 			// Every sign-in gets a fresh `state` parameter.
 			delete next.oauthState;
-			// A registered client cannot use another redirect URI, and its tokens belong to it. A Client ID
-			// Metadata Document is not stored, so with one, a stored client was registered before and is replaced.
+			// A registered client cannot use another redirect URI, and its tokens belong to it. `cimd` replaces a
+			// registered client; `auto` keeps it. A Client ID Metadata Document is not stored, so tokens without
+			// a stored client belong to the document.
 			const keepClient =
 				settings.clientId ||
-				(cimd ? !stored.clientInformation : registeredRedirectUrls(stored.clientInformation).includes(redirectUrl));
+				(stored.clientInformation
+					? settings.clientRegistration !== "cimd" &&
+						registeredRedirectUrls(stored.clientInformation).includes(redirectUrl)
+					: offersDocument);
 			if (!keepClient) {
 				delete next.clientInformation;
 				delete next.tokens;
@@ -501,6 +541,8 @@ export async function signInMcpServer(options: {
 		});
 		const flow = {
 			serverUrl,
+			fetch: timedFetch(),
+			signal,
 			resourceMetadataUrl: options.challenge?.resourceMetadataUrl,
 			authorizationServerMetadataUrl: settings.authServerMetadataUrl,
 			// A server asking for more scope gets it on top of the configured scope and, since the challenge
@@ -524,8 +566,13 @@ export async function signInMcpServer(options: {
 			state,
 			authorizationRedirectUrl,
 			options.prompt,
+			signal,
 		);
 		await authorizeMcp(provider, { ...flow, authorizationCode: code, iss });
+	} catch (error) {
+		// Aborted requests fail with the signal's reason; report them as the cancellation they are.
+		if (signal?.aborted) throw new McpSignInCancelledError();
+		throw error;
 	} finally {
 		await callback.close();
 	}

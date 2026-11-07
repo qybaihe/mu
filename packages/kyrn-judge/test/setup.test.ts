@@ -46,8 +46,10 @@ import {
 	type SetupService,
 	serviceById,
 	servicesForKey,
+	servicesInOrder,
 	tableModel,
 } from "../src/setup/services.ts";
+import { wrapToWidth } from "../src/setup/terminal.ts";
 import {
 	jevKeyAt,
 	type PiAccess,
@@ -89,6 +91,7 @@ const KEYS = {
 	anthropic: `sk-ant-api03-${"x".repeat(40)}`,
 	google: `AIza${"S".repeat(35)}`,
 	xai: `xai-${"z".repeat(40)}`,
+	nebius: `v1.${"CmQ".repeat(45)}a.${"x_9-".repeat(24)}`,
 	unknown: "made-up-key-of-no-known-shape-1234",
 	jev: "ts-made-up-jev-key-5678",
 };
@@ -108,6 +111,7 @@ describe("the services table", () => {
 		expect(ids(servicesForKey(KEYS.anthropic))).toEqual(["anthropic"]);
 		expect(ids(servicesForKey(KEYS.google))).toEqual(["google"]);
 		expect(ids(servicesForKey(KEYS.xai))).toEqual(["xai"]);
+		expect(ids(servicesForKey(KEYS.nebius))).toEqual(["nebius"]);
 		expect(servicesForKey(KEYS.unknown)).toEqual([]);
 		expect(servicesForKey("")).toEqual([]);
 		// Pasted with the quotes and spaces of a .env line.
@@ -255,7 +259,7 @@ describe("the check", () => {
 			[
 				"key",
 				json(401, { error: { message: `Incorrect API key provided: ${KEYS.hex32}` } }),
-				/does not accept this key/,
+				/didn't accept this key/,
 				/不接受这个密钥/,
 			],
 			["balance", json(402, { error: { message: "Insufficient Balance" } }), /no balance or quota/, /余额或额度/],
@@ -270,28 +274,28 @@ describe("the check", () => {
 			[
 				"key",
 				json(400, { error: { message: "API key not valid. Please pass a valid API key." } }),
-				/does not accept/,
+				/didn't accept/,
 				/不接受/,
 			],
 			["refused", json(403, { error: { message: "Forbidden" } }), /refused this key/, /拒绝了这个密钥/],
 			[
 				"permission",
 				json(403, { error: { message: "Missing scopes: api.model.read" } }),
-				/may not read the list/,
+				/can't list models/,
 				/没有读取模型列表/,
 			],
 			["address", json(404, { error: "not found" }), /HTTP 404/, /HTTP 404/],
-			["server", json(503, { error: "overloaded" }), /error of its own/, /出错/],
+			["server", json(503, { error: "overloaded" }), /server error/, /出错/],
 			[
 				"response",
 				() => new Response("<html>hello</html>", { status: 200 }),
 				/not with a list of models/,
 				/不是模型列表/,
 			],
-			["dns", failure("ENOTFOUND"), /Could not find api\.example\.test/, /找不到/],
-			["connection", failure("ECONNREFUSED"), /Could not connect/, /连不上/],
+			["dns", failure("ENOTFOUND"), /Couldn't resolve api\.example\.test/, /找不到/],
+			["connection", failure("ECONNREFUSED"), /Couldn't connect/, /连不上/],
 			["tls", failure("UNABLE_TO_VERIFY_LEAF_SIGNATURE"), /secure connection/, /安全连接/],
-			["timeout", failure("UND_ERR_CONNECT_TIMEOUT"), /No answer from api\.example\.test within 10 s/, /10 秒内/],
+			["timeout", failure("UND_ERR_CONNECT_TIMEOUT"), /No response from api\.example\.test within 10 s/, /10 秒内/],
 		];
 		for (const [kind, respond, english, chinese] of cases) {
 			const result = await check(respond);
@@ -313,9 +317,27 @@ describe("the check", () => {
 		// Nothing listening on this machine is a service that is not running, not the network.
 		const local: Problem = { kind: "connection", url: "http://127.0.0.1:8080/v1/models" };
 		expect(explainProblem(local, { service: "box" }, "en")).toBe(
-			"Nothing is listening at 127.0.0.1:8080: is the service running?",
+			"Nothing is listening at 127.0.0.1:8080. Is the service running?",
 		);
 		expect(explainProblem({ kind: "key", url: "" }, { service: "OpenAI" }, "en")).toContain("an OpenAI key");
+	});
+
+	it("checks an OpenCode key at Zen's general base, though pi sends chat to its OpenAI one", async () => {
+		const urls: string[] = [];
+		const result = await checkKey({
+			kind: "opencode-key",
+			baseUrl: "https://opencode.ai/inference/openai/v1",
+			key: "sk-opencode-good-key-0123456789",
+			timeoutMs: 1000,
+			fetch: (async (url: string) => {
+				urls.push(url);
+				return url.endsWith("/systemone")
+					? new Response(JSON.stringify({ answers: { check: { type: "noul", noul: 0.9 } } }), { status: 200 })
+					: new Response(JSON.stringify({ data: [{ id: "kimi-k2.6" }] }), { status: 200 });
+			}) as typeof fetch,
+		});
+		expect(result.ok).toBe(true);
+		expect(urls).toEqual(["https://opencode.ai/inference/v1/systemone", "https://opencode.ai/inference/v1/models"]);
 	});
 
 	it("gives up after the time it was given", async () => {
@@ -387,6 +409,12 @@ describe("the files", () => {
 		expect(backupStamp(now)).toBe("2026-09-27T15-04-05");
 		const first = new Backups(home, now);
 		first.save(join(home, "agent", "missing.json"));
+		expect(first.path).toBeUndefined();
+		// The `{}` pi writes at its first start, or an empty file, holds nothing to keep.
+		writeFileSync(join(home, "agent", "settings.json"), "{}\n");
+		writeFileSync(join(home, "agent", "models.json"), "");
+		first.save(join(home, "agent", "settings.json"));
+		first.save(join(home, "agent", "models.json"));
 		expect(first.path).toBeUndefined();
 		first.save(file);
 		writeFileSync(file, '{"changed":true}');
@@ -524,7 +552,7 @@ class FakePi implements PiAccess {
 		"zai-coding-cn": { baseUrl: "https://open.bigmodel.cn/api/coding/paas/v4", models: ["glm-5.3"] },
 		openrouter: { baseUrl: "https://openrouter.ai/api/v1", models: ["moonshotai/kimi-k2.6"] },
 		opencode: { baseUrl: "https://opencode.ai/zen/v1", models: ["kimi-k2.6", "claude-opus-4-8"] },
-		openai: { baseUrl: "https://api.openai.com/v1", models: ["gpt-5.5"] },
+		openai: { baseUrl: "https://api.openai.com/v1", models: ["gpt-6.1-sol"] },
 		anthropic: { baseUrl: "https://api.anthropic.com", models: ["claude-opus-4-8"] },
 		google: { baseUrl: "https://generativelanguage.googleapis.com/v1beta", models: ["gemini-3.1-pro-preview"] },
 		xai: { baseUrl: "https://api.x.ai/v1", models: ["grok-4.7"] },
@@ -568,6 +596,8 @@ interface Run {
 	home?: string;
 	/** The fake network: an answer per request. */
 	respond?: (url: string, headers: Readonly<Record<string, string>>) => Response | Error;
+	/** A Mac that can run mude 1.0: what its install ends with. */
+	mude?: number;
 }
 
 /** What happened, in order: said, warned, asked (a question or a key), or sent (a request). */
@@ -600,6 +630,7 @@ async function wizard(run: Run) {
 		},
 	};
 	const pi = run.pi ?? new FakePi();
+	let mudeInstalls = 0;
 	const fetch = (async (input: string | URL | Request, init?: RequestInit) => {
 		const url = String(input);
 		const headers = { ...(init?.headers as Record<string, string>) };
@@ -622,6 +653,16 @@ async function wizard(run: Run) {
 		readStdin: async () => run.stdin ?? "",
 		givenKey: run.givenKey,
 		timeoutMs: 1000,
+		mude:
+			run.mude === undefined
+				? undefined
+				: {
+						install: async () => {
+							mudeInstalls++;
+							events.push({ kind: "say", text: "(mu judge mude install)" });
+							return run.mude ?? 0;
+						},
+					},
 	});
 	const said = events.filter((event) => event.kind === "say").map((event) => event.text);
 	const warned = events.filter((event) => event.kind === "warn").map((event) => event.text);
@@ -643,14 +684,30 @@ async function wizard(run: Run) {
 	/** Where the first event with this text is, -1 when there is none. */
 	const at = (kind: Event["kind"], text: string) =>
 		events.findIndex((event) => event.kind === kind && event.text.includes(text));
-	return { code, events, said, warned, printed, calls, home, paths, pi, read, json, at };
+	return { code, events, said, warned, printed, calls, home, paths, pi, read, json, at, mudeInstalls };
 }
 
 describe("mu setup, asking in a terminal", () => {
+	it("refuses a Claude subscription token, and asks for an API key instead", async () => {
+		const token = `sk-ant-oat01-${"t".repeat(40)}`;
+		const run = await wizard({
+			// Paste a key: a token from claude setup-token first, then an Anthropic API key.
+			answers: ["1"],
+			secrets: [token, KEYS.anthropic],
+			respond: () => listing("claude-opus-4-8"),
+		});
+		const refused = run.at("warn", "That's a Claude subscription token (from claude setup-token), not an API key.");
+		expect(refused).toBeGreaterThan(-1);
+		expect(run.events.filter((event) => event.kind === "secret")).toHaveLength(2);
+		expect(run.at("say", "This is an Anthropic key.")).toBeGreaterThan(refused);
+		for (const call of run.calls) expect(JSON.stringify(call.headers)).not.toContain(token);
+		expect((run.pi as FakePi).stored.map((stored) => stored.key)).not.toContain(token);
+	});
+
 	it("asks whose key it is when two vendors share its shape, and sends it to that one only", async () => {
 		const run = await wizard({
 			// Paste a key; it is Qwen's; no judge for now; no session now.
-			answers: ["1", "2", "4", "n"],
+			answers: ["1", "2", "5", "n"],
 			secrets: [KEYS.hex32],
 			respond: (url) =>
 				url.startsWith("https://dashscope.aliyuncs.com/")
@@ -659,7 +716,7 @@ describe("mu setup, asking in a terminal", () => {
 		});
 		expect(run.code).toBe(SETUP_EXIT.done);
 		// The question, and its answer, came before any request.
-		const question = run.at("say", "Keys of DeepSeek and Qwen look the same. Which service is this key for?");
+		const question = run.at("say", "DeepSeek and Qwen keys look the same. Which service is this key for?");
 		expect(question).toBeGreaterThan(-1);
 		expect(run.at("fetch", "")).toBeGreaterThan(run.at("ask", "Choose 1-2"));
 		expect(run.at("ask", "Choose 1-2")).toBeGreaterThan(question);
@@ -679,15 +736,15 @@ describe("mu setup, asking in a terminal", () => {
 		const pi = run.pi as FakePi;
 		expect(pi.stored).toEqual([{ provider: "qwen", key: KEYS.hex32 }]);
 		expect(pi.defaults).toEqual([{ provider: "qwen", model: "qwen3-coder-plus" }]);
-		// No judge: neither mu.json nor the .env was touched.
-		expect(run.read("mu.json")).toBeUndefined();
+		// No judge: mu.json turns every decision point off, so none asks a judge; the .env was not touched.
+		expect(run.json("mu.json")).toEqual({ modes: { default: "off" } });
 		expect(run.read(".env")).toBeUndefined();
-		expect(run.said).toContain("Done. mu starts on Qwen · qwen3-coder-plus. Judge: none for now.");
+		expect(run.said).toContain("Done. mu will start on Qwen · qwen3-coder-plus. Judge: none for now.");
 	});
 
 	it("tries a Kimi key at .cn, then at .ai, and at no other vendor", async () => {
 		const run = await wizard({
-			answers: ["1", "3", "n"],
+			answers: ["1", "4", "n"],
 			secrets: [KEYS.kimi],
 			respond: (url) => {
 				if (url === "https://api.moonshot.cn/v1/models") {
@@ -714,7 +771,7 @@ describe("mu setup, asking in a terminal", () => {
 		const good = `sk-${"fedcba9876543210".repeat(2)}`;
 		const run = await wizard({
 			// Paste; DeepSeek; (401) paste another; judge: the model; start mu now.
-			answers: ["1", "1", "1", "3", "y"],
+			answers: ["1", "1", "1", "4", "y"],
 			secrets: [KEYS.hex32, good],
 			respond: (_url, headers) =>
 				headers.authorization === `Bearer ${good}`
@@ -723,10 +780,10 @@ describe("mu setup, asking in a terminal", () => {
 		});
 		expect(run.calls).toHaveLength(2);
 		expect(run.said).toContain(
-			"DeepSeek does not accept this key. Check that you copied all of it, and that it is a DeepSeek key.",
+			"DeepSeek didn't accept this key. Check that you copied all of it and that it's a DeepSeek key.",
 		);
 		// A key that is refused cannot be saved unchecked.
-		expect(run.printed).not.toContain("Save it without the check");
+		expect(run.printed).not.toContain("Save it without checking");
 		expect(run.said).toContain("Model to start with: deepseek-chat");
 		expect((run.pi as FakePi).stored).toEqual([{ provider: "deepseek", key: good }]);
 		expect(run.json("mu.json")).toEqual({ tiers: ["llm:deepseek/deepseek-chat"] });
@@ -738,7 +795,7 @@ describe("mu setup, asking in a terminal", () => {
 		mkdirSync(join(home, "agent"));
 		writeFileSync(join(home, ".env"), "# mine\nOTHER=1\n");
 		const mode = statSync(join(home, ".env")).mode & 0o777;
-		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["laya"], modes: { default: "active" } }));
+		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["clm"], modes: { default: "active" } }));
 		const run = await wizard({
 			home,
 			// The second "2": Jev with a key of one's own (the free Jev is offered first while no key is set).
@@ -753,11 +810,9 @@ describe("mu setup, asking in a terminal", () => {
 		expect(run.json("mu.json")).toEqual({ tiers: ["jev"], modes: { default: "active" } });
 		const backup = join(home, "backups", "2026-09-27T12-00-00");
 		expect(readFileSync(join(backup, ".env"), "utf8")).toBe("# mine\nOTHER=1\n");
-		expect(JSON.parse(readFileSync(join(backup, "mu.json"), "utf8")).tiers).toEqual(["laya"]);
-		expect(run.printed).toContain(
-			`The files as they were are copied to ${join("~", "backups", "2026-09-27T12-00-00")}`,
-		);
-		expect(run.said).toContain("Done. mu starts on Anthropic · claude-opus-4-8. Judge: Jev.");
+		expect(JSON.parse(readFileSync(join(backup, "mu.json"), "utf8")).tiers).toEqual(["clm"]);
+		expect(run.printed).toContain(`Backed up the previous files to ${join("~", "backups", "2026-09-27T12-00-00")}`);
+		expect(run.said).toContain("Done. mu will start on Anthropic · claude-opus-4-8. Judge: Jev.");
 	});
 
 	it("does not take the model's key, nor another vendor's without a yes, as the Jev key", async () => {
@@ -766,48 +821,146 @@ describe("mu setup, asking in a terminal", () => {
 			secrets: [KEYS.anthropic, KEYS.anthropic, KEYS.openaiProject, KEYS.jev],
 			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }] }),
 		});
-		expect(run.printed).toContain("That is the key you gave for the model.");
+		expect(run.printed).toContain("That's the key you gave for the model.");
 		expect(run.at("ask", "This looks like an OpenAI key, not a Jev key")).toBeGreaterThan(-1);
 		expect(run.read(".env")).toBe(`TYPESAFE_API_KEY=${KEYS.jev}\n`);
 		if (!windows) expect(statSync(run.paths.envFile).mode & 0o777).toBe(0o600);
 	});
 
 	it("points a subscription to /login inside mu, and still offers the judge", async () => {
-		// Subscription; judge: not now (Jev, free Jev or nothing: there is no model to judge with); no session.
-		const run = await wizard({ answers: ["3", "3", "n"] });
+		// Subscription; judge: not now (free Jev, Jev, OpenAI or nothing: there is no model to judge with); no session.
+		const run = await wizard({ answers: ["3", "4", "n"] });
 		expect(run.code).toBe(SETUP_EXIT.done);
-		expect(run.printed).toContain("start mu, type /login");
-		expect(run.said).toContain("Start mu and type /login to sign in.");
+		expect(run.printed).toContain("When setup starts mu, /login is already open.");
+		expect(run.said).toContain("Next, sign in with /login in mu.");
 		expect(run.calls).toEqual([]);
 		expect(run.read("auth.json")).toBeUndefined();
+		expect(run.json("mu.json")).toEqual({ modes: { default: "off" } });
+	});
+
+	it("turns the judge off for Not now, and on again when a judge is picked later", async () => {
+		const home = temp();
+		mkdirSync(join(home, "agent"));
+		writeFileSync(
+			join(home, "agent", "mu.json"),
+			JSON.stringify({ tiers: ["clm"], modes: { "turn.drift": "active" } }),
+		);
+		// Subscription; judge: not now; no session.
+		const off = await wizard({ home, answers: ["3", "4", "n"] });
+		expect(off.json("mu.json")).toEqual({ tiers: ["clm"], modes: { default: "off", "turn.drift": "active" } });
+		expect(off.printed).toContain("judge: off");
+		// Again, with the free Jev: the "off" goes, a point's own mode stays.
+		const on = await wizard({ home, answers: ["3", "1", "n"] });
+		expect(on.json("mu.json")).toEqual({ tiers: ["jev"], modes: { "turn.drift": "active" } });
+	});
+
+	it("offers OpenAI's decision model, asks its key when mu has none, and keeps it where the launcher reads it", async () => {
+		// Subscription; judge: OpenAI (free Jev, Jev, then OpenAI); an Anthropic key is turned down first; no session.
+		const run = await wizard({
+			answers: ["3", "3", "n", "n"],
+			secrets: [KEYS.anthropic, KEYS.openaiProject],
+		});
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect(run.printed).toContain(
+			"  3) OpenAI's decision model, gpt-6-luna, with an OpenAI API key, billed per input token: https://platform.openai.com/api-keys",
+		);
+		expect(run.at("secret", "Paste the OpenAI API key (MU_JUDGE_OPENAI_KEY; it won't be shown)")).toBeGreaterThan(-1);
+		expect(
+			run.at("ask", "This looks like an Anthropic key, not an OpenAI key, and it would be sent to OpenAI."),
+		).toBeGreaterThan(-1);
+		expect(run.read(".env")).toBe(`MU_JUDGE_OPENAI_KEY=${KEYS.openaiProject}\n`);
+		expect(run.json("mu.json")).toEqual({ tiers: ["openai"] });
+		expect(run.printed).toContain("MU_JUDGE_OPENAI_KEY (the OpenAI judge key)");
+		expect(run.said.join("\n")).toContain("Judge: OpenAI's gpt-6-luna.");
+		// Nothing was sent anywhere: the key is the judge's, used from the next session on.
+		expect(run.calls).toEqual([]);
+	});
+
+	it("gives OpenAI's decision model the OpenAI key just set up, without asking for another", async () => {
+		// Paste an OpenAI key; judge: OpenAI; no session.
+		const run = await wizard({
+			answers: ["1", "3", "n"],
+			secrets: [KEYS.openaiProject],
+			respond: () => listing("gpt-6.1-sol"),
+		});
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect(run.printed).toContain(
+			"  3) OpenAI's decision model, gpt-6-luna, with your OpenAI key, billed per input token",
+		);
+		expect(run.events.filter((event) => event.kind === "secret")).toHaveLength(1);
+		expect((run.pi as FakePi).stored).toEqual([{ provider: "openai", key: KEYS.openaiProject }]);
+		expect(run.read(".env")).toBeUndefined();
+		expect(run.json("mu.json")).toEqual({ tiers: ["openai"] });
+	});
+
+	it("recommends mude 1.0 first on a Mac that can run it, and installs it after the files are written", async () => {
+		// Subscription; judge: the default, mude 1.0; no session.
+		const run = await wizard({ answers: ["3", "", "n"], mude: 0 });
+		expect(run.printed).toContain("  1) mude 1.0 on this Mac (recommended): mu's own decision model");
+		// Free Jev is still there, no longer the recommended one.
+		expect(run.printed).toContain("  2) Free Jev on OpenCode Zen: no key needed");
+		expect(run.printed).not.toContain("Free Jev on OpenCode Zen (recommended)");
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect(run.mudeInstalls).toBe(1);
+		expect(run.said.join("\n")).toContain("Judge: mude 1.0, installed next, with Jev for what it can't answer.");
+		// The install comes after the summary, and before the question about a session.
+		expect(run.at("say", "(mu judge mude install)")).toBeGreaterThan(run.at("say", "Judge: mude 1.0"));
+		expect(run.at("ask", "Start mu now?")).toBeGreaterThan(run.at("say", "(mu judge mude install)"));
+		// Elsewhere it is not offered, and the free Jev is the recommended default as before.
+		const elsewhere = await wizard({ answers: ["3", "", "n"] });
+		expect(elsewhere.printed).not.toContain("mude 1.0");
+		expect(elsewhere.printed).toContain("  1) Free Jev on OpenCode Zen (recommended)");
+		expect(elsewhere.mudeInstalls).toBe(0);
+	});
+
+	it("leaves Jev as the judge when mude 1.0 does not get installed, and says how to go on", async () => {
+		const home = temp();
+		mkdirSync(join(home, "agent"));
+		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["clm"], modes: { default: "off" } }));
+		const run = await wizard({ home, answers: ["3", "1", "n"], mude: 1 });
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect(run.json("mu.json")).toEqual({ tiers: ["jev"] });
+		expect(run.warned.join("\n")).toContain(
+			"mude 1.0 isn't installed yet, so Jev is the judge until it is. Run mu judge mude install to resume it.",
+		);
+		expect(run.at("ask", "Start mu now?")).toBeGreaterThan(-1);
+	});
+
+	it("after a subscription, starts the session on /login", async () => {
+		const yes = await wizard({ answers: ["3", "4", "y"] });
+		expect(yes.code).toBe(SETUP_EXIT.signIn);
+		// On a first start the launcher goes on into the session anyway, opening /login.
+		const first = await wizard({ argv: ["--first-run"], answers: ["", "3", "4"] });
+		expect(first.code).toBe(SETUP_EXIT.signIn);
+		expect(first.at("ask", "Start mu now?")).toBe(-1);
 	});
 
 	it("asks which service a key of another shape is for, before sending it anywhere", async () => {
 		const run = await wizard({
-			// From the list: DeepSeek; the pasted key looks like Anthropic's: it is Anthropic's.
-			answers: ["2", "1", "2", "4", "n"],
+			// From the list: DeepSeek (7th in English); the pasted key looks like Anthropic's: it is Anthropic's.
+			answers: ["2", "7", "2", "4", "n"],
 			secrets: [KEYS.anthropic],
 			respond: (url) => (url.startsWith("https://api.anthropic.com/") ? answer(200, { data: [] }) : new Error(url)),
 		});
-		expect(run.printed).toContain("Keys are made at https://platform.deepseek.com/api_keys");
+		expect(run.printed).toContain("Create a key at https://platform.deepseek.com/api_keys");
 		expect(run.printed).toContain("This key looks like an Anthropic key, not a DeepSeek one.");
 		expect(run.calls.map((call) => new URL(call.url).host)).toEqual(["api.anthropic.com"]);
 		// Anthropic listed nothing: it starts on the model it names.
-		expect(run.said).toContain("It works: 0 models listed.");
+		expect(run.said).toContain("It works: 0 models available.");
 		expect(run.said).toContain("Model to start with: claude-opus-4-8");
 	});
 
 	it("sets up Ollama without a key, and says when it is not ready", async () => {
-		const down = await wizard({ answers: ["2", "14", "3"], respond: refused });
-		expect(down.said).toContain("Ollama is not ready yet (start it with `ollama serve`, pull a model).");
+		const down = await wizard({ answers: ["2", "15", "3"], respond: refused });
+		expect(down.said).toContain("Ollama isn't ready yet. Start it with `ollama serve`, then pull a model.");
 		expect(down.code).toBe(SETUP_EXIT.cancelled);
 		expect(down.events.some((event) => event.kind === "secret")).toBe(false);
 		expect(down.printed).not.toContain("Paste another key");
-		const empty = await wizard({ answers: ["2", "14", "3"], respond: () => listing() });
-		expect(empty.said).toContain("Ollama is not ready yet (start it with `ollama serve`, pull a model).");
+		const empty = await wizard({ answers: ["2", "15", "3"], respond: () => listing() });
+		expect(empty.said).toContain("Ollama isn't ready yet. Start it with `ollama serve`, then pull a model.");
 		const up = await wizard({
 			// From the list: Ollama; its first chat model; no judge; no session.
-			answers: ["2", "14", "", "4", "n"],
+			answers: ["2", "15", "", "4", "n"],
 			respond: () => listing("nomic-embed-text:latest", "qwen2.5-coder:7b"),
 		});
 		expect(up.code).toBe(SETUP_EXIT.done);
@@ -828,7 +981,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("takes an address of one's own, asks its key after it, finds its /v1, and names it", async () => {
 		const run = await wizard({
 			// From the list: other; its address; OpenAI-compatible; its name; (no key); its model; no judge; no session.
-			answers: ["2", "15", "http://127.0.0.1:8080", "1", "box", "", "4", "n"],
+			answers: ["2", "16", "http://127.0.0.1:8080", "1", "box", "", "5", "n"],
 			secrets: [""],
 			respond: (url) => (url === "http://127.0.0.1:8080/v1/models" ? listing("local-coder") : answer(404, "no")),
 		});
@@ -838,22 +991,22 @@ describe("mu setup, asking in a terminal", () => {
 			"http://127.0.0.1:8080/models",
 			"http://127.0.0.1:8080/v1/models",
 		]);
-		expect(run.said).toContain("Checking box (127.0.0.1:8080)...");
+		expect(run.said).toContain("Checking box (127.0.0.1:8080)…");
 		expect(providerOf(run.json("models.json"), "box")).toEqual({
 			baseUrl: "http://127.0.0.1:8080/v1",
 			api: "openai-completions",
 			apiKey: "none",
 			models: [{ id: "local-coder" }],
 		});
-		expect(run.said).toContain("Done. mu starts on box · local-coder. Judge: none for now.");
+		expect(run.said).toContain("Done. mu will start on box · local-coder. Judge: none for now.");
 	});
 
 	it("takes a number past the list as a slip, and a typed name as a model", async () => {
 		const run = await wizard({
-			answers: ["2", "14", "7", "my-model", "4", "n"],
+			answers: ["2", "15", "7", "my-model", "4", "n"],
 			respond: () => listing("a-coder", "b-coder"),
 		});
-		expect(run.said).toContain("Type a number from 1-2, or a model name.");
+		expect(run.said).toContain("Type a number from 1 to 2, or a model name.");
 		expect((run.pi as FakePi).defaults).toEqual([{ provider: "ollama", model: "my-model" }]);
 	});
 
@@ -861,7 +1014,7 @@ describe("mu setup, asking in a terminal", () => {
 		const no = await wizard({ argv: ["--first-run"], answers: ["n"] });
 		expect(no.code).toBe(SETUP_EXIT.done);
 		expect(existsSync(join(no.paths.agentDir, SETUP_DECLINED_FILE))).toBe(true);
-		expect(no.printed).toContain("mu will not ask again");
+		expect(no.printed).toContain("mu won't ask again");
 		const yes = await wizard({
 			argv: ["--first-run"],
 			answers: ["", "1", "4"],
@@ -886,7 +1039,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("speaks Chinese", async () => {
 		const run = await wizard({
 			language: "zh",
-			answers: ["1", "1", "4", "n"],
+			answers: ["1", "1", "5", "n"],
 			secrets: [KEYS.hex32],
 			respond: () => listing("deepseek-v4-pro"),
 		});
@@ -904,8 +1057,15 @@ describe("mu setup in a script", () => {
 		const run = await stdinRun([], `${KEYS.hex32}\n`);
 		expect(run.code).toBe(SETUP_EXIT.usage);
 		expect(run.warned.join("\n")).toContain(
-			"keys of DeepSeek and Qwen look the same. Say which with --service deepseek or qwen",
+			"DeepSeek and Qwen keys look the same. Choose one with --service deepseek or qwen",
 		);
+		expect(run.calls).toEqual([]);
+	});
+
+	it("refuses a Claude subscription token, and sends it nowhere", async () => {
+		const run = await stdinRun(["--service", "anthropic"], `sk-ant-oat01-${"t".repeat(40)}\n`);
+		expect(run.code).toBe(SETUP_EXIT.usage);
+		expect(run.warned.join("\n")).toContain("mu setup: That's a Claude subscription token");
 		expect(run.calls).toEqual([]);
 	});
 
@@ -933,6 +1093,18 @@ describe("mu setup in a script", () => {
 		expect(run.json("mu.json")).toEqual({ tiers: ["llm:deepseek/deepseek-v4-pro"] });
 	});
 
+	it("turns the judge off with --judge off, and leaves it alone with --judge none", async () => {
+		const off = await stdinRun(["--service", "deepseek", "--judge", "off"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(off.code).toBe(SETUP_EXIT.done);
+		expect(off.json("mu.json")).toEqual({ modes: { default: "off" } });
+		const none = await stdinRun(["--service", "deepseek", "--judge", "none"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(none.read("mu.json")).toBeUndefined();
+	});
+
 	it("fails with the reason when the check fails, and changes nothing", async () => {
 		const run = await stdinRun(["--service", "openai"], `${KEYS.openaiProject}\n`, {
 			respond: () =>
@@ -956,7 +1128,7 @@ describe("mu setup in a script", () => {
 		const run = await stdinRun(["--service", "anthropic"], `${KEYS.anthropic}\n`, { pi });
 		expect(run.code).toBe(SETUP_EXIT.failed);
 		expect(run.warned.join("\n")).toContain(
-			"Anthropic is signed in with a subscription. To store a key instead, add --yes",
+			"You're signed in to Anthropic with a subscription. To use a key instead, add --yes",
 		);
 		expect(run.calls).toEqual([]);
 		const yes = await stdinRun(["--service", "anthropic", "--yes"], `${KEYS.anthropic}\n`, {
@@ -973,7 +1145,7 @@ describe("mu setup in a script", () => {
 		writeFileSync(join(home, "agent", "models.json"), '{ // mine\n "providers": {} }');
 		const run = await stdinRun(["--service", "siliconflow"], `${KEYS.siliconflow}\n`, { home });
 		expect(run.code).toBe(SETUP_EXIT.failed);
-		expect(run.warned.join("\n")).toContain("is not plain JSON");
+		expect(run.warned.join("\n")).toContain("isn't plain JSON");
 		expect(run.calls).toEqual([]);
 		expect(readFileSync(join(home, "agent", "models.json"), "utf8")).toBe('{ // mine\n "providers": {} }');
 	});
@@ -1000,7 +1172,7 @@ describe("mu setup in a script", () => {
 			respond: () => listing("deepseek-chat"),
 		});
 		expect(run.code).toBe(SETUP_EXIT.done);
-		expect(run.said).toContain("Note: DeepSeek does not list deepseek-v9; it is used anyway.");
+		expect(run.said).toContain("Note: DeepSeek doesn't list deepseek-v9; using it anyway.");
 		expect(run.json("models.json")).toEqual({ providers: { deepseek: { models: [{ id: "deepseek-v9" }] } } });
 		expect((run.pi as FakePi).defaults).toEqual([{ provider: "deepseek", model: "deepseek-v9" }]);
 	});
@@ -1038,12 +1210,52 @@ describe("mu setup in a script", () => {
 		expect((run.pi as FakePi).stored).toEqual([{ provider: "opencode", key: good }]);
 		expect((run.pi as FakePi).defaults).toEqual([{ provider: "opencode", model: "kimi-k2.6" }]);
 		expect(run.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
-		expect(run.said).toContain("Done. mu starts on OpenCode Zen · kimi-k2.6. Judge: Jev on OpenCode Zen.");
+		expect(run.said).toContain("Done. mu will start on OpenCode Zen · kimi-k2.6. Judge: Jev on OpenCode Zen.");
 
 		// In a terminal, Jev on OpenCode Zen comes first once there is an OpenCode key.
-		const asked = await wizard({ answers: ["2", "9", "", "", "n"], secrets: [good], respond });
-		expect(asked.printed).toContain("1) Jev (recommended) on OpenCode Zen, with your OpenCode key, billed per call");
+		const asked = await wizard({ answers: ["2", "6", "", "", "n"], secrets: [good], respond });
+		expect(asked.printed).toContain("1) Jev on OpenCode Zen with your OpenCode key (recommended), billed per call");
 		expect(asked.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
+	});
+
+	it("makes Nemotron 3 Ultra the judge with a Nebius key, and wants one for it", async () => {
+		const run = await stdinRun(["--service", "nebius", "--judge", "nemotron"], `${KEYS.nebius}\n`, {
+			respond: () => listing("nvidia/Nemotron-3.5-Super-VL", "nvidia/Nemotron-3-Ultra-550b-a55b"),
+		});
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect((run.pi as FakePi).stored).toEqual([{ provider: "nebius", key: KEYS.nebius }]);
+		expect(run.json("mu.json")).toEqual({ tiers: ["nemotron"] });
+		expect(run.said.join("\n")).toContain("Judge: Nemotron 3 Ultra on Nebius Token Factory.");
+
+		const keyless = await stdinRun(["--service", "deepseek", "--judge", "nemotron"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(keyless.code).toBe(SETUP_EXIT.usage);
+		expect(keyless.warned.join("\n")).toContain("--judge nemotron needs a Nebius key");
+		const keyed = await stdinRun(["--service", "deepseek", "--judge", "nemotron"], `${KEYS.hex32}\n`, {
+			env: { NEBIUS_API_KEY: "n" },
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(keyed.json("mu.json")).toEqual({ tiers: ["nemotron"] });
+	});
+
+	it("installs mude 1.0 with --judge mude on a Mac that can run it, and refuses it elsewhere", async () => {
+		const options = { respond: () => listing("deepseek-v4-pro") };
+		const mac = await stdinRun(["--service", "deepseek", "--judge", "mude"], `${KEYS.hex32}\n`, {
+			...options,
+			mude: 0,
+		});
+		expect(mac.code).toBe(SETUP_EXIT.done);
+		expect(mac.mudeInstalls).toBe(1);
+		const failed = await stdinRun(["--service", "deepseek", "--judge", "mude"], `${KEYS.hex32}\n`, {
+			...options,
+			mude: 1,
+		});
+		expect(failed.code).toBe(SETUP_EXIT.failed);
+		const elsewhere = await stdinRun(["--service", "deepseek", "--judge", "mude"], `${KEYS.hex32}\n`, options);
+		expect(elsewhere.code).toBe(SETUP_EXIT.usage);
+		expect(elsewhere.warned.join("\n")).toContain("--judge mude needs a Mac with Apple silicon");
+		expect(elsewhere.read("auth.json")).toBeUndefined();
 	});
 
 	it("makes free Jev on OpenCode Zen the judge with no key, and wants a key for the paid one", async () => {
@@ -1054,9 +1266,7 @@ describe("mu setup in a script", () => {
 		// `jev`, the default, answers with the free Jev while no key is set, and with a key once one is: nothing to write.
 		expect(free.read("mu.json")).toBeUndefined();
 		expect(free.read(".env")).toBeUndefined();
-		expect(free.said.join("\n")).toContain(
-			"Judge: Jev, free on OpenCode Zen for a limited time until you add a key.",
-		);
+		expect(free.said.join("\n")).toContain("Judge: Jev, using the free version on OpenCode Zen until you add a key.");
 
 		const paid = await stdinRun(["--service", "deepseek", "--judge", "opencode"], `${KEYS.hex32}\n`, {
 			respond: () => listing("deepseek-v4-pro"),
@@ -1068,6 +1278,59 @@ describe("mu setup in a script", () => {
 			respond: () => listing("deepseek-v4-pro"),
 		});
 		expect(keyed.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
+	});
+
+	it("makes OpenAI's decision model the judge with --judge openai: its key from the second line, or the one mu has", async () => {
+		const deepseek = () => listing("deepseek-v4-pro");
+		const keyed = await stdinRun(
+			["--service", "deepseek", "--judge", "openai"],
+			`${KEYS.hex32}\n${KEYS.openaiProject}\n`,
+			{
+				respond: deepseek,
+			},
+		);
+		expect(keyed.code).toBe(SETUP_EXIT.done);
+		expect(keyed.read(".env")).toBe(`MU_JUDGE_OPENAI_KEY=${KEYS.openaiProject}\n`);
+		expect(keyed.json("mu.json")).toEqual({ tiers: ["openai"] });
+		// The OpenAI key goes nowhere during setup: only DeepSeek's key is checked, at DeepSeek.
+		expect(keyed.calls.map((call) => call.url)).toEqual(["https://api.deepseek.com/models"]);
+
+		// The OpenAI model's own key, given once or twice: nothing more to write.
+		for (const stdin of [`${KEYS.openaiProject}\n`, `${KEYS.openaiProject}\n${KEYS.openaiProject}\n`]) {
+			const own = await stdinRun(["--service", "openai", "--judge", "openai"], stdin, {
+				respond: () => listing("gpt-6.1-sol"),
+			});
+			expect(own.code).toBe(SETUP_EXIT.done);
+			expect(own.read(".env")).toBeUndefined();
+			expect(own.json("mu.json")).toEqual({ tiers: ["openai"] });
+		}
+
+		const keyless = await stdinRun(["--service", "deepseek", "--judge", "openai"], `${KEYS.hex32}\n`, {
+			respond: deepseek,
+		});
+		expect(keyless.code).toBe(SETUP_EXIT.usage);
+		expect(keyless.warned.join("\n")).toContain("--judge openai needs an OpenAI API key");
+		const fromEnv = await stdinRun(["--service", "deepseek", "--judge", "openai"], `${KEYS.hex32}\n`, {
+			env: { OPENAI_API_KEY: "o" },
+			respond: deepseek,
+		});
+		expect(fromEnv.code).toBe(SETUP_EXIT.done);
+		expect(fromEnv.json("mu.json")).toEqual({ tiers: ["openai"] });
+
+		// Another judge key already in the .env is replaced only with --yes.
+		const home = temp();
+		writeFileSync(join(home, ".env"), "MU_JUDGE_OPENAI_KEY=old\n");
+		const kept = await stdinRun(
+			["--service", "deepseek", "--judge", "openai"],
+			`${KEYS.hex32}\n${KEYS.openaiProject}\n`,
+			{
+				home,
+				respond: deepseek,
+			},
+		);
+		expect(kept.code).toBe(SETUP_EXIT.failed);
+		expect(kept.warned.join("\n")).toContain("already has a MU_JUDGE_OPENAI_KEY. To replace it, add --yes");
+		expect(readFileSync(join(home, ".env"), "utf8")).toBe("MU_JUDGE_OPENAI_KEY=old\n");
 	});
 
 	it("checks an OpenRouter key where only a working key is answered", async () => {
@@ -1089,9 +1352,9 @@ describe("mu setup in a script", () => {
 
 describe("mu setup's words", () => {
 	it("explains why a script gives the key on stdin", () => {
-		expect(setupUsage("en")).toContain("a key on the command line stays in your shell's history");
+		expect(setupUsage("en")).toContain("a key on the command line stays in your shell history");
 		expect(setupUsage("zh")).toContain("写在命令行上的密钥会留在 shell 的历史记录里");
-		expect(parseSetupArgs(["a", "b"])).toEqual({ error: { zh: "只能给一个密钥", en: "give one key at most" } });
+		expect(parseSetupArgs(["a", "b"])).toEqual({ error: { zh: "只能给一个密钥", en: "give at most one key" } });
 		expect(parseSetupArgs(["--service", "nope"])).toMatchObject({ error: { en: expect.stringContaining("nope") } });
 		expect(parseSetupArgs(["--service=kimi", "--judge", "model", "-y"])).toMatchObject({
 			service: "kimi",
@@ -1197,5 +1460,39 @@ describe("mu setup with pi's own files", () => {
 		const { pi } = await realPi(home);
 		await expect(pi.setDefaultModel("deepseek", "deepseek-chat")).rejects.toThrow("settings.json cannot be read");
 		expect(readFileSync(join(home, "agent", "settings.json"), "utf8")).toBe("{ not json");
+	});
+});
+
+describe("the list of services", () => {
+	it("starts with the best known services in English, keeps the table's order in Chinese, and ends with Ollama", () => {
+		const ids = (language: "zh" | "en") => servicesInOrder(language).map((service) => service.id);
+		expect(ids("en").slice(0, 6)).toEqual(["openai", "anthropic", "google", "xai", "openrouter", "opencode"]);
+		expect(ids("zh")).toEqual(SETUP_SERVICES.map((service) => service.id));
+		for (const language of ["zh", "en"] as const) {
+			expect(ids(language).slice(-2)).toEqual(["ollama", "other"]);
+			expect([...ids(language)].sort()).toEqual(SETUP_SERVICES.map((service) => service.id).sort());
+		}
+	});
+});
+
+describe("the wizard's text in a terminal", () => {
+	it("breaks long lines between words, under the text of a numbered choice, and leaves short ones alone", () => {
+		const hint =
+			"To use a subscription, sign in from inside mu: start mu, type /login, choose OpenAI (ChatGPT subscription).";
+		expect(wrapToWidth(hint, 40).split("\n")).toEqual([
+			"To use a subscription, sign in from",
+			"inside mu: start mu, type /login, choose",
+			"OpenAI (ChatGPT subscription).",
+		]);
+		expect(wrapToWidth("  1) Free Jev on OpenCode Zen (recommended): no key needed", 34).split("\n")).toEqual([
+			"  1) Free Jev on OpenCode Zen",
+			"     (recommended): no key needed",
+		]);
+		expect(wrapToWidth("Short line.\nAnother.", 40)).toBe("Short line.\nAnother.");
+		// Not a terminal, or one too narrow to help: as written.
+		expect(wrapToWidth(hint, undefined)).toBe(hint);
+		// No spaces to break at (Chinese): the terminal wraps it.
+		const zh = "订阅账号在 mu 里面登录：启动mu，输入/login，按提示在浏览器里完成。登录信息保存在这里。";
+		expect(wrapToWidth(zh, 30).split("\n").length).toBeLessThanOrEqual(3);
 	});
 });

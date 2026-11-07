@@ -1,9 +1,13 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { emptyView, reduceAll, type NativeView, type PiRecord } from '@/common/utils/nativeHost';
-import { setWorkPanelViewing, useWorkPanelUnread } from '@/renderer/components/layout/WorkPanel/workPanelStore';
+import {
+  setWorkPanelFollow,
+  setWorkPanelViewing,
+  useWorkPanelUnread,
+} from '@/renderer/components/layout/WorkPanel/workPanelStore';
 import { useNativePanel } from '@/renderer/pages/native/hooks/useNativePanel';
-import { finishedEdits } from '@/renderer/pages/native/utils/editNews';
+import { finishedEditPaths, finishedEdits } from '@/renderer/pages/native/utils/editNews';
 import { ended, reply, text, toolCall } from './records';
 
 /**
@@ -11,15 +15,34 @@ import { ended, reply, text, toolCall } from './records';
  * model finished is news, unless the person is looking at that tab; what a view held when it came is not.
  */
 
+/** The files the preview was asked to show, as the conversation's folder reads them. */
+const opened = vi.hoisted(() => [] as string[]);
+vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () => ({
+  useOptionalLocalFilePreview: () => async (path: string) => {
+    opened.push(path);
+  },
+}));
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  opened.length = 0;
+  setWorkPanelFollow(true);
 });
 
 /** One call of `tool`, as pi's records tell it: the assistant's message, the call running, and its end unless `end` is left out. */
-const call = (id: string, tool: string, options: { end?: boolean; error?: boolean } = {}): PiRecord[] => [
-  ended(reply([toolCall(id, tool, { path: 'a.txt', content: 'x' })], { stopReason: 'toolUse' })),
-  { type: 'tool_execution_start', toolCallId: id, toolName: tool, args: { path: 'a.txt', content: 'x' } },
+const call = (
+  id: string,
+  tool: string,
+  options: { end?: boolean; error?: boolean; path?: string } = {}
+): PiRecord[] => [
+  ended(reply([toolCall(id, tool, { path: options.path ?? 'a.txt', content: 'x' })], { stopReason: 'toolUse' })),
+  {
+    type: 'tool_execution_start',
+    toolCallId: id,
+    toolName: tool,
+    args: { path: options.path ?? 'a.txt', content: 'x' },
+  },
   ...(options.end === false
     ? []
     : [
@@ -81,6 +104,50 @@ describe('finishedEdits', () => {
         )
       )
     ).toBe(2);
+  });
+});
+
+describe('finishedEditPaths', () => {
+  it('names the file of each finished write and edit, in order', () => {
+    expect(
+      finishedEditPaths(
+        viewOf(call('t1', 'write', { path: 'src/a.ts' }), call('t2', 'bash'), call('t3', 'edit', { path: '/abs/b.md' }))
+      )
+    ).toEqual(['src/a.ts', '/abs/b.md']);
+  });
+});
+
+describe('following the agent to the file it changed', () => {
+  it('shows the latest file in the preview while the person looks at the workspace, and only then', () => {
+    const panel = mount('edit-follow-1');
+    panel.open(viewOf(call('t1', 'write')));
+    // Not looking at the panel: the dot only.
+    panel.fold(viewOf(call('t1', 'write'), call('t2', 'write', { path: 'src/b.ts' })));
+    expect(opened).toEqual([]);
+
+    act(() => setWorkPanelViewing('edit-follow-1', 'files'));
+    panel.fold(
+      viewOf(
+        call('t1', 'write'),
+        call('t2', 'write', { path: 'src/b.ts' }),
+        call('t3', 'edit', { path: 'src/c.ts' }),
+        call('t4', 'write', { path: 'src/d.ts' })
+      )
+    );
+    expect(opened).toEqual(['src/d.ts']);
+
+    act(() => setWorkPanelFollow(false));
+    panel.fold(
+      viewOf(
+        call('t1', 'write'),
+        call('t2', 'write', { path: 'src/b.ts' }),
+        call('t3', 'edit', { path: 'src/c.ts' }),
+        call('t4', 'write', { path: 'src/d.ts' }),
+        call('t5', 'write', { path: 'src/e.ts' })
+      )
+    );
+    expect(opened).toEqual(['src/d.ts']);
+    act(() => setWorkPanelViewing('edit-follow-1', null));
   });
 });
 

@@ -1,7 +1,7 @@
 /**
- * Butler diagnose button — the "Ask the Butler" chip on conversation error
- * bubbles. Clicking it must jump to the home chat with a diagnosis prompt
- * (containing the error text) pre-filled.
+ * The "Ask mu about this" chip on conversation error bubbles. Clicking it must
+ * jump to the home chat with a diagnosis prompt (containing the error text)
+ * pre-filled, for a new mu conversation.
  *
  * Uses the ACP E2E stream injector to fabricate an error tip without needing
  * a real broken agent session.
@@ -13,7 +13,7 @@ import { findAssistantIdForBackend, goToGuid } from '../helpers';
 import { httpDelete, httpPost } from '../helpers/httpBridge';
 import { GUID_INPUT } from '../helpers/selectors';
 
-const ENABLED_CONVERSATION_KEY = 'aionui:e2e-message-stream-conversation-id';
+const ENABLED_CONVERSATION_KEY = 'mu:e2e-message-stream-conversation-id';
 const ERROR_TEXT = 'E2E fabricated failure: provider exploded (code 500)';
 
 type CreatedConversation = { id: string };
@@ -31,7 +31,7 @@ async function ensureRendererReady(page: Page): Promise<void> {
   );
 }
 
-test('error bubble butler chip pre-fills a diagnosis prompt in the home chat', async ({ page }) => {
+test('error bubble Ask mu chip pre-fills a diagnosis prompt in the home chat', async ({ page }) => {
   await goToGuid(page);
   await ensureRendererReady(page);
   const assistantId = await findAssistantIdForBackend(page, 'codex', { requireAvailable: true });
@@ -59,27 +59,28 @@ test('error bubble butler chip pre-fills a diagnosis prompt in the home chat', a
     await page.waitForFunction(
       (id) =>
         Boolean(
-          (window as unknown as { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry }).__AIONUI_E2E_MESSAGE_STREAM__
-            ?.controllers[id]
+          (window as unknown as { __MU_E2E_MESSAGE_STREAM__?: StreamRegistry }).__MU_E2E_MESSAGE_STREAM__?.controllers[
+            id
+          ]
         ),
       conversation.id,
       { timeout: 15_000 }
     );
     await page.evaluate(
       async ({ id, text }) => {
-        const registry = (window as unknown as { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
-          .__AIONUI_E2E_MESSAGE_STREAM__;
+        const registry = (window as unknown as { __MU_E2E_MESSAGE_STREAM__?: StreamRegistry })
+          .__MU_E2E_MESSAGE_STREAM__;
         await registry!.controllers[id].emitErrorTip(text);
       },
       { id: conversation.id, text: ERROR_TEXT }
     );
 
-    // The error bubble surfaces the Butler chip, and no report chip.
-    const butlerChip = page.locator('button:has-text("找管家排查"), button:has-text("Ask the Butler")').first();
-    await expect(butlerChip).toBeVisible({ timeout: 10_000 });
+    // The error bubble surfaces the Ask mu chip, and no report chip.
+    const askMuChip = page.locator('button:has-text("问问 mu"), button:has-text("Ask mu about this")').first();
+    await expect(askMuChip).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('button:has-text("反馈问题"), button:has-text("Report Issue")')).toHaveCount(0);
 
-    await butlerChip.click();
+    await askMuChip.click();
 
     // Lands on the home chat with the diagnosis prompt (incl. error text) seeded.
     await page.waitForFunction(() => window.location.hash.startsWith('#/guid'), { timeout: 10_000 });

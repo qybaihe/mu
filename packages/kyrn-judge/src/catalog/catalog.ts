@@ -11,7 +11,11 @@
  * the model, and a capability that had to be asked for is recorded as a miss,
  * which is the label a disclosure judge is later measured against.
  */
-export type CapabilityKind = "tool" | "pack" | "mcp" | "lsp";
+/**
+ * `feature`: a feature of mu that is off by default (features/feature-offers.ts). It has no tools and is never opened in
+ * a session: finding it lets the model offer it to the user, who turns it on in mu.json, for the next conversation.
+ */
+export type CapabilityKind = "tool" | "pack" | "mcp" | "lsp" | "feature";
 
 export interface Capability {
 	/** Stable and unique, e.g. "pack:ast-grep", "mcp:github", "tool:web". */
@@ -29,8 +33,11 @@ export interface Capability {
 	readonly activate?: () => Promise<void> | void;
 }
 
-/** How a capability came to be open. `requested` is a miss of the disclosure decision. */
-export type OpenedBy = "always" | "judge" | "requested" | "user";
+/**
+ * How a capability came to be open. `requested` is a miss of the disclosure decision. `parent`: a sub-agent opened
+ * what its parent has open.
+ */
+export type OpenedBy = "always" | "judge" | "requested" | "user" | "parent";
 
 export interface OpenRecord {
 	readonly id: string;

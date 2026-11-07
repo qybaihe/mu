@@ -20,6 +20,9 @@ export const ABSTAIN: unique symbol = Symbol("kyrn.judge.abstain");
 
 /** Batches up to this size record each item's answers in the ledger. */
 const MAX_BATCH_ANSWERS = 8;
+
+/** A state's digest in the ledger: SHA-256 of its JSON, as the decision built it. */
+export const digestOf = (state: unknown): string => createHash("sha256").update(JSON.stringify(state)).digest("hex");
 export type Abstain = typeof ABSTAIN;
 
 /**
@@ -60,6 +63,12 @@ export interface DecisionSpec<In, Qs extends Questions, Out extends JsonValue> {
 	readonly latency: LatencyClass;
 	/** Set only when every choice question's option set is truly closed. */
 	readonly allowChoicesWithoutEscape?: boolean;
+	/**
+	 * The caller acts on the judge's verdict in shadow mode too, because it has no behaviour of its own to keep
+	 * (the browser's next click, a sub-agent's role, the model's own question). In shadow its verdict is then the
+	 * outcome, and the ledger says it came from the judge, not from the fallback. `off` still never asks.
+	 */
+	readonly actsInShadow?: boolean;
 	/** Digest the input into a small state. The judge has a 32K window: send summaries and metadata, not bulk text. */
 	buildState(input: In): JudgeInput;
 	policy(answers: AnswersFor<Qs>, input: In): Out | Abstain;
@@ -109,6 +118,9 @@ export interface EngineStats {
 	failures: number;
 	abstentions: number;
 	inputTokens: number;
+	/** Trivial questions that only check the judge answers or keep its connection warm (`probe`), and what they cost. */
+	probes: number;
+	probeInputTokens: number;
 	lastError?: { kind: string; message: string; at: string };
 }
 
@@ -118,6 +130,11 @@ export interface DecisionEngineOptions {
 	ledger?: LedgerSink;
 	defaultMode?: DecisionMode;
 	modes?: Readonly<Record<string, DecisionMode>>;
+	/**
+	 * The modes single points start with (DEFAULT_CONFIG.modes, such as a point in shadow). They refine a judge that is
+	 * on: with the default mode "off", such a point is off too, so no judge is asked. A mode set to another value holds.
+	 */
+	builtInModes?: Readonly<Record<string, DecisionMode>>;
 	/** Store submitted states in the ledger. Needed for replay and calibration; off by default because states can hold user content. */
 	recordState?: boolean;
 	/**
@@ -145,16 +162,35 @@ interface Evaluation<Out> {
 	warnings?: readonly JudgeWarning[];
 	tiers?: readonly JudgeTierReport[];
 	failure?: string;
+	/**
+	 * With `recordState`: the request as the judge received it, secrets redacted, for the ledger. Kept when the call
+	 * fails too: such a request is still one to replay or to train a judge on.
+	 */
+	request?: { state: JsonValue; questions: JsonValue };
 }
 
 export class DecisionEngine {
-	readonly stats: EngineStats = { calls: 0, failures: 0, abstentions: 0, inputTokens: 0 };
+	readonly stats: EngineStats = {
+		calls: 0,
+		failures: 0,
+		abstentions: 0,
+		inputTokens: 0,
+		probes: 0,
+		probeInputTokens: 0,
+	};
+	/**
+	 * When the shared judge was last asked anything, a probe included, or last answered (`Date.now()`; 0 before the
+	 * first). Its connection is warm while this is recent, and whoever keeps it warm needs no probe of its own then.
+	 */
+	lastUsedAt = 0;
 	private judge: JudgeLike;
 	/** Decisions that are answered by their own judge instead of the shared one. */
 	private readonly routed = new Map<string, JudgeLike>();
+	private readonly impacts = new Map<string, CacheImpact>();
 	private readonly ledger: LedgerSink | undefined;
 	private defaultMode: DecisionMode;
 	private readonly modes: Map<string, DecisionMode>;
+	private readonly builtInModes: Readonly<Record<string, DecisionMode>>;
 	private readonly recordState: boolean;
 	private readonly origin: (() => JsonValue | undefined) | undefined;
 	private readonly knownSecrets: () => readonly string[];
@@ -164,6 +200,7 @@ export class DecisionEngine {
 		this.ledger = options.ledger;
 		this.defaultMode = options.defaultMode ?? "shadow";
 		this.modes = new Map(Object.entries(options.modes ?? {}));
+		this.builtInModes = options.builtInModes ?? {};
 		this.recordState = options.recordState ?? false;
 		this.origin = options.origin;
 		this.knownSecrets = options.knownSecrets ?? (() => environmentSecrets());
@@ -173,23 +210,27 @@ export class DecisionEngine {
 		return this.judge.id;
 	}
 
-	/** Swap the decision model without touching any decision point. */
 	/**
 	 * One trivial question straight to the judge: is anyone answering, and how fast?
-	 * Not a decision, so it is neither counted nor written to the ledger.
+	 * Not a decision, so it is not written to the ledger; `stats.probes` counts it apart from the decisions.
 	 */
 	async probe(signal?: AbortSignal): Promise<{ ok: boolean; latencyMs: number; error?: string }> {
 		const startedAt = performance.now();
+		this.stats.probes++;
+		this.lastUsedAt = Date.now();
 		try {
-			await this.judge.evaluate({
+			const result = await this.judge.evaluate({
 				state: { text: "ping" },
 				questions: { ready: { type: "boolean", instructions: "Is `text` the word ping?" } },
 				signal,
 			});
+			this.stats.probeInputTokens += result.usage.inputTokens ?? 0;
 			return { ok: true, latencyMs: Math.round(performance.now() - startedAt) };
 		} catch (error) {
 			const kind = isJudgeError(error) ? error.kind : "error";
 			return { ok: false, latencyMs: Math.round(performance.now() - startedAt), error: kind };
+		} finally {
+			this.lastUsedAt = Date.now();
 		}
 	}
 
@@ -208,12 +249,21 @@ export class DecisionEngine {
 		return this.routed;
 	}
 
+	/** Swap the decision model without touching any decision point. */
 	setJudge(judge: JudgeLike): void {
 		this.judge = judge;
 	}
 
 	getMode(specId: string): DecisionMode {
-		return this.modes.get(specId) ?? this.defaultMode;
+		const mode = this.modes.get(specId);
+		if (mode === undefined || (this.defaultMode === "off" && this.builtInModes[specId] === mode))
+			return this.defaultMode;
+		return mode;
+	}
+
+	/** Whether any decision point asks the judge: false when every one is off. */
+	asksJudge(): boolean {
+		return this.defaultMode !== "off" || [...this.modes.keys()].some((specId) => this.getMode(specId) !== "off");
 	}
 
 	setMode(specId: string, mode: DecisionMode): void {
@@ -224,9 +274,16 @@ export class DecisionEngine {
 		this.defaultMode = mode;
 	}
 
-	/** Spec ids with an explicit mode, for status displays. */
-	explicitModes(): ReadonlyMap<string, DecisionMode> {
-		return this.modes;
+	/**
+	 * The points whose mode, as it takes effect, differs from the default: what a status display lists after it. A
+	 * built-in shadow that gives way to a default of off is not one.
+	 */
+	overrides(): ReadonlyMap<string, DecisionMode> {
+		return new Map(
+			[...this.modes.keys()]
+				.map((specId): [string, DecisionMode] => [specId, this.getMode(specId)])
+				.filter(([, mode]) => mode !== this.defaultMode),
+		);
 	}
 
 	private async evaluate<In, const Qs extends Questions, Out extends JsonValue>(
@@ -244,12 +301,18 @@ export class DecisionEngine {
 				: (declared as Record<string, Capability> | undefined);
 
 		this.stats.calls++;
+		const shared = !this.routed.has(spec.id);
+		if (shared) this.lastUsedAt = Date.now();
+		let request: Evaluation<Out>["request"];
 		try {
 			// A judge weighs what a call does, never the key it does it with.
 			const known = this.knownSecrets();
+			const sent = redactJson(state, known);
+			const asked = redactJson(questions, known);
+			if (this.recordState) request = { state: sent as JsonValue, questions: asked as unknown as JsonValue };
 			const result = await this.judgeFor(spec.id).evaluate({
-				state: redactJson(state, known),
-				questions: redactJson(questions, known),
+				state: sent,
+				questions: asked,
 				signal,
 				capabilities,
 			});
@@ -261,6 +324,7 @@ export class DecisionEngine {
 				modelId: result.modelId,
 				warnings: result.warnings.length > 0 ? result.warnings : undefined,
 				tiers: result.tiers,
+				request,
 			};
 			const verdict = spec.policy(result.answers as AnswersFor<Qs>, input);
 			if (verdict === ABSTAIN) {
@@ -275,8 +339,15 @@ export class DecisionEngine {
 			const message = error instanceof Error ? error.message : String(error);
 			this.stats.failures++;
 			this.stats.lastError = { kind, message, at: new Date().toISOString() };
-			return { failure: `error:${kind}` };
+			return { failure: `error:${kind}`, request };
+		} finally {
+			if (shared) this.lastUsedAt = Date.now();
 		}
+	}
+
+	/** Whether a verdict is what the caller acts on in this mode. */
+	private applies(spec: { readonly actsInShadow?: boolean }, mode: DecisionMode): boolean {
+		return mode === "active" || (mode === "shadow" && spec.actsInShadow === true);
 	}
 
 	private asked(): JsonValue | undefined {
@@ -296,11 +367,17 @@ export class DecisionEngine {
 		}
 	}
 
+	/** What acting on a decision asked so far does to the prompt cache, as its spec declares, by id. */
+	cacheImpactOf(specId: string): CacheImpact | undefined {
+		return this.impacts.get(specId);
+	}
+
 	async decide<In, const Qs extends Questions, Out extends JsonValue>(
 		spec: DecisionSpec<In, Qs, Out>,
 		input: In,
 		options: { signal?: AbortSignal } = {},
 	): Promise<Decision<Out>> {
+		this.impacts.set(spec.id, spec.cacheImpact);
 		const mode = this.getMode(spec.id);
 		const fallback = spec.fallback(input);
 		if (mode === "off") return { specId: spec.id, mode, outcome: fallback, source: "fallback", reason: "off" };
@@ -309,7 +386,7 @@ export class DecisionEngine {
 		const state = spec.buildState(input);
 		const evaluation = await this.evaluate(spec, input, state, options.signal);
 		const { judged } = evaluation;
-		const useJudged = mode === "active" && judged !== undefined;
+		const useJudged = this.applies(spec, mode) && judged !== undefined;
 		const outcome = useJudged && judged !== undefined ? judged : fallback;
 		const reason = useJudged ? undefined : (evaluation.failure ?? "shadow");
 		const source = useJudged ? "judge" : "fallback";
@@ -332,8 +409,9 @@ export class DecisionEngine {
 			usage: evaluation.usage,
 			warnings: evaluation.warnings,
 			tiers: evaluation.tiers,
-			stateDigest: createHash("sha256").update(JSON.stringify(state)).digest("hex"),
-			state: this.recordState ? (state as JsonValue) : undefined,
+			stateDigest: digestOf(state),
+			state: evaluation.request?.state,
+			questions: evaluation.request?.questions,
 		};
 		await this.record(record);
 
@@ -363,6 +441,7 @@ export class DecisionEngine {
 		inputs: readonly In[],
 		options: { signal?: AbortSignal; concurrency?: number } = {},
 	): Promise<Decision<Out>[]> {
+		this.impacts.set(spec.id, spec.cacheImpact);
 		const mode = this.getMode(spec.id);
 		if (mode === "off" || inputs.length === 0) {
 			return inputs.map((input) => ({
@@ -377,25 +456,26 @@ export class DecisionEngine {
 		const origin = this.asked();
 		const startedAt = performance.now();
 		const evaluations: Evaluation<Out>[] = new Array(inputs.length);
+		// Each state is built once: for its call and for the ledger's digest.
+		const states = inputs.map((input) => spec.buildState(input));
 		let next = 0;
 		const worker = async () => {
 			while (next < inputs.length) {
 				const index = next++;
-				evaluations[index] = await this.evaluate(
-					spec,
-					inputs[index],
-					spec.buildState(inputs[index]),
-					options.signal,
-				);
+				evaluations[index] = await this.evaluate(spec, inputs[index], states[index], options.signal);
 			}
 		};
-		const workers = Math.max(1, Math.min(options.concurrency ?? 4, inputs.length));
+		// The callers pass mu.json's values: one that is no whole number of at least one (0, 2.5) is taken as the nearest
+		// that is, and one that is no number at all (NaN) as the default, rather than starting no worker.
+		const asked = options.concurrency ?? 4;
+		const concurrency = Number.isFinite(asked) ? Math.max(1, Math.floor(asked)) : 4;
+		const workers = Math.min(concurrency, inputs.length);
 		await Promise.all(Array.from({ length: workers }, worker));
 
 		const ledgerId = randomUUID();
 		const decisions = inputs.map((input, index): Decision<Out> => {
 			const evaluation = evaluations[index];
-			const useJudged = mode === "active" && evaluation.judged !== undefined;
+			const useJudged = this.applies(spec, mode) && evaluation.judged !== undefined;
 			return {
 				specId: spec.id,
 				mode,
@@ -412,6 +492,12 @@ export class DecisionEngine {
 		});
 
 		const inputTokens = evaluations.reduce((sum, evaluation) => sum + (evaluation.usage?.inputTokens ?? 0), 0);
+		const outputTokens = evaluations.reduce((sum, evaluation) => sum + (evaluation.usage?.outputTokens ?? 0), 0);
+		// Small batches keep what each call asked, as one decision does with `recordState`; large ones would bloat the session.
+		const requests =
+			this.recordState && inputs.length <= MAX_BATCH_ANSWERS
+				? evaluations.map((evaluation) => evaluation.request ?? null)
+				: undefined;
 		const failures = evaluations.filter((evaluation) => evaluation.failure?.startsWith("error:")).length;
 		await this.record({
 			id: ledgerId,
@@ -424,10 +510,13 @@ export class DecisionEngine {
 			modelId: evaluations.find((evaluation) => evaluation.modelId)?.modelId,
 			outcome: decisions.map((decision) => decision.outcome),
 			source: decisions.some((decision) => decision.source === "judge") ? "judge" : "fallback",
-			reason: mode === "shadow" ? "shadow" : failures === inputs.length ? "error:all" : undefined,
+			reason:
+				mode === "shadow" && !spec.actsInShadow ? "shadow" : failures === inputs.length ? "error:all" : undefined,
 			judged: evaluations.map((evaluation) => evaluation.judged ?? null),
 			latencyMs: Math.round(performance.now() - startedAt),
-			usage: { inputTokens, outputTokens: 0 },
+			usage: { inputTokens, outputTokens },
+			state: requests?.map((request) => request?.state ?? null),
+			questions: requests?.map((request) => request?.questions ?? null),
 			batch: {
 				size: inputs.length,
 				failures,
@@ -436,10 +525,9 @@ export class DecisionEngine {
 					inputs.length <= MAX_BATCH_ANSWERS
 						? evaluations.map((evaluation) => evaluation.answers ?? null)
 						: undefined,
+				digests: inputs.length <= MAX_BATCH_ANSWERS ? states.map(digestOf) : undefined,
 			},
-			stateDigest: createHash("sha256")
-				.update(JSON.stringify(inputs.map((input) => spec.buildState(input))))
-				.digest("hex"),
+			stateDigest: digestOf(states),
 		});
 		return decisions;
 	}

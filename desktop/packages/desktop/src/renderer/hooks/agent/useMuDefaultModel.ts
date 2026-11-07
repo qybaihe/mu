@@ -18,7 +18,8 @@ export type MuDefaultModel = {
   makeDefault: (model: string, level?: string) => Promise<boolean>;
 };
 
-const KEY = 'mu.defaultModel';
+/** The default's shared read: read again after the settings save a new one, or a sign-out moves it. */
+export const DEFAULT_MODEL_KEY = 'mu.defaultModel';
 
 const asLevel = (value?: string): ThinkingLevel | undefined => THINKING_LEVELS.find((level) => level === value);
 
@@ -37,7 +38,7 @@ async function readDefault(): Promise<ModelDefaults | null> {
  */
 export function useMuDefaultModel(): MuDefaultModel {
   const { t } = useTranslation();
-  const { data, mutate } = useSWR(KEY, readDefault, { revalidateOnFocus: true });
+  const { data, mutate } = useSWR(DEFAULT_MODEL_KEY, readDefault, { revalidateOnFocus: true });
   const makeDefault = useCallback(
     async (model: string, level?: string) => {
       const target = splitModel(model);

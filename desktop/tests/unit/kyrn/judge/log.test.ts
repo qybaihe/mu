@@ -92,28 +92,28 @@ describe('a classification in the judge log', () => {
 
   it('names the judge that answered: the first judge of a cascade, and a judge the app does not know as it is', () => {
     expect(answeredBy('jev-latest')).toBe(`Classified by Jev: ${task}`);
-    expect(answeredBy('laya>jev-latest')).toBe(`Classified by Laya: ${task}`);
+    expect(answeredBy('clm-8b>jev-latest')).toBe(`Classified by CLM: ${task}`);
     expect(answeredBy('clm-8b')).toBe(`Classified by CLM: ${task}`);
     expect(answeredBy('my-judge')).toBe(`Classified by my-judge: ${task}`);
     // Waiting, the line names the judge that was asked.
     expect(
-      classification(recorded('preflight.pending', { judge: 'laya', mode: 'active' }, turn('runtime', 1, 2)))
-    ).toBe('Laya is classifying this message…');
+      classification(recorded('preflight.pending', { judge: 'clm-8b', mode: 'active' }, turn('runtime', 1, 2)))
+    ).toBe('CLM is classifying this message…');
   });
 
   it('says why a classification came to nothing: no judge, no answer, switched off, skipped, or no clear class', () => {
-    expect(noClass('error:auth')).toBe(common.kyrn.jevLine.noJudge);
-    expect(noClass('error:unreachable')).toBe('Jev did not answer this time; going on as usual');
-    expect(noClass('off')).toBe(common.kyrn.jevLine.off);
-    expect(noClass('skipped')).toBe(common.kyrn.jevLine.skipped);
-    expect(noClass('abstain')).toBe('No clear class from Jev this time; going on as usual');
+    expect(noClass('error:auth')).toBe(common.kyrn.judgeLine.noJudge);
+    expect(noClass('error:unreachable')).toBe("Jev didn't answer this time; continuing as usual");
+    expect(noClass('off')).toBe(common.kyrn.judgeLine.off);
+    expect(noClass('skipped')).toBe(common.kyrn.judgeLine.skipped);
+    expect(noClass('abstain')).toBe('Jev gave no clear answer this time; continuing as usual');
     // A wait that ran out is the judge not answering in time.
     expect(
       classification(
-        recorded('preflight.pending', { judge: 'laya' }, turn('runtime', 1, 2)),
+        recorded('preflight.pending', { judge: 'clm-8b' }, turn('runtime', 1, 2)),
         recorded('preflight.wait_end', { reason: 'timeout', waitedMs: 3000 }, turn('runtime', 1, 3))
       )
-    ).toBe('Laya did not answer this time; going on as usual');
+    ).toBe("CLM didn't answer this time; continuing as usual");
   });
 });
 
@@ -127,7 +127,7 @@ describe('the judge log’s permission lines', () => {
     ]);
     expect(items.map(sentence)).toEqual([
       'Waiting for your permission: rm -rf build',
-      'You did not allow it: rm -rf build',
+      "You didn't allow it: rm -rf build",
       'You allowed it once',
     ]);
     // The record stays as it came.

@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +7,11 @@ import { ExplorerContainer, type ExplorerView } from '@/renderer/pages/conversat
 import { KernelBody, useKyrnActivity, type KernelTab } from '@/renderer/pages/conversation/KyrnPanel';
 import { PreviewPanel, usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import FolderFiles from '@/renderer/pages/conversation/explorer/FolderFiles';
-import { useNativeActivity, useNativeFolder } from '@/renderer/pages/native/utils/nativeActivityStore';
+import {
+  useNativeActivity,
+  useNativeCommand,
+  useNativeFolder,
+} from '@/renderer/pages/native/utils/nativeActivityStore';
 import FirstHint from '@/renderer/components/base/FirstHint';
 import BrowserPanel from '@/renderer/pages/conversation/Preview/browser/BrowserPanel';
 import { setBrowserMaximized, useBrowserMaximized } from '@/renderer/pages/conversation/Preview/browser/browserStore';
@@ -163,10 +161,12 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
   const { t } = useTranslation();
   const conversationId = useCurrentConversation();
   const projectId = useCurrentProject();
-  // A native conversation's Jev tabs read its view, which its page publishes; any other conversation's are polled. It
-  // has no AionCore project: its lessons and files are read by the folder it works in.
+  // A native conversation's judgment tabs read its view, which its page publishes; any other conversation's are polled.
+  // It has no backend project: its lessons and files are read by the folder it works in.
   const native = useNativeActivity(conversationId);
   const nativeFolder = useNativeFolder(conversationId);
+  // What the judge tab asks of mu itself goes to a native conversation as a command; other conversations have no line.
+  const nativeCommand = useNativeCommand(conversationId);
   const polled = useKyrnActivity(native ? null : conversationId);
   const activity = native ?? polled;
   // The last run's end: the folder is read again after it, so what the model wrote shows.
@@ -261,6 +261,7 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
                   visible={open && active === tab}
                   lessons={!native || nativeFolder !== undefined}
                   cwd={nativeFolder}
+                  command={nativeCommand}
                 />
               )
             )}
@@ -282,6 +283,7 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
                   view={wantedView}
                   visible={open && explorerActive}
                   refresh={lastRun}
+                  conversationId={conversationId}
                 />
               ) : (
                 <p className={styles.quiet}>{t('common.workPanel.noProject')}</p>

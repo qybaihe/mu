@@ -10,6 +10,7 @@ import { ipcBridge } from '@/common';
 import { configService } from '@/common/config/configService';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import { getSnapshotConversationName } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
+import { completionSoundOn, playAttentionSound } from './attentionSound';
 import { createBrowserNotificationController, truncateConversationName } from './browserNotificationCore';
 
 /**
@@ -32,7 +33,7 @@ export const useDesktopTurnNotification = (): void => {
     const controller = createBrowserNotificationController({
       // Cheap renderer-side gate; the main process still re-checks the setting
       // and the window-focus condition before showing anything.
-      shouldShow: () => configService.get('system.notificationEnabled') !== false,
+      shouldShow: () => configService.get('system.notificationEnabled') !== false || completionSoundOn(),
       bodyFor: (kind, conversationId) => {
         const name = conversationId ? getSnapshotConversationName(conversationId) : undefined;
         if (kind === 'confirmation') {
@@ -44,7 +45,10 @@ export const useDesktopTurnNotification = (): void => {
           ? t('settings.browserNotification.bodyTurnCompletedNamed', { name: truncateConversationName(name) })
           : t('settings.browserNotification.bodyTurnCompleted');
       },
-      show: ({ body, conversationId }) => {
+      show: ({ body, conversationId, kind }) => {
+        // The chime, if the person turned it on (attentionSound.ts), whether the window is in front or not.
+        if (completionSoundOn()) playAttentionSound(kind === 'confirmation' ? 'question' : 'done');
+        if (configService.get('system.notificationEnabled') === false) return;
         // Both turn-completed and confirmation (permission / question) kinds
         // fire a native notification. The main process still gates on the
         // setting and skips when the window is focused.

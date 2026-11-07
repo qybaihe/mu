@@ -411,6 +411,7 @@ describe("the experience library in a session", () => {
 		only?: FeatureName[];
 		features?: Record<string, unknown>;
 		memory?: Record<string, unknown>;
+		modes?: Record<string, string>;
 		runner?: SwarmRunner;
 	}
 
@@ -424,7 +425,10 @@ describe("the experience library in a session", () => {
 				createKyrnJudgeExtension({
 					provider,
 					mode: "active",
-					config: parseConfig({ features: { memory: { path, ...setup.memory }, ...setup.features } }),
+					config: parseConfig({
+						modes: setup.modes,
+						features: { memory: { path, ...setup.memory }, ...setup.features },
+					}),
 					only: ["preflight", "memory", ...(setup.only ?? [])],
 					onPresentation: (event) => events.push(event),
 					swarmRunner: setup.runner,
@@ -606,6 +610,40 @@ describe("the experience library in a session", () => {
 		expect(session.stored()).toEqual([]);
 	});
 
+	it("outcome: drift is no trouble to learn a way out of: it names no failing call", async () => {
+		let checks = 0;
+		const session = await start(
+			(request): Record<string, Answer> => {
+				// Drift at the first two checks only, which makes a steer: a check passes after it.
+				if ("course" in request.questions) return { course: pick(++checks <= 2 ? "drift" : "on_track") };
+				return "way_out" in request.questions ? { way_out: yes } : {};
+			},
+			{
+				tools: [bash()],
+				only: ["monitor"],
+				features: { monitor: { every: 1, minMinutes: 0, stuckMinutes: 0 } },
+				modes: { "turn.drift": "active" },
+			},
+		);
+		const agent = [
+			run("ls"),
+			run("cat package.json"),
+			run("npx vitest --run"),
+			fauxAssistantMessage("The tests pass."),
+		];
+		session.harness.setResponses(Array.from({ length: 6 }, () => router(agent, WAY_OUT, [])));
+		await session.harness.session.prompt("Make the tests pass.");
+		// The monitor did flag drift and steer, after which a check passed.
+		await vi.waitFor(() => expect(session.asked("course").length).toBeGreaterThan(0));
+		const steers = session.harness.session.messages.filter(
+			(message) => message.role === "custom" && (message as { customType?: string }).customType === "kyrn.steer",
+		);
+		expect(steers.length).toBeGreaterThan(0);
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(session.asked("way_out")).toEqual([]);
+		expect(session.stored()).toEqual([]);
+	});
+
 	it("model: remember keeps what the judge reads as reusable, and says why it keeps nothing else", async () => {
 		const verdicts = [pick("reusable"), pick("one_off")];
 		const session = await start(
@@ -641,7 +679,36 @@ describe("the experience library in a session", () => {
 		});
 	});
 
-	it("sub-agents: Lesson: lines of a report are judged together and the reusable ones kept", async () => {
+	it("model: remember keeps a lesson the judge gave no verdict on, or could not tell about", async () => {
+		// The model's call is a vote already. Only a judge that reads the lesson as not worth keeping turns it down.
+		const verdicts: (Answer | undefined)[] = [undefined, pick("unclear")];
+		const session = await start((request): Record<string, Answer> => {
+			if (!("worth_1" in request.questions)) return {};
+			const verdict = verdicts.shift();
+			// No answer at all: the judge abstains, and the decision falls back.
+			return verdict ? { worth_1: verdict } : {};
+		});
+		const remember = (trigger: string, text: string) =>
+			fauxAssistantMessage([fauxToolCall("remember", { trigger, lesson: text })], { stopReason: "toolUse" });
+		session.harness.setResponses([
+			remember("the dev server does not start because port 5173 is taken", "Start it with PORT=5174 npm run dev."),
+			remember("a migration fails with a lock timeout", "Stop the worker queue before migrating."),
+			fauxAssistantMessage("Noted."),
+		]);
+		await session.harness.session.prompt("Start the dev server.");
+
+		expect(session.stored().map((lesson) => lesson.lesson)).toEqual([
+			"Start it with PORT=5174 npm run dev.",
+			"Stop the worker queue before migrating.",
+		]);
+		const results = session.harness.session.messages
+			.filter((message) => message.role === "toolResult")
+			.map((message) => JSON.stringify(message));
+		expect(results[0]).toContain("Stored: Start it with PORT=5174 npm run dev.");
+		expect(results[1]).toContain("Stored: Stop the worker queue before migrating.");
+	});
+
+	it("subagents: Lesson: lines of a report are judged together and the reusable ones kept", async () => {
 		const session = await start(
 			(request): Record<string, Answer> =>
 				"worth_1" in request.questions ? { worth_1: pick("reusable"), worth_2: pick("one_off") } : {},
@@ -685,13 +752,13 @@ describe("the experience library in a session", () => {
 				source: expect.objectContaining({ origin: "command" }),
 			}),
 		]);
-		expect(session.notes.at(-1)).toBe("Stored.");
+		expect(session.notes.at(-1)).toBe("Saved.");
 		expect(session.asked("worth_1")).toHaveLength(0);
 		// Word for word again: a rule, not a question.
 		await session.harness.session.prompt("/remember always run the linter before   committing.");
 		expect(session.stored()).toHaveLength(1);
 		expect(session.asked("merge_1")).toHaveLength(0);
-		expect(session.notes.at(-1)).toBe("Already kept: Always run the linter before committing.");
+		expect(session.notes.at(-1)).toBe("Already saved: Always run the linter before committing.");
 	});
 
 	describe("merging before a lesson is stored", () => {
@@ -723,7 +790,7 @@ describe("the experience library in a session", () => {
 			expect(session.shown("memory.merged")).toEqual([
 				{ id: expect.any(String), into: "tests-lesson", how: "same" },
 			]);
-			expect(session.notes.at(-1)).toBe("Already kept: Run the tests with npm test.");
+			expect(session.notes.at(-1)).toBe("Already saved: Run the tests with npm test.");
 			expect(session.asked("merge_1")[0].state).toEqual({
 				candidate: "When: Use npm test to run the tests.\nDo: Use npm test to run the tests.",
 				existing_1: "When: running the tests\nDo: Run the tests with npm test.",
@@ -737,7 +804,7 @@ describe("the experience library in a session", () => {
 			expect(old).toMatchObject({ id: "tests-lesson", status: "superseded" });
 			expect(sharper).toMatchObject({ status: "active", supersedes: "tests-lesson", source: { origin: "command" } });
 			expect(session.shown("memory.merged")).toEqual([{ id: "tests-lesson", into: sharper.id, how: "refines" }]);
-			expect(session.notes.at(-1)).toBe("Stored. It replaces:\n- Run the tests with npm test.");
+			expect(session.notes.at(-1)).toBe("Saved. It replaces:\n- Run the tests with npm test.");
 		});
 
 		it("contradicts: the user's latest word retires the old lesson", async () => {
@@ -936,16 +1003,16 @@ describe("the experience library in a session", () => {
 			[
 				"id · kind · recalled/followed · lesson",
 				"aaaa1111 · correction · 4/2 · Mine.",
-				"bbbb3333 · fact · 0/0 · Everywhere. (everywhere)",
+				"bbbb3333 · fact · 0/0 · Everywhere. (global)",
 				"aaaa2222 · workaround · 0/0 · Old. (retired)",
 			].join("\n"),
 		);
 		await session.harness.session.prompt("/forget aaaa");
-		expect(session.notes.at(-1)).toContain("2 lessons start with aaaa; give more of the id:");
+		expect(session.notes.at(-1)).toContain("2 lessons start with aaaa; type more of the id:");
 		await session.harness.session.prompt("/forget cccc");
-		expect(session.notes.at(-1)).toBe("No lesson of this project starts with cccc.");
+		expect(session.notes.at(-1)).toBe("No lesson in this project starts with cccc.");
 		await session.harness.session.prompt("/forget aaaa2");
-		expect(session.notes.at(-1)).toContain("It is not in use already:");
+		expect(session.notes.at(-1)).toContain("That lesson isn't active:");
 		await session.harness.session.prompt("/forget AAAA1");
 		expect(session.notes.at(-1)).toBe("Retired: Mine.");
 		expect(session.shown("memory.retired")).toEqual([{ id: "aaaa1111-mine", reason: "forgotten" }]);
@@ -956,7 +1023,7 @@ describe("the experience library in a session", () => {
 		expect(session.notes.at(-1)).toContain("No lessons for this project yet.");
 	});
 
-	it("sub-agents: a brief carries the lessons that apply to its task, without counting a use", async () => {
+	it("subagents: a brief carries the lessons that apply to its task, without counting a use", async () => {
 		const messages: string[] = [];
 		const session = await start(
 			(request): Record<string, Answer> =>
@@ -1008,7 +1075,7 @@ describe("the experience library in a session", () => {
 		expect(knownLessons([])).toEqual([]);
 	});
 
-	it("sub-agents: each investigator of a hive gets the lessons for its angle, and its Lesson: lines come back", async () => {
+	it("subagents: each investigator of a hive gets the lessons for its angle, and its Lesson: lines come back", async () => {
 		// The role files of this machine are not part of the test.
 		const agentDir = temp();
 		for (const name of ["PI_CODING_AGENT_DIR", "MU_CODING_AGENT_DIR", "KYRN_CODING_AGENT_DIR"])
@@ -1072,7 +1139,7 @@ describe("the experience library in a session", () => {
 		});
 	});
 
-	it("inside a sub-agent it keeps nothing and offers no remember tool", async () => {
+	it("inside a subagent it keeps nothing and offers no remember tool", async () => {
 		vi.stubEnv("KYRN_SWARM_DEPTH", "1");
 		const session = await start(() => ({}));
 		expect(session.harness.session.getAllTools().map((each) => each.name)).not.toContain("remember");

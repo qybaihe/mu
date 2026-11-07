@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { describe, expect, it } from 'vitest';
 import type { TMessage } from '@/common/chat/chatLib';
 import { questionsBeforeCalls } from '@/renderer/pages/conversation/Messages/permissionOrder';
@@ -23,7 +17,7 @@ const call = (id: string, command: string, created: number): TMessage =>
     content: { update: { tool_call_id: id, title: 'bash', raw_input: { command } } },
   }) as unknown as TMessage;
 
-/** mu's card as AionCore relays it: its codes under `raw_input.mu`, snake-cased or not. */
+/** mu's card as the backend relays it: its codes under `raw_input.mu`, snake-cased or not. */
 const card = (id: string, command: string, created: number, mu: Record<string, string>): TMessage =>
   ({
     id,

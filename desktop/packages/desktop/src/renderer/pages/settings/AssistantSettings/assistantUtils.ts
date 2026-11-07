@@ -2,6 +2,7 @@ import { resolveExtensionAssetUrl } from '@/renderer/utils/platform';
 import { isBackendRelativeAssetPath, isLikelyLocalFilePath } from '@/renderer/utils/model/assistantAvatar';
 import type { AssistantListItem, AvailableBackend } from './types';
 import type { ManagedAgent } from '@/renderer/utils/model/agentTypes';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 export type AssistantListFilter = 'all' | 'enabled' | 'disabled' | 'builtin' | 'user';
 
@@ -153,7 +154,7 @@ const byAssistantSortOrder = (a: AssistantListItem, b: AssistantListItem) => a.s
 /// Excluded on purpose: `gemini` and `codex` are legacy read-only variants kept
 /// so historical rows stay readable, and `remote` / `nanobot` /
 /// `openclaw-gateway` are not editor-driven.
-const ASSISTANT_EDITOR_AGENT_TYPES = new Set(['acp', 'aionrs', 'antigravity']);
+const ASSISTANT_EDITOR_AGENT_TYPES = new Set(['acp', BUILTIN_AGENT, 'antigravity']);
 
 const isAssistantEditorAgent = (agent: ManagedAgent): boolean => ASSISTANT_EDITOR_AGENT_TYPES.has(agent.agent_type);
 

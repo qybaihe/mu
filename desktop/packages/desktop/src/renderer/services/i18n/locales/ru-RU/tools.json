@@ -78,7 +78,8 @@
     "callAria": "{{name}} · {{status}}",
     "denied": "Не выполнено: вы не разрешили.",
     "showMore": "Показать больше",
-    "showLess": "Показать меньше"
+    "showLess": "Показать меньше",
+    "openInBrowser": "Открыть {{address}} в браузере"
   },
   "activity": {
     "running": "{{steps}} шагов · выполняется {{label}}",

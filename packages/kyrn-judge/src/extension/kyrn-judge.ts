@@ -5,9 +5,8 @@
  *
  * Configuration lives in `<agent dir>/kyrn.json` (see `../config.ts`), with
  * environment overrides:
- *   KYRN_JUDGE            judges to use, in order: jev | laya | mock | classifier:<provider>/<model> | llm:<provider>/<model> | a name from kyrn.json; "off" disables
+ *   KYRN_JUDGE            judges to use, in order: jev | mude | mock | classifier:<provider>/<model> | llm:<provider>/<model> | a name from kyrn.json; "off" disables
  *   KYRN_JUDGE_MODE       default mode of every decision: active (default) | shadow | off
- *   KYRN_LOCAL_JUDGE_URL  sidecar address for `laya` (default http://127.0.0.1:47823)
  *
  * The decision model is pluggable: features ask typed questions through one
  * engine and never know which model answers. Every handler fails open. pi
@@ -15,14 +14,18 @@
  * never surface as an exception.
  */
 import { homedir } from "node:os";
+import { join } from "node:path";
 import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
 import type { Capability } from "../catalog/catalog.ts";
-import { DEFAULT_CONFIG, type KyrnConfig, loadConfig } from "../config.ts";
+import { DEFAULT_CONFIG, featureConfigProblems, type KyrnConfig, loadConfig } from "../config.ts";
 import type { DecisionMode } from "../decision.ts";
 import { Judge } from "../judge.ts";
+import { mudeReady } from "../laya-migration.ts";
+import { muHome } from "../naming.ts";
 import { FRAME_OUT_ENV } from "../swarm/brief.ts";
 import type { JudgeProvider } from "../types.ts";
 import { registerAdmission } from "./features/admission.ts";
+import { registerAskUser } from "./features/ask-user.ts";
 import { registerBackground } from "./features/background.ts";
 import { registerBoard } from "./features/board.ts";
 import { registerBrowser } from "./features/browser.ts";
@@ -31,8 +34,11 @@ import { type CheckpointDeps, registerCheckpoint } from "./features/checkpoint.t
 import { registerCommands } from "./features/commands.ts";
 import { registerCompaction } from "./features/compaction.ts";
 import { registerCompletion } from "./features/completion.ts";
+import { type ConfineDeps, registerConfine } from "./features/confine.ts";
 import { registerConstraints } from "./features/constraints.ts";
 import { registerContinuation } from "./features/continuation.ts";
+import { registerDeadline } from "./features/deadline.ts";
+import { registerFeatureOffers } from "./features/feature-offers.ts";
 import { registerForgetting } from "./features/forgetting.ts";
 import { registerFrame } from "./features/frame.ts";
 import { registerFreeJevNotice } from "./features/free-jev.ts";
@@ -44,28 +50,41 @@ import { registerImport } from "./features/import.ts";
 import { type HarnessRoots, registerInherit } from "./features/inherit.ts";
 import { registerInjection } from "./features/injection.ts";
 import { registerInterjection } from "./features/interjection.ts";
+import { registerInterrupted } from "./features/interrupted.ts";
 import { registerJudgeItems } from "./features/judge-items.ts";
+import { registerLayaNotice } from "./features/laya.ts";
 import { registerLsp } from "./features/lsp.ts";
 import { registerMcp } from "./features/mcp.ts";
 import { registerMemory } from "./features/memory.ts";
 import { registerMonitor } from "./features/monitor.ts";
 import { registerNotify } from "./features/notify.ts";
+import { registerNudgeOutcomes } from "./features/nudge-outcome.ts";
+import { registerOpenAIKeyNotice } from "./features/openai-key.ts";
 import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
+import { registerPlan } from "./features/plan.ts";
+import { registerPrefix } from "./features/prefix.ts";
 import { registerPreflight } from "./features/preflight.ts";
+import { registerPresent } from "./features/present.ts";
+import { registerProcedures } from "./features/procedures.ts";
+import { registerRecall } from "./features/recall.ts";
+import { registerRecovery } from "./features/recovery.ts";
+import { registerSandbox, type SandboxDeps } from "./features/sandbox.ts";
 import { registerSkills } from "./features/skills.ts";
 import { registerSwarm, type SwarmRunner } from "./features/swarm.ts";
 import { registerSwarmChild } from "./features/swarm-child.ts";
 import { registerTools } from "./features/tools.ts";
 import { registerTtsr } from "./features/ttsr.ts";
+import { registerUnattendedDrift } from "./features/unattended.ts";
 import { registerWarming } from "./features/warming.ts";
 import { registerWarmup } from "./features/warmup.ts";
+import { registerWatchdog } from "./features/watchdog.ts";
 import { registerWeb } from "./features/web.ts";
 import { registerWelcome } from "./features/welcome.ts";
 import type { PresentationListener } from "./presentation.ts";
 import { registerLockSafeQuit } from "./quit.ts";
 import { registerRejectionLog } from "./rejections.ts";
-import { KyrnRuntime, recentTurnDigests } from "./runtime.ts";
+import { failOpen, KyrnRuntime, recentTurnDigests, textOf } from "./runtime.ts";
 
 export { recentTurnDigests };
 
@@ -91,6 +110,15 @@ export interface KyrnJudgeExtensionOptions {
 	roots?: HarnessRoots;
 	/** For tests of the checkpoint feature: how git is run. */
 	checkpoint?: CheckpointDeps;
+	/** For tests of the sandbox feature: the HTTP client, the environment and how the project is packed. */
+	sandbox?: SandboxDeps;
+	/** For tests of the write floor: the platform, how the floor is tried, the home and temporary folders. */
+	confine?: ConfineDeps;
+	/**
+	 * Told which part of mu registers next, before it does: a feature's name from the table below, or `kernel` for what
+	 * mu registers around them. For the generated hook table (`test/golden/hooks.test.ts`, `docs/reference/hooks.md`).
+	 */
+	trace?: (part: FeatureName | "kernel") => void;
 }
 
 export type FeatureName =
@@ -98,6 +126,7 @@ export type FeatureName =
 	| "preflight"
 	| "frame"
 	| "memory"
+	| "procedures"
 	| "skills"
 	| "catalog"
 	| "guard"
@@ -106,6 +135,8 @@ export type FeatureName =
 	| "goal"
 	| "board"
 	| "ttsr"
+	| "deadline"
+	| "watchdog"
 	| "injection"
 	| "admission"
 	| "forgetting"
@@ -126,9 +157,19 @@ export type FeatureName =
 	| "inherit"
 	| "mcp"
 	| "background"
+	| "confine"
+	| "sandbox"
 	| "web"
 	| "packs"
-	| "googleLogin";
+	| "googleLogin"
+	| "recovery"
+	| "recall"
+	| "askUser"
+	| "present"
+	| "plan"
+	| "featureOffers"
+	| "interrupted"
+	| "prefix";
 
 export function createKyrnJudgeExtension(options: KyrnJudgeExtensionOptions = {}): (pi: ExtensionAPI) => void {
 	return (pi) => registerKyrn(pi, options);
@@ -143,13 +184,20 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	// inherits that variable: an Electron app the agent starts would run as a script. Only mu's own sub-agents, which
 	// run on this same binary, get it back (swarm.ts).
 	delete process.env.ELECTRON_RUN_AS_NODE;
+	options.trace?.("kernel");
 	// Whatever else is on or off: in RPC mode, a promise nothing handled is logged instead of ending mu.
 	registerRejectionLog(pi);
 	// An injected provider or config means the caller owns the setup: do not read the user's files.
+	const home = muHome();
 	const loaded =
 		options.config || options.provider
-			? { config: options.config ?? DEFAULT_CONFIG, disabled: false, problem: undefined }
-			: loadConfig({ dir: getAgentDir(), env: process.env });
+			? { config: options.config ?? DEFAULT_CONFIG, disabled: false, problem: undefined, laya: undefined }
+			: loadConfig({
+					dir: getAgentDir(),
+					env: process.env,
+					// Laya, no longer built in, still named in mu.json: mude 1.0 takes its place when it is set up here.
+					replaceLaya: () => (mudeReady(home, process.env) ? "mude" : undefined),
+				});
 	// KYRN_JUDGE=off keeps the CLI (welcome screen, commands) and the permission modes, and asks no judge: every
 	// decision is off.
 	const config: KyrnConfig = loaded.disabled
@@ -171,9 +219,12 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	// Whoever injected a provider or a config owns the setup, and that includes not reading the user's home folder.
 	const roots: HarnessRoots | undefined =
 		options.roots ?? (options.config || options.provider ? undefined : { home: homedir(), agentDir: getAgentDir() });
+	runtime.stateDir = roots ? join(roots.agentDir, "mu") : undefined;
+	// Also with nothing about Laya in this configuration: an earlier session may have left its notice for this one.
+	registerLayaNotice(runtime, loaded.laya, roots, home);
 	if (loaded.disabled) {
-		// Asking the user needs no judge, so the permission mode the user chose holds with judging off too. In Jev
-		// approval, with no Jev to ask, what Jev would have decided goes to the user.
+		// Asking the user needs no judge, so the permission mode the user chose holds with judging off too. In judge
+		// mode, with no judge to ask, what the judge would have decided goes to the user.
 		if (!options.only || options.only.includes("permissions")) registerPermissions(runtime, roots);
 		registerCommands(runtime, roots);
 		registerImport(pi);
@@ -181,33 +232,69 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		return;
 	}
 
+	// What the agent said last, the stated intent of the calls that follow it: interjection, memory, admission, lsp,
+	// notify and warming read it, whichever of them are on.
+	pi.on(
+		"message_end",
+		failOpen((event, ctx) => {
+			runtime.touch(ctx);
+			const message = event.message as { role?: unknown; content?: unknown };
+			if (message.role !== "assistant") return undefined;
+			const text = textOf(message.content);
+			if (text.trim()) runtime.lastAssistantText = text;
+			return undefined;
+		}),
+	);
+
 	// A sub-agent first of all listens to its parent: a wrap-up request has to be known before anything else reacts to a step.
 	if (process.env.KYRN_SWARM_CONTROL)
 		registerSwarmChild(runtime, process.env.KYRN_SWARM_CONTROL, process.env[FRAME_OUT_ENV]);
 
 	// Order matters where two features share an event: interjection must see a
 	// mid-run message before anything else, and preflight must set the turn's
-	// gear before memory and skills read it.
+	// gear before memory and skills read it. Every `tool_call` handler is final
+	// (pi's `ToolCallHandlerOptions`): mu loads before the user's extensions, and
+	// its checks read the call as it runs, after theirs changed it, in this order.
 	const features: readonly [FeatureName, (runtime: KyrnRuntime) => void][] = [
 		["interjection", registerInterjection],
 		["preflight", registerPreflight],
 		// Right after preflight, which counts the turns: the frame has to be current before anything reads it.
 		["frame", registerFrame],
 		["memory", (shared) => registerMemory(shared, roots)],
-		["skills", registerSkills],
+		["procedures", (shared) => registerProcedures(shared, roots)],
+		["skills", (shared) => registerSkills(shared, roots)],
 		// Registered before the features that add capabilities, and that is fine: it reads the catalog when a turn starts.
 		["catalog", registerCatalog],
+		// Before admission, which then archives the screened text, and before the MCP feature, whose label goes in front of it.
+		// Before the guard and the gates too: a call to an MCP tool taken off the list for its description (tool.description)
+		// is refused before anyone is asked to allow it.
+		["injection", registerInjection],
 		["guard", registerGuard],
 		["constraints", registerConstraints],
+		// After the constraint gate and before the permission gate: plan mode refuses a call nobody is asked about.
+		["plan", registerPlan],
 		// After the constraint gate: a call the user ruled out is stopped before anyone is asked to allow it.
 		["permissions", (shared) => registerPermissions(shared, roots)],
-		// Before admission, which then archives the screened text, and before the MCP feature, whose label goes in front of it.
-		["injection", registerInjection],
 		["admission", registerAdmission],
 		["forgetting", registerForgetting],
+		// Reads back what admission, forgetting and web_fetch left out; they point to it only while the model has it.
+		["recall", registerRecall],
+		["askUser", registerAskUser],
+		["present", registerPresent],
 		["compaction", registerCompaction],
-		["monitor", registerMonitor],
+		[
+			"monitor",
+			(shared) => {
+				registerMonitor(shared);
+				registerUnattendedDrift(shared);
+			},
+		],
 		["ttsr", registerTtsr],
+		// Before the watchdog, which cuts sooner when the run has a deadline.
+		["deadline", registerDeadline],
+		["watchdog", registerWatchdog],
+		// A reply the user stopped; the watchdog's and the correction's own cuts are left to them.
+		["interrupted", registerInterrupted],
 		// Before the goal and completion checks: errors an edit introduced are said before "verify your change" is.
 		["lsp", registerLsp],
 		["goal", registerGoal],
@@ -221,6 +308,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["notify", registerNotify],
 		["warming", registerWarming],
 		["warmup", registerWarmup],
+		// Watches what the others' changes do to the prompt cache: it only reads each request.
+		["prefix", registerPrefix],
 		["swarm", (shared) => registerSwarm(shared, options.swarmRunner)],
 		["hive", (shared) => registerHive(shared, options.swarmRunner)],
 		["tools", registerTools],
@@ -228,15 +317,60 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["browser", registerBrowser],
 		["inherit", (shared) => registerInherit(shared, roots)],
 		["mcp", (shared) => registerMcp(shared, roots)],
+		// Replaces bash with one under the write floor when switched on; off by default. Before the Nebius sandbox,
+		// which takes bash over again when it is on: nothing runs on this machine then. Before background, whose bg_start
+		// offers the floor's way out when there is one.
+		["confine", (shared) => registerConfine(shared, options.confine)],
 		["background", registerBackground],
+		// Replaces bash, read, write and edit when switched on; off by default.
+		["sandbox", (shared) => registerSandbox(shared, options.sandbox)],
 		["web", registerWeb],
 		["packs", registerPacks],
 		["googleLogin", registerGoogleLogin],
+		// Adds mu's default-off features to the catalog, which is first read when a turn starts.
+		["featureOffers", (shared) => registerFeatureOffers(shared, roots?.agentDir)],
+		// Last: its tool_call handler marks a call as started, so every check that may stop the call comes first.
+		["recovery", registerRecovery],
 	];
+	// Before the features that send the agent back to work: the end of the run that answers a nudge is read here before
+	// they decide on it, and they may send another.
+	runtime.nudges = registerNudgeOutcomes(runtime);
 	for (const [name, register] of features) {
-		if (!options.only || options.only.includes(name)) register(runtime);
+		if (options.only && !options.only.includes(name)) continue;
+		options.trace?.(name);
+		register(runtime);
+	}
+	options.trace?.("kernel");
+	// What was put back on the model's list since by something other than the masks (another extension, a tool that
+	// sets the list itself) comes off again before the next request.
+	pi.on(
+		"turn_start",
+		failOpen(() => {
+			runtime.toolMasks.apply();
+			return undefined;
+		}),
+	);
+	// Every feature has read its options by now. What mu.json sets that no feature takes is said, not ignored: in
+	// /doctor and /status, and once when the session starts.
+	if (!options.only) {
+		const wrong = featureConfigProblems(config.features, runtime.optionDefaults);
+		runtime.problems.push(...wrong);
+		if (wrong.length > 0) {
+			pi.on(
+				"session_start",
+				failOpen((_event, ctx) => {
+					if (ctx.hasUI)
+						ctx.ui.notify(
+							`mu.json: ${wrong.length === 1 ? "a setting under features does" : `${wrong.length} settings under features do`} nothing as written. ${wrong[0]}${wrong.length > 1 ? " /doctor lists the rest." : ""}`,
+							"warning",
+						);
+					return undefined;
+				}),
+			);
+		}
 	}
 	registerFreeJevNotice(runtime, roots);
+	registerOpenAIKeyNotice(runtime);
 	registerCommands(runtime, roots);
 	registerImport(pi);
 	if (roots) registerLockSafeQuit(pi, roots.agentDir);

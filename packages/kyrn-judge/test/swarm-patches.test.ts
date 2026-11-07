@@ -75,7 +75,7 @@ function fingerprint(repo: string): string {
 	return `${status}\n${staged}`;
 }
 
-describe("applying a sub-agent's patch", () => {
+describe("applying a subagent's patch", () => {
 	it("brings new, deleted, renamed, binary and CRLF changes into the working tree and leaves the index alone", async () => {
 		const root = area();
 		const repo = makeRepo(root, {

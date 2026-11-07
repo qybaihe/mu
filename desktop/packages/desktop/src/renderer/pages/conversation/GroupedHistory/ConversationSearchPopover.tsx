@@ -6,8 +6,8 @@
 
 import { ipcBridge } from '@/common';
 import type { IMessageSearchItem } from '@/common/types/team/database';
-import AionModal from '@/renderer/components/base/AionModal';
-import { AionSearchInput } from '@/renderer/components/base';
+import MuModal from '@/renderer/components/base/MuModal';
+import { MuSearchInput } from '@/renderer/components/base';
 import { formatDateTime } from '@/renderer/services/i18n/format';
 import { usePresetAssistantInfo } from '@/renderer/hooks/agent/usePresetAssistantInfo';
 import { useAgentLogos } from '@/renderer/utils/model/agentLogo';
@@ -482,7 +482,7 @@ const ConversationSearchPopover: React.FC<ConversationSearchPopoverProps> = ({
         </button>
       )}
 
-      <AionModal
+      <MuModal
         visible={visible}
         onCancel={handleClose}
         footer={null}
@@ -533,7 +533,7 @@ const ConversationSearchPopover: React.FC<ConversationSearchPopoverProps> = ({
           </div>
 
           <div className='mb-14px conversation-search-modal__input-wrap'>
-            <AionSearchInput
+            <MuSearchInput
               className='w-full'
               autoFocus={visible}
               value={keyword}
@@ -545,7 +545,7 @@ const ConversationSearchPopover: React.FC<ConversationSearchPopoverProps> = ({
 
           <div className='flex-1 min-h-0'>{resultContent}</div>
         </div>
-      </AionModal>
+      </MuModal>
     </>
   );
 };

@@ -2,14 +2,14 @@
 
 Question: can the desktop stop bridging a CLI and run the agent itself?
 
-Today: renderer ⇄ AionCore (Rust) → ACP adapter → `kyrn --mode rpc` → pi + kyrn-judge, with judgment events
+Today: renderer ⇄ the backend (Rust) → ACP adapter → `kyrn --mode rpc` → pi + kyrn-judge, with judgment events
 on a side channel (status piggyback → `events.jsonl` → 1 s cursor polling). Four processes, three protocols, two
 channels that the front end re-joins by `runtimeId + turnId`.
 
 This spike runs pi's SDK (`createAgentSession`) and the KYRN judgment extension (`createKyrnJudgeExtension` with
 its in-process `onPresentation` hook) inside an Electron **utility process**, and sends the app ONE ordered,
 typed stream over a `MessagePort`. Everything is synthetic: faux model, mock judge, temp directories. It reads no
-real config, no credentials, and does not touch the running desktop app, AionCore or `~/.kyrn`.
+real config, no credentials, and does not touch the running desktop app, the backend or `~/.kyrn`.
 
 ## Files
 
@@ -68,10 +68,10 @@ registration is dropped as side-effect free.
 
 ## What this does not show
 
-- Real models, real Jev, real tools (`noTools: "builtin"`), long sessions, compaction, sub-agents (swarm / hive
+- Real models, a real judge, real tools (`noTools: "builtin"`), long sessions, compaction, sub-agents (swarm / hive
   spawn child pi processes by default; `swarmRunner` is the seam for running them in-host).
 - The renderer. The stream stops at Electron's main process; the reducer and the React surfaces are the next step.
-- AionUi's side: its conversation DB and history list still think in ACP conversations.
+- The app's side: its conversation DB and history list still think in ACP conversations.
 - Several sessions in one host. `process.env` and other process-level state are shared; start with one host per
   session or audit first.
 - Electron 37 (the version in the root `package.json`): dev runs on the 44.4.3 binary from `kyrn/node_modules`

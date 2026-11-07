@@ -1,4 +1,4 @@
-import { type SystemMessage, type Tool, Type } from "@earendil-works/pi-ai";
+import type { SystemMessage, Tool } from "@earendil-works/pi-ai";
 import { getCurrentTools, toToolDeclaration } from "@earendil-works/pi-ai/utils/transcript";
 import {
 	type Conversation,
@@ -12,6 +12,7 @@ import {
 	type ToolRegistration,
 	wrapSection,
 } from "@earendil-works/pi-durable";
+import { obj } from "@earendil-works/pi-schema";
 import { describe, expect, it } from "vitest";
 import { resolveAgent, resolveSettings } from "../src/harness/agent.ts";
 import { planSystemEntries, renderSections, replaySections } from "../src/harness/prompt.ts";
@@ -62,7 +63,7 @@ function section(key: string, render: PromptSection<ToolRegistration>["render"],
 
 const input: PromptInput<ToolRegistration> = {
 	conversationId: 1 as never,
-	agent: { thinkingLevel: "off", extensions: [], tools: [], sections: [] },
+	agent: { thinkingLevel: "off", extensions: [], tools: [], callable: [], deferred: [], sections: [] },
 	env: undefined,
 	shown: {},
 	read: { snapshot: async () => undefined, snapshotAsOf: async () => undefined },
@@ -207,7 +208,7 @@ describe("tool loadout preparation", () => {
 	const declaration = (name: string, description = name): Tool => ({
 		name,
 		description,
-		parameters: Type.Object({}),
+		parameters: obj({}),
 	});
 
 	/** Plan tools only, append the plan, check that replay offers `tools` in order, and return each message's changes. */

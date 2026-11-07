@@ -19,8 +19,8 @@ import { Help, Right } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useConfigModelListWithImage from '@/renderer/hooks/agent/useConfigModelListWithImage';
-import AionScrollArea from '@/renderer/components/base/AionScrollArea';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuScrollArea from '@/renderer/components/base/MuScrollArea';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import TalkToButlerButton from '@/renderer/components/base/TalkToButlerButton';
 import AddMcpServerModal from '@/renderer/pages/settings/components/AddMcpServerModal';
 import McpServerItem from '@/renderer/pages/settings/ToolsSettings/McpServerItem';
@@ -171,7 +171,7 @@ const ModalMcpManagementSection: React.FC<{
     return (
       <TalkToButlerButton
         label={t('settings.mcpAddServer')}
-        chatLabel={t('settings.talkToButler.addViaChat', { defaultValue: 'Add via chat' })}
+        chatLabel={t('settings.talkToButler.addViaChat', { defaultValue: 'Add in a conversation' })}
         prompt={t('settings.talkToButler.prompt.addMcp', { defaultValue: 'Help me set up an MCP server.' })}
         extraActions={[
           {
@@ -208,10 +208,7 @@ const ModalMcpManagementSection: React.FC<{
             <div className='py-24px text-center text-t-secondary text-13px'>{t('settings.mcpNoServersFound')}</div>
           </div>
         ) : (
-          <AionScrollArea
-            className={classNames('max-h-360px', isPageMode && 'max-h-none')}
-            disableOverflow={isPageMode}
-          >
+          <MuScrollArea className={classNames('max-h-360px', isPageMode && 'max-h-none')} disableOverflow={isPageMode}>
             {/* One row per server between hairlines, no boxes. The line sits on a wrapper (settings-list draws it),
                 because a borderless Arco collapse clears any border of its own. */}
             <div className='settings-list'>
@@ -246,7 +243,7 @@ const ModalMcpManagementSection: React.FC<{
                 </div>
               ))}
             </div>
-          </AionScrollArea>
+          </MuScrollArea>
         )}
       </div>
 
@@ -501,12 +498,12 @@ const ToolsModalContent: React.FC = () => {
       {mcpMessageContext}
 
       {/* Content Area: the MCP servers, then image generation, as quiet lists with no boxes. */}
-      <AionScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
+      <MuScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
         <div className='flex flex-col gap-16px'>
           {/* MCP 工具配置 */}
           <div className='flex flex-col min-h-0'>
             <div className='flex-1 min-h-0'>
-              <AionScrollArea
+              <MuScrollArea
                 className={classNames('h-full', isPageMode && 'overflow-visible')}
                 disableOverflow={isPageMode}
               >
@@ -518,7 +515,7 @@ const ToolsModalContent: React.FC = () => {
                   saveMcpServers={saveMcpServers}
                   isPageMode={isPageMode}
                 />
-              </AionScrollArea>
+              </MuScrollArea>
             </div>
           </div>
           {/* 图像生成: the switch, then the model it draws with. */}
@@ -565,7 +562,7 @@ const ToolsModalContent: React.FC = () => {
               </div>
               <div className='w-full md:w-280px md:shrink-0'>
                 {imageGenerationModelList.length > 0 ? (
-                  <AionSelect
+                  <MuSelect
                     value={
                       imageGenerationModel?.id && imageGenerationModel?.use_model
                         ? `${imageGenerationModel.id}|${imageGenerationModel.use_model}`
@@ -583,15 +580,15 @@ const ToolsModalContent: React.FC = () => {
                     }}
                   >
                     {imageGenerationModelList.map(({ models, ...platform }) => (
-                      <AionSelect.OptGroup label={platform.name} key={platform.id}>
+                      <MuSelect.OptGroup label={platform.name} key={platform.id}>
                         {models.map((modelName) => (
-                          <AionSelect.Option key={platform.id + modelName} value={platform.id + '|' + modelName}>
+                          <MuSelect.Option key={platform.id + modelName} value={platform.id + '|' + modelName}>
                             {modelName}
-                          </AionSelect.Option>
+                          </MuSelect.Option>
                         ))}
-                      </AionSelect.OptGroup>
+                      </MuSelect.OptGroup>
                     ))}
-                  </AionSelect>
+                  </MuSelect>
                 ) : (
                   <div className='text-13px text-t-secondary flex flex-wrap items-center gap-4px md:justify-end'>
                     <span>{t('settings.noAvailable')}</span>
@@ -622,7 +619,7 @@ const ToolsModalContent: React.FC = () => {
             </div>
           </div>
         </div>
-      </AionScrollArea>
+      </MuScrollArea>
     </div>
   );
 };

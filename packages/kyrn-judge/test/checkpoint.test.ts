@@ -14,7 +14,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ExtensionUIContext } from "../../coding-agent/src/core/extensions/types.ts";
+import type { ExtensionMode, ExtensionUIContext } from "../../coding-agent/src/core/extensions/types.ts";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { findOnPath, GitMissing, type GitProbe, type GitRun, spawnGit } from "../src/checkpoint/git.ts";
 import { isCheckCommand, isMutatingCall, isReadOnlyCommand } from "../src/checkpoint/mutating.ts";
@@ -102,6 +102,8 @@ describe("checkpoints and the judged rewind", () => {
 			mode?: DecisionMode;
 			ui?: Ui;
 			navigation?: boolean;
+			/** How mu runs. Unset: like the desktop app ("rpc") with a UI, else like `mu --print`, the harness's own. */
+			runMode?: ExtensionMode;
 			git?: string;
 			run?: GitRun;
 			options?: Record<string, unknown>;
@@ -164,10 +166,10 @@ describe("checkpoints and the judged rewind", () => {
 		root = harness.tempDir;
 		writeFileSync(join(root, "app.ts"), "v1\n");
 		writeFileSync(join(root, "notes.md"), "notes\n");
-		if (extra.ui || extra.navigation) {
+		if (extra.ui || extra.navigation || extra.runMode) {
 			await harness.session.bindExtensions({
 				uiContext: extra.ui?.context,
-				mode: "rpc",
+				mode: extra.runMode ?? "rpc",
 				commandContextActions:
 					extra.navigation === false
 						? undefined
@@ -217,7 +219,8 @@ describe("checkpoints and the judged rewind", () => {
 			);
 
 	it("takes one checkpoint before the first change of a turn, and none in a turn that only reads", async () => {
-		const { harness, shadow, entries, events } = await start();
+		// The harness runs like `mu --print`, which takes none by default (below).
+		const { harness, shadow, entries, events } = await start({ options: { unattended: true } });
 		harness.setResponses([
 			call("read", { path: "app.ts" }),
 			call("bash", { command: "git status" }),
@@ -325,7 +328,7 @@ describe("checkpoints and the judged rewind", () => {
 		await harness.session.prompt("/rewind 1 both");
 
 		expect(file("app.ts")).toBe("v1\n");
-		expect(ui.notes.at(-1)).toContain('/tree, then pick the message "Break it."');
+		expect(ui.notes.at(-1)).toContain('run /tree and pick the message "Break it."');
 		expect(userTexts(harness).join()).toContain("Break it.");
 	});
 
@@ -405,7 +408,8 @@ describe("checkpoints and the judged rewind", () => {
 	});
 
 	it("active with nobody to ask: undoes nothing and tells the model to step back", async () => {
-		const { harness, file, messages, entries } = await start({ responder: deadEnd });
+		// With a checkpoint, as `mu --print` takes them when told to.
+		const { harness, file, messages, entries } = await start({ responder: deadEnd, options: { unattended: true } });
 		harness.setResponses([...failingRun(), fauxAssistantMessage("I will try something else.")]);
 
 		await harness.session.prompt("Make the tests pass.");
@@ -415,6 +419,133 @@ describe("checkpoints and the judged rewind", () => {
 		expect(steers).toHaveLength(1);
 		expect(steers[0]).toContain("try a different approach");
 		expect(entries(REWOUND_ENTRY)).toEqual([]);
+	});
+
+	/** git as the machine has it, with every command it is asked to run written down. */
+	const logged = (commands: string[][]): GitRun => {
+		const git = spawnGit("git");
+		return (args, env, input, limit) => {
+			commands.push([...args]);
+			return git(args, env, input, limit);
+		};
+	};
+
+	it("an unattended run (mu --print, json mode) runs no git at all, and at a dead end still tells the model to step back", async () => {
+		for (const runMode of ["print", "json"] as const) {
+			const git: string[][] = [];
+			const { harness, shadow, file, entries, messages, provider, events } = await start({
+				responder: deadEnd,
+				run: logged(git),
+				runMode,
+			});
+			harness.setResponses([...failingRun(), fauxAssistantMessage("I will try something else.")]);
+
+			await harness.session.prompt("Make the tests pass.");
+
+			// No snapshot before the first change, and no scan after any of the four.
+			expect(git, runMode).toEqual([]);
+			expect(entries(CHECKPOINT_ENTRY)).toEqual([]);
+			expect(readdirSync(shadow)).toEqual([]);
+			// The dead end is still asked about, with the request as the goal, and a yes reaches the model as a steer.
+			const asked = provider.calls.filter((request) => "dead_end" in request.questions);
+			expect(asked).toHaveLength(1);
+			expect(asked[0].state).toMatchObject({
+				goal: "Make the tests pass.",
+				edits_since_checkpoint: 1,
+				last_check_failed: true,
+			});
+			const steers = messages("kyrn.steer").filter((text) => text.includes("dead end"));
+			expect(steers).toEqual([expect.stringContaining("Step back: undo what this attempt changed")]);
+			// Nothing was put back, and nothing says so.
+			expect(file("app.ts")).toBe("attempt\n");
+			expect(messages(REWIND_MESSAGE)).toEqual([]);
+			expect(entries(REWOUND_ENTRY)).toEqual([]);
+			expect(events.map((event) => event.kind).filter((kind) => /^(checkpoint|rewind)\./.test(kind))).toEqual([]);
+		}
+	});
+
+	it("an unattended run asks about a dead end only in a turn that ran a call that can change files", async () => {
+		const asked = async (command: string) => {
+			const { harness, provider } = await start({ responder: deadEnd });
+			harness.setResponses([
+				...Array.from({ length: 3 }, () => call("bash", { command })),
+				fauxAssistantMessage("Stuck."),
+			]);
+			await harness.session.prompt("Make the tests pass.");
+			return provider.calls.filter((request) => "dead_end" in request.questions).length;
+		};
+		// Where a terminal session would have taken its checkpoint, and only there.
+		expect(await asked("npm test")).toBe(1);
+		expect(await asked("cat test-output.txt")).toBe(0);
+	});
+
+	it("a terminal or desktop session still snapshots before the first change and scans after each one", async () => {
+		for (const runMode of ["tui", "rpc"] as const) {
+			const git: string[][] = [];
+			const { harness, entries } = await start({ ui: scriptedUi({}), run: logged(git), runMode });
+			harness.setResponses([
+				call("write", { path: "app.ts", content: "v2\n" }),
+				call("write", { path: "b.ts", content: "b\n" }),
+				call("bash", { command: "npm run build" }),
+				fauxAssistantMessage("Done."),
+			]);
+			await harness.session.prompt("Change it.");
+			expect(entries(CHECKPOINT_ENTRY), runMode).toHaveLength(1);
+			// One tree for the snapshot, and one more after each of the three calls.
+			expect(
+				git.filter((args) => args[0] === "write-tree"),
+				runMode,
+			).toHaveLength(4);
+			expect(
+				git.filter((args) => args[0] === "commit-tree"),
+				runMode,
+			).toHaveLength(1);
+		}
+	});
+
+	it("the next call does not wait for the scan after a change, and the run ends once the last one has", async () => {
+		const git = spawnGit("git");
+		let root = "";
+		let trees = 0;
+		let nextCallRanFirst: boolean | undefined;
+		// The scan after the first change takes 300 ms; by then the second call has written its file.
+		const slow: GitRun = async (args, env, input, limit) => {
+			if (args[0] === "write-tree" && ++trees === 2) {
+				await new Promise((resolve) => setTimeout(resolve, 300));
+				nextCallRanFirst = existsSync(join(root, "b.ts"));
+			}
+			return git(args, env, input, limit);
+		};
+		const started = await start({ ui: scriptedUi({}), run: slow, runMode: "tui" });
+		root = started.root;
+		started.harness.setResponses([
+			call("write", { path: "app.ts", content: "v2\n" }),
+			call("write", { path: "b.ts", content: "b\n" }),
+			fauxAssistantMessage("Done."),
+		]);
+		await started.harness.session.prompt("Change it.");
+		expect(nextCallRanFirst).toBe(true);
+		// The snapshot, then one scan after each change: both scans are done when the prompt returns.
+		expect(trees).toBe(3);
+	});
+
+	it("a dead-end verdict that is late changes nothing, and the turn does not wait for it", async () => {
+		const ui = scriptedUi({ confirm: true });
+		// The judge never answers dead_end: without a limit the turn would wait for the judge's own timeout.
+		const slow: MockResponder = (request) => ("dead_end" in request.questions ? new Promise(() => {}) : {});
+		const { harness, file, provider } = await start({
+			responder: slow,
+			ui,
+			navigation: true,
+			options: { rewindWaitMs: 100 },
+		});
+		harness.setResponses([...failingRun(), fauxAssistantMessage("Still failing.")]);
+		const began = Date.now();
+		await harness.session.prompt("Make the tests pass.");
+		expect(Date.now() - began).toBeLessThan(5000);
+		expect(provider.calls.filter((request) => "dead_end" in request.questions)).toHaveLength(1);
+		expect(ui.asked).toEqual([]);
+		expect(file("app.ts")).toBe("attempt\n");
 	});
 
 	it("shadow only records the verdict, off does not ask, and an unsure judge changes nothing", async () => {
@@ -455,7 +586,7 @@ describe("checkpoints and the judged rewind", () => {
 
 		expect(file("app.ts")).toBe("v3\n");
 		expect(entries(CHECKPOINT_ENTRY)).toEqual([]);
-		expect(ui.notes.filter((note) => note.includes("git was not found"))).toHaveLength(1);
+		expect(ui.notes.filter((note) => note.includes("git wasn't found"))).toHaveLength(1);
 		await harness.session.prompt("/rewind");
 		expect(ui.notes.at(-1)).toContain("checkpoints are off");
 	});
@@ -489,7 +620,7 @@ describe("checkpoints and the judged rewind", () => {
 			const ui = scriptedUi({});
 			const off = await twoTurnsAndRewind(await start({ ui, navigation: true, git }));
 			const line =
-				"mu: checkpoints are off, because git cannot run on this Mac until the Xcode license is accepted. Accept it with sudo xcodebuild -license in Terminal, then start a new session to get them.";
+				"mu: checkpoints are off because git can't run on this Mac until you accept the Xcode license. Run sudo xcodebuild -license in Terminal to accept it, then start a new session.";
 			// Once for the session's first change; /rewind says it again because it was asked.
 			expect(ui.notes).toEqual([line, line]);
 			expect(off).toEqual([{ code: "xcode_license", params: {}, message: line }]);
@@ -503,7 +634,7 @@ describe("checkpoints and the judged rewind", () => {
 		const run = spawnGit("mu-test-no-such-git-binary", 30_000, probe);
 		const off = await twoTurnsAndRewind(await start({ ui, navigation: true, run }));
 		const line =
-			"mu: checkpoints are off, because this Mac has no command line developer tools, which git needs. Install them with xcode-select --install, then start a new session to get them.";
+			"mu: checkpoints are off because git needs the command line developer tools, which aren't installed on this Mac. Install them with xcode-select --install, then start a new session.";
 		expect(ui.notes).toEqual([line, line]);
 		expect(off).toEqual([{ code: "developer_tools_missing", params: {}, message: line }]);
 	});
@@ -534,7 +665,7 @@ describe("checkpoints and the judged rewind", () => {
 		expect(entries(CHECKPOINT_ENTRY)).toEqual([]);
 		expect(readdirSync(shadow)).toEqual([]);
 		const line =
-			"mu: checkpoints are off in this session, because this folder is your home folder or holds it. Start mu in a project folder to get them.";
+			"mu: checkpoints are off for this session because this folder is, or contains, your home folder. Start mu in a project folder to use checkpoints.";
 		// Once for the session's first change; /checkpoints and /rewind say it again because they were asked.
 		expect(ui.notes).toEqual([line, line, line]);
 		expect(events.filter((event) => event.kind === "checkpoint.off").map((event) => event.payload)).toEqual([
@@ -581,13 +712,13 @@ describe("checkpoints and the judged rewind", () => {
 			else process.env.MU_LANG = saved;
 		}
 		expect(offNotice("too_slow", limits).line).toBe(
-			"mu: checkpoints are off in this session, because listing this folder's files took longer than 30 s. Start mu in a project folder to get them.",
+			"mu: checkpoints are off for this session because listing this folder's files took more than 30 s. Start mu in a project folder to use checkpoints.",
 		);
 	});
 });
 
 describe("turn.rewind and what counts as a change", () => {
-	it("proposes only for a confident dead end with no progress", async () => {
+	it("proposes only for a confident dead end with no likely progress", async () => {
 		const verdict = async (dead_end: Answer, progress: Answer) =>
 			(
 				await new DecisionEngine({
@@ -604,6 +735,10 @@ describe("turn.rewind and what counts as a change", () => {
 		expect(await verdict(yes, yes)).toBe("continue");
 		expect(await verdict(unsure, no)).toBe("continue");
 		expect(await verdict(no, no)).toBe("continue");
+		// No progress only has to be the likelier reading; at 0.5 the judge has no opinion.
+		expect(await verdict(yes, { type: "boolean", probability: 0.4 })).toBe("propose");
+		expect(await verdict(yes, unsure)).toBe("continue");
+		expect(await verdict(yes, { type: "boolean", probability: 0.6 })).toBe("continue");
 		expect(turnRewind.fallback({ goal: "", recentSteps: [], trigger: "", editsSinceCheckpoint: 0 })).toBe("continue");
 	});
 
@@ -624,9 +759,30 @@ describe("turn.rewind and what counts as a change", () => {
 		]) {
 			expect(isReadOnlyCommand(command), command).toBe(false);
 		}
+		// A variable's value becomes arguments, an option that writes included (`OPTS='-o out'`); a `$` that names
+		// nothing, or one in single quotes, is the character itself.
+		for (const command of ['sort "$OPTS" input.txt', "rg $ARGS .", 'cat "$1"', "head -n $N a.txt"]) {
+			expect(isReadOnlyCommand(command), command).toBe(false);
+			expect(isMutatingCall("bash", { command }), command).toBe(true);
+		}
+		for (const command of ["rg 'foo$' src", 'grep -n "end$" a.txt', "grep -c 'a$' a.txt", "rg 'cost \\$5' ."]) {
+			expect(isReadOnlyCommand(command), command).toBe(true);
+			expect(isMutatingCall("bash", { command }), command).toBe(false);
+		}
+		expect(isMutatingCall("bash", { command: "git log --oneline | grep -E 'fix$|feat$'" })).toBe(false);
+		// Git runs the program a repository's config names for an external diff or a text conversion.
+		for (const command of ["git diff --ext-diff", "git show --textconv HEAD:a.txt", "git log -p --ext-diff"]) {
+			expect(isReadOnlyCommand(command), command).toBe(false);
+		}
 		expect(isMutatingCall("read", { path: "a" })).toBe(false);
 		expect(isMutatingCall("bash", { command: "git log -3" })).toBe(false);
 		expect(isMutatingCall("bash", { command: "sed -i s/a/b/ x" })).toBe(true);
+		// A chain of read-only commands only looks, as the permission gate reads it: no snapshot before it.
+		expect(isMutatingCall("bash", { command: "pwd && find src -name '*.ts' | sort | head" })).toBe(false);
+		expect(isMutatingCall("bash", { command: "git status --short; git log --oneline -5" })).toBe(false);
+		expect(isMutatingCall("bash", { command: "ls; rm a" })).toBe(true);
+		expect(isMutatingCall("bash", { command: "git status && rm -rf build" })).toBe(true);
+		expect(isMutatingCall("bash", { command: "cd ../other && git status" })).toBe(true);
 		// pi's shell on Windows is the powershell tool: read-only cmdlets read, everything else may write.
 		expect(isMutatingCall("powershell", { command: "Get-ChildItem src" })).toBe(false);
 		expect(isMutatingCall("powershell", { command: "gci src | Select-String TODO" })).toBe(false);

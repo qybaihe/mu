@@ -28,11 +28,7 @@ export default function ContextRows({ settings, base, onChange }: ContextRowsPro
   const bounds = { min: formatNumber(LIMIT_MIN, i18n.language), max: formatNumber(LIMIT_MAX, i18n.language) };
   return (
     <Card testId='mu-context-rows'>
-      <Row
-        title={t('mu.context.auto')}
-        help={t('mu.context.autoHelp')}
-        modified={settings.autoCompaction !== base.autoCompaction}
-      >
+      <Row title={t('mu.context.auto')} modified={settings.autoCompaction !== base.autoCompaction}>
         <Switch
           size='small'
           aria-label={t('mu.context.auto')}

@@ -1,4 +1,4 @@
-# LSP 诊断：只说这次改动新引入的，由 Jev 决定什么时候说
+# LSP 诊断：只说这次改动新引入的，由判定器决定什么时候说
 
 更新日期：2026-09-22。对应路线图 `11-out-of-the-box-roadmap.md` 第 1 节“LSP 诊断”。代码在 `packages/kyrn-judge`：协议与纯逻辑 `src/lsp/`，决策 `src/decisions/diagnostics-delivery.ts`，功能 `src/extension/features/lsp.ts`。没有新增依赖。
 
@@ -147,6 +147,8 @@ src/a.ts:20:9 warning 6133 'x' is declared but never used.
 | `maxServers` | 4 | 同时运行的服务器上限 |
 | `maxFileBytes` | 2000000 | 超过这个大小的文件不交给服务器 |
 | `waitMs` | 4000 | 等判定最多多久 |
+| `navigation` | true | 导航工具 `lsp`，见文末 |
+| `navigationResults` | 30 | `lsp` 一次最多列几处 |
 
 命令 `/lsp`：每个服务器是否安装、用的是哪个可执行文件、来自哪里（内置 / 用户 / 项目）、哪些在跑、在哪个根、打开了几个文档、启动过几次、最后的错误；项目文件因未受信任被忽略时会明说。展示事件：`diagnostics.delivered`、`diagnostics.held`、`diagnostics.dropped`，载荷只有条数、相对文件名、`by`（judge / rule）、`when`（edit / turn_end），没有诊断文本和文件内容。
 
@@ -178,3 +180,26 @@ src/a.ts:20:9 warning 6133 'x' is declared but never used.
 - typescript-language-server：本机未安装，用例跳过。
 - clangd：`/usr/bin/clangd` 是 Xcode 的转发壳，本机尚未同意 Xcode 许可，进程一启动就退出。客户端对此的表现是启动失败并给出原因，不会卡住；要用它需要你自己在终端执行一次 `sudo xcodebuild -license`。
 - rust-analyzer：`~/.cargo/bin/rust-analyzer` 是 rustup 的壳，对应组件没装。
+
+## 导航工具 `lsp`（2026-11-05 补）
+
+代码在 `src/lsp/navigation.ts`（纯逻辑）和 `src/extension/features/lsp-navigation.ts`（工具）。它是 `lsp` 功能的一部分，由 `navigation` 选项控制，和诊断用同一个 `LspManager`，所以同一个文件不会多起一个服务器进程。
+
+- **四个操作**：`definition`、`references`（总带上声明本身）、`implementation`、`hover`。
+- **坐标**：行、列都从 1 起，列按 UTF-16 计（协议的默认，也是 mu 在 `initialize` 里唯一声明的编码）。参数里给 `symbol`（那一行上写的名字）就够了，工具自己在行里找：整词优先于词的一部分，出现多次时取 `column` 处或离它最近的那个，不给 `column` 取第一个。模型数列数常常数错，所以名字是首选。
+- **怎么露出**：能力目录里的 `lsp:navigation`（`kind: "lsp"`，`judged`）。默认隐藏，不在每一轮的工具表里；判定器为任务打开它，或者模型用 `find_capability` 打开。`find_capability` 的描述里列出已装的能力，模型由此知道它在。catalog 关闭时它一直在。子代理和诊断一样默认没有它（`subAgents`）。
+- **怎么问**：文件按磁盘上的当前内容交给服务器（已经打开的只在内容变了时重新同步），服务器没启动就启动并**等它启动完**（问题和改动不同，不先答不行）。只问声明了对应能力（`definitionProvider` 等）的服务器，按顺序取第一个有结果的。服务器回 `ContentModified` / `ServerCancelled` 时隔 300 毫秒再问一次。单次回答最多等 30 秒：冷启动的 TypeScript 服务器在第一个请求里加载整个项目。
+- **对诊断的影响**：为提问打开的文件，服务器对它的第一份诊断就是基线，和为改动打开的文件一样，里面原有的问题不会被说成新问题。之后改到这个文件时，基线已经就绪。
+- **给模型看的格式**：``N references to `save`, the declaration included:``，每处一行 `路径:行:列  那一行的文字`（文字截到 160 字），按文件和行排序，最多 `navigationResults` 处，末行说还有几处没列、可以用 grep 看全。hover 原样保留换行（签名和文档是 Markdown），截到 3000 字。路径按真实路径比较和显示：服务器可能用真实路径回答，而会话目录经由链接到达（macOS 的 `/var` 就是 `/private/var`），不这样做一个文件会出现两次，项目里的文件也会显示成项目外的绝对路径。
+- **问不了的时候**说一句能照着做的话，作为错误结果返回：这种文件没有配置服务器、服务器没装（列出找过的名字）、项目的 `lsp.json` 没被信任（可以 `/trust`）、服务器起不来（带原因）、服务器不支持这种问题（`implementation` 建议改问 `references`）、文件不存在、行号超出、名字不在那一行（附上那一行的文字）。都以「用 grep 和 read」收尾。
+- **什么都没找到**不是错误。服务器报告过还没结束的工作进度（还在加载项目）时，加一句「稍后再问，或者用 grep」。
+- **只读**：权限 gate 的 `LOOKING`、checkpoint 的 `READ_ONLY_TOOLS`（所以 recovery 不写派发标记）、guard 的 `LOCAL_TOOLS`、看板的例行工具和阶段规则里都有 `lsp`。任何权限模式下都不问人。
+
+### 验证
+
+- `test/lsp-navigation.test.ts`（假服务器）：符号定位（整词、列、UTF-16 里 emoji 占两个单位）；`Location`、`Location[]`、`LocationLink`、真实路径去重；三种 hover 形状；格式和上限；跨文件定义、按名字和按列；引用的上限；实现和 hover；没找到和服务器忙；`ContentModified` 重问；八种问不了的说法，项目的 lsp.json 没被信任时的说明；Ask first 模式、没有人可问时照样回答且不写派发标记，同一设置下 `touch` 被拒；能力目录里先隐藏、打开后可用；`navigation: false` 时没有这个工具。
+- `test/lsp-real-server.test.ts` 加了 clangd 的可选用例：定义、带声明的 3 处引用、hover。在本机用 Command Line Tools 自带的 clangd 21 跑通（`/usr/bin/clangd` 是 Xcode 的转发壳，见上一节）。
+- 另用 clangd 对整个工具做过一次端到端试跑，发现了上面说的真实路径问题：同一个文件的 3 处引用被列成 6 处，一半显示成绝对路径。修好后重跑，3 处、相对路径；之后在同一会话里写坏另一个 C 文件，诊断照常报出，两者共用一个 clangd 进程。
+
+**未验证**：typescript-language-server、pyright、gopls、rust-analyzer 这次都没有在真实服务器上跑导航（本机没有装）。大项目里第一个请求要多久、30 秒够不够，没有量过。
+

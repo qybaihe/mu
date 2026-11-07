@@ -1,6 +1,12 @@
 # KYRN 改动地图：决策点挂在 pi 的哪里
 
+Status: 部分维护。文件地图、启动命令和 provider 列表跟到 0.2.5（2026-10-24），对 pi 的改动以 [fork-ledger.md](fork-ledger.md) 为准；其余是当时的记录。
+
 > 已于 2026-09-21 更名为 mu（命令 `mu`，标识 μ）。本文是更名前的记录，正文保持原样；新旧名对照见 [10-rename-to-mu.md](10-rename-to-mu.md)。
+
+> 2026-10-24（0.2.5）：Laya 已从 mu 移除。`kyrn/bin/kyrn-judge-local`、`kyrn/local-judge/server.py` 和 `local` 类型的判定器都已删掉，`kyrn/local-judge/` 里只剩 mude 1.0 的 Python 依赖锁。下面的文件地图、启动命令和 provider 列表已按此改过；第 9 节等处仍是当时的记录。
+
+> 2026-11-04：mu 对 pi 文件的改动早已不止 `package-lock.json`。完整清单、每处改动的原因和合并时要保留什么，见 [fork-ledger.md](fork-ledger.md)；CI 的 Fork ledger 检查会在漏记时失败。§1.1 和 §8 里「只有 package-lock.json」是 2026-09-20 的记录。
 
 > 2026-09-20 · 基于上游 `earendil-works/pi` 提交 `d1230ea20`（v0.86.0 之后）
 > 行号来自对源码的静态阅读（两份测绘 + 我对承重结论的抽查），未逐条运行验证；上游更新后行号会漂移，以函数名为准。
@@ -16,8 +22,7 @@ KYRN/                      = pi 的分叉（git）
   packages/kyrn-judge/     判断内核 + pi 适配扩展        ← 新增
   kyrn/
     bin/kyrn-dev           从源码启动 KYRN                ← 新增
-    bin/kyrn-judge-local   本地判断 sidecar 的 setup/start/stop/status
-    local-judge/           sidecar（server.py）+ venv + 权重（后两者被 kyrn/.gitignore 忽略）
+    local-judge/           mude 1.0 的 Python 依赖锁（mude-requirements.lock.txt）
     docs/                  设计文档
     spikes/jev-smoke/      Jev 网关冒烟测试
     spikes/judge-bench/    同一批标注场景上对比任意判断后端
@@ -25,7 +30,7 @@ KYRN/                      = pi 的分叉（git）
 ```
 
 - 远端 `upstream` = earendil-works/pi；分支 `main` = 上游纯净镜像，`kyrn` = 开发分支。还没有 `origin`（没推到任何地方）。
-- **对上游文件的改动面：只有 `package-lock.json` +24 行**（新 workspace 包的条目）。其余全是新增文件。
+- **对上游文件的改动面：只有 `package-lock.json` +24 行**（新 workspace 包的条目）。其余全是新增文件。现在的改动面见 [fork-ledger.md](fork-ledger.md)。
 - 品牌常量暂时不改。pi 官方支持用 `packages/coding-agent/package.json` 的 `piConfig: { name, configDir }` + `bin` 改名（`src/config.ts:480-509`），但会把环境变量前缀一起改成 `KYRN_*`，而上游有 9 个测试文件硬编码 `PI_CODING_AGENT_DIR`。现在用 `PI_CODING_AGENT_DIR=~/.kyrn/agent` 做配置隔离（零源码改动），正式改名留作单独一步。
 
 ### 1.2 运行与测试
@@ -33,7 +38,7 @@ KYRN/                      = pi 的分叉（git）
 ```bash
 kyrn/bin/kyrn-dev                      # 交互模式；自动选 Node ≥22、隔离配置到 ~/.kyrn/agent、加载判断内核扩展
 KYRN_JUDGE=mock kyrn/bin/kyrn-dev      # 不联网的假判断后端
-KYRN_JUDGE=laya kyrn/bin/kyrn-dev      # 本地 Laya（Core ML）判断后端，自动拉起 sidecar；见 03-local-judge.md
+KYRN_JUDGE=mude,jev kyrn/bin/kyrn-dev  # 本机的 mude 1.0 先答（mu judge mude install），Jev 兜底
 KYRN_JUDGE_MODE=active kyrn/bin/kyrn-dev
 ```
 
@@ -94,7 +99,7 @@ npm run check                                                                  #
 | D2–D4 经验写入 / 遗忘 / 反馈 | `agent_settled`、下一个 `input` | 够 | 经验库本身 |
 | E1 压缩方式 | `session_before_compact` | 够 | 处理器完全控制摘要和 `firstKeptEntryId`（不校验）；但保留区间只能是**一段连续后缀**，不能挖洞 |
 | E2 旁支隔离 | `navigateTree(anchor, {summarize:true})` | 部分 | 只在命令上下文可用（`ET:356-390`），流式输出时会抛错。从事件处理器触发要绕：`agent_settled` 里 `pi.sendUserMessage("/cmd", {expandPromptTemplates:true})` |
-| E3 缓存保温 | `cache_warming_decision` 事件 | 够 | 空闲时的续聊概率是**写死的常数 0.15**（`cache-warmer.ts:26,372`），直接用 Jev 的估计覆盖 |
+| E3 缓存保温 | `cache_warming_decision` 事件 | 够 | 空闲时的续聊概率是**写死的常数 0.15**（`cache-warmer.ts:26,372`），直接用判定器的估计覆盖 |
 | E4 代码定位 | `pi.registerTool("locate")` | 够 | — |
 | E5 / E6 测试选择、提交检查 | 自定义工具 / `tool_call` 拦 `git commit` | 够 | — |
 | F `judge` 工具 | `pi.registerTool` | 够 | — |
@@ -136,9 +141,9 @@ src/
   types.ts  errors.ts  policy.ts     线上契约（与网关同形）、错误分类、三区间/逃生选项/中性答案
   judge.ts                           单个判断模型：超时、>32 题分片、答案校验；JudgeLike 抽象
   cascade.ts                         多档级联：按"能力档案"路由，逐题升级，不可信的答案中性化
-  registry.ts  config.ts             判断模型注册表（gateway / local / http / llm / mock）+ ~/.kyrn/agent/kyrn.json
+  registry.ts  config.ts             判断模型注册表（jev / typesafe / clm / gateway / http / llm / classifier / mock）+ ~/.kyrn/agent/kyrn.json
   decision.ts  ledger.ts             DecisionSpec（静态或按输入生成题目）+ 引擎（off/shadow/active、decideMany、fail-open）+ 账本
-  providers/                         gateway（Jev）· local（Laya sidecar / 任意同协议 HTTP）· llm（任意生成式模型）· mock
+  providers/                         gateway（Jev）· typesafe（System One：TypeSafe、mude 1.0、CLM）· http-judge（任意同协议 HTTP）· llm（任意生成式模型）· mock
   decisions/                         15 个决策规格：input-preflight · skill-disclosure · memory · interjection ·
                                      tool-admission · tool-risk · context-forget · turn-drift · turn-completion ·
                                      notify-routing · swarm-routing · cache-warming · file-locate · browser-step
@@ -196,7 +201,7 @@ npm install --package-lock-only --ignore-scripts   # lockfile 冲突时重新生
 npm run check
 ```
 
-目前唯一会冲突的是 `package-lock.json`，机械可解。动手做蜂群之前读一遍 pi 的 [RFC](https://rfc.earendil.com/keyword/pi/)。
+当时唯一会冲突的是 `package-lock.json`，机械可解；现在会冲突的文件和该保留什么，见 [fork-ledger.md](fork-ledger.md)。动手做蜂群之前读一遍 pi 的 [RFC](https://rfc.earendil.com/keyword/pi/)。
 
 ## 9. 下一步
 

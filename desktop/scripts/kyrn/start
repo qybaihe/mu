@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export PATH="$HOME/.nvm/versions/node/v24.16.0/bin:$PATH"
 export KYRN_ROOT="${KYRN_ROOT:-$(dirname "$ROOT")/KYRN}"
 export KYRN_DESKTOP_ROOT="$ROOT"
-export AIONUI_BACKEND_BIN="${AIONUI_BACKEND_BIN:-$ROOT/resources/bundled-aioncore/darwin-arm64/aioncore}"
+export MU_BACKEND_BIN="${MU_BACKEND_BIN:-$ROOT/resources/bundled-backend/darwin-arm64/aioncore}"
 # Reuse the already downloaded, checksum-verified Electron runtime during development.
 export ELECTRON_EXEC_PATH="${ELECTRON_EXEC_PATH:-$ROOT/kyrn/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron}"
 unset ELECTRON_RUN_AS_NODE

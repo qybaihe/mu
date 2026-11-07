@@ -16,9 +16,9 @@ import type { Theme } from '@/common/theme/types';
 import { useCallback, useEffect, useState } from 'react';
 
 /** The last applied appearance, for index.html's first paint before the app runs. */
-const APPEARANCE_CACHE_KEY = '__aionui_theme';
+const APPEARANCE_CACHE_KEY = '__mu_theme';
 /** Set while the theme follows the system: the first paint then asks the system instead of the cached appearance. */
-const FOLLOWS_SYSTEM_CACHE_KEY = '__aionui_theme_follows_system';
+const FOLLOWS_SYSTEM_CACHE_KEY = '__mu_theme_follows_system';
 
 function cacheAppearance(theme: Theme, followsSystem: boolean): void {
   try {

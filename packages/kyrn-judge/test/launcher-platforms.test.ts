@@ -89,11 +89,13 @@ const WIN_HOME = "C:\\Users\\bai";
 const winInstalled = {
 	[`${WIN_ROOT}\\node_modules\\undici\\package.json`]: "{}",
 	[`${WIN_ROOT}\\packages\\coding-agent\\src\\experimental\\source-resolver.ts`]: "",
+	[`${WIN_ROOT}\\packages\\ai\\src\\providers\\data\\.manifest.json`]: "{}",
 };
 const POSIX_ROOT = "/home/bai/KYRN";
 const posixInstalled = {
 	[`${POSIX_ROOT}/node_modules/undici/package.json`]: "{}",
 	[`${POSIX_ROOT}/packages/coding-agent/src/experimental/source-resolver.ts`]: "",
+	[`${POSIX_ROOT}/packages/ai/src/providers/data/.manifest.json`]: "{}",
 };
 /** How Node runs a checkout's TypeScript itself: pi's source resolver and Node's compile cache (sourceRuntime). */
 const POSIX_NATIVE = [
@@ -352,7 +354,7 @@ describe("starting pi", () => {
 			execPath: "node",
 			fs: disk({}),
 		});
-		expect(linux.error).toContain(`cd ${POSIX_ROOT} && npm ci --ignore-scripts && npm run hydrate:model-data`);
+		expect(linux.error).toContain(`cd ${POSIX_ROOT} && npm ci --ignore-scripts && npm run hydrate:model-catalog`);
 	});
 
 	it("on Windows runs node with an argument array: no shell, no .cmd shim, the prompt untouched", () => {
@@ -374,7 +376,7 @@ describe("starting pi", () => {
 			"file:///C:/Users/bai/code/KYRN/kyrn/bin/compile-cache.mjs",
 			"--import",
 			"file:///C:/Users/bai/code/KYRN/packages/coding-agent/src/experimental/source-resolver.ts",
-			`${WIN_ROOT}\\packages\\coding-agent\\src\\experimental\\cli.ts`,
+			`${WIN_ROOT}\\packages\\coding-agent\\src\\cli.ts`,
 			"-e",
 			`${WIN_ROOT}\\packages\\kyrn-judge\\src\\extension\\kyrn-judge.ts`,
 			"-p",
@@ -384,6 +386,8 @@ describe("starting pi", () => {
 		expect(plan.strategy).toBe("spawn");
 		expect(plan.env).toMatchObject({
 			PI_PACKAGE_DIR: "C:\\Users\\bai\\.mu\\app",
+			// The judgment layer is the app's own extension: pi lists its commands untagged.
+			PI_APP_EXTENSIONS: `${WIN_ROOT}\\packages\\kyrn-judge\\src\\extension\\kyrn-judge.ts`,
 			MU_CODING_AGENT_DIR: "C:\\Users\\bai\\.mu\\agent",
 			KYRN_CODING_AGENT_DIR: "C:\\Users\\bai\\.mu\\agent",
 			PI_CODING_AGENT_DIR: "C:\\Users\\bai\\.mu\\agent",
@@ -405,7 +409,7 @@ describe("starting pi", () => {
 	it("runs a checkout's TypeScript with Node itself, and says why where it cannot", () => {
 		expect(launch({ argv: ["--mode", "rpc"] }).args).toEqual([
 			...POSIX_NATIVE,
-			`${POSIX_ROOT}/packages/coding-agent/src/experimental/cli.ts`,
+			`${POSIX_ROOT}/packages/coding-agent/src/cli.ts`,
 			"-e",
 			`${POSIX_ROOT}/packages/kyrn-judge/src/extension/kyrn-judge.ts`,
 			"--mode",
@@ -414,12 +418,18 @@ describe("starting pi", () => {
 		const runtime = (stripsTypes: boolean, files: Record<string, string>) =>
 			sourceRuntime({ root: POSIX_ROOT, platform: "linux", stripsTypes, ...disk(files) }).error;
 		// A runtime that does not strip types.
-		expect(runtime(false, posixInstalled)).toContain("does not strip types");
+		expect(runtime(false, posixInstalled)).toContain("doesn't strip types");
 		// A checkout from before pi's source resolver.
 		const older = Object.entries(posixInstalled).filter(([file]) => !file.endsWith("source-resolver.ts"));
 		expect(runtime(true, Object.fromEntries(older))).toContain("source resolver");
 		// Node strips types, but the dependencies are not installed: that is still said, not left to a failed import.
 		expect(runtime(true, {})).toContain("npm ci --ignore-scripts");
+		// Installed, but the model list was never written (a clone right after npm install): pi would fail at its first
+		// import of a provider's .json.
+		const unhydrated = Object.entries(posixInstalled).filter(([file]) => !file.endsWith(".manifest.json"));
+		expect(runtime(true, Object.fromEntries(unhydrated))).toBe(
+			`mu's list of models isn't generated in this checkout yet. Run:  cd ${POSIX_ROOT} && npm run hydrate:model-catalog`,
+		);
 		// A user name with a space or beyond ASCII is escaped in the URL, and the file is still found.
 		const root = "C:\\Users\\白鹤 Li\\KYRN";
 		const named = sourceRuntime({
@@ -429,6 +439,7 @@ describe("starting pi", () => {
 			...disk({
 				[`${root}\\node_modules\\undici\\package.json`]: "{}",
 				[`${root}\\packages\\coding-agent\\src\\experimental\\source-resolver.ts`]: "",
+				[`${root}\\packages\\ai\\src\\providers\\data\\.manifest.json`]: "{}",
 			}),
 		});
 		expect(named.error === undefined && named.args[4]).toBe(
@@ -461,7 +472,7 @@ describe("starting pi", () => {
 	});
 
 	it("prints the launcher's own help before the agent's", () => {
-		expect(launch({ argv: ["--help"] }).preface).toContain("Agent flags:");
+		expect(launch({ argv: ["--help"] }).preface).toContain("pi's help (mu passes all of this through):");
 		expect(launch({ argv: ["-h"] }).preface).toContain("mu link | unlink");
 		expect(launch({ argv: ["-p", "--help"] }).preface).toBeUndefined();
 	});
@@ -471,7 +482,7 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 	const WIN_PACKAGE = "C:\\Program Files\\mu\\resources\\harness\\mu-agent";
 	const winPackage = {
 		[`${WIN_PACKAGE}\\dist\\bundle\\cli.js`]: "",
-		[`${WIN_PACKAGE}\\judge\\dist\\kyrn-judge.js`]: "",
+		[`${WIN_PACKAGE}\\judge\\mu\\index.js`]: "",
 	};
 	const rpc = ["--mode", "rpc"];
 
@@ -488,8 +499,9 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 		if (host.error !== undefined) throw new Error(host.error);
 		expect(host).toMatchObject({
 			module: `${WIN_PACKAGE}\\dist\\bundle\\index.js`,
+			cli: `${WIN_PACKAGE}\\dist\\bundle\\cli.js`,
 			execArgv: [],
-			args: ["-e", `${WIN_PACKAGE}\\judge\\dist\\kyrn-judge.js`, "--mode", "rpc"],
+			args: ["-e", `${WIN_PACKAGE}\\judge\\mu\\index.js`, "--mode", "rpc"],
 			layout: "package",
 			appDir: WIN_PACKAGE,
 			agentDir: "C:\\Users\\bai\\.mu\\agent",
@@ -511,6 +523,7 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 		if (host.error !== undefined) throw new Error(host.error);
 		expect(host).toMatchObject({
 			module: `${POSIX_ROOT}/packages/coding-agent/src/index.ts`,
+			cli: `${POSIX_ROOT}/packages/coding-agent/src/cli.ts`,
 			execArgv: POSIX_NATIVE,
 			args: ["-e", `${POSIX_ROOT}/packages/kyrn-judge/src/extension/kyrn-judge.ts`, "--mode", "rpc"],
 			layout: "repo",
@@ -535,7 +548,7 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 	it("refuses a checkout it cannot run on the host's own Node", () => {
 		const input = { platform: "linux" as const, env: {}, argv: rpc, root: POSIX_ROOT, home: "/home/bai" };
 		expect(planHost({ ...input, stripsTypes: false, fs: disk(posixInstalled) }).error).toContain(
-			"does not strip types",
+			"doesn't strip types",
 		);
 		const noResolver = Object.fromEntries(
 			Object.entries(posixInstalled).filter(([path]) => !path.endsWith("source-resolver.ts")),
@@ -546,14 +559,12 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 
 describe("preparing a launch, for the command line and for a program that must not stop", () => {
 	const posix = process.platform !== "win32";
-	const NOT_STARTED = "the local judge did not start";
 
-	/** A launcher folder whose local judge is a script that runs `script`, and an agent folder to prepare. */
-	function prepared(script: string | undefined, startJudge: boolean) {
+	/** A launcher folder, and an agent folder to prepare. */
+	function prepared() {
 		const root = temp();
 		const bin = join(root, "bin");
 		mkdirSync(bin);
-		if (script !== undefined) writeFileSync(join(bin, "kyrn-judge-local"), `#!/bin/sh\n${script}\n`, { mode: 0o755 });
 		const notes: string[] = [];
 		const input = {
 			plan: {
@@ -561,7 +572,6 @@ describe("preparing a launch, for the command line and for a program that must n
 				appDir: root,
 				agentDir: join(root, "agent"),
 				notes: ["a note from the configuration"],
-				startJudge,
 				env: { PATH: "/usr/bin:/bin" },
 			},
 			platform: process.platform,
@@ -573,9 +583,9 @@ describe("preparing a launch, for the command line and for a program that must n
 	}
 
 	it("makes the agent folder and passes the configuration's notes on, whichever way it is called", async () => {
-		const sync = prepared(undefined, false);
+		const sync = prepared();
 		prepareLaunch(sync.input);
-		const later = prepared(undefined, false);
+		const later = prepared();
 		await prepareLaunchAsync(later.input);
 		for (const each of [sync, later]) {
 			expect(existsSync(join(each.root, "agent"))).toBe(true);
@@ -583,48 +593,31 @@ describe("preparing a launch, for the command line and for a program that must n
 		}
 	});
 
-	it.skipIf(!posix)("starts the local judge through its script, and says nothing when it starts", async () => {
-		const { root, input, notes } = prepared('echo "$1" > "$(dirname "$0")/started"', true);
-		await prepareLaunchAsync(input);
-		expect(readFileSync(join(root, "bin", "started"), "utf8").trim()).toBe("start");
-		expect(notes).toEqual(["a note from the configuration"]);
-	});
-
-	it.skipIf(!posix)("does not stop the process while the local judge starts", async () => {
-		const { input } = prepared("sleep 0.5", true);
-		let ticks = 0;
-		const timer = setInterval(() => ticks++, 25);
-		try {
+	it.skipIf(!posix)(
+		"starts no sidecar of Laya's, not even one an old install left in the launcher's folder",
+		async () => {
+			const { root, input, notes } = prepared();
+			writeFileSync(join(root, "bin", "kyrn-judge-local"), '#!/bin/sh\necho "$1" > "$(dirname "$0")/started"\n', {
+				mode: 0o755,
+			});
+			prepareLaunch(input);
 			await prepareLaunchAsync(input);
-		} finally {
-			clearInterval(timer);
-		}
-		// spawnSync would hold the event loop for the whole half second: no timer could have run.
-		expect(ticks).toBeGreaterThanOrEqual(5);
-	});
-
-	it.skipIf(!posix)("says the same when the local judge fails or is missing, blocking or not", async () => {
-		for (const script of ["exit 3", undefined]) {
-			const sync = prepared(script, true);
-			prepareLaunch(sync.input);
-			const later = prepared(script, true);
-			await prepareLaunchAsync(later.input);
-			expect(sync.notes.at(-1)).toContain(NOT_STARTED);
-			expect(later.notes).toEqual(sync.notes);
-		}
-	});
+			expect(existsSync(join(root, "bin", "started"))).toBe(false);
+			expect(notes).toEqual(["a note from the configuration", "a note from the configuration"]);
+		},
+	);
 });
 
 describe("the npm package (mu-agent)", () => {
 	const WIN_PACKAGE = "C:\\Users\\bai\\AppData\\Roaming\\npm\\node_modules\\mu-agent";
 	const winPackage = {
 		[`${WIN_PACKAGE}\\dist\\bundle\\cli.js`]: "",
-		[`${WIN_PACKAGE}\\judge\\dist\\kyrn-judge.js`]: "",
+		[`${WIN_PACKAGE}\\judge\\mu\\index.js`]: "",
 	};
 	const POSIX_PACKAGE = "/usr/local/lib/node_modules/mu-agent";
 	const posixPackage = {
 		[`${POSIX_PACKAGE}/dist/bundle/cli.js`]: "",
-		[`${POSIX_PACKAGE}/judge/dist/kyrn-judge.js`]: "",
+		[`${POSIX_PACKAGE}/judge/mu/index.js`]: "",
 	};
 
 	it("is told apart from a checkout, also from one without its dependencies", () => {
@@ -655,13 +648,14 @@ describe("the npm package (mu-agent)", () => {
 		expect(plan.args).toEqual([
 			`${WIN_PACKAGE}\\dist\\bundle\\cli.js`,
 			"-e",
-			`${WIN_PACKAGE}\\judge\\dist\\kyrn-judge.js`,
+			`${WIN_PACKAGE}\\judge\\mu\\index.js`,
 			"-p",
 			prompt,
 		]);
 		expect(plan.strategy).toBe("spawn");
 		expect(plan.env).toMatchObject({
 			PI_PACKAGE_DIR: WIN_PACKAGE,
+			PI_APP_EXTENSIONS: `${WIN_PACKAGE}\\judge\\mu\\index.js`,
 			MU_CODING_AGENT_DIR: "C:\\Users\\bai\\.mu\\agent",
 			PI_SKIP_VERSION_CHECK: "1",
 			// pi's install report goes to pi.dev; mu-agent is not a pi install.
@@ -702,7 +696,7 @@ describe("the npm package (mu-agent)", () => {
 		});
 		expect(plan.error).toContain("npm i -g mu-agent");
 		expect(packageEntries({ root: POSIX_PACKAGE, platform: "linux" }).extension).toBe(
-			`${POSIX_PACKAGE}/judge/dist/kyrn-judge.js`,
+			`${POSIX_PACKAGE}/judge/mu/index.js`,
 		);
 	});
 
@@ -832,7 +826,7 @@ describe("the repo-root .env", () => {
 			env: { AFTER: "from-the-shell" },
 			fs: disk({
 				...posixInstalled,
-				[`${POSIX_ROOT}/.env`]: `${FIXTURE}\nMU_CODING_AGENT_DIR=/from/file\nMU_JUDGE=laya`,
+				[`${POSIX_ROOT}/.env`]: `${FIXTURE}\nMU_CODING_AGENT_DIR=/from/file\nMU_JUDGE=mude,jev`,
 			}),
 		});
 
@@ -846,60 +840,73 @@ describe("the repo-root .env", () => {
 			expect(said).not.toContain(secret);
 		}
 		// The file can name the judges, as it could when it was sourced.
-		expect(plan.notes.join("\n")).toContain("local judge (laya)");
+		expect(plan.env.MU_JUDGE).toBe("mude,jev");
 	});
 });
 
-describe("the local judge away from macOS", () => {
-	it("is started by the launcher on macOS only", () => {
-		const files = { ...posixInstalled, "/home/bai/.mu/agent/mu.json": '{ "tiers": ["laya", "jev"] }' };
-		expect(launch({ platform: "darwin", fs: disk(files) })).toMatchObject({ startJudge: true, notes: [] });
-
-		const linux = launch({ fs: disk(files) });
-		expect(linux.startJudge).toBe(false);
-		expect(linux.notes[0]).toMatch(/local judge \(laya\), which runs on macOS only; on Linux/);
-		expect(launch({ wsl: true, fs: disk(files) }).notes[0]).toContain("on WSL");
-
-		// A server of one's own is the way out, and then there is nothing to say.
-		expect(launch({ env: { MU_LOCAL_JUDGE_URL: "http://10.0.0.5:47823" }, fs: disk(files) })).toMatchObject({
-			startJudge: false,
-			notes: [],
+describe("Laya, no longer built in", () => {
+	const agent = "/home/bai/.mu/agent";
+	const python = "/home/bai/.mu/local-judge/mude/venv/bin/python";
+	const mudeCli = `${POSIX_ROOT}/packages/kyrn-judge/src/mude/cli.ts`;
+	const onMac = (config: string, extra: Record<string, string> = {}, env: Record<string, string> = {}) =>
+		launch({
+			platform: "darwin",
+			env,
+			fs: disk({ ...posixInstalled, [mudeCli]: "", [`${agent}/mu.json`]: config, ...extra }),
 		});
-		// MU_JUDGE decides before the file; kyrn.json is only read when there is no mu.json.
-		expect(launch({ env: { MU_JUDGE: "jev" }, fs: disk(files) }).notes).toEqual([]);
-		expect(launch({ env: { KYRN_JUDGE: "jev,laya" }, fs: disk(posixInstalled) }).notes).toHaveLength(1);
-		const legacy = {
-			...posixInstalled,
-			"/home/bai/.mu/agent/mu.json": "{}",
-			"/home/bai/.mu/agent/kyrn.json": '{"tiers":["laya"]}',
-		};
-		expect(launch({ fs: disk(legacy) }).notes).toEqual([]);
+	const key = { MU_JUDGE_MUDE_KEY: "fixture-mude-key" };
+
+	it("starts mude 1.0's server in its place when mude is set up on this Mac, and nothing else", () => {
+		const named = '{ "tiers": ["laya", "jev"] }';
+		const ready = onMac(named, { [python]: "" }, key);
+		expect(ready.startMude?.args).toEqual(["--disable-warning=ExperimentalWarning", mudeCli, "start", "--no-wait"]);
+		expect(ready.notes).toEqual([]);
+		expect(ready).not.toHaveProperty("startJudge");
+		// Not set up (no environment, or no key): mude is not started, and the session goes on without Laya.
+		expect(onMac(named, {}, key).startMude).toBeUndefined();
+		expect(onMac(named, { [python]: "" }).startMude).toBeUndefined();
+		// A route, or a judge of Laya's type `local`, names it too; a judge of one's own called laya does not.
+		expect(
+			onMac('{ "tiers": ["jev"], "routes": { "memory.capture": ["laya"] } }', { [python]: "" }, key).startMude,
+		).toBeDefined();
+		expect(
+			onMac('{ "tiers": ["mine", "jev"], "judges": { "mine": { "type": "local" } } }', { [python]: "" }, key)
+				.startMude,
+		).toBeDefined();
+		expect(
+			onMac(
+				'{ "tiers": ["laya"], "judges": { "laya": { "type": "http", "baseUrl": "http://x" } } }',
+				{ [python]: "" },
+				key,
+			).startMude,
+		).toBeUndefined();
+		// MU_JUDGE naming Laya is only skipped; nothing is started for it.
+		expect(
+			onMac('{ "tiers": ["jev"] }', { [python]: "" }, { ...key, MU_JUDGE: "laya,jev" }).startMude,
+		).toBeUndefined();
+		// No note about it anywhere, and nothing to start away from a Mac.
+		const linux = launch({ fs: disk({ ...posixInstalled, [`${agent}/mu.json`]: named, [python]: "" }), env: key });
+		expect(linux).toMatchObject({ notes: [] });
+		expect(linux.startMude).toBeUndefined();
 	});
 
-	it("explains itself instead of failing: `mu judge start` on Windows, Linux and WSL", () => {
-		expect(planJudge({ platform: "darwin", env: {}, argv: [], bin: "/repo/kyrn/bin" })).toEqual({
-			kind: "script",
-			command: "/repo/kyrn/bin/kyrn-judge-local",
-			args: ["status"],
-		});
-		for (const [platform, wsl, name] of [
-			["win32", false, "Windows"],
-			["linux", false, "Linux"],
-			["linux", true, "WSL"],
-		] as const) {
-			const plan = planJudge({ platform, wsl, env: {}, argv: ["start"], bin: "bin" });
-			if (plan.kind !== "unsupported") throw new Error(`expected an explanation, got ${plan.kind}`);
-			expect(plan.message).toContain(`macOS with Apple Silicon only, not on ${name}`);
-			expect(plan.message).toContain("Jev");
-			expect(plan.message).toContain("desktop app");
-			expect(plan.message).toContain("MU_LOCAL_JUDGE_URL");
+	it("says what became of `mu judge setup | start | stop | status | run`, and what to use instead", () => {
+		for (const argv of [[], ["help"], ["--help"]]) {
+			const plan = planJudge({ argv });
+			expect(plan).toMatchObject({ kind: "usage", code: 0 });
+			expect(plan.text).toContain("mu judge mude");
+			expect(plan.text).toContain("mu judge model");
+			expect(plan.text).not.toContain("Laya");
 		}
-		const env = { MU_LOCAL_JUDGE_URL: "http://10.0.0.5:47823/" };
-		expect(planJudge({ platform: "linux", env, argv: [], bin: "bin" })).toEqual({
-			kind: "health",
-			url: "http://10.0.0.5:47823/health",
-		});
-		expect(planJudge({ platform: "win32", env, argv: ["start"], bin: "bin" }).kind).toBe("unsupported");
+		for (const command of ["setup", "start", "stop", "status", "run"]) {
+			const plan = planJudge({ argv: [command] });
+			expect(plan).toMatchObject({ kind: "removed", code: 1 });
+			expect(plan.text).toContain(`mu judge ${command} used to manage Laya, which is no longer built into mu.`);
+			expect(plan.text).toContain("mu judge mude install");
+			expect(plan.text).toContain("mu judge model add <link>");
+		}
+		expect(planJudge({ argv: ["frob"] })).toMatchObject({ kind: "unknown", code: 2 });
+		expect(usage("darwin")).not.toContain("Laya");
 	});
 });
 
@@ -923,7 +930,7 @@ describe("mu import", () => {
 		const pkg = "/usr/local/lib/node_modules/mu-agent";
 		const built = `${pkg}/judge/dist/import.js`;
 		expect(packageEntries({ root: pkg, platform: "linux" }).import).toBe(built);
-		const installed = { [`${pkg}/dist/bundle/cli.js`]: "", [`${pkg}/judge/dist/kyrn-judge.js`]: "" };
+		const installed = { [`${pkg}/dist/bundle/cli.js`]: "", [`${pkg}/judge/mu/index.js`]: "" };
 		expect(
 			planImport({ ...importArgs, platform: "linux", root: pkg, fs: disk({ ...installed, [built]: "" }) }),
 		).toMatchObject({ command: "/usr/bin/node", args: [built, "--list"], agentDir: "/home/bai/.mu/agent" });
@@ -962,7 +969,7 @@ describe("mu import", () => {
 			stripsTypes: false,
 		};
 		expect(planImport({ ...electron, fs: disk({ ...winInstalled, [source]: "" }) }).error).toContain(
-			"does not strip types",
+			"doesn't strip types",
 		);
 	});
 
@@ -1247,11 +1254,11 @@ describe("mu migrate without pgrep", () => {
 		expect(busy).toMatchObject({ code: 1, done: [] });
 		expect(busy.said).toContain("mu sessions");
 		expect(busy.said).toContain("the mu browser (pid 9200)");
-		expect(busy.said).toContain("desktop app's backend (pid 7312)");
+		expect(busy.said).toContain("desktop app's local service (pid 7312)");
 
 		const blind = windowsHome(() => undefined);
 		expect(blind).toMatchObject({ code: 1, done: [] });
-		expect(blind.said).toContain("could not be read");
+		expect(blind.said).toContain("couldn't read the list of running processes");
 	});
 });
 
@@ -1298,7 +1305,10 @@ describe("the launcher, run for real on this machine", () => {
 		if (!windows) expect(lstatSync(linked).isSymbolicLink()).toBe(true);
 		// Through the link, as a user would call it.
 		expect(runScript(linked, ["help"], { HOME: dir }).out).toContain("mu link | unlink");
-		expect(run(["unlink"], { HOME: dir, MU_LINK_DIR: links }).out).toContain("removed");
+		// --help explains, and links nothing.
+		expect(run(["unlink", "--help"], { HOME: dir, MU_LINK_DIR: links }).out).toContain("mu link --force");
+		expect(existsSync(linked)).toBe(true);
+		expect(run(["unlink"], { HOME: dir, MU_LINK_DIR: links }).out).toContain("Removed ");
 		expect(existsSync(linked)).toBe(false);
 		writeFileSync(linked, "a file");
 		expect(run(["unlink"], { HOME: dir, MU_LINK_DIR: links }).out).toContain(
@@ -1330,11 +1340,13 @@ describe("the launcher, run for real on this machine", () => {
 		"starts pi as a child too, the way Windows has to, and passes its exit code on",
 		() => {
 			const dir = temp();
-			const child = run(["--version"], { HOME: dir, MU_LAUNCH: "spawn" });
-			const replaced = run(["--version"], { HOME: dir });
+			// --help reaches pi (the launcher answers --version itself).
+			const child = run(["--help"], { HOME: dir, MU_LAUNCH: "spawn" });
+			const replaced = run(["--help"], { HOME: dir });
 
 			expect(child).toMatchObject({ code: 0, out: replaced.out });
-			expect(child.out).toMatch(/^\d+\.\d+\.\d+/);
+			expect(child.out).toContain("pi's help (mu passes all of this through)");
+			expect(child.out).toContain("--print, -p");
 			// An exit code that is not zero comes through as well: a home without a login makes the doctor exit with 1.
 			const doctor = run(["doctor"], { HOME: dir, MU_LAUNCH: "spawn" });
 			expect(doctor.out).toContain("login");

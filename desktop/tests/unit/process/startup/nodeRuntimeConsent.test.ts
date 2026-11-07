@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -34,7 +28,7 @@ function plan(overrides: Partial<Parameters<typeof planNodeRuntime>[0]> = {}) {
 }
 
 describe('the Node.js runtime the backend would download', () => {
-  it('is the archive aioncore fetches, unpacked where it looks for it', () => {
+  it('is the archive the backend fetches, unpacked where it looks for it', () => {
     expect(runtime).toEqual({
       version: '24.11.0',
       dir: path.join('/data', 'runtime', 'node', 'node-v24.11.0-darwin-arm64'),
@@ -51,10 +45,10 @@ describe('the Node.js runtime the backend would download', () => {
   });
 
   it('matches the backend the app is built with', () => {
-    // MANAGED_NODE_VERSION is aioncore v0.2.2's: a new backend may bring a new Node.js, so look again when this fails.
+    // MANAGED_NODE_VERSION is the one the backend (v0.2.2) has: a new backend may bring a new Node.js, so look again when this fails.
     const root = path.resolve(__dirname, '../../../..');
-    const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')) as { aioncoreVersion?: string };
-    expect(pkg.aioncoreVersion).toBe('v0.2.2');
+    const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')) as { backendVersion?: string };
+    expect(pkg.backendVersion).toBe('v0.2.2');
     expect(MANAGED_NODE_VERSION).toBe('24.11.0');
   });
 
@@ -94,7 +88,7 @@ describe('planNodeRuntime', () => {
   it.each([
     ['a packaged app', { isPackaged: true }],
     ['a runtime already in place', { installed: true }],
-    ['a platform aioncore does not manage', { runtime: undefined }],
+    ['a platform the backend does not manage', { runtime: undefined }],
   ])('asks nothing for %s', async (_case, overrides) => {
     const { ask, result } = plan(overrides);
     await expect(result).resolves.toBe('ready');

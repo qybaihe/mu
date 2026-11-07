@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The settings rail is six groups of short pages with a search over all of them, and every place that used to be a
  * page of its own still leads to the page that holds its settings now. Both halves are tested here: the rail a person
  * sees, and the redirects the router installs for the retired paths and for the tabs that became pages.

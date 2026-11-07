@@ -37,7 +37,7 @@ describe('refreshSession (WebUI session refresh)', () => {
 
   it('sends no x-csrf-token header (open-source WebUI has no CSRF layer — M6 removed, M7 restores)', async () => {
     // resolveCoreCsrfToken() is a stub returning '' here, so the shared refresh
-    // primitive attaches no CSRF header. The aionpro superset resolves a real
+    // primitive attaches no CSRF header. A hosted build resolves a real
     // token and asserts the header is present instead.
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', fetchMock);

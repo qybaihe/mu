@@ -83,6 +83,19 @@ describe('the harness manifest', () => {
     const state = parseManifest({ ...manifest, features: [odd] });
     expect(state.status === 'ok' && state.manifest.features[0].options).toEqual([]);
   });
+  it("reads a point's built-in mode, and leaves out one that is not a mode", () => {
+    const [first, second, third] = manifest.decisions;
+    const state = parseManifest({
+      ...manifest,
+      decisions: [{ ...first, defaultMode: 'shadow' }, { ...second, defaultMode: 'loud' }, third],
+    });
+    expect(state.status === 'ok' && state.manifest.decisions.map((decision) => decision.defaultMode)).toEqual([
+      'shadow',
+      undefined,
+      undefined,
+    ]);
+    expect(state.status === 'ok' && state.manifest.decisions[1]).not.toHaveProperty('defaultMode');
+  });
   it('speaks Chinese to every Chinese locale and English to all others, when that is all the harness has', () => {
     const text = { zh: '生效', en: 'Active' };
     expect(['zh-CN', 'zh-TW', 'zh'].map((language) => localized(text, language))).toEqual(['生效', '生效', '生效']);
@@ -280,12 +293,12 @@ describe('feature options', () => {
 describe('what a save leaves alone', () => {
   it('never drops routes, writer, recordState, judge profiles or keys it does not know', () => {
     const config = {
-      tiers: ['laya', 'jev'],
+      tiers: ['clm', 'jev'],
       routes: { 'browser.step': ['luna'] },
       writer: 'openai/gpt-5.6-luna',
       recordState: true,
       judges: {
-        laya: { type: 'local', profile: { capabilities: { relate: false } } },
+        clm: { type: 'clm', profile: { capabilities: { relate: false } } },
         luna: { type: 'llm', model: 'a/b' },
       },
       somethingNew: { nested: [1, 2, 3] },

@@ -7,7 +7,7 @@
 import type { IGpuStatus } from '@/common/adapter/ipcBridge';
 
 /** localStorage key holding the `lastCrashAt` of the last acknowledged notice. */
-export const GPU_AUTO_DISABLE_ACK_KEY = 'aionui.gpuAutoDisableNoticeAckAt';
+export const GPU_AUTO_DISABLE_ACK_KEY = 'mu.gpuAutoDisableNoticeAckAt';
 
 /**
  * Decide whether to surface the one-time "hardware acceleration auto-disabled"

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Button, Input } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   isGoogleProvider,
   isRiskConsent,
   type LoginPrompt,
+  type LoginStartOptions,
   type LoginState,
   type SubscriptionProvider,
 } from '@/common/kyrn/login';
@@ -28,7 +30,9 @@ export function ExperimentalTag({ provider }: { provider: SubscriptionProvider }
 
 /**
  * A sign-in in the browser, while it runs. The page on this machine finishes it by itself; pasting the code by hand
- * is only offered as the way out when that does not happen. Give it `key={login.id}`, so a new sign-in starts clean.
+ * is only offered as the way out when that does not happen. A sign-in by the pasted address alone (`login.paste`,
+ * when another program keeps the callback port) shows its field at once. Give it `key={login.id}`, so a new sign-in
+ * starts clean.
  */
 export default function LoginWaiting({
   login,
@@ -40,7 +44,7 @@ export default function LoginWaiting({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const [pasting, setPasting] = useState(false);
+  const [pasting, setPasting] = useState(login.paste === true);
   const [code, setCode] = useState('');
   const { prompt } = login;
   const answer = (value: string) => {
@@ -69,6 +73,11 @@ export default function LoginWaiting({
         <div className={styles.deviceCode}>
           <span>{t('mu.welcome.login.deviceCode')}</span>
           <code data-testid='mu-login-device-code'>{login.device.userCode}</code>
+        </div>
+      ) : null}
+      {login.paste && prompt?.type === 'manual_code' && prompt.placeholder ? (
+        <div className={styles.hint} data-testid='mu-login-paste-hint'>
+          {t('mu.welcome.login.pasteHint', { address: prompt.placeholder })}
         </div>
       ) : null}
       {prompt && (prompt.type !== 'manual_code' || pasting) ? (
@@ -128,23 +137,72 @@ function RiskConsent({
 }
 
 /**
- * Why a sign-in or sign-out did not finish: what did not, in a plain sentence; the reason in the app language when the
- * failure has a known code; and the flow's or the call's own words under it.
+ * The one sentence for a sign-in whose callback port another program keeps: which program, as far as the system says,
+ * and what to do there. It stands in for the flow's own English words.
  */
-export function LoginProblem({ failure }: { failure: LoginFailure | undefined }) {
+function portInUseText(t: TFunction, failure: LoginFailure): string {
+  const port = failure.port ?? 1455;
+  const { pid, command, pi } = failure.holder ?? {};
+  if (pi && pid) return t('mu.welcome.login.portInUse.session', { port, pid });
+  if (command && pid) return t('mu.welcome.login.portInUse.program', { port, command, pid });
+  if (pid) return t('mu.welcome.login.portInUse.process', { port, pid });
+  return t('mu.welcome.login.portInUse.unknown', { port });
+}
+
+/**
+ * Why a sign-in or sign-out did not finish: what did not, in a plain sentence; the reason in the app language when the
+ * failure has a known code; and the flow's or the call's own words under it. A sign-in that failed can be tried again
+ * from here (`onStart`), and one whose callback port another program keeps can be done by the pasted address instead.
+ */
+export function LoginProblem({
+  failure,
+  onStart,
+}: {
+  failure: LoginFailure | undefined;
+  /** Starts the sign-in again; without it there is no Retry. */
+  onStart?: (provider: SubscriptionProvider, options?: LoginStartOptions) => void;
+}) {
   const { t, i18n } = useTranslation();
   if (!failure) return null;
+  const { provider } = failure;
+  // A port another program keeps, or a sign-in another one took over: one sentence of the app's own says it all.
+  const own =
+    failure.code === 'port_in_use'
+      ? portInUseText(t, failure)
+      : failure.code === 'login_taken_over'
+        ? t('mu.welcome.login.takenOver')
+        : undefined;
   // An uncoded failure has nothing to say beyond its own words.
   const known =
-    failure.error && failure.error.code !== 'unknown' ? muErrorText(t, i18n.language, failure.error) : undefined;
-  const detail = known ? known.detail : failure.detail;
+    !own && failure.error && failure.error.code !== 'unknown'
+      ? muErrorText(t, i18n.language, failure.error)
+      : undefined;
+  const detail = own ? undefined : known ? known.detail : failure.detail;
+  const retry = failure.action === 'signIn' && provider && onStart ? onStart : undefined;
   return (
     <div className={styles.problem} role='alert' data-testid='mu-login-problem'>
-      {t(failure.action === 'signOut' ? 'mu.accounts.signOutFailed' : 'mu.welcome.login.failed')}
+      {own ?? t(failure.action === 'signOut' ? 'mu.accounts.signOutFailed' : 'mu.welcome.login.failed')}
       {known ? <div>{known.text}</div> : null}
       {detail ? (
         <div className={styles.problemDetail} dir='ltr'>
           {detail.length > DETAIL_LIMIT ? `${detail.slice(0, DETAIL_LIMIT)}…` : detail}
+        </div>
+      ) : null}
+      {retry && provider ? (
+        <div className={styles.problemActions}>
+          <Button size='small' data-testid='mu-login-retry' onClick={() => retry(provider, { paste: failure.paste })}>
+            {t('mu.welcome.login.retry')}
+          </Button>
+          {failure.code === 'port_in_use' && !failure.paste ? (
+            <Button
+              size='small'
+              type='text'
+              data-testid='mu-login-paste-instead'
+              onClick={() => retry(provider, { paste: true })}
+            >
+              {t('mu.welcome.login.pasteInstead')}
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </div>

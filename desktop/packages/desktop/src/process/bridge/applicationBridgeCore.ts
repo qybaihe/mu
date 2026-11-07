@@ -15,6 +15,7 @@ import { ipcBridge } from '@/common';
 import { createSkillFileService } from '@process/services/skills';
 import { getSystemDir, ProcessEnv } from '@process/utils/initStorage';
 import { copyDirectoryRecursively, getConfigPath, getDataPath, resolveCliSafePath } from '@process/utils';
+import { DIRS_KEY } from '@/common/platform/legacyNames';
 
 export function initApplicationBridgeCore(): void {
   const skillFiles = createSkillFileService();
@@ -35,7 +36,7 @@ export function initApplicationBridgeCore(): void {
     if (oldDir.cacheDir !== safeCacheDir) {
       await copyDirectoryRecursively(oldDir.cacheDir, safeCacheDir);
     }
-    await ProcessEnv.set('aionui.dir', { cacheDir: safeCacheDir, workDir: safeWorkDir, logDir: safeLogDir });
+    await ProcessEnv.set(DIRS_KEY, { cacheDir: safeCacheDir, workDir: safeWorkDir, logDir: safeLogDir });
   });
 
   ipcBridge.application.getPath.provider(({ name }) => {

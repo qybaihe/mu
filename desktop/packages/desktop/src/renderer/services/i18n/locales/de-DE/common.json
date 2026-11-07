@@ -168,7 +168,6 @@
     "judge": "Judge-Konfiguration",
     "reload": "Neu laden",
     "starting": "mu wird gestartet…",
-    "startingHint": "Verbindung zum lokalen mu-Kernel wird hergestellt, Modell- und Judge-Konfiguration werden gelesen.",
     "startupError": "mu konnte nicht gestartet werden",
     "hiveView": {
       "title": "Hive",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · zuletzt: {{step}}",
       "runs": "Hive-Läufe",
       "graph": "Kollaborationskarte",
-      "graphHint": "Je dicker eine Linie, desto mehr ging darüber. Eine Biene wählen öffnet ihre Zeile; auf eine Linie zeigen zeigt, was sie trug.",
       "map": "Karte",
       "legend": "Legende",
       "legendDelivery": "Zustellung",
@@ -206,7 +204,6 @@
       "board": "Gemeinsames Board",
       "noNotes": "Noch keine gemeinsamen Erkenntnisse.",
       "context": "Ausführungskontext",
-      "contextHint": "Aufgezeichnete Nachrichten und fertige Tool-Ausgabe, nicht der vollständige Modell-Prompt. Die Ausgabe erscheint nach Abschluss.",
       "focus": "Zuweisung",
       "missingFocus": "Für diese Ausführung wurde keine Zuweisung aufgezeichnet.",
       "current": "Aktuelle Aktivität",
@@ -227,7 +224,7 @@
       "noteMissing": "Erkenntnis nicht aufgezeichnet.",
       "allFlow": "Alle Übergaben",
       "beeFlow": "Übergaben für {{name}}",
-      "audit": "Jev-Entscheidungen",
+      "audit": "Entscheidungen",
       "waitingRun": "Warte auf aufgezeichnete Ereignisse dieses Hive.",
       "recordedAt": "Aufgezeichnet um {{time}}",
       "beeMissing": "Diese Biene ist nicht im aufgezeichneten Snapshot.",
@@ -296,6 +293,17 @@
       "batchFailures": "Ohne Antwort, Standardstrategie angewendet: {{count}}.",
       "changedThinking": "Denkstufe: {{from}} → {{to}}",
       "sentHints": "An das Hauptmodell gesendete Hinweise",
+      "userAnswer": {
+        "once": "Du hast das einmal erlaubt.",
+        "session": "Du hast das für diese Unterhaltung erlaubt.",
+        "deny": "Du hast das nicht erlaubt.",
+        "dismissed": "Du hast die Frage ohne Antwort geschlossen.",
+        "none": "Niemand konnte gefragt werden, daher wurde der Schritt abgelehnt."
+      },
+      "markedWrong": "Du hast dieses Urteil als falsch markiert.",
+      "markedWrongWhy": "Du hast dieses Urteil als falsch markiert: {{note}}",
+      "markWrong": "Als falsch markieren",
+      "markWrongHint": "Sag mu, dass dieses Urteil falsch war. Die Markierung wird mit dem Urteil im ledger dieser Sitzung gespeichert.",
       "unlinked": "Einzelaufzeichnung",
       "unlinkedHint": "Ohne Zuordnung zu einer Runde aufgezeichnet. Der Eintrag steht für sich und wird nicht mit zeitlich nahen Aufzeichnungen zusammengeführt.",
       "state": {
@@ -959,7 +967,7 @@
       "auto_compaction_end": "Verdichtung abgeschlossen",
       "hive.note": "Geteilte Erkenntnis",
       "hive.delivery": "Übergabe bestätigt",
-      "hive.gate": "Jev-Schleuse",
+      "hive.gate": "Hive-Schleuse",
       "hive.manifest": "Hive-Zuweisung",
       "bee.event": "Bienen-Ereignis",
       "memory.recalled": "Abgerufene Erfahrung",
@@ -1065,7 +1073,6 @@
     "compactionAborted": "Verdichtung abgebrochen",
     "compactionFailed": "Verdichtung fehlgeschlagen",
     "compactionSavings": "Kontext um ≈{{saved}} reduziert",
-    "compactionEstimate": "Die Tokenzahl nach der Verdichtung ist geschätzt; die nächste Modellantwort aktualisiert die Nutzung.",
     "cacheHit": "Cache-Treffer",
     "cachePending": "Noch keine Cache-Nutzung gemeldet",
     "cacheLabel": "Cache-Trefferquote der Sitzung: {{percent}}",
@@ -1076,24 +1083,6 @@
         "idle": "Judge in Bereitschaft",
         "judging": "Judge urteilt gerade",
         "off": "Judge ist aus"
-      },
-      "starters": {
-        "hint": "Nicht sicher, wo du anfangen sollst? Probier eines davon:",
-        "understand": {
-          "title": "Dieses Projekt verstehen",
-          "desc": "Struktur, Einstiegspunkte und Kernmodule erfassen",
-          "prompt": "Lies dieses Projekt zuerst durch und erkläre mir dann seinen Aufbau, die wichtigsten Einstiegspunkte und die zentralen Module. Nenne die drei Dateien, die man zuerst lesen sollte."
-        },
-        "fix": {
-          "title": "Ein Problem finden und beheben",
-          "desc": "Vom Fehler oder Symptom zur Ursache",
-          "prompt": "Ich habe ein Problem: <Symptom beschreiben oder Fehlermeldung einfügen>. Reproduziere es zuerst und finde die Ursache, nimm dann die kleinste Korrektur vor und führe die zugehörigen Tests zur Überprüfung aus."
-        },
-        "plan": {
-          "title": "Eine Änderung planen",
-          "desc": "Erst der Plan, Änderungen nach deiner Bestätigung",
-          "prompt": "Ich möchte Folgendes umsetzen: <Anforderung beschreiben>. Gib mir zuerst einen Umsetzungsplan mit den betroffenen Dateien und beginne erst nach meiner Bestätigung mit den Änderungen."
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1096,7 @@
       "switch": "Klartext-Board für dieses Projekt",
       "switching": "Wird umgeschaltet…",
       "afterTurn": "Schaltet um, sobald der Agent diesen Schritt beendet hat",
-      "unknown": "In dieser Unterhaltung gibt es noch kein Board. Es erscheint in mu-Unterhaltungen, solange das Klartext-Board unter Funktionen eingeschaltet ist.",
+      "unknown": "In dieser Unterhaltung gibt es noch kein Board. Es erscheint in mu-Unterhaltungen, solange das Klartext-Board unter Einstellungen → Kernfunktionen eingeschaltet ist.",
       "off": "Sobald es eingeschaltet ist, steht hier in einfachen Worten, wie die Arbeit vorangeht, was der Agent gerade tut und wo du gebraucht wirst.",
       "cost": "Nur für dieses Projekt. Jede Aktualisierung kostet einen Modellaufruf.",
       "empty": "Gib dem Agenten einen Moment; hier steht dann in einfachen Worten, wie es läuft.",
@@ -1119,7 +1108,6 @@
       "needsYou": "Braucht dich",
       "needsYouText": "Der Agent wartet in der Unterhaltung auf deine Antwort.",
       "quote": "In deiner Antwort zitieren",
-      "quoteHint": "Klicke auf einen Punkt, um ihn in deiner Antwort zu zitieren; gesendet wird erst, wenn du sendest.",
       "account": "Was er getan hat",
       "earlierNotes": "{{count, number}} frühere Einträge",
       "earlierNotes_one": "{{count, number}} früherer Eintrag",
@@ -1132,7 +1120,8 @@
         "fixing": "Behebt, was die Prüfung fand",
         "waiting": "Wartet auf dich",
         "wrapping_up": "Schließt ab",
-        "stuck": "Scheint festzustecken"
+        "stuck": "Scheint festzustecken",
+        "blocked": "Wartet auf etwas anderes"
       },
       "checks_one": "{{done}} von {{total}} Prüfpunkt erledigt",
       "checks_other": "{{done}} von {{total}} Prüfpunkten erledigt",
@@ -1158,8 +1147,9 @@
           "wrapping_up": "Ist mit der Arbeit fertig und schließt ab.",
           "stuck": "Scheint sich im Kreis zu drehen; ein Hinweis von dir könnte helfen.",
           "unclear": "Arbeitet.",
-          "focus": "{{now}} (Aktueller Punkt: {{focus}})",
-          "planning": "Überlegt das Vorgehen; geändert ist noch nichts."
+          "planning": "Überlegt das Vorgehen; geändert ist noch nichts.",
+          "blocked": "Wartet auf einen Befehl, einen Helfer oder das Netzwerk.",
+          "focus": "{{now}} (Aktueller Punkt: {{focus}})"
         }
       },
       "notes": {
@@ -1190,8 +1180,42 @@
         "did": "Hat {{tool}} benutzt: {{what}}",
         "said_quote": "Er sagte: {{text}}",
         "ended": "Angehalten.",
-        "waiting_reply": "Hat angehalten und wartet auf deine Antwort."
-      }
+        "waiting_reply": "Hat angehalten und wartet auf deine Antwort.",
+        "still_running": "{{what}} läuft noch, seit {{minutes, number}} Min.",
+        "still_running_who": "{{who}}: {{what}} läuft seit {{minutes, number}} Min. ohne Ausgabe",
+        "helper_done": "{{name}} ist zurück: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} ist fehlgeschlagen",
+          "timed_out": "{{name}} hat das Zeitlimit überschritten",
+          "stopped": "{{name}} wurde gestoppt"
+        },
+        "helpers_back_failed": "{{count, number}} Helfer zurück, {{failed, number}} mit Fehlern",
+        "helpers_back_failed_one": "{{count, number}} Helfer zurück, {{failed, number}} mit Fehlern",
+        "helpers_back_failed_other": "{{count, number}} Helfer zurück, {{failed, number}} mit Fehlern",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "list": {
+        "separator": ", "
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} Helfer arbeiten",
+        "helpers_working_one": "{{count, number}} Helfer arbeitet",
+        "helpers_working_other": "{{count, number}} Helfer arbeiten",
+        "waiting_permission": "Wartet auf deine Erlaubnis: {{what}}"
+      },
+      "updated": "Vor {{ago}} aktualisiert",
+      "updatedNow": "Gerade aktualisiert",
+      "blocked": "Blockiert",
+      "blockedLine": "Blockiert: {{text}}",
+      "next": "Als Nächstes",
+      "agents": "Wer macht was",
+      "agentStates": {
+        "working": "Arbeitet",
+        "waiting": "Wartet",
+        "stuck": "Hängt fest"
+      },
+      "stripOpen": "Klartext-Board: {{headline}}",
+      "stripHint": "Klicken, um das Board zu öffnen"
     },
     "lessonsView": {
       "filterLabel": "Welche Lektionen angezeigt werden",
@@ -1279,7 +1303,7 @@
     "compactionDropped": "{{count}} Aufrufe entfernt",
     "compactionDropped_one": "{{count}} Aufruf entfernt",
     "compactionDropped_other": "{{count}} Aufrufe entfernt",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} ordnet die Nachricht ein…",
       "classified": "Von {{judge}} eingeordnet: {{type}}",
       "byRule": "Per Regel eingeordnet: {{type}}",
@@ -1291,9 +1315,16 @@
       "setUp": "Judge einrichten",
       "skipped": "Einordnung übersprungen",
       "off": "Einordnung ist aus",
-      "firstHint": "Diese Zeile ist Jevs Urteil: Jev ordnet jede Nachricht zuerst ein, dann entscheidet mu, wie es weitergeht. Jedes Urteil steht rechts unter Urteile."
+      "firstHint": "Diese Zeile ist das Urteil des Judges: Der Judge ordnet jede Nachricht zuerst ein, dann entscheidet mu, wie es weitergeht. Jedes Urteil steht rechts unter Urteile."
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "Kein Jev-Schlüssel gesetzt: Der kostenlose Jev auf OpenCode Zen antwortet",
+        "freeJevUnavailable": "Der kostenlose Jev antwortet nicht mehr: Bis ein Jev-Schlüssel gesetzt ist, entscheiden feste Regeln",
+        "openaiKeyMissing": "Das Entscheidungsmodell von OpenAI hat keinen API-Schlüssel: Es entscheiden der nächste Judge oder feste Regeln",
+        "openaiKeyRejected": "OpenAI hat den API-Schlüssel des Entscheidungsmodells abgelehnt: Es entscheiden der nächste Judge oder feste Regeln",
+        "layaRemoved": "Laya ist nicht mehr in mu enthalten: Der Judge ist jetzt {{judge}}"
+      },
       "detail": "Details: {{detail}}",
       "progress": {
         "frame": "Aufgabenrahmen wird aktualisiert",
@@ -1301,7 +1332,7 @@
         "skills": "Benötigte Skills für diese Sitzung werden ausgewählt",
         "capabilities": "Benötigte Fähigkeiten für diese Aufgabe werden ausgewählt",
         "goal_check": "Es wird geprüft, ob das Ziel erreicht ist",
-        "permissionReview": "Jev prüft: {{summary}}"
+        "permissionReview": "Der Judge prüft: {{summary}}"
       },
       "goal": {
         "paused": "Pausiert: {{reason}}",
@@ -1428,6 +1459,26 @@
       "reviewer": "Prüfer",
       "scout": "Kundschafter",
       "worker": "Ausführer"
+    },
+    "kernel": {
+      "free": "kostenlos",
+      "local": "lokal",
+      "judgeHint": "Der Judge, der die Entscheidungspunkte von mu beantwortet. Zum Ändern klicken.",
+      "points": "{{active}}/{{total}} Entscheidungspunkte aktiv",
+      "shadow_one": "· {{count}} im Schattenmodus",
+      "shadow_other": "· {{count}} im Schattenmodus",
+      "off": "Urteile sind aus",
+      "verdicts_one": "Urteil",
+      "verdicts_other": "Urteile",
+      "last": "zuletzt",
+      "context": "Kontext",
+      "cache": "Cache"
+    },
+    "hero": {
+      "kernel": "Urteilskern",
+      "judgeReady": "{{judge}} ist bereit",
+      "judgeOff": "Urteile sind aus",
+      "title": "Woran soll mu arbeiten?"
     }
   },
   "menu": {
@@ -1464,7 +1515,8 @@
     "bringAllToFront": "Alle nach vorne bringen",
     "help": "Hilfe",
     "checkForUpdates": "Nach Updates suchen…",
-    "projectPage": "{{name}} auf GitHub"
+    "projectPage": "{{name}} auf GitHub",
+    "keyboardShortcuts": "Tastenkürzel"
   },
   "trayMenu": {
     "runningTasks": "Laufende Aufgaben: {{count}}"
@@ -1486,7 +1538,10 @@
     "openSettings": "Einstellungen öffnen",
     "actions": {
       "newConversation": "Neuen Chat beginnen",
-      "scheduledTasks": "Geplante Aufgaben öffnen"
+      "scheduledTasks": "Geplante Aufgaben öffnen",
+      "quickOpen": "Datei nach Namen öffnen",
+      "nextWaiting": "Zur nächsten Unterhaltung, die auf dich wartet",
+      "shortcuts": "Tastenkürzel anzeigen"
     },
     "commandWaits": "Wird ausgeführt, wenn diese Antwort fertig ist"
   },
@@ -1517,7 +1572,12 @@
     "previewEmpty": "Noch nichts zur Vorschau. Dateien, die aus der Unterhaltung geöffnet werden, erscheinen hier.",
     "previewHidden": "Die Vorschau ist ausgeblendet.",
     "browserEmpty": "Keine Seiten geöffnet. Oben eine Adresse oder einen Suchbegriff eingeben. Seiten, die aus der Unterhaltung geöffnet werden, erscheinen ebenfalls hier.",
-    "firstHint": "Klartext erzählt den Fortschritt in einfachen Worten, Urteile listet jedes Urteil von Jev, Dateien ist der Ordner dieser Unterhaltung. Weitere Tabs erscheinen, sobald sie gebraucht werden."
+    "firstHint": "Klartext erzählt den Fortschritt in einfachen Worten, Urteile listet jedes Urteil, Dateien ist der Ordner dieser Unterhaltung. Weitere Tabs erscheinen, sobald sie gebraucht werden.",
+    "follow": {
+      "label": "Dem Agenten folgen",
+      "on": "Dem Agenten folgen: Dateien, die er bearbeitet, und Seiten, die er öffnet, erscheinen hier. Zum Beenden klicken.",
+      "off": "Dem Agenten folgen: hier die Dateien zeigen, die er bearbeitet, und die Seiten, die er öffnet."
+    }
   },
   "nodeRuntime": {
     "title": "Node.js herunterladen?",
@@ -1530,5 +1590,46 @@
   },
   "firstHint": {
     "close": "Verstanden"
+  },
+  "quickOpen": {
+    "title": "Datei öffnen",
+    "placeholder": "Dateien im Ordner dieser Unterhaltung suchen",
+    "loading": "Ordner wird gelesen…",
+    "failed": "Der Ordner dieser Unterhaltung konnte nicht gelesen werden.",
+    "more": "Dieser Ordner enthält mehr Dateien als aufgelistet. Gib mehr vom Namen ein, um einzugrenzen.",
+    "noFolder": "Öffne eine Unterhaltung mit Ordner, um ihre Dateien nach Namen zu finden."
+  },
+  "shortcuts": {
+    "title": "Tastenkürzel",
+    "groups": {
+      "general": "Allgemein",
+      "conversations": "Unterhaltungen",
+      "panels": "Bereiche",
+      "sendBox": "Eingabefeld",
+      "view": "Ansicht"
+    },
+    "rows": {
+      "palette": "Unterhaltungen, Einstellungen und Befehle suchen",
+      "quickOpen": "Datei nach Namen öffnen",
+      "searchMessages": "Alle Nachrichten durchsuchen",
+      "findInConversation": "In dieser Unterhaltung suchen",
+      "newConversation": "Neue Unterhaltung",
+      "settings": "Einstellungen",
+      "shortcuts": "Tastenkürzel",
+      "byPosition": "Unterhaltung an dieser Position der Seitenleiste öffnen",
+      "nextWaiting": "Nächste Unterhaltung, die auf dich wartet",
+      "nextPrevious": "Nächste oder vorherige Unterhaltung",
+      "sidebar": "Seitenleiste ein- oder ausblenden",
+      "workPanel": "Arbeitsbereich ein- oder ausblenden",
+      "closeTab": "Die Vorschau-Registerkarte oder Browserseite schließen, in der du bist",
+      "saveFile": "Die bearbeitete Datei speichern",
+      "send": "Senden",
+      "newLine": "Neue Zeile",
+      "history": "Eine frühere Nachricht zurückholen",
+      "commands": "Einen Befehl ausführen",
+      "mention": "Datei erwähnen",
+      "zoom": "Vergrößern oder verkleinern",
+      "resetZoom": "Originalgröße"
+    }
   }
 }

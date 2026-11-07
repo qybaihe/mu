@@ -1,5 +1,5 @@
 /**
- * Postinstall script for AionUi
+ * Postinstall script for the mu desktop app
  * Handles native module installation for different environments
  */
 

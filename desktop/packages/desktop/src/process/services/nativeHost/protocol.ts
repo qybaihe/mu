@@ -9,12 +9,12 @@
  */
 
 /**
- * main → host. `init` comes first: pi's module and arguments, and the Node options the launcher planned for the
- * process, which the host applies itself (entry.ts). `in` records wait in the host until pi listens; `end` asks pi to
- * shut down.
+ * main → host. `init` comes first: pi's module and arguments, the Node options the launcher planned for the process,
+ * which the host applies itself, and the script the command line runs pi with, which the host hands pi as its command
+ * line (entry.ts). `in` records wait in the host until pi listens; `end` asks pi to shut down.
  */
 export type ToHost =
-  | { type: 'init'; module: string; args: string[]; execArgv: string[] }
+  | { type: 'init'; module: string; cli?: string; args: string[]; execArgv: string[] }
   | { type: 'in'; json: string }
   | { type: 'end' };
 
@@ -40,7 +40,9 @@ export function readToHost(value: unknown): ToHost | undefined {
   if (value.type === 'end') return { type: 'end' };
   if (value.type === 'init' && typeof value.module === 'string' && isStrings(value.args)) {
     const execArgv = value.execArgv ?? [];
-    return isStrings(execArgv) ? { type: 'init', module: value.module, args: value.args, execArgv } : undefined;
+    if (!isStrings(execArgv) || (value.cli !== undefined && typeof value.cli !== 'string')) return undefined;
+    const cli = typeof value.cli === 'string' && value.cli !== '' ? { cli: value.cli } : {};
+    return { type: 'init', module: value.module, ...cli, args: value.args, execArgv };
   }
   return undefined;
 }

@@ -1,6 +1,6 @@
 /**
  * Electron main process of the spike: no window, its own throw-away profile, one utility process.
- * It never touches the running desktop app, AionCore, or the real ~/.kyrn.
+ * It never touches the running desktop app, the backend, or the real ~/.kyrn.
  */
 import { app, utilityProcess } from 'electron';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';

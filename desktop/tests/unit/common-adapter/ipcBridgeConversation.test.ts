@@ -3,6 +3,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 type HttpCall = {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -204,7 +205,7 @@ describe('ipcBridge backend texts shown as mu', () => {
       {
         id: '632f31d2',
         name: 'Aion CLI',
-        backend: 'aionrs',
+        backend: BUILTIN_AGENT,
         agent_source: 'internal',
         last_check_error_message: 'Internal Aion CLI does not support overrides',
       },
@@ -215,7 +216,7 @@ describe('ipcBridge backend texts shown as mu', () => {
       {
         id: '632f31d2',
         name: 'mu',
-        backend: 'aionrs',
+        backend: BUILTIN_AGENT,
         agent_source: 'internal',
         last_check_error_message: 'Internal mu does not support overrides',
       },

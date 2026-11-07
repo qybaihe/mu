@@ -157,7 +157,25 @@
     "tabLimitReached": "탭 수 한도({{count}})에 도달하여 가장 오래된 탭을 재사용했습니다.",
     "agentFirstUseTitle": "에이전트가 앱 내 브라우저를 사용하고 있습니다",
     "agentFirstUseContent": "이 패널에서 페이지를 열고 클릭하고 내용을 읽을 수 있습니다. 로그인 상태는 유지됩니다.",
-    "agentFirstUseAction": "설정 열기"
+    "agentFirstUseAction": "설정 열기",
+    "pick": {
+      "start": "요소를 선택해 mu에게 보여주기",
+      "stop": "선택 중지",
+      "hint": "요소를 클릭해 메시지에 추가 · ↑ 상위 요소 · Esc 취소",
+      "added": "{{name}}을(를) 메시지에 추가했습니다",
+      "failed": "이 페이지의 요소는 선택할 수 없습니다"
+    },
+    "screenshot": {
+      "send": "지금 보이는 이 페이지를 mu에게 보여 주기",
+      "chip": "{{site}} 스크린샷",
+      "added": "{{site}} 스크린샷을 메시지에 추가했어요",
+      "failed": "지금은 이 페이지를 캡처할 수 없어요"
+    },
+    "console": {
+      "send": "페이지 콘솔의 오류와 경고를 mu에게 보내기",
+      "chip": "{{site}} 콘솔",
+      "added": "{{site}} 콘솔을 메시지에 추가했어요"
+    }
   },
   "saveConflict": "저장하지 못했습니다: 이 파일은 열어 둔 사이에 디스크에서 변경되었습니다. 다시 불러오면 다른 변경을 확인할 수 있으며, 편집 내용은 저장되지 않은 상태로 남아 있습니다.",
   "persistQuotaExceeded": "로컬 저장 공간이 가득 차 이 프로젝트의 열린 탭을 기억할 수 없습니다. 탭을 닫거나 사이트 데이터를 지워 주세요.",
@@ -319,5 +337,31 @@
   "saveFailedWithDetail": "저장하지 못했습니다: {{detail}}",
   "zoomActualSize": "확대/축소 초기화",
   "zoomFit": "너비 맞춤",
-  "zoomFitTooltip": "패널 너비에 맞춤"
+  "zoomFitTooltip": "패널 너비에 맞춤",
+  "gallery": {
+    "label": "이미지 {{name}}",
+    "previous": "이전 이미지",
+    "next": "다음 이미지",
+    "position": "{{index}} / {{count}}",
+    "gone": "이 파일을 찾을 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.",
+    "tooLarge": "이미지가 너무 커서 여기에 표시할 수 없습니다({{size}}). 기본 앱에서 열어 주세요."
+  },
+  "reveal": {
+    "mac": "Finder에서 보기",
+    "windows": "파일 탐색기에서 보기",
+    "linux": "폴더에서 보기"
+  },
+  "diffComment": {
+    "add": "이 줄에 댓글 달기",
+    "placeholder": "여기서 mu가 무엇을 바꿔야 하나요?",
+    "save": "댓글 추가",
+    "hint": "댓글은 다음 메시지와 함께 전송됩니다",
+    "remove": "댓글 삭제"
+  },
+  "diffHunk": {
+    "stage": "이 변경 스테이징",
+    "unstage": "이 변경 스테이징 해제",
+    "stale": "이 diff를 보여 준 뒤에 파일이 바뀌어서 아무것도 바꾸지 않았어요. 지금 상태를 다시 보여 드려요.",
+    "failed": "Git이 완료하지 못했어요: {{reason}}"
+  }
 }

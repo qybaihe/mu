@@ -63,7 +63,7 @@ function fromWire(question: Question, answer: ClassifierWireAnswer | undefined):
 			? { type: "score", score: answer.score, confidence: answer.confidence }
 			: undefined;
 	}
-	if (answer.type !== "choice" || !(answer.choice in question.criteria)) return undefined;
+	if (answer.type !== "choice" || !Object.hasOwn(question.criteria, answer.choice)) return undefined;
 	return {
 		type: "choice",
 		choice: answer.choice,

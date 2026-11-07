@@ -39,11 +39,16 @@ import { formatProviderError, normalizeProviderError } from "../utils/error-body
 import { AssistantMessageEventStream } from "../utils/event-stream.ts";
 import { shortHash } from "../utils/hash.ts";
 import { headersToRecord } from "../utils/headers.ts";
-import { parseStreamingJson } from "../utils/json-parse.ts";
-import { getPiUserAgent } from "../utils/pi-user-agent.ts";
+import { type ClientIdentity, getIdentityHeaders } from "../utils/identity.ts";
+import {
+	applyOpenRouterReportedCost,
+	isOpenRouterModel,
+	type OpenRouterUsageAccounting,
+} from "../utils/openrouter-cost.ts";
 import { getProviderEnvValue } from "../utils/provider-env.ts";
 import { retryProviderRequest } from "../utils/provider-retry.ts";
 import { sanitizeSurrogates } from "../utils/sanitize-unicode.ts";
+import { ToolCallArgumentsStream } from "../utils/streaming-json.ts";
 import { getSystemMessageText, renderSystemMessageUpdate } from "../utils/text.ts";
 import {
 	getDeclaredTools,
@@ -53,6 +58,7 @@ import {
 } from "../utils/transcript.ts";
 import {
 	appendGrammarToolInputJsonDelta,
+	closeGrammarToolInputJson,
 	createGrammarToolInputProperties,
 	type GrammarToolInputJsonBuffer,
 	getGrammarToolInput,
@@ -185,6 +191,8 @@ type ResolvedOpenAICompletionsCompat = Omit<
 };
 
 type ResolvedChatTemplateKwargValue = string | number | boolean | null;
+
+type ChatCompletionParams = OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
 
 type ChatCompletionInstructionMessageParam = ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam;
 
@@ -351,6 +359,7 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 				normalizedContext,
 				apiKey,
 				options?.headers,
+				options?.identity,
 				options?.fetch,
 				cacheSessionId,
 				compat,
@@ -373,7 +382,9 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 				maxRetries: 0,
 			};
 			const { data: openaiStream, response } = await retryProviderRequest(
-				() => client.chat.completions.create(params, requestOptions).withResponse(),
+				withCompatFallback(model, params, (body) =>
+					client.chat.completions.create(body, requestOptions).withResponse(),
+				),
 				{
 					maxRetries: options?.maxRetries,
 					maxRetryDelayMs: options?.maxRetryDelayMs,
@@ -383,15 +394,13 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 			await options?.onResponse?.({ status: response.status, headers: headersToRecord(response.headers) }, model);
 			stream.push({ type: "start", partial: output });
 
-			interface StreamingToolCallBlock extends ToolCall {
-				partialArgs?: string;
-				customInput?: {
-					property: string;
-					jsonBuffer: GrammarToolInputJsonBuffer;
-				};
-				streamIndex?: number;
-			}
-			type StreamingBlock = TextContent | ThinkingContent | StreamingToolCallBlock;
+			// Stream state of a tool call, kept off the content block so it never reaches partials: JSON arguments, or
+			// the input of a grammar (custom) tool.
+			type ToolCallInput =
+				| { readonly kind: "json"; readonly arguments: ToolCallArgumentsStream }
+				| { readonly kind: "custom"; readonly property: string; readonly buffer: GrammarToolInputJsonBuffer };
+			type ToolCallState = { streamIndex: number | undefined; input: ToolCallInput };
+			type StreamingBlock = TextContent | ThinkingContent | ToolCall;
 			type StreamingToolCallDelta = {
 				index?: number;
 				id?: string;
@@ -403,32 +412,16 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 			let textBlock: TextContent | null = null;
 			let thinkingBlock: ThinkingContent | null = null;
 			let hasFinishReason = false;
-			const toolCallBlocksByIndex = new Map<number, StreamingToolCallBlock>();
-			const toolCallBlocksById = new Map<string, StreamingToolCallBlock>();
+			const toolCallBlocksByIndex = new Map<number, ToolCall>();
+			const toolCallBlocksById = new Map<string, ToolCall>();
+			const toolCallStates = new Map<ToolCall, ToolCallState>();
 			const blocks = output.content as StreamingBlock[];
 			const getContentIndex = (block: StreamingBlock) => blocks.indexOf(block);
-			const getCustomToolCallInput = (block: StreamingToolCallBlock): string => {
-				const property = block.customInput?.property;
-				if (property === undefined) return "";
-				const value = block.arguments[property];
-				return typeof value === "string" ? value : "";
-			};
-			const appendCustomToolCallInput = (
-				block: StreamingToolCallBlock,
-				nextInput: string,
-				close: boolean,
-			): string | undefined => {
-				const customInput = block.customInput;
-				if (!customInput) return undefined;
-				const delta = appendGrammarToolInputJsonDelta(
-					customInput.jsonBuffer,
-					customInput.property,
-					nextInput,
-					close,
-				);
-				block.arguments = { [customInput.property]: nextInput };
-				return delta;
-			};
+			const customInput = (property: string): ToolCallInput => ({
+				kind: "custom",
+				property,
+				buffer: { input: "", started: false, closed: false },
+			});
 			const finishBlock = (block: StreamingBlock) => {
 				const contentIndex = getContentIndex(block);
 				if (contentIndex === -1) {
@@ -450,8 +443,10 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 						partial: output,
 					});
 				} else if (block.type === "toolCall") {
-					if (block.customInput) {
-						const delta = appendCustomToolCallInput(block, getCustomToolCallInput(block), true);
+					const input = toolCallStates.get(block)!.input;
+					toolCallStates.delete(block);
+					if (input.kind === "custom") {
+						const delta = closeGrammarToolInputJson(input.buffer, input.property, undefined);
 						if (delta !== undefined) {
 							stream.push({
 								type: "toolcall_delta",
@@ -461,13 +456,8 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 							});
 						}
 					} else {
-						block.arguments = parseStreamingJson(block.partialArgs);
+						Object.assign(block, input.arguments.finish());
 					}
-					// Finalize in-place and strip the scratch buffers so replay only
-					// carries parsed arguments.
-					delete block.partialArgs;
-					delete block.customInput;
-					delete block.streamIndex;
 					stream.push({
 						type: "toolcall_end",
 						contentIndex,
@@ -508,18 +498,19 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 					// a tool we don't knwo about, we at least have a place to stash our stuff.
 					const customInputProperty =
 						toolCall.custom && !toolCall.function ? (grammarToolInputProperties.get(name) ?? "input") : undefined;
-					const hasCustomInput = customInputProperty !== undefined;
 					block = {
 						type: "toolCall",
 						id: toolCall.id || "",
 						name,
-						arguments: hasCustomInput ? { [customInputProperty]: "" } : {},
-						partialArgs: hasCustomInput ? undefined : "",
-						customInput: hasCustomInput
-							? { property: customInputProperty, jsonBuffer: { input: "", started: false, closed: false } }
-							: undefined,
-						streamIndex,
+						arguments: customInputProperty !== undefined ? { [customInputProperty]: "" } : {},
 					};
+					toolCallStates.set(block, {
+						streamIndex,
+						input:
+							customInputProperty !== undefined
+								? customInput(customInputProperty)
+								: { kind: "json", arguments: new ToolCallArgumentsStream() },
+					});
 					if (streamIndex !== undefined) {
 						toolCallBlocksByIndex.set(streamIndex, block);
 					}
@@ -533,8 +524,9 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 						partial: output,
 					});
 				}
-				if (streamIndex !== undefined && block.streamIndex === undefined) {
-					block.streamIndex = streamIndex;
+				const state = toolCallStates.get(block)!;
+				if (streamIndex !== undefined && state.streamIndex === undefined) {
+					state.streamIndex = streamIndex;
 					toolCallBlocksByIndex.set(streamIndex, block);
 				}
 				if (toolCall.id) {
@@ -543,16 +535,12 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 				if (!block.name && name) {
 					block.name = name;
 				}
-				if (toolCall.custom && !toolCall.function && !block.customInput) {
+				if (toolCall.custom && !toolCall.function && state.input.kind !== "custom") {
 					const customInputProperty = grammarToolInputProperties.get(block.name) ?? "input";
 					block.arguments = { [customInputProperty]: "" };
-					block.customInput = {
-						property: customInputProperty,
-						jsonBuffer: { input: "", started: false, closed: false },
-					};
-					delete block.partialArgs;
+					state.input = customInput(customInputProperty);
 				}
-				return block;
+				return { block, state };
 			};
 
 			for await (const chunk of openaiStream) {
@@ -589,21 +577,8 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 				}
 
 				if (choice.delta) {
-					if (
-						choice.delta.content !== null &&
-						choice.delta.content !== undefined &&
-						choice.delta.content.length > 0
-					) {
-						const block = ensureTextBlock();
-						block.text += choice.delta.content;
-						stream.push({
-							type: "text_delta",
-							contentIndex: getContentIndex(block),
-							delta: choice.delta.content,
-							partial: output,
-						});
-					}
-
+					// Handle reasoning before content: some proxies (e.g. LiteLLM) aggregate reasoning and
+					// answer into one delta, and the thinking block must precede the text block.
 					// Some endpoints return reasoning in reasoning_content (llama.cpp),
 					// or reasoning (other openai compatible endpoints)
 					// Use the first non-empty reasoning field to avoid duplication
@@ -637,36 +612,6 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 						}
 					}
 
-					if (choice?.delta?.tool_calls) {
-						for (const toolCall of choice.delta.tool_calls as StreamingToolCallDelta[]) {
-							const block = ensureToolCallBlock(toolCall);
-							if (!block.id && toolCall.id) {
-								block.id = toolCall.id;
-								toolCallBlocksById.set(toolCall.id, block);
-							}
-							const name = toolCall.function?.name ?? toolCall.custom?.name;
-							if (!block.name && name) {
-								block.name = name;
-							}
-
-							let delta = "";
-							if (toolCall.function?.arguments) {
-								delta = toolCall.function.arguments;
-								block.partialArgs = (block.partialArgs ?? "") + toolCall.function.arguments;
-								block.arguments = parseStreamingJson(block.partialArgs);
-							} else if (toolCall.custom?.input) {
-								const nextInput = getCustomToolCallInput(block) + toolCall.custom.input;
-								delta = appendCustomToolCallInput(block, nextInput, false) ?? "";
-							}
-							stream.push({
-								type: "toolcall_delta",
-								contentIndex: getContentIndex(block),
-								delta,
-								partial: output,
-							});
-						}
-					}
-
 					const reasoningDetails = (choice.delta as { reasoning_details?: unknown }).reasoning_details;
 					if (Array.isArray(reasoningDetails)) {
 						for (const detail of reasoningDetails) {
@@ -677,6 +622,52 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 							// reasoning_details as deltas: consecutive text/summary deltas are merged into
 							// logical entries, while encrypted entries remain opaque and discrete.
 							appendOpenAIReasoningDetail(streamedReasoningDetails, detail);
+						}
+					}
+
+					if (
+						choice.delta.content !== null &&
+						choice.delta.content !== undefined &&
+						choice.delta.content.length > 0
+					) {
+						const block = ensureTextBlock();
+						block.text += choice.delta.content;
+						stream.push({
+							type: "text_delta",
+							contentIndex: getContentIndex(block),
+							delta: choice.delta.content,
+							partial: output,
+						});
+					}
+
+					if (choice?.delta?.tool_calls) {
+						for (const toolCall of choice.delta.tool_calls as StreamingToolCallDelta[]) {
+							const { block, state } = ensureToolCallBlock(toolCall);
+							if (!block.id && toolCall.id) {
+								block.id = toolCall.id;
+								toolCallBlocksById.set(toolCall.id, block);
+							}
+							const name = toolCall.function?.name ?? toolCall.custom?.name;
+							if (!block.name && name) {
+								block.name = name;
+							}
+
+							let delta = "";
+							const input = state.input;
+							if (toolCall.function?.arguments && input.kind === "json") {
+								delta = toolCall.function.arguments;
+								block.arguments = input.arguments.append(delta);
+							} else if (toolCall.custom?.input && input.kind === "custom") {
+								delta =
+									appendGrammarToolInputJsonDelta(input.buffer, input.property, toolCall.custom.input) ?? "";
+								block.arguments = { [input.property]: input.buffer.input };
+							}
+							stream.push({
+								type: "toolcall_delta",
+								contentIndex: getContentIndex(block),
+								delta,
+								partial: output,
+							});
 						}
 					}
 				}
@@ -709,11 +700,6 @@ export const stream: StreamFunction<"openai-completions", OpenAICompletionsOptio
 				if (block.type === "thinking") {
 					applyStreamedReasoningDetails(block);
 				}
-				delete (block as { index?: number }).index;
-				// Streaming scratch buffers are only used during parsing; never persist them.
-				delete (block as { partialArgs?: string }).partialArgs;
-				delete (block as { customInput?: unknown }).customInput;
-				delete (block as { streamIndex?: number }).streamIndex;
 			}
 			output.stopReason = options?.signal?.aborted ? "aborted" : "error";
 			output.errorMessage = formatProviderError(normalizeProviderError(error));
@@ -759,11 +745,12 @@ function createClient(
 	context: TranscriptContext,
 	apiKey: string,
 	optionsHeaders?: ProviderHeaders,
+	identity?: ClientIdentity,
 	fetch?: typeof globalThis.fetch,
 	sessionId?: string,
 	compat: ResolvedOpenAICompletionsCompat = getCompat(model),
 ) {
-	const headers: ProviderHeaders = { "User-Agent": getPiUserAgent(), ...model.headers };
+	const headers: ProviderHeaders = { ...getIdentityHeaders(model, identity), ...model.headers };
 	if (model.provider === "github-copilot") {
 		const hasImages = hasCopilotVisionInput(context.messages);
 		const copilotHeaders = buildCopilotDynamicHeaders({
@@ -812,7 +799,9 @@ function buildParams(
 ) {
 	const transcriptTools = resolveTranscriptTools(
 		context.messages,
-		compat.supportsMidConvoSystemMessages === true && compat.supportsMidConvoToolAdditions === true,
+		compat.supportsMidConvoSystemMessages === true && compat.supportsMidConvoToolAdditions === true
+			? "additions"
+			: "none",
 	);
 	const messages = convertMessages(model, context, compat, {
 		grammarToolInputProperties,
@@ -1228,11 +1217,14 @@ export function convertMessages(
 	const transformedMessages = transformMessages(normalizedContext.messages, model, (id) => normalizeToolCallId(id));
 	const transcriptTools = resolveTranscriptTools(
 		normalizedContext.messages,
-		compat.supportsMidConvoSystemMessages === true && compat.supportsMidConvoToolAdditions === true,
+		compat.supportsMidConvoSystemMessages === true && compat.supportsMidConvoToolAdditions === true
+			? "additions"
+			: "none",
 	);
 	const instructionRole = model.reasoning && compat.supportsDeveloperRole ? "developer" : "system";
 
 	let lastRole: string | null = null;
+	let systemIndex = 0;
 
 	for (let i = 0; i < transformedMessages.length; i++) {
 		const msg = transformedMessages[i];
@@ -1246,7 +1238,8 @@ export function convertMessages(
 		}
 
 		if (msg.role === "system") {
-			const addedTools = i > 0 && transcriptTools.anchorsAdditions ? (msg.toolsAdded ?? []) : [];
+			// transformMessages keeps system messages in order, so their position matches the transcript.
+			const addedTools = systemIndex++ >= transcriptTools.foldedSystemMessages ? (msg.toolsAdded ?? []) : [];
 			if (addedTools.length > 0) {
 				const kimiToolMessage: KimiToolSystemMessageParam = {
 					role: "system",
@@ -1418,7 +1411,7 @@ export function convertMessages(
 				const hasImages = toolMsg.content.some((c) => c.type === "image");
 
 				// Always send tool result with text (or placeholder if only images)
-				const hasText = textResult.length > 0;
+				const hasText = textResult.trim().length > 0;
 				const toolResultText = hasText ? textResult : hasImages ? "(see attached image)" : "(no tool output)";
 				// Some providers require the 'name' field in tool results
 				const toolResultMsg: ChatCompletionToolMessageParam = {
@@ -1517,6 +1510,8 @@ function convertTools(
 }
 
 function parseChunkUsage(
+	// OpenRouter adds billing fields to streamed usage at runtime,
+	// although the OpenAI SDK does not type those fields.
 	rawUsage: {
 		prompt_tokens?: number;
 		completion_tokens?: number;
@@ -1556,6 +1551,9 @@ function parseChunkUsage(
 		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
 	};
 	calculateCost(model, usage);
+	if (isOpenRouterModel(model)) {
+		applyOpenRouterReportedCost(usage, rawUsage as typeof rawUsage & OpenRouterUsageAccounting);
+	}
 	return usage;
 }
 
@@ -1585,6 +1583,18 @@ function mapStopReason(reason: ChatCompletionChunk.Choice["finish_reason"] | str
 	}
 }
 
+function getHostname(baseUrl: string): string | undefined {
+	try {
+		return new URL(baseUrl).hostname.toLowerCase();
+	} catch {
+		return undefined;
+	}
+}
+
+function isHostOrSubdomain(hostname: string | undefined, domain: string): boolean {
+	return hostname === domain || hostname?.endsWith(`.${domain}`) === true;
+}
+
 /**
  * Auto-detect compatibility settings from provider name and baseUrl.
  * Used as the base when model.compat is not set; explicit model.compat
@@ -1593,6 +1603,18 @@ function mapStopReason(reason: ChatCompletionChunk.Choice["finish_reason"] | str
 function detectCompat(model: Model<"openai-completions">): ResolvedOpenAICompletionsCompat {
 	const provider = model.provider;
 	const baseUrl = model.baseUrl;
+	const hostname = getHostname(baseUrl);
+
+	const isOpenAIApi = hostname === "api.openai.com";
+	const isAzureOpenAI =
+		isHostOrSubdomain(hostname, "openai.azure.com") || isHostOrSubdomain(hostname, "cognitiveservices.azure.com");
+	// Xiaomi MiMo documents developer messages and max_completion_tokens, and not max_tokens.
+	const isXiaomi = isHostOrSubdomain(hostname, "xiaomimimo.com");
+	// Endpoints documented to take OpenAI's newer request shape: developer messages and
+	// max_completion_tokens. Any other endpoint gets the shape every OpenAI-compatible server
+	// takes, OpenAI's included: system messages and max_tokens. An endpoint that rejects
+	// either is asked again the other way (see withCompatFallback).
+	const takesOpenAIRequestShape = isOpenAIApi || isAzureOpenAI || isXiaomi;
 
 	const isZai =
 		provider === "zai" ||
@@ -1607,34 +1629,8 @@ function detectCompat(model: Model<"openai-completions">): ResolvedOpenAIComplet
 	const isCloudflareAiGateway = provider === "cloudflare-ai-gateway" || baseUrl.includes("gateway.ai.cloudflare.com");
 	const isNvidia = provider === "nvidia" || baseUrl.includes("integrate.api.nvidia.com");
 	const isAntLing = provider === "ant-ling" || baseUrl.includes("api.ant-ling.com");
-	const isCerebras = provider === "cerebras" || baseUrl.includes("cerebras.ai");
+	const isNebius = provider === "nebius" || baseUrl.includes("tokenfactory.nebius.com");
 	const isDeepSeek = provider === "deepseek" || baseUrl.toLowerCase().includes("deepseek.com");
-
-	const isNonStandard =
-		isNvidia ||
-		isCerebras ||
-		provider === "xai" ||
-		baseUrl.includes("api.x.ai") ||
-		isTogether ||
-		baseUrl.includes("chutes.ai") ||
-		isDeepSeek ||
-		isZai ||
-		isMoonshot ||
-		provider === "opencode" ||
-		baseUrl.includes("opencode.ai") ||
-		isCloudflareWorkersAI ||
-		isCloudflareAiGateway ||
-		isAntLing;
-
-	const useMaxTokens =
-		baseUrl.includes("chutes.ai") ||
-		isDeepSeek ||
-		isMoonshot ||
-		isCloudflareAiGateway ||
-		isTogether ||
-		isNvidia ||
-		isAntLing ||
-		isZai;
 
 	const isGrok = provider === "xai" || baseUrl.includes("api.x.ai");
 	const isOpenRouterDeveloperRoleModel =
@@ -1642,13 +1638,24 @@ function detectCompat(model: Model<"openai-completions">): ResolvedOpenAIComplet
 	const cacheControlFormat = provider === "openrouter" && model.id.startsWith("anthropic/") ? "anthropic" : undefined;
 
 	return {
-		supportsStore: !isNonStandard,
-		supportsDeveloperRole: isOpenRouterDeveloperRoleModel || (!isNonStandard && !isOpenRouter),
+		// store is OpenAI's stored-completions switch. Groq documents it as unsupported, and a strict
+		// server rejects the unknown field; leaving it out means the same as false on OpenAI's API.
+		supportsStore: isOpenAIApi || isAzureOpenAI,
+		supportsDeveloperRole: takesOpenAIRequestShape || isOpenRouterDeveloperRoleModel,
 		supportsReasoningEffort:
-			!isGrok && !isZai && !isMoonshot && !isTogether && !isCloudflareAiGateway && !isNvidia && !isAntLing,
+			!isGrok &&
+			!isZai &&
+			!isMoonshot &&
+			!isTogether &&
+			!isCloudflareAiGateway &&
+			!isNvidia &&
+			!isNebius &&
+			!isAntLing,
 		supportsUsageInStreaming: true,
 		supportsFinishReason: true,
-		maxTokensField: useMaxTokens ? "max_tokens" : "max_completion_tokens",
+		// Every OpenAI-compatible server reads max_tokens. Some ignore max_completion_tokens
+		// (DeepSeek does), which leaves their own default output cap in place.
+		maxTokensField: takesOpenAIRequestShape ? "max_completion_tokens" : "max_tokens",
 		requiresToolResultName: false,
 		requiresAssistantAfterToolResult: false,
 		requiresThinkingAsText: false,
@@ -1684,16 +1691,24 @@ function detectCompat(model: Model<"openai-completions">): ResolvedOpenAIComplet
 			isCloudflareWorkersAI ||
 			isCloudflareAiGateway ||
 			isNvidia ||
+			isNebius ||
 			isAntLing
 		),
 	};
 }
 
 /**
- * Get resolved compatibility settings for a model.
- * Auto-detects from provider/URL then overrides with explicit model.compat.
+ * Get resolved compatibility settings for a model: auto-detected from provider and URL,
+ * overridden by explicit model.compat, then by what the endpoint taught us by rejecting
+ * a request earlier in this process (see withCompatFallback).
  */
 function getCompat(model: Model<"openai-completions">): ResolvedOpenAICompletionsCompat {
+	const configured = getConfiguredCompat(model);
+	const learned = learnedCompat.get(getLearnedCompatKey(model));
+	return learned ? { ...configured, ...learned } : configured;
+}
+
+function getConfiguredCompat(model: Model<"openai-completions">): ResolvedOpenAICompletionsCompat {
 	const detected = detectCompat(model);
 	if (!model.compat) return detected;
 
@@ -1731,4 +1746,271 @@ function getCompat(model: Model<"openai-completions">): ResolvedOpenAICompletion
 		supportsLongCacheRetention: model.compat.supportsLongCacheRetention ?? detected.supportsLongCacheRetention,
 		vllmPriority: model.compat.vllmPriority,
 	};
+}
+
+/**
+ * What endpoints taught us by rejecting a request, per provider, base URL and model, for the
+ * rest of the process. Each value stops sending, or swaps, the request field that was rejected.
+ */
+type LearnedCompat = Partial<
+	Pick<
+		ResolvedOpenAICompletionsCompat,
+		| "supportsDeveloperRole"
+		| "maxTokensField"
+		| "supportsReasoningEffort"
+		| "supportsUsageInStreaming"
+		| "supportsStore"
+		| "supportsLongCacheRetention"
+	>
+>;
+
+const learnedCompat = new Map<string, LearnedCompat>();
+
+function getLearnedCompatKey(model: Model<"openai-completions">): string {
+	return `${model.provider}\u0000${model.baseUrl}\u0000${model.id}`;
+}
+
+/** A change to a rejected request. Each kind applies at most once per request, so resends are bounded. */
+interface CompatFallback {
+	kind: string;
+	learned: LearnedCompat;
+	apply(params: ChatCompletionParams): ChatCompletionParams;
+}
+
+/** Request fields a request does without, and the compat that stops sending them once an endpoint rejects one. */
+const DROPPABLE_REQUEST_FIELDS: ReadonlyArray<{ fields: readonly string[]; learned: LearnedCompat }> = [
+	{ fields: ["reasoning_effort"], learned: { supportsReasoningEffort: false } },
+	{ fields: ["stream_options"], learned: { supportsUsageInStreaming: false } },
+	{ fields: ["store"], learned: { supportsStore: false } },
+	{ fields: ["prompt_cache_key", "prompt_cache_retention"], learned: { supportsLongCacheRetention: false } },
+];
+
+/**
+ * Wrap `send` so that when the endpoint rejects something compat chose for the request (developer
+ * messages, the max tokens field, reasoning_effort, stream_options, store, the prompt cache fields),
+ * the request is sent again with it changed, and the change is kept for later requests to the same
+ * provider, base URL and model. The rejection comes before the response stream starts, so nothing
+ * has reached the caller. Requests to api.openai.com are left as they are.
+ */
+function withCompatFallback<T>(
+	model: Model<"openai-completions">,
+	params: ChatCompletionParams,
+	send: (params: ChatCompletionParams) => Promise<T>,
+): () => Promise<T> {
+	const enabled = getHostname(model.baseUrl) !== "api.openai.com";
+	const applied = new Set<string>();
+	let body = params;
+	// Kept across calls: the provider retry calls this again after a transient error.
+	return async () => {
+		for (;;) {
+			try {
+				return await send(body);
+			} catch (error) {
+				const rejection = enabled ? readRejection(error) : undefined;
+				const fallbacks = rejection
+					? findCompatFallbacks(rejection, body).filter((fallback) => !applied.has(fallback.kind))
+					: [];
+				if (fallbacks.length === 0) throw error;
+				const key = getLearnedCompatKey(model);
+				const learned = { ...learnedCompat.get(key) };
+				for (const fallback of fallbacks) {
+					applied.add(fallback.kind);
+					body = fallback.apply(body);
+					Object.assign(learned, fallback.learned);
+				}
+				learnedCompat.set(key, learned);
+			}
+		}
+	};
+}
+
+function findCompatFallbacks(rejection: RequestRejection, params: ChatCompletionParams): CompatFallback[] {
+	const fallbacks: CompatFallback[] = [];
+	if (params.messages.some((message) => message.role === "developer") && rejectsDeveloperRole(rejection)) {
+		fallbacks.push({
+			kind: "developer role",
+			learned: { supportsDeveloperRole: false },
+			apply: (body) => ({
+				...body,
+				messages: body.messages.map((message) =>
+					message.role === "developer"
+						? ({ ...message, role: "system" } satisfies ChatCompletionSystemMessageParam)
+						: message,
+				),
+			}),
+		});
+	}
+	if (params.max_completion_tokens != null && refusesField(rejection, "max_completion_tokens")) {
+		fallbacks.push({
+			kind: "max tokens field",
+			learned: { maxTokensField: "max_tokens" },
+			apply: ({ max_completion_tokens, ...body }) => ({ ...body, max_tokens: max_completion_tokens }),
+		});
+	} else if (params.max_tokens != null && refusesField(rejection, "max_tokens")) {
+		// OpenAI's reasoning models behind a relay: "Unsupported parameter: 'max_tokens' ... Use 'max_completion_tokens' instead."
+		fallbacks.push({
+			kind: "max tokens field",
+			learned: { maxTokensField: "max_completion_tokens" },
+			apply: ({ max_tokens, ...body }) => ({ ...body, max_completion_tokens: max_tokens }),
+		});
+	}
+	const sent = new Map<string, unknown>(Object.entries(params));
+	for (const { fields, learned } of DROPPABLE_REQUEST_FIELDS) {
+		if (fields.some((field) => sent.get(field) != null && refusesField(rejection, field))) {
+			fallbacks.push({
+				kind: fields[0],
+				learned,
+				apply: (body) =>
+					Object.fromEntries(
+						Object.entries(body).filter(([field]) => !fields.includes(field)),
+					) as ChatCompletionParams,
+			});
+		}
+	}
+	return fallbacks;
+}
+
+/**
+ * What an endpoint said when it rejected a request: its words, and the error objects in them,
+ * including JSON a gateway embedded in its own message (`upstream 400: {"error":...}`).
+ */
+interface RequestRejection {
+	texts: string[];
+	/** Texts that can name a refused field: those of errors about a value sent are left out. */
+	fieldTexts: string[];
+	objects: Record<string, unknown>[];
+}
+
+/** The rejection in a 400 or 422, or in a 5xx that wraps an upstream one; undefined for any other failure. */
+function readRejection(error: unknown): RequestRejection | undefined {
+	const { status, message } = normalizeProviderError(error);
+	if (status === undefined) return undefined;
+	const rejection: RequestRejection = { texts: [], fieldTexts: [], objects: [] };
+	collectRejection(message, rejection, false, 0);
+	collectRejection((error as { error?: unknown }).error, rejection, false, 0);
+	const words = rejection.texts.join("\n");
+	const rejected =
+		status === 400 || status === 422 || (status >= 500 && /\b4(?:00|22)\b|invalid_request/i.test(words));
+	return rejected ? rejection : undefined;
+}
+
+function collectRejection(value: unknown, rejection: RequestRejection, aboutValue: boolean, depth: number): void {
+	if (depth > 8) return;
+	if (typeof value === "string") {
+		const { prose, embedded } = splitEmbeddedJson(value);
+		rejection.texts.push(prose);
+		if (!aboutValue) rejection.fieldTexts.push(prose);
+		for (const item of embedded) collectRejection(item, rejection, aboutValue, depth + 1);
+	} else if (Array.isArray(value)) {
+		for (const item of value) collectRejection(item, rejection, aboutValue, depth + 1);
+	} else if (typeof value === "object" && value !== null) {
+		const object = value as Record<string, unknown>;
+		if (!aboutValue) rejection.objects.push(object);
+		// A validation error located at a field, or about an invalid value, concerns the value
+		// sent, not whether the field is supported.
+		const isValueError =
+			("loc" in object && object.type !== "extra_forbidden") ||
+			object.code === "invalid_value" ||
+			object.code === "unsupported_value" ||
+			object.type === "unsupported_value";
+		for (const [key, item] of Object.entries(object)) {
+			// `input` echoes what was sent, which is no word from the endpoint.
+			if (key !== "input") collectRejection(item, rejection, aboutValue || isValueError, depth + 1);
+		}
+	}
+}
+
+/** Split JSON values out of an error text: a gateway quotes the upstream's error in its own. */
+function splitEmbeddedJson(text: string): { prose: string; embedded: unknown[] } {
+	const embedded: unknown[] = [];
+	let prose = "";
+	let index = 0;
+	while (index < text.length) {
+		const start = text.slice(index).search(/[{[]/);
+		if (start === -1) break;
+		const begin = index + start;
+		const end = findJsonEnd(text, begin);
+		if (end !== -1) {
+			try {
+				embedded.push(JSON.parse(text.slice(begin, end)));
+				prose += text.slice(index, begin);
+				index = end;
+				continue;
+			} catch {
+				// Not JSON, such as "[HTTP 400]": keep it as words.
+			}
+		}
+		prose += text.slice(index, begin + 1);
+		index = begin + 1;
+	}
+	return { prose: prose + text.slice(index), embedded };
+}
+
+function findJsonEnd(text: string, start: number): number {
+	let depth = 0;
+	let inString = false;
+	for (let index = start; index < text.length; index++) {
+		const char = text[index];
+		if (inString) {
+			if (char === "\\") index++;
+			else if (char === '"') inString = false;
+		} else if (char === '"') {
+			inString = true;
+		} else if (char === "{" || char === "[") {
+			depth++;
+		} else if (char === "}" || char === "]") {
+			depth--;
+			if (depth === 0) return index + 1;
+		}
+	}
+	return -1;
+}
+
+const ROLE_REJECTION_WORDS =
+	/\b(?:unknown|invalid|unsupported|unrecognized|unexpected|not (?:supported|allowed|permitted|recognized|valid|accepted)|does not (?:support|match)|must be one of|should be|expected)\b/i;
+
+/**
+ * "unknown role developer", "Invalid value: 'developer'. Supported values are: 'system', 'user', ...",
+ * "Input tag 'developer' found using 'role' does not match any of the expected tags".
+ */
+function rejectsDeveloperRole(rejection: RequestRejection): boolean {
+	const words = rejection.texts.join("\n");
+	return (
+		/\bdeveloper\b/i.test(words) &&
+		ROLE_REJECTION_WORDS.test(words) &&
+		(/\brole\b/i.test(words) || (/\bsystem\b/i.test(words) && /\buser\b/i.test(words)))
+	);
+}
+
+/**
+ * Whether the endpoint refused a request field by name, as unknown or unsupported: by the
+ * error's structure where it has one (an OpenAI-style `unsupported_parameter` with its `param`,
+ * a Pydantic `extra_forbidden` at the field), else by its words.
+ */
+function refusesField(rejection: RequestRejection, field: string): boolean {
+	for (const object of rejection.objects) {
+		if ((object.code === "unsupported_parameter" || object.code === "unknown_parameter") && object.param === field) {
+			return true;
+		}
+		const loc = object.loc;
+		if (
+			object.type === "extra_forbidden" &&
+			Array.isArray(loc) &&
+			(loc[0] === field || (loc[0] === "body" && loc[1] === field))
+		) {
+			return true;
+		}
+	}
+	const name = `[\\\\"'\`]*${field}[\\\\"'\`]*(?![\\w])`;
+	const patterns = [
+		// Unknown parameter: 'store' / Unrecognized request argument supplied: store / json: unknown field "store".
+		// Gemini names a nested field with "at 'path'", which is not this top-level one.
+		`\\b(?:unknown|unrecognized|unsupported|unexpected|extra)\\s+(?:request\\s+)?(?:field|parameter|param|argument|property|option|name)s?(?:\\s+supplied)?\\s*:?\\s*${name}(?!\\s*:?\\s*at\\s+[\\\\"']+[^\\\\"'\\s:])`,
+		// store is not supported / parameter 'store' is unsupported: the field must lead, so a field
+		// named further on, in an echo of the request, is not taken for it.
+		`(?:^(?:\\d{3}\\s+)?|\\b(?:field|parameter|param|argument|property|option)\\s+)${name}\\s+(?:is\\s+|are\\s+)?(?:not\\s+(?:supported|allowed|permitted|recognized)|unsupported|unknown|unrecognized)\\b`,
+		// This model does not support max_completion_tokens.
+		`\\b(?:does\\s+not|doesn't|do\\s+not)\\s+support\\s+(?:the\\s+)?(?:(?:field|parameter|param|argument)\\s+)?${name}`,
+	].map((pattern) => new RegExp(pattern, "i"));
+	return rejection.fieldTexts.some((text) => patterns.some((pattern) => pattern.test(text)));
 }

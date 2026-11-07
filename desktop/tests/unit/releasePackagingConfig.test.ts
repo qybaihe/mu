@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
 
 const projectRoot = resolve(__dirname, '../..');
-const itWithBash = spawnSync('bash', ['--version'], { encoding: 'utf8' }).status === 0 ? it : it.skip;
 
 function readProjectFile(path: string): string {
   return readFileSync(resolve(projectRoot, path), 'utf8');
@@ -38,45 +35,17 @@ describe('release packaging configuration', () => {
     expect(winBlock).not.toContain('    - zip');
   });
 
-  it('uploads mac zip artifacts without a stale Windows zip glob', () => {
-    const workflow = readProjectFile('.github/workflows/_build-reusable.yml');
+  it('uploads the macOS zip, and no Windows zip', () => {
+    // The pipeline that builds and publishes the installers, at the repository root.
+    const workflow = readProjectFile('../.github/workflows/desktop.yml');
 
-    expect(workflow).toContain('out/mu-*-mac-*.zip');
-    expect(workflow).not.toContain('out/mu-*-win32-*.zip');
+    expect(workflow).toContain('path: desktop/out/*.zip');
+    expect(workflow).not.toMatch(/win32-[^\n]*\.zip/);
   });
 
   it('retries mac prepackaged builds with both dmg and zip targets', () => {
     const script = readProjectFile('scripts/build-with-builder.js');
 
     expect(script).toMatch(/--mac\s+dmg\s+zip\s+--\$\{targetArch\}\s+--prepackaged/);
-  });
-
-  itWithBash('fails release asset preparation when a mac zip is missing', () => {
-    const tempDir = mkdtempSync(resolve(tmpdir(), 'aionui-release-assets-'));
-    const artifactsDir = resolve(tempDir, 'build-artifacts');
-    const outputDir = resolve(tempDir, 'release-assets');
-
-    try {
-      const env = { ...process.env, MOCK_VERSION: '1.0.0' };
-      const createResult = spawnSync('bash', ['scripts/create-mock-release-artifacts.sh', artifactsDir], {
-        cwd: projectRoot,
-        env,
-        encoding: 'utf8',
-      });
-      expect(createResult.status).toBe(0);
-
-      rmSync(resolve(artifactsDir, 'macos-build-arm64', 'mu-1.0.0-mac-arm64.zip'), { force: true });
-
-      const prepareResult = spawnSync('bash', ['scripts/prepare-release-assets.sh', artifactsDir, outputDir], {
-        cwd: projectRoot,
-        env,
-        encoding: 'utf8',
-      });
-
-      expect(prepareResult.status).not.toBe(0);
-      expect(`${prepareResult.stdout}\n${prepareResult.stderr}`).toContain('Missing macOS zip artifact');
-    } finally {
-      rmSync(tempDir, { force: true, recursive: true });
-    }
   });
 });

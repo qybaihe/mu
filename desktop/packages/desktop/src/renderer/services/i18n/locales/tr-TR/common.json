@@ -168,7 +168,6 @@
     "judge": "Hakem yapılandırması",
     "reload": "Yeniden yükle",
     "starting": "mu başlatılıyor…",
-    "startingHint": "Yerel mu çekirdeğine bağlanılıyor, model ve hakem yapılandırması okunuyor.",
     "startupError": "mu başlatılamadı",
     "hiveView": {
       "title": "Hive",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · son adım: {{step}}",
       "runs": "Hive çalışmaları",
       "graph": "İş birliği haritası",
-      "graphHint": "Çizgi ne kadar kalınsa o kadar çok şey taşınmıştır. Bir arıyı seçmek satırını açar; bir çizginin üzerine gelmek taşıdığını gösterir.",
       "map": "Harita",
       "legend": "Açıklama",
       "legendDelivery": "teslim",
@@ -206,7 +204,6 @@
       "board": "Paylaşılan pano",
       "noNotes": "Henüz paylaşılan bulgu yok.",
       "context": "Yürütme bağlamı",
-      "contextHint": "Kaydedilmiş mesajlar ve tamamlanmış araç çıktısıdır; tam model istemi değildir. Araç çıktısı tamamlandıktan sonra görünür.",
       "focus": "Atama",
       "missingFocus": "Bu çalışma için atama kaydedilmedi.",
       "current": "Geçerli etkinlik",
@@ -227,7 +224,7 @@
       "noteMissing": "Bulgu kaydedilmedi.",
       "allFlow": "Tüm teslimler",
       "beeFlow": "{{name}} için teslimler",
-      "audit": "Jev kararları",
+      "audit": "Kararlar",
       "waitingRun": "Bu Hive'ın kaydedilmiş etkinlikleri bekleniyor.",
       "recordedAt": "{{time}} tarihinde kaydedildi",
       "beeMissing": "Bu arı, kaydedilmiş anlık görüntüde yok.",
@@ -296,6 +293,17 @@
       "batchFailures": "Yanıt alınamayan ve varsayılan stratejiyle işlenen: {{count}}.",
       "changedThinking": "Düşünme düzeyi: {{from}} → {{to}}",
       "sentHints": "Ana modele gönderilen ipuçları",
+      "userAnswer": {
+        "once": "Bir kez izin verdiniz.",
+        "session": "Bu konuşma için izin verdiniz.",
+        "deny": "İzin vermediniz.",
+        "dismissed": "Soruyu yanıtlamadan kapattınız.",
+        "none": "Sorulacak kimse yoktu, bu yüzden adım reddedildi."
+      },
+      "markedWrong": "Bu kararı yanlış olarak işaretlediniz.",
+      "markedWrongWhy": "Bu kararı yanlış olarak işaretlediniz: {{note}}",
+      "markWrong": "Yanlış olarak işaretle",
+      "markWrongHint": "mu'ya bu kararın yanlış olduğunu söyleyin. İşaret, kararla birlikte bu oturumun ledger kaydında tutulur.",
       "unlinked": "Bağımsız kayıt",
       "unlinkedHint": "Tur ilişkilendirmesi olmadan kaydedildi. Tek başına gösterilir ve yakın zamanlı kayıtlarla birleştirilmez.",
       "state": {
@@ -959,7 +967,7 @@
       "auto_compaction_end": "Sıkıştırma tamamlandı",
       "hive.note": "Paylaşılan bulgu",
       "hive.delivery": "Teslim onaylandı",
-      "hive.gate": "Jev kapısı",
+      "hive.gate": "Hive kapısı",
       "hive.manifest": "Hive görevi",
       "bee.event": "Arı olayı",
       "memory.recalled": "Hatırlanan deneyim",
@@ -1065,7 +1073,6 @@
     "compactionAborted": "Sıkıştırma iptal edildi",
     "compactionFailed": "Sıkıştırma başarısız oldu",
     "compactionSavings": "Bağlamda azalma ≈{{saved}}",
-    "compactionEstimate": "Sıkıştırma sonrası token sayısı tahminidir; bir sonraki model yanıtı kullanımı günceller.",
     "cacheHit": "Önbellek isabetleri",
     "cachePending": "Henüz önbellek kullanımı bildirilmedi",
     "cacheLabel": "Oturum önbellek isabet oranı: {{percent}}",
@@ -1076,24 +1083,6 @@
         "idle": "Hakem beklemede",
         "judging": "Hakem değerlendiriyor",
         "off": "Hakem kapalı"
-      },
-      "starters": {
-        "hint": "Nereden başlayacağınızı bilmiyor musunuz? Şunlardan birini deneyin:",
-        "understand": {
-          "title": "Bu projeyi anla",
-          "desc": "Yapıyı, giriş noktalarını ve ana modülleri çıkar",
-          "prompt": "Önce bu projeyi baştan sona oku; genel yapısını, ana giriş noktalarını ve en önemli modüllerini anlat. İlk okunması gereken üç dosyayı belirt."
-        },
-        "fix": {
-          "title": "Bir sorunu bul ve düzelt",
-          "desc": "Hatadan veya belirtiden kök nedene",
-          "prompt": "Bir sorunla karşılaştım: <belirtiyi anlatın veya hatayı yapıştırın>. Önce sorunu yeniden üret ve kök nedeni bul, ardından en küçük düzeltmeyi yap ve doğrulamak için ilgili testleri çalıştır."
-        },
-        "plan": {
-          "title": "Bir değişiklik planla",
-          "desc": "Önce plan, onayınızdan sonra düzenleme",
-          "prompt": "Şunu gerçekleştirmek istiyorum: <ihtiyacınızı anlatın>. Önce bir uygulama planı ve ilgili dosyaları sun; düzenlemeye ancak ben onayladıktan sonra başla."
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1096,7 @@
       "switch": "Bu projenin sade dildeki panosu",
       "switching": "Değiştiriliyor…",
       "afterTurn": "Ajan bu adımı bitirince değişir",
-      "unknown": "Bu konuşmada henüz pano yok. Özellikler bölümünde sade dildeki pano açıkken mu konuşmalarında görünür.",
+      "unknown": "Bu konuşmada henüz pano yok. Ayarlar → Temel özellikler bölümünde sade dildeki pano açıkken mu konuşmalarında görünür.",
       "off": "Açıldığında işin nasıl gittiğini, ajanın şu an ne yaptığını ve sizden neyin beklendiğini sade bir dille anlatır.",
       "cost": "Yalnızca bu proje için. Her güncelleme bir model çağrısına mal olur.",
       "empty": "Ajana biraz zaman tanıyın; nasıl gittiği burada sade bir dille yazacak.",
@@ -1119,7 +1108,6 @@
       "needsYou": "Size ihtiyaç var",
       "needsYouText": "Ajan konuşmada yanıtınızı bekliyor.",
       "quote": "Yanıtınızda alıntıla",
-      "quoteHint": "Yanıtınızda alıntılamak için birine tıklayın; siz göndermeden hiçbir şey gönderilmez.",
       "account": "Neler yaptı",
       "earlierNotes": "{{count, number}} önceki kayıt",
       "earlierNotes_one": "{{count, number}} önceki kayıt",
@@ -1132,7 +1120,8 @@
         "fixing": "Kontrolde bulunanı düzeltiyor",
         "waiting": "Sizi bekliyor",
         "wrapping_up": "Topluyor",
-        "stuck": "Takılmış görünüyor"
+        "stuck": "Takılmış görünüyor",
+        "blocked": "Başka bir şeyi bekliyor"
       },
       "checks_one": "{{total}} kontrolden {{done}} tanesi tamam",
       "checks_other": "{{total}} kontrolden {{done}} tanesi tamam",
@@ -1158,8 +1147,9 @@
           "wrapping_up": "İş bitti; şimdi toparlıyor.",
           "stuck": "Döngüye girmiş gibi görünüyor; sizden bir ipucuna ihtiyacı olabilir.",
           "unclear": "Çalışıyor.",
-          "focus": "{{now}} (Şu anki iş: {{focus}})",
-          "planning": "Nasıl yapacağını düşünüyor; henüz hiçbir şeyi değiştirmedi."
+          "planning": "Nasıl yapacağını düşünüyor; henüz hiçbir şeyi değiştirmedi.",
+          "blocked": "Bir komutu, bir yardımcıyı ya da ağı bekliyor.",
+          "focus": "{{now}} (Şu anki iş: {{focus}})"
         }
       },
       "notes": {
@@ -1190,8 +1180,42 @@
         "did": "{{tool}} ile şunu yaptı: {{what}}",
         "said_quote": "Şunu söyledi: {{text}}",
         "ended": "Durdu.",
-        "waiting_reply": "Durdu, yanıtınızı bekliyor."
-      }
+        "waiting_reply": "Durdu, yanıtınızı bekliyor.",
+        "still_running": "{{what}} hâlâ çalışıyor, {{minutes, number}} dk oldu",
+        "still_running_who": "{{who}}: {{what}} {{minutes, number}} dk’dır çıktı vermeden çalışıyor",
+        "helper_done": "{{name}} döndü: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} hata verdi",
+          "timed_out": "{{name}} zaman aşımına uğradı",
+          "stopped": "{{name}} durduruldu"
+        },
+        "helpers_back_failed": "{{count, number}} yardımcı döndü, {{failed, number}} tanesi hatalı",
+        "helpers_back_failed_one": "{{count, number}} yardımcı döndü, {{failed, number}} tanesi hatalı",
+        "helpers_back_failed_other": "{{count, number}} yardımcı döndü, {{failed, number}} tanesi hatalı",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "list": {
+        "separator": ", "
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} yardımcı çalışıyor",
+        "helpers_working_one": "{{count, number}} yardımcı çalışıyor",
+        "helpers_working_other": "{{count, number}} yardımcı çalışıyor",
+        "waiting_permission": "İzninizi bekliyor: {{what}}"
+      },
+      "updated": "{{ago}} önce güncellendi",
+      "updatedNow": "Az önce güncellendi",
+      "blocked": "Takıldı",
+      "blockedLine": "Takıldı: {{text}}",
+      "next": "Sırada",
+      "agents": "Kim ne yapıyor",
+      "agentStates": {
+        "working": "Çalışıyor",
+        "waiting": "Bekliyor",
+        "stuck": "Takıldı"
+      },
+      "stripOpen": "Sade dilde pano: {{headline}}",
+      "stripHint": "Panoyu açmak için tıklayın"
     },
     "lessonsView": {
       "filterLabel": "Hangi dersler gösterilsin",
@@ -1279,7 +1303,7 @@
     "compactionDropped": "{{count}} çağrı kaldırıldı",
     "compactionDropped_one": "{{count}} çağrı kaldırıldı",
     "compactionDropped_other": "{{count}} çağrı kaldırıldı",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} mesajı sınıflandırıyor…",
       "classified": "{{judge}} sınıflandırması: {{type}}",
       "byRule": "Kuralla sınıflandırıldı: {{type}}",
@@ -1291,9 +1315,16 @@
       "setUp": "Hakem ayarla",
       "skipped": "Sınıflandırma atlandı",
       "off": "Sınıflandırma kapalı",
-      "firstHint": "Bu satır Jev’in kararı: Jev önce her mesajı sınıflandırır, sonra mu nasıl devam edeceğine karar verir. Tüm kararlar sağdaki Kararlar sekmesinde."
+      "firstHint": "Bu satır hakemin kararı: hakem önce her mesajı sınıflandırır, sonra mu nasıl devam edeceğine karar verir. Tüm kararlar sağdaki Kararlar sekmesinde."
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "Jev anahtarı yok: OpenCode Zen'deki ücretsiz Jev yanıtlıyor",
+        "freeJevUnavailable": "Ücretsiz Jev yanıt vermeyi bıraktı: Bir Jev anahtarı ayarlanana kadar sabit kurallar karar veriyor",
+        "openaiKeyMissing": "OpenAI'ın karar modelinin API anahtarı yok: Sıradaki hakem veya sabit kurallar karar veriyor",
+        "openaiKeyRejected": "OpenAI, karar modelinin API anahtarını reddetti: Sıradaki hakem veya sabit kurallar karar veriyor",
+        "layaRemoved": "Laya artık mu'ya yerleşik değil: hakem artık {{judge}}"
+      },
       "detail": "Ayrıntılar: {{detail}}",
       "progress": {
         "frame": "Görev çerçevesi güncelleniyor",
@@ -1301,7 +1332,7 @@
         "skills": "Bu oturum için gereken beceriler seçiliyor",
         "capabilities": "Bu görev için gereken yetenekler seçiliyor",
         "goal_check": "Hedefe ulaşılıp ulaşılmadığı kontrol ediliyor",
-        "permissionReview": "Jev inceliyor: {{summary}}"
+        "permissionReview": "Hakem inceliyor: {{summary}}"
       },
       "goal": {
         "paused": "Duraklatıldı: {{reason}}",
@@ -1428,6 +1459,26 @@
       "reviewer": "gözden geçiren",
       "scout": "keşifçi",
       "worker": "uygulayıcı"
+    },
+    "kernel": {
+      "free": "ücretsiz",
+      "local": "yerel",
+      "judgeHint": "mu'nun karar noktalarını yanıtlayan hakem. Değiştirmek için tıklayın.",
+      "points": "{{active}}/{{total}} karar noktası etkin",
+      "shadow_one": "· {{count}} gölge modunda",
+      "shadow_other": "· {{count}} gölge modunda",
+      "off": "Hakem kapalı",
+      "verdicts_one": "karar",
+      "verdicts_other": "karar",
+      "last": "son",
+      "context": "bağlam",
+      "cache": "önbellek"
+    },
+    "hero": {
+      "kernel": "Karar çekirdeği",
+      "judgeReady": "{{judge}} hazır",
+      "judgeOff": "Hakem kapalı",
+      "title": "mu ne üzerinde çalışsın?"
     }
   },
   "menu": {
@@ -1464,7 +1515,8 @@
     "bringAllToFront": "Tümünü öne getir",
     "help": "Yardım",
     "checkForUpdates": "Güncellemeleri kontrol et…",
-    "projectPage": "GitHub'da {{name}}"
+    "projectPage": "GitHub'da {{name}}",
+    "keyboardShortcuts": "Klavye kısayolları"
   },
   "trayMenu": {
     "runningTasks": "Çalışan görevler: {{count}}"
@@ -1486,7 +1538,10 @@
     "openSettings": "Ayarları aç",
     "actions": {
       "newConversation": "Yeni sohbet başlat",
-      "scheduledTasks": "Zamanlanmış görevleri aç"
+      "scheduledTasks": "Zamanlanmış görevleri aç",
+      "quickOpen": "Adına göre dosya aç",
+      "nextWaiting": "Sizi bekleyen sonraki konuşmaya git",
+      "shortcuts": "Klavye kısayollarını göster"
     },
     "commandWaits": "Bu yanıt bitince çalışır"
   },
@@ -1517,7 +1572,12 @@
     "previewEmpty": "Henüz önizlenecek bir şey yok. Konuşmadan açılan dosyalar burada görünür.",
     "previewHidden": "Önizleme gizli.",
     "browserEmpty": "Açık sayfa yok. Yukarıya bir adres ya da arama yazın. Konuşmadan açılan sayfalar da burada görünür.",
-    "firstHint": "Pano ilerlemeyi sade bir dille anlatır, Kararlar Jev’in her kararını listeler, Dosyalar bu konuşmanın klasörüdür. Diğer sekmeler kullanıldıklarında görünür."
+    "firstHint": "Pano ilerlemeyi sade bir dille anlatır, Kararlar her kararı listeler, Dosyalar bu konuşmanın klasörüdür. Diğer sekmeler kullanıldıklarında görünür.",
+    "follow": {
+      "label": "Ajanı takip et",
+      "on": "Ajan takip ediliyor: düzenlediği dosyalar ve açtığı sayfalar burada görünür. Durdurmak için tıklayın.",
+      "off": "Ajanı takip et: düzenlediği dosyaları ve açtığı sayfaları burada göster."
+    }
   },
   "nodeRuntime": {
     "title": "Node.js indirilsin mi?",
@@ -1530,5 +1590,46 @@
   },
   "firstHint": {
     "close": "Anladım"
+  },
+  "quickOpen": {
+    "title": "Dosya aç",
+    "placeholder": "Bu konuşmanın klasöründe dosya ara",
+    "loading": "Klasör okunuyor…",
+    "failed": "Bu konuşmanın klasörü okunamadı.",
+    "more": "Bu klasörde listelenenden daha fazla dosya var. Daraltmak için adın devamını yazın.",
+    "noFolder": "Dosyalarını adına göre bulmak için klasörü olan bir konuşma açın."
+  },
+  "shortcuts": {
+    "title": "Klavye kısayolları",
+    "groups": {
+      "general": "Genel",
+      "conversations": "Konuşmalar",
+      "panels": "Paneller",
+      "sendBox": "Gönderme kutusu",
+      "view": "Görünüm"
+    },
+    "rows": {
+      "palette": "Konuşmaları, ayarları ve komutları ara",
+      "quickOpen": "Adıyla dosya aç",
+      "searchMessages": "Tüm mesajlarda ara",
+      "findInConversation": "Bu konuşmada bul",
+      "newConversation": "Yeni konuşma",
+      "settings": "Ayarlar",
+      "shortcuts": "Klavye kısayolları",
+      "byPosition": "Kenar çubuğunda o konumdaki konuşmayı aç",
+      "nextWaiting": "Sizi bekleyen sonraki konuşma",
+      "nextPrevious": "Sonraki veya önceki konuşma",
+      "sidebar": "Kenar çubuğunu göster veya gizle",
+      "workPanel": "Çalışma panelini göster veya gizle",
+      "closeTab": "İçinde bulunduğunuz önizleme sekmesini veya tarayıcı sayfasını kapat",
+      "saveFile": "Düzenlediğiniz dosyayı kaydet",
+      "send": "Gönder",
+      "newLine": "Yeni satır",
+      "history": "Önceki bir mesajı geri getir",
+      "commands": "Komut çalıştır",
+      "mention": "Dosyadan bahset",
+      "zoom": "Yakınlaştır veya uzaklaştır",
+      "resetZoom": "Gerçek boyut"
+    }
   }
 }

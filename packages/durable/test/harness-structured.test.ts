@@ -8,12 +8,11 @@ import {
 	fauxToolCall,
 	type Models,
 	type ToolResultMessage,
-	Type,
 } from "@earendil-works/pi-ai";
 import {
-	type AgentEvent,
 	type Conversation,
 	type ConversationId,
+	type ConversationView,
 	createSession,
 	defineDoc,
 	defineTask,
@@ -26,20 +25,22 @@ import {
 	type NextTaskState,
 	type Registry,
 	type Storage,
-	StorageRejected,
+	type StorageWrite,
+	type TaskGraph,
 	type TaskId,
 	type TaskOptions,
 	type TaskRuntime,
 	type ToolRegistration,
 	ToolResultEntry,
 	type Tx,
-	watchEvents,
 } from "@earendil-works/pi-durable";
+import { obj } from "@earendil-works/pi-schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { openNodeSqliteStorage } from "../src/storage/sqlite/node.ts";
 import { allEntries, chatSetup, openChat, waitFor } from "./chat-support.ts";
 import { addHooks, addTask, addTool } from "./harness-support.ts";
-import { context } from "./session-support.ts";
+import { generations, graphHistory, slotsOf, viewHistory } from "./live-support.ts";
+import { ControlledStorage, context, refusingAt } from "./session-support.ts";
 import { aborted, type Deferred, deferred, openTasks, settled } from "./task-support.ts";
 
 // ─── A scriptable task ──────────────────────────────────────────────────────
@@ -133,6 +134,7 @@ const Unregistered = defineTask<NodeInput, { phase: "run" }, string>({
 });
 
 const TaskNotes = defineDoc<{ text: string }>({
+	checkpointWhen: () => false,
 	kind: "test.task-notes",
 	version: 1,
 	scope: "task",
@@ -463,7 +465,7 @@ describe("waiting", () => {
 		const { harness, root } = await openNodes();
 		const other = await start(root, "other");
 		const cases: [string, (runtime: NodeRuntime) => readonly TaskId[], JoinPolicy, string][] = [
-			["self", (runtime) => [runtime.taskId], "allSettled", "cannot wait on itself or its owner"],
+			["self", (runtime) => [runtime.taskId], "allSettled", "is a wait cycle"],
 			["missing", () => [999_999 as TaskId], "allSettled", "does not exist"],
 			["foreign", () => [other], "failFast", "only on tasks it owns"],
 		];
@@ -490,9 +492,207 @@ describe("waiting", () => {
 		expect((await harness.waitForTask(parent, context)).state.outcome.status).toBe("completed");
 		expect((await harness.waitForTask(child!, context)).state.outcome).toMatchObject({
 			status: "faulted",
-			error: { message: expect.stringContaining("cannot wait on itself or its owner") },
+			error: { message: expect.stringContaining("is a wait cycle") },
 		});
 		open("other");
+		await harness.close(context);
+	});
+
+	// #10411; this test and the next two are from #10533 by @odysseus0.
+	it("rejects the wait that closes a cycle", async () => {
+		const { harness, root } = await openNodes();
+		let a: TaskId | undefined;
+		let b: TaskId | undefined;
+		script("a", { run: (runtime, ctx) => runtime.commit(() => waitOn([b!], "allSettled"), ctx) });
+		script("b", { run: (runtime, ctx) => runtime.commit(() => waitOn([a!], "allSettled"), ctx) });
+		await root.commit(async (tx) => {
+			a = await tx.createTask(Node, { name: "a" }, OWN_CONVERSATION);
+			b = await tx.createTask(Node, { name: "b" }, OWN_CONVERSATION);
+		}, context);
+		// a -> b and b -> a are waits, and whichever comes second closes the cycle.
+		const outcomes = await Promise.all([outcomeOf(harness, a!), outcomeOf(harness, b!)]);
+		expect(outcomes.sort()).toEqual(["completed", "faulted"]);
+		await harness.close(context);
+	});
+
+	// #10411
+	it("rejects the wait that closes a cycle through a held owner", async () => {
+		const { harness, root } = await openNodes();
+		let held: TaskId | undefined;
+		let other: TaskId | undefined;
+		const child = spawnAndFinish("held", "child");
+		script("child", { run: (runtime, ctx) => runtime.commit(() => waitOn([other!], "allSettled"), ctx) });
+		script("other", { run: (runtime, ctx) => runtime.commit(() => waitOn([held!], "allSettled"), ctx) });
+		await root.commit(async (tx) => {
+			held = await tx.createTask(Node, { name: "held" }, OWN_CONVERSATION);
+			other = await tx.createTask(Node, { name: "other" }, OWN_CONVERSATION);
+		}, context);
+		// held -> child is a hold; child -> other -> held are waits, and whichever wait comes second closes the cycle.
+		expect(await outcomeOf(harness, held!)).toBe("completed");
+		const outcomes = await Promise.all([outcomeOf(harness, child.id!), outcomeOf(harness, other!)]);
+		expect(outcomes.sort()).toEqual(["completed", "faulted"]);
+		await harness.close(context);
+	});
+
+	// #10411
+	it("rejects a cycle through holds two levels deep", async () => {
+		const { harness, root } = await openNodes();
+		let held: TaskId | undefined;
+		let other: TaskId | undefined;
+		const child = spawnAndFinish("held", "child");
+		const grandchild = spawnAndFinish("child", "grandchild");
+		script("grandchild", { run: (runtime, ctx) => runtime.commit(() => waitOn([other!], "allSettled"), ctx) });
+		script("other", { run: (runtime, ctx) => runtime.commit(() => waitOn([held!], "allSettled"), ctx) });
+		await root.commit(async (tx) => {
+			held = await tx.createTask(Node, { name: "held" }, OWN_CONVERSATION);
+			other = await tx.createTask(Node, { name: "other" }, OWN_CONVERSATION);
+		}, context);
+		// held -> child -> grandchild are holds; grandchild -> other -> held are waits.
+		await until(() => grandchild.id !== undefined);
+		const outcomes = await Promise.all([outcomeOf(harness, grandchild.id!), outcomeOf(harness, other!)]);
+		expect(outcomes.sort()).toEqual(["completed", "faulted"]);
+		expect(await outcomeOf(harness, child.id!)).toBe("completed");
+		await harness.close(context);
+	});
+
+	// #10411
+	it("lets a background task wait on the owner of its conversation", async () => {
+		const { harness, root } = await openNodes();
+		let owner: TaskId | undefined;
+		script("background", { run: (runtime, ctx) => runtime.commit(() => waitOn([owner!], "allSettled"), ctx) });
+		const background = await root.commit(async (tx) => {
+			owner = await tx.createTask(Node, { name: "owner" }, OWN_CONVERSATION);
+			const conversation = await tx.createConversation({ ownership: { kind: "task", taskId: owner } });
+			const options = { ...OWN_CONVERSATION, conversationId: conversation.id, background: true };
+			return tx.createTask(Node, { name: "background" }, options);
+		}, context);
+		// background -> owner is a wait but owner -> background is no hold, so there is no cycle.
+		await until(async () => (await state(harness, background)).status === "waiting");
+		open("owner");
+		expect(await outcomeOf(harness, background)).toBe("completed");
+		await harness.close(context);
+	});
+
+	// #10411: the issue's orchestrator, worker, and reviewer.
+	it("rejects a cycle of a hold and two waits that each look reasonable", async () => {
+		const { harness, root } = await openNodes();
+		const ids: Record<string, TaskId> = {};
+		const reviewerWaits = deferred();
+		// The orchestrator spawns a worker and finishes; the running worker holds it as completing.
+		script("orchestrator", {
+			run: (runtime, ctx) =>
+				runtime.commit(async (tx) => {
+					ids.worker = await spawn(tx, runtime.taskId, "worker");
+					return { status: "running", checkpoint: { phase: "resume", round: 1 } };
+				}, ctx),
+		});
+		// The reviewer waits for the orchestrator's result.
+		script("reviewer", {
+			run: async (runtime, ctx) => {
+				await runtime.commit(() => waitOn([ids.orchestrator!], "allSettled"), ctx);
+				reviewerWaits.resolve();
+			},
+		});
+		// The worker waits for the reviewer, closing the cycle.
+		script("worker", {
+			run: async (runtime, ctx) => {
+				await reviewerWaits.promise;
+				await runtime.commit(() => waitOn([ids.reviewer!], "allSettled"), ctx);
+			},
+		});
+		ids.orchestrator = await start(root, "orchestrator");
+		await until(async () => (await state(harness, ids.orchestrator!)).status === "completing");
+		ids.reviewer = await start(root, "reviewer");
+		const outcomes = await Promise.all(
+			["orchestrator", "worker", "reviewer"].map((name) => outcomeOf(harness, ids[name]!)),
+		);
+		expect(outcomes).toEqual(["completed", "faulted", "completed"]);
+		const worker = (await harness.waitForTask(ids.worker!, context)).state.outcome;
+		expect(JSON.stringify(worker)).toContain(
+			`${ids.worker} -> ${ids.reviewer} -> ${ids.orchestrator} -> ${ids.worker} is a wait cycle`,
+		);
+		await harness.close(context);
+	});
+
+	// #10411
+	it("allows a diamond of waits", async () => {
+		const { harness, root } = await openNodes();
+		const ids: Record<string, TaskId> = {};
+		// A diamond: top waits on left and right, both wait on bottom. No cycle.
+		script("top", {
+			run: (runtime, ctx) => runtime.commit(() => waitOn([ids.left!, ids.right!], "allSettled"), ctx),
+		});
+		script("left", { run: (runtime, ctx) => runtime.commit(() => waitOn([ids.bottom!], "allSettled"), ctx) });
+		script("right", { run: (runtime, ctx) => runtime.commit(() => waitOn([ids.bottom!], "allSettled"), ctx) });
+		await root.commit(async (tx) => {
+			ids.bottom = await tx.createTask(Node, { name: "bottom" }, OWN_CONVERSATION);
+			ids.left = await tx.createTask(Node, { name: "left" }, OWN_CONVERSATION);
+			ids.right = await tx.createTask(Node, { name: "right" }, OWN_CONVERSATION);
+			ids.top = await tx.createTask(Node, { name: "top" }, OWN_CONVERSATION);
+		}, context);
+		open("bottom");
+		expect(await outcomeOf(harness, ids.top)).toBe("completed");
+		await harness.close(context);
+	});
+
+	// #10411
+	it("follows no wait of an abort-marked task, which waits only for its owned work", async () => {
+		const { harness, root } = await openNodes();
+		const ids: Record<string, TaskId> = {};
+		const cleanup = deferred();
+		// b owns c and waits on a; aborting b leaves c's cleanup pending, so b waits only for c.
+		script("b", {
+			run: (runtime, ctx) =>
+				runtime.commit(async (tx) => {
+					ids.c = await spawn(tx, runtime.taskId, "c");
+					return waitOn([ids.a!], "allSettled");
+				}, ctx),
+		});
+		script("c", {
+			abort: async (runtime, ctx) => {
+				await cleanup.promise;
+				await runtime.commit(() => ({ status: "terminal", outcome: { status: "aborted", result: "c" } }), ctx);
+			},
+		});
+		const aWaits = deferred();
+		script("a", {
+			run: async (runtime, ctx) => {
+				await aWaits.promise;
+				await runtime.commit(() => waitOn([ids.b!], "allSettled"), ctx);
+			},
+			resume: (runtime, ctx) => runtime.commit(() => end("completed", "a"), ctx),
+		});
+		await root.commit(async (tx) => {
+			ids.a = await tx.createTask(Node, { name: "a" }, OWN_CONVERSATION);
+			ids.b = await tx.createTask(Node, { name: "b" }, OWN_CONVERSATION);
+		}, context);
+		await until(async () => (await state(harness, ids.b!)).status === "waiting");
+		expect(await harness.abortTask(ids.b!, context)).toBe("marked");
+		await until(() => log.includes("abort:c"));
+		// a -> b would close a -> b -> a through b's stale wait; b now waits only for c.
+		aWaits.resolve();
+		await until(async () => (await state(harness, ids.a!)).status === "waiting");
+		cleanup.resolve();
+		expect(await outcomeOf(harness, ids.b!)).toBe("aborted");
+		expect(await outcomeOf(harness, ids.a!)).toBe("completed");
+		await harness.close(context);
+	});
+
+	// #10411
+	it("rejects a longer cycle of waits", async () => {
+		const { harness, root } = await openNodes();
+		const ids: Record<string, TaskId> = {};
+		const names = ["x", "y", "z"];
+		for (const [index, name] of names.entries()) {
+			const next = names[(index + 1) % names.length]!;
+			script(name, { run: (runtime, ctx) => runtime.commit(() => waitOn([ids[next]!], "allSettled"), ctx) });
+		}
+		await root.commit(async (tx) => {
+			for (const name of names) ids[name] = await tx.createTask(Node, { name }, OWN_CONVERSATION);
+		}, context);
+		const outcomes = await Promise.all(names.map((name) => outcomeOf(harness, ids[name]!)));
+		expect(outcomes.filter((outcome) => outcome === "faulted")).toHaveLength(1);
+		expect(outcomes.filter((outcome) => outcome === "completed")).toHaveLength(2);
 		await harness.close(context);
 	});
 
@@ -992,7 +1192,7 @@ function blockingTool(name: string): { started: Promise<void>; registration: Too
 		registration: defineTool({
 			name,
 			description: `The ${name} tool`,
-			parameters: Type.Object({}),
+			parameters: obj({}),
 			executionMode: "sequential",
 			execute: async (_args, api, callContext) => {
 				api.output("partial");
@@ -1018,8 +1218,8 @@ describe("tool rounds", () => {
 			defineTool({
 				name: "noop",
 				description: "Does nothing",
-				parameters: Type.Object({}),
-				execute: async () => ({ content: [] }),
+				parameters: obj({}),
+				execute: async () => ({ output: [] }),
 			}),
 		);
 		setup.faux.setResponses([toolCalls(["noop", "c1"], ["noop", "c2"]), fauxAssistantMessage([fauxText("done")])]);
@@ -1053,7 +1253,9 @@ describe("tool rounds", () => {
 		expect(await submission.wait(context)).toMatchObject({ status: "unanswered", reason: "aborted" });
 		const results = (await allEntries(root)).filter((entry) => ToolResultEntry.is(entry));
 		expect(results.map((entry) => (entry.model![0] as ToolResultMessage).toolCallId)).toEqual(["c1", "c2"]);
-		expect(await harness.snapshot(LiveDoc, root.id, context)).toEqual({});
+		expect(await harness.snapshot(LiveDoc, root.id, context)).toEqual({
+			runFailure: { taskId: generation, inputs: [submission.id], reason: "aborted", first: expect.any(Number) },
+		});
 		expect((await harness.waitForTask(generation, context)).state.outcome.status).toBe("aborted");
 		await harness.close(context);
 	});
@@ -1088,7 +1290,7 @@ describe("tool rounds", () => {
 		await harness.close(context);
 	});
 
-	it("ends a turn at the generation's hold, before its successor's turn starts", async () => {
+	it("hands run control to the successor while the generation holds, and keeps it in the graph until it ends", async () => {
 		const setup = chatSetup();
 		addTask(setup.registry, Node);
 		addTool(
@@ -1096,8 +1298,8 @@ describe("tool rounds", () => {
 			defineTool({
 				name: "noop",
 				description: "Does nothing",
-				parameters: Type.Object({}),
-				execute: async () => ({ content: [] }),
+				parameters: obj({}),
+				execute: async () => ({ output: [] }),
 			}),
 		);
 		// An extension's hook starts work owned by the generation, which holds it while the next turn runs.
@@ -1110,25 +1312,27 @@ describe("tool rounds", () => {
 		setup.faux.setResponses([toolCalls(["noop", "c1"]), fauxAssistantMessage([fauxText("done")])]);
 		const { harness, root } = await openChat(new MemoryStorage(), setup);
 		opened = harness;
-		const stream = await watchEvents(harness, root.id, context);
-		const events: AgentEvent[] = [];
-		stream.start(async (batch) => {
-			events.push(...batch);
-		});
+		const graph = await graphHistory(harness);
+		const history = await viewHistory(harness, root.id);
 		await (await root.submit({ type: "input", content: "go" }, context)).wait(context);
 		const first = (await harness.commit((tx) => tx.scanTasks({ kind: "pi.generation" }, 1), context)).items[0]!;
 		expect((await state(harness, first.id)).status).toBe("completing");
-		const turns = () => events.filter((event) => event.type.startsWith("turn_")).map((event) => event.type);
-		await waitFor(() => turns().length === 4);
-		expect(turns()).toEqual(["turn_start", "turn_end", "turn_start", "turn_end"]);
+		// The first generation's outcome is committed at its hold: the successor already runs the run, and the graph shows
+		// the first one completing beside it.
+		const handed = graph.graphs.find((value) => generations(value).length === 2)!;
+		const [held, successor] = generations(handed);
+		expect(held).toMatchObject({ id: first.id, state: { status: "completing" } });
+		expect(successor!.state.status).not.toBe("completing");
+		expect(history.live().some((live) => live.run?.taskId === successor!.id)).toBe(true);
 		open("hooked");
 		expect(await outcomeOf(harness, first.id)).toBe("completed");
-		await waitFor(() => turns().length === 4);
-		await stream.stop();
+		await waitFor(() => graph.graphs.at(-1)!.tasks[String(first.id)] === undefined);
+		graph.detach();
+		history.detach();
 		await harness.close(context);
 	});
 
-	it("keeps run control with a faulted generation until its owned work drains, and retries a rejected final commit", async () => {
+	it("keeps run control with a faulted generation until its owned work drains, and fails the Harness on a failed final commit", async () => {
 		const base = chatSetup();
 		const models = new Proxy(base.models, {
 			get(target, property) {
@@ -1138,6 +1342,9 @@ describe("tool rounds", () => {
 			},
 		});
 		const setup = { ...base, models };
+		// The partial is stored at once, so the failed final commit leaves it for the reopened run to convert; held, it would
+		// be lost with the failed Session.
+		setup.settings.progress = { persistWithinMs: 0 };
 		addTask(setup.registry, Node);
 		let opened: Harness | undefined;
 		addHooks(setup.registry, GenerationTask, {
@@ -1153,22 +1360,26 @@ describe("tool rounds", () => {
 			},
 		});
 		let reject: TaskId | undefined;
-		class Rejecting extends MemoryStorage {
-			override async commit(
-				writes: Parameters<MemoryStorage["commit"]>[0],
-				ctx: Parameters<MemoryStorage["commit"]>[1],
+		const failure = new Error("disk gone");
+		class Failing extends ControlledStorage {
+			override commit(
+				batches: Parameters<MemoryStorage["commit"]>[0],
+				receive: Parameters<MemoryStorage["commit"]>[1],
+				ctx: Parameters<MemoryStorage["commit"]>[2],
 			) {
-				const finalizes = writes.some(
-					(write) => write.type === "task" && write.value.id === reject && write.value.state.status === "terminal",
-				);
-				if (finalizes) {
-					reject = undefined;
-					throw new StorageRejected("rejected once");
-				}
-				return super.commit(writes, ctx);
+				const refuses = (writes: readonly StorageWrite[]): boolean => {
+					const finalizes = writes.some(
+						(write) =>
+							write.type === "task" && write.value.id === reject && write.value.state.status === "terminal",
+					);
+					if (finalizes) reject = undefined;
+					return finalizes;
+				};
+				return refusingAt((...args) => super.commit(...args), batches, receive, ctx, refuses, failure);
 			}
 		}
-		const { harness, root } = await openChat(new Rejecting(), setup);
+		const storage = new Failing();
+		const { harness, root } = await openChat(storage, setup);
 		opened = harness;
 		const submission = await root.submit({ type: "input", content: "hi" }, context);
 		await waitFor(async () => {
@@ -1183,17 +1394,26 @@ describe("tool rounds", () => {
 		await waitFor(() => log.includes("abort:hooked"));
 		reject = generation;
 		open("abort.hooked");
-		// The final commit, with the run's cleanup, is rejected once: nothing of the cleanup lands.
-		await waitFor(() => setup.reports.some((error) => error instanceof StorageRejected));
-		expect((await harness.snapshot(LiveDoc, root.id, context))!.run?.taskId).toBe(generation);
-		expect((await allEntries(root)).map((entry) => entry.kind)).toEqual(["pi.user"]);
-		expect(await settled(submission.wait(context))).toBe(false);
-		// The next commit retries it; the partial becomes one aborted entry.
-		await root.commit((tx) => tx.appendEntry(root.id, { kind: "note" }), context);
-		expect(await submission.wait(context)).toMatchObject({ status: "unanswered", reason: "faulted" });
-		expect(await harness.snapshot(LiveDoc, root.id, context)).toEqual({});
-		expect((await allEntries(root)).map((entry) => entry.kind)).toEqual(["pi.user", "note", "pi.assistant"]);
+		// The final commit, with the run's cleanup, fails: nothing of the cleanup lands, and the Harness fails.
+		expect(await harness.closed).toEqual({ kind: "failed", error: failure });
+		await expect(submission.wait(context)).rejects.toMatchObject({ name: "SessionFailed", cause: failure });
 		await harness.close(context);
+		// Reopening finalizes the run; the partial becomes one aborted entry.
+		const reopened = await openChat(storage.reopen(), setup);
+		opened = reopened.harness;
+		const again = (await reopened.harness.submission(submission.id, context))!;
+		expect(await again.wait(context)).toMatchObject({ status: "unanswered", reason: "faulted" });
+		expect(await reopened.harness.snapshot(LiveDoc, reopened.root.id, context)).toEqual({
+			runFailure: {
+				taskId: expect.any(Number),
+				inputs: [submission.id],
+				reason: "faulted",
+				detail: "Value contains a non-JSON function; expected strict JSON",
+				first: expect.any(Number),
+			},
+		});
+		expect((await allEntries(reopened.root)).map((entry) => entry.kind)).toEqual(["pi.user", "pi.assistant"]);
+		await reopened.harness.close(context);
 	});
 });
 
@@ -1425,35 +1645,39 @@ describe("conversation abort and boundaries", () => {
 		await harness.close(context);
 	});
 
-	it("retries a finalization the Storage rejected with the next commit", async () => {
+	it("fails the Harness on a failed finalization, which reopening applies", async () => {
 		let reject: TaskId | undefined;
-		class Rejecting extends MemoryStorage {
-			override async commit(
-				writes: Parameters<MemoryStorage["commit"]>[0],
-				ctx: Parameters<MemoryStorage["commit"]>[1],
+		const failure = new Error("disk gone");
+		class Failing extends ControlledStorage {
+			override commit(
+				batches: Parameters<MemoryStorage["commit"]>[0],
+				receive: Parameters<MemoryStorage["commit"]>[1],
+				ctx: Parameters<MemoryStorage["commit"]>[2],
 			) {
-				const finalizes = writes.some(
-					(write) => write.type === "task" && write.value.id === reject && write.value.state.status === "terminal",
-				);
-				if (finalizes) {
-					reject = undefined;
-					throw new StorageRejected("rejected once");
-				}
-				return super.commit(writes, ctx);
+				const refuses = (writes: readonly StorageWrite[]): boolean => {
+					const finalizes = writes.some(
+						(write) =>
+							write.type === "task" && write.value.id === reject && write.value.state.status === "terminal",
+					);
+					if (finalizes) reject = undefined;
+					return finalizes;
+				};
+				return refusingAt((...args) => super.commit(...args), batches, receive, ctx, refuses, failure);
 			}
 		}
-		const { harness, root, reports } = await openNodes(new Rejecting());
-		const child = spawnAndFinish("parent", "child");
+		const storage = new Failing();
+		const { harness, root, reports } = await openNodes(storage);
+		spawnAndFinish("parent", "child");
 		const parent = await start(root, "parent");
 		await until(async () => (await state(harness, parent)).status === "completing");
 		reject = parent;
 		open("child");
-		await harness.waitForTask(child.id!, context);
-		await until(() => reports.some((error) => error instanceof StorageRejected));
-		expect((await state(harness, parent)).status).toBe("completing");
-		await root.commit((tx) => tx.appendEntry(root.id, { kind: "note" }), context);
-		expect(await outcomeOf(harness, parent)).toBe("completed");
+		expect(await harness.closed).toEqual({ kind: "failed", error: failure });
+		expect(reports).toEqual([failure]);
 		await harness.close(context);
+		const reopened = await openNodes(storage.reopen());
+		expect(await outcomeOf(reopened.harness, parent)).toBe("completed");
+		await reopened.harness.close(context);
 	});
 });
 
@@ -1549,25 +1773,12 @@ describe("recovery through ownership edges", () => {
 	});
 });
 
-describe("tool rounds and events", () => {
-	async function listen(harness: Harness, conversation: Conversation) {
-		const stream = await watchEvents(harness, conversation.id, context);
-		const events: AgentEvent[] = [];
-		stream.start(async (batch) => {
-			events.push(...batch);
-		});
-		return { stream, events };
-	}
-
-	/** Event types, with tool ends and message ends labelled by call ID and whether an entry came along. */
-	function labels(events: readonly AgentEvent[]): string[] {
-		return events.flatMap((event) => {
-			if (event.type === "tool_execution_end") return [`end:${event.toolCallId}:${event.entry !== undefined}`];
-			if (event.type === "message_end") {
-				const message = event.entry.model?.[0];
-				return [message?.role === "toolResult" ? `result:${message.toolCallId}` : `message:${message?.role}`];
-			}
-			return [];
+describe("tool rounds as the view shows them", () => {
+	/** The tool result entries of a view, by call ID, in transcript order. */
+	function resultsOf(view: ConversationView): string[] {
+		return view.entries.flatMap((entry) => {
+			const message = entry.model?.[0];
+			return message?.role === "toolResult" ? [message.toolCallId] : [];
 		});
 	}
 
@@ -1578,25 +1789,36 @@ describe("tool rounds and events", () => {
 		addTool(setup.registry, defineTool({ ...blockingTool("two").registration, name: "two" }));
 		setup.faux.setResponses([toolCalls(["one", "c1"], ["two", "c2"], ["two", "c3"])]);
 		const { harness, root } = await openChat(new MemoryStorage(), setup);
-		const { stream, events } = await listen(harness, root);
+		const history = await viewHistory(harness, root.id);
 		const submission = await root.submit({ type: "input", content: "go" }, context);
 		await one.started;
 		await harness.abortTask((await harness.snapshot(LiveDoc, root.id, context))!.run!.taskId, context);
 		await submission.wait(context);
-		await waitFor(() => labels(events).includes("result:c3"));
-		expect(labels(events).filter((label) => !label.startsWith("message:"))).toEqual([
-			"end:c1:true",
-			"result:c1",
-			"end:c2:true",
-			"result:c2",
-			"end:c3:true",
-			"result:c3",
+		history.detach();
+		// The started call ends with its result entry; the commit that ends the run appends the unstarted calls' results,
+		// in call order, and removes the round.
+		const states = history.live();
+		const c1Done = slotsOf(states, "c1").find((slot) => slot?.status === "done");
+		const last = history.views.at(-1)!;
+		expect(resultsOf(last)).toEqual(["c1", "c2", "c3"]);
+		const c1Result = last.entries.find(
+			(entry) =>
+				entry.model?.[0]?.role === "toolResult" && (entry.model[0] as ToolResultMessage).toolCallId === "c1",
+		);
+		expect(c1Done?.entry).toBe(c1Result?.id);
+		const ending = history.views.findIndex((view) => resultsOf(view).includes("c2"));
+		expect(resultsOf(history.views[ending]!)).toEqual(["c1", "c2", "c3"]);
+		expect(states[ending]!.run).toBeUndefined();
+		expect(states[ending]!.tools).toBeUndefined();
+		expect(states[ending - 1]!.tools?.map((slot) => [slot.callId, slot.status])).toEqual([
+			["c1", "done"],
+			["c2", "pending"],
+			["c3", "pending"],
 		]);
-		await stream.stop();
 		await harness.close(context);
 	});
 
-	it("emits one turn_end per generation, also for a stream attached while it holds", async () => {
+	it("shows a held generation as completing to an observer attached while it holds", async () => {
 		const setup = chatSetup();
 		addTask(setup.registry, Node);
 		addTool(
@@ -1604,8 +1826,8 @@ describe("tool rounds and events", () => {
 			defineTool({
 				name: "noop",
 				description: "Does nothing",
-				parameters: Type.Object({}),
-				execute: async () => ({ content: [] }),
+				parameters: obj({}),
+				execute: async () => ({ output: [] }),
 			}),
 		);
 		let opened: Harness | undefined;
@@ -1617,19 +1839,22 @@ describe("tool rounds and events", () => {
 		setup.faux.setResponses([toolCalls(["noop", "c1"]), fauxAssistantMessage([fauxText("done")])]);
 		const { harness, root } = await openChat(new MemoryStorage(), setup);
 		opened = harness;
-		const early = await listen(harness, root);
+		const early = await graphHistory(harness);
 		await (await root.submit({ type: "input", content: "go" }, context)).wait(context);
-		const late = await listen(harness, root);
+		const late = await graphHistory(harness);
 		open("hooked");
 		const [first] = (await harness.commit((tx) => tx.scanTasks({ kind: "pi.generation" }, 1), context)).items;
 		await harness.waitForTask(first!.id, context);
-		await root.commit((tx) => tx.appendEntry(root.id, { kind: "note" }), context);
-		await waitFor(() => late.events.some((event) => event.type === "entry_appended"));
-		const turns = (events: readonly AgentEvent[]) => events.filter((event) => event.type === "turn_end").length;
-		expect(turns(early.events)).toBe(2);
-		expect(turns(late.events)).toBe(0);
-		await early.stream.stop();
-		await late.stream.stop();
+		// The early observer saw both generations; the late one starts with the held one, completing, and sees it leave.
+		const seen = (graphs: readonly TaskGraph[]) =>
+			new Set(graphs.flatMap((graph) => generations(graph).map((node) => node.id)));
+		expect(seen(early.graphs).size).toBe(2);
+		expect(generations(late.graphs[0]!)).toEqual([
+			expect.objectContaining({ id: first!.id, state: expect.objectContaining({ status: "completing" }) }),
+		]);
+		expect(late.graphs.at(-1)!.tasks[String(first!.id)]).toBeUndefined();
+		early.detach();
+		late.detach();
 		await harness.close(context);
 	});
 
@@ -1641,19 +1866,18 @@ describe("tool rounds and events", () => {
 			defineTool({
 				name: "delegate",
 				description: "Starts work in a conversation it owns",
-				parameters: Type.Object({}),
+				parameters: obj({}),
 				execute: async (_args, api, callContext) => {
 					await api.commit(async (tx) => {
 						const child = await tx.createConversation({ ownership: { kind: "task", taskId: api.taskId } });
 						await tx.createTask(Node, { name: "sub" }, { ...OWN_CONVERSATION, conversationId: child.id });
 					}, callContext);
-					return { content: [{ type: "text", text: "started" }] };
+					return { output: [{ type: "text", text: "started" }] };
 				},
 			}),
 		);
 		setup.faux.setResponses([toolCalls(["delegate", "c1"]), fauxAssistantMessage([fauxText("done")])]);
 		const { harness, root } = await openChat(new MemoryStorage(), setup);
-		const { stream, events } = await listen(harness, root);
 		const submission = await root.submit({ type: "input", content: "go" }, context);
 		await waitFor(async () => (await harness.snapshot(LiveDoc, root.id, context))?.tools?.[0]?.status === "done");
 		const live = (await harness.snapshot(LiveDoc, root.id, context))!;
@@ -1661,16 +1885,14 @@ describe("tool rounds and events", () => {
 		expect(live.tools![0]!.entry).toBeDefined();
 		expect((await state(harness, tool)).status).toBe("completing");
 		expect((await state(harness, live.run!.taskId)).status).toBe("waiting");
-		await waitFor(() => labels(events).includes("end:c1:true"));
 		expect(await settled(submission.wait(context))).toBe(false);
 		open("sub");
 		expect((await submission.wait(context)).status).toBe("done");
 		expect(await outcomeOf(harness, tool)).toBe("completed");
-		await stream.stop();
 		await harness.close(context);
 	});
 
-	it("holds a faulted tool's slot and task_failed until the work it owns drained", async () => {
+	it("holds a faulted tool's slot and its graph node until the work it owns drained", async () => {
 		const setup = chatSetup();
 		addTask(setup.registry, Node);
 		script("held", {
@@ -1684,29 +1906,35 @@ describe("tool rounds and events", () => {
 			defineTool({
 				name: "broken",
 				description: "Starts owned work, then returns a result that is not strict JSON",
-				parameters: Type.Object({}),
+				parameters: obj({}),
 				execute: async (_args, api, callContext) => {
 					await api.commit((tx) => tx.createTask(Node, { name: "held" }, owned(api.taskId)), callContext);
-					return { content: [], details: { fn: (() => 1) as unknown as JsonValue } };
+					return { output: [], details: { fn: (() => 1) as unknown as JsonValue } };
 				},
 			}),
 		);
 		setup.faux.setResponses([toolCalls(["broken", "c1"]), fauxAssistantMessage([fauxText("done")])]);
 		const { harness, root } = await openChat(new MemoryStorage(), setup);
-		const { stream, events } = await listen(harness, root);
+		const history = await viewHistory(harness, root.id);
+		const graph = await graphHistory(harness);
 		const submission = await root.submit({ type: "input", content: "go" }, context);
 		await waitFor(() => log.includes("abort:held"));
 		const live = (await harness.snapshot(LiveDoc, root.id, context))!;
 		const tool = live.tools![0]!.taskId!;
 		expect(await state(harness, tool)).toMatchObject({ status: "completing", outcome: { status: "faulted" } });
 		expect(live.tools![0]!.status).not.toBe("done");
-		expect(events.some((event) => event.type === "task_failed")).toBe(false);
+		// The graph shows the held fault; the task is not terminal yet.
+		expect(graph.graphs.at(-1)!.tasks[String(tool)]?.state).toEqual({ status: "completing", outcome: "faulted" });
 		open("abort.held");
 		expect((await submission.wait(context)).status).toBe("done");
 		expect(await outcomeOf(harness, tool)).toBe("faulted");
-		await waitFor(() => events.some((event) => event.type === "task_failed"));
-		expect(labels(events)).toContain("end:c1:false");
-		await stream.stop();
+		await waitFor(() => graph.graphs.at(-1)!.tasks[String(tool)] === undefined);
+		// The slot ends done without a result entry.
+		const done = slotsOf(history.live(), "c1").find((slot) => slot?.status === "done");
+		expect(done).toBeDefined();
+		expect(done).not.toHaveProperty("entry");
+		history.detach();
+		graph.detach();
 		await harness.close(context);
 	});
 });

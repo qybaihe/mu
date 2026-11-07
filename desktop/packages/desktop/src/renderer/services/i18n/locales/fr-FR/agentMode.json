@@ -15,7 +15,7 @@
   "smart": "Intelligent",
   "build": "Mode Construction",
   "full": "Accès complet",
-  "jev": "Jev approuve",
+  "judge": "Mode juge",
   "ask": "Autorisations minimales",
   "permission": "Autorisations",
   "switchMode": "Changer de mode",
@@ -24,7 +24,7 @@
   "switchFailed": "Échec du changement de mode",
   "descriptions": {
     "full": "Exécute tout sans demander. Ce que vous avez interdit reste bloqué.",
-    "jev": "La lecture et les modifications dans le projet se font directement ; Jev approuve pour vous les commandes, les changements hors du projet et les actions extérieures, et ne vous demande que s’il n’est pas sûr.",
+    "judge": "La lecture et les modifications dans le projet se font directement ; le juge approuve pour vous les commandes, les changements hors du projet et les actions extérieures, et ne vous demande que s’il n’est pas sûr.",
     "ask": "Seule la lecture se fait directement ; chaque modification, commande ou action extérieure vous est d’abord soumise."
   }
 }

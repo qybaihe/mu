@@ -81,7 +81,7 @@ async function performRefresh(): Promise<boolean> {
   try {
     // Attach the CSRF double-submit header when a token is available. The
     // open-source WebUI has no CSRF layer yet (M6 removed it, M7 restores it), so
-    // resolveCoreCsrfToken() returns '' and no header is sent; the aionpro superset
+    // resolveCoreCsrfToken() returns '' and no header is sent; a hosted build
     // resolves a real token here and its backend enforces the check. The matching
     // cookie, when one exists, rides `credentials: 'include'`.
     const headers: Record<string, string> = {};

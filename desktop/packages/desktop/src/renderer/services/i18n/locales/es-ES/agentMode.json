@@ -15,7 +15,7 @@
   "smart": "Inteligente",
   "build": "Modo construcción",
   "full": "Acceso completo",
-  "jev": "Jev aprueba",
+  "judge": "Modo juez",
   "ask": "Permisos mínimos",
   "permission": "Permiso",
   "switchMode": "Modo de permiso",
@@ -24,7 +24,7 @@
   "switchFailed": "Error al cambiar modo",
   "descriptions": {
     "full": "Ejecuta todo sin preguntar. Lo que dijiste que no se hiciera se sigue deteniendo.",
-    "jev": "Leer y editar dentro del proyecto sigue adelante; Jev aprueba por ti los comandos, los cambios fuera del proyecto y las acciones externas, y solo te pregunta cuando no está seguro.",
+    "judge": "Leer y editar dentro del proyecto sigue adelante; el juez aprueba por ti los comandos, los cambios fuera del proyecto y las acciones externas, y solo te pregunta cuando no está seguro.",
     "ask": "Solo la lectura sigue adelante; cada edición, comando o acción externa te pregunta primero."
   }
 }

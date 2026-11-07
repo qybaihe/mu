@@ -5,11 +5,12 @@ import {
   RESERVED_PROVIDER_IDS,
   suggestProviderId,
   type EndpointType,
+  type ListedModel,
   type ProviderTestResult,
 } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
 import type { Draft } from '@/renderer/pages/settings/KyrnSettings/draft';
-import { blankModel, blankProvider } from '@/renderer/pages/settings/KyrnSettings/providers/endpoints';
+import { blankProvider, listedModel } from '@/renderer/pages/settings/KyrnSettings/providers/endpoints';
 import type { ModelService } from './services';
 
 /**
@@ -44,7 +45,8 @@ export const needsOnboarding = (settings: KyrnSettings): boolean => !settings.mo
  */
 export type GuideApi = Extract<EndpointType, 'openai-completions' | 'openai-responses' | 'anthropic-messages'>;
 
-export type ApiModel = { api: EndpointType; baseUrl: string; key: string; model: string };
+/** `facts`: what the endpoint's model list stated about the model, where a connection test read one (#23). */
+export type ApiModel = { api: EndpointType; baseUrl: string; key: string; model: string; facts?: ListedModel };
 
 const isLoopback = (baseUrl: string): boolean => {
   try {
@@ -137,7 +139,7 @@ export function withApiModel(
     name: named ? named.name : providerNameFor(input.baseUrl.trim(), id),
     api: input.api,
     baseUrl: input.baseUrl.trim(),
-    models: [{ ...blankModel(input.model.trim()), name: input.model.trim() }],
+    models: [{ ...listedModel(input.model.trim(), input.facts), name: input.facts?.name ?? input.model.trim() }],
   };
   const { [previous ?? '']: _dropped, ...providerKeys } = draft.providerKeys;
   return {
@@ -173,7 +175,7 @@ export function withSignedInModel(draft: Draft, provider: string, model: string,
 }
 
 /** The permission modes the guide knows how to describe, in the order it shows them. */
-export const GUIDE_PERMISSION_MODES = ['jev', 'full', 'ask'] as const;
+export const GUIDE_PERMISSION_MODES = ['judge', 'full', 'ask'] as const;
 export type GuidePermissionMode = (typeof GUIDE_PERMISSION_MODES)[number];
 
 /** The permission modes this harness offers that the guide can describe; none when it has no permission modes. */

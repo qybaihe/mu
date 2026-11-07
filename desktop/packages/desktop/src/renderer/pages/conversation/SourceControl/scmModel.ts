@@ -55,7 +55,7 @@ export type ScmRepository = {
   head?: ScmHead;
   /**
    * Whether this repository is a linked worktree rather than a primary clone (wire
-   * field `is_worktree`, aioncore `types.rs`). Only surfaced under one-level workspace
+   * field `is_worktree`, the backend's `types.rs`). Only surfaced under one-level workspace
    * discovery; the backend omits it entirely when `false`, so it is optional and a
    * missing value means "not a worktree". Never assume it is present.
    */
@@ -63,7 +63,7 @@ export type ScmRepository = {
   /**
    * When this is a linked worktree **and** its primary repository is also in the same
    * project's surfaced set, the primary repository's `repo_id` (wire field `worktree_of`,
-   * aioncore `types.rs`). Omitted when the primary is outside the current view — the
+   * the backend's `types.rs`). Omitted when the primary is outside the current view — the
    * client then renders the worktree at the outer level. Matched by real git directory
    * upstream, never by path text; the client treats it as an opaque id.
    */
@@ -74,7 +74,7 @@ export type ScmRepository = {
 
 /**
  * The repository HEAD: branch name and whether it is detached (wire `ScmHead`,
- * aioncore `types.rs`). Both fields are optional — a provider that cannot resolve
+ * the backend's `types.rs`). Both fields are optional — a provider that cannot resolve
  * a branch name omits it, and `detached` defaults to false when absent.
  */
 export type ScmHead = { name?: string; detached?: boolean };
@@ -106,7 +106,7 @@ export type ScmStatus = {
   resources: ScmResource[];
   /**
    * HEAD at the time of this snapshot (wire `ScmStatus.head`, top-level and sibling
-   * to `resources`/`seq`, per aioncore `types.rs`; `skip_serializing_if none`). It is
+   * to `resources`/`seq`, per the backend's `types.rs`; `skip_serializing_if none`). It is
    * a property of the snapshot, not of the repo identity, so it lives here rather than
    * on `repository`. Optional: a status push after e.g. a terminal `checkout` carries
    * it so the branch display updates without a separate `repositoriesChanged` frame,

@@ -877,10 +877,13 @@ describe("ExtensionRunner", () => {
 			runner.onError((error) => errors.push(error.error));
 			runner.bindCore(extensionActions, extensionContextActions);
 
-			const chained = await runner.emitBeforeAgentStart("hello", undefined, {
-				cwd: tempDir,
-				customPrompt: "base",
-			});
+			const chained = await runner.emitBeforeAgentStart(
+				{ messageType: "user", prompt: "hello" },
+				{
+					cwd: tempDir,
+					customPrompt: "base",
+				},
+			);
 
 			expect(errors).toEqual([]);
 			expect(chained.messages).toEqual([]);
@@ -1378,6 +1381,112 @@ describe("ExtensionRunner", () => {
 
 			expect(runner.hasHandlers("tool_call")).toBe(true);
 			expect(runner.hasHandlers("agent_end")).toBe(false);
+		});
+	});
+
+	describe("final tool_call handlers", () => {
+		const load = async (...factories: ExtensionFactory[]) => {
+			const runtime = createExtensionRuntime();
+			const eventBus = createEventBus();
+			const extensions = [];
+			for (const factory of factories)
+				extensions.push(await loadExtensionFromFactory(factory, tempDir, eventBus, runtime));
+			return new ExtensionRunner(extensions, runtime, tempDir, sessionManager, modelRegistry);
+		};
+		const call = (command: string) =>
+			({ type: "tool_call", toolName: "bash", toolCallId: "c1", input: { command } }) as const;
+
+		it("run after every other handler, also of extensions loaded later, and read the input they left", async () => {
+			const order: string[] = [];
+			const runner = await load(
+				(pi) => {
+					pi.on(
+						"tool_call",
+						(event) => {
+							order.push(`check: ${(event.input as { command: string }).command}`);
+						},
+						{ final: true },
+					);
+					pi.on("tool_call", () => {
+						order.push("first");
+					});
+				},
+				(pi) => {
+					pi.on("tool_call", (event) => {
+						order.push("rewrite");
+						(event.input as { command: string }).command =
+							`source ~/.profile\n${(event.input as { command: string }).command}`;
+					});
+				},
+			);
+			const event = call("npm test");
+
+			expect(runner.hasHandlers("tool_call")).toBe(true);
+			await runner.emitToolCall(event);
+			expect(order).toEqual(["first", "rewrite", "check: source ~/.profile\nnpm test"]);
+			// The input that runs is the one the check read.
+			expect(event.input.command).toBe("source ~/.profile\nnpm test");
+		});
+
+		it("count as tool_call handlers on their own", async () => {
+			const runner = await load((pi) => {
+				pi.on("tool_call", () => undefined, { final: true });
+			});
+			expect(runner.hasHandlers("tool_call")).toBe(true);
+		});
+
+		it("can block a call, and the handlers after them do not run", async () => {
+			const seen: string[] = [];
+			const runner = await load(
+				(pi) => {
+					pi.on("tool_call", () => ({ block: true, reason: "no" }), { final: true });
+				},
+				(pi) => {
+					pi.on(
+						"tool_call",
+						() => {
+							seen.push("second");
+						},
+						{ final: true },
+					);
+				},
+			);
+			expect(await runner.emitToolCall(call("npm publish"))).toEqual({ block: true, reason: "no" });
+			expect(seen).toEqual([]);
+		});
+
+		it("cannot change the call: the input they read is frozen, and the input that runs stays as it was", async () => {
+			const runner = await load((pi) => {
+				pi.on(
+					"tool_call",
+					(event) => {
+						(event.input as { command: string }).command = "npm publish";
+					},
+					{ final: true },
+				);
+			});
+			const event = call("npm test");
+
+			await expect(runner.emitToolCall(event)).rejects.toThrow(TypeError);
+			expect(event.input.command).toBe("npm test");
+		});
+
+		it("stop being called once unsubscribed", async () => {
+			const seen: string[] = [];
+			let stop = () => {};
+			const runner = await load((pi) => {
+				stop = pi.on(
+					"tool_call",
+					() => {
+						seen.push("final");
+					},
+					{ final: true },
+				);
+			});
+			stop();
+			await runner.emitToolCall(call("ls"));
+			expect(seen).toEqual([]);
+			expect(runner.hasHandlers("tool_call")).toBe(false);
 		});
 	});
 

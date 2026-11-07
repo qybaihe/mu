@@ -93,7 +93,7 @@ describe('the theme at start', () => {
     await startApp();
 
     await waitFor(() => expect(seedMock).toHaveBeenCalledWith(expect.objectContaining({ appearance: 'dark' }), true));
-    expect(localStorage.getItem('__aionui_theme_follows_system')).toBe('1');
+    expect(localStorage.getItem('__mu_theme_follows_system')).toBe('1');
   });
 
   it('keeps a chosen Light theme when the system is dark', async () => {
@@ -104,7 +104,7 @@ describe('the theme at start', () => {
 
     await waitFor(() => expect(result.current[0]?.appearance).toBe('light'));
     expect(seedMock).toHaveBeenCalledWith(expect.objectContaining({ appearance: 'light' }), false);
-    expect(localStorage.getItem('__aionui_theme_follows_system')).toBeNull();
+    expect(localStorage.getItem('__mu_theme_follows_system')).toBeNull();
   });
 
   it('follows the system when the settings cannot be read', async () => {

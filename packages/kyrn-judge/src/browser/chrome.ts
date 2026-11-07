@@ -231,7 +231,7 @@ export function planBrowserLaunch(input: {
 		// Chrome is a Windows program: it gets the folder in Windows' spelling (what `wslpath -w` would answer).
 		const translated = wslToWindowsPath(profileDir, host.wsl);
 		if (!translated)
-			throw codedError(`The profile folder ${profileDir} has no Windows spelling (WSL_DISTRO_NAME is not set).`, {
+			throw codedError(`The profile folder ${profileDir} has no Windows path (WSL_DISTRO_NAME isn't set).`, {
 				code: "profile_no_windows_path",
 				params: { profileDir },
 			});
@@ -386,5 +386,5 @@ export async function launchChrome(options: LaunchOptions = {}): Promise<Launche
 	// browsing step) would find the profile taken, and Windows would not even let its folder be removed.
 	child.kill();
 	await exitOf(child, 5_000);
-	throw codedError("Chrome did not open its DevTools port in time", { code: "devtools_port_timeout" });
+	throw codedError("Chrome didn't open its DevTools port in time", { code: "devtools_port_timeout" });
 }

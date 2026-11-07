@@ -44,7 +44,7 @@ async function openConversationOn(page: import('@playwright/test').Page, workspa
   await goToGuid(page);
   const id = await page.evaluate(async (ws) => {
     const port = (window as BackendWindow).__backendPort;
-    if (!port) throw new Error('window.__backendPort is not available — is aioncore running?');
+    if (!port) throw new Error('window.__backendPort is not available — is the backend running?');
     const created = await fetch(`http://127.0.0.1:${port}/api/conversations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -83,7 +83,7 @@ test.describe('Preview — the refresh button notices a change on disk', () => {
   let workspace: string;
 
   test.beforeEach(() => {
-    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-watch-signal-'));
+    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'mu-watch-signal-'));
   });
 
   test.afterEach(() => {

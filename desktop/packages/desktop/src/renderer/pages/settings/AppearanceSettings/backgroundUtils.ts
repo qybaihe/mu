@@ -4,19 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { LEGACY_BACKGROUND_BLOCK } from '@/common/platform/legacyNames';
+
 /**
  * Helpers for injecting user-selected background images into theme CSS.
  */
 
-export const BACKGROUND_BLOCK_START = '/* AionUi Theme Background Start */';
-export const BACKGROUND_BLOCK_END = '/* AionUi Theme Background End */';
+export const BACKGROUND_BLOCK_START = '/* mu Theme Background Start */';
+export const BACKGROUND_BLOCK_END = '/* mu Theme Background End */';
 
-// Precompiled regex for better performance / 预编译正则以提升性能
+// Precompiled regex for better performance / 预编译正则以提升性能. A block an earlier version wrote has its markers.
 const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const BACKGROUND_BLOCK_PATTERN = new RegExp(
-  `${escapeRegex(BACKGROUND_BLOCK_START)}[\\s\\S]*?${escapeRegex(BACKGROUND_BLOCK_END)}\n?`,
+  [
+    [BACKGROUND_BLOCK_START, BACKGROUND_BLOCK_END],
+    [LEGACY_BACKGROUND_BLOCK.start, LEGACY_BACKGROUND_BLOCK.end],
+  ]
+    .map(([start, end]) => `${escapeRegex(start)}[\\s\\S]*?${escapeRegex(end)}\n?`)
+    .join('|'),
   'g'
 );
+
+/** Whether a theme's CSS has a background block, by this version or an earlier one. */
+export const hasBackgroundBlock = (css: string): boolean =>
+  css.includes(BACKGROUND_BLOCK_START) || css.includes(LEGACY_BACKGROUND_BLOCK.start);
 
 const buildBackgroundCss = (imageDataUrl: string): string => {
   if (!imageDataUrl) return '';

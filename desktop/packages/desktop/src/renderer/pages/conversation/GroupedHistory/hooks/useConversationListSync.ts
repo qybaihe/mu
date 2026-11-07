@@ -831,3 +831,19 @@ export const useConversationListSync = () => {
     setActiveConversation,
   };
 };
+
+/**
+ * Which conversations are running, wait for a confirmation, or are unread (a reply finished out of view, or marked by
+ * hand), for what reads them all at once: the app's badge, keeping the computer awake.
+ */
+export const useConversationActivitySets = (): Omit<ConversationListSyncSnapshot, 'conversations'> => {
+  useEffect(() => {
+    initializeConversationListSyncStore();
+  }, []);
+  const { conversations: _conversations, ...sets } = useSyncExternalStore(
+    subscribeConversationListSync,
+    getConversationListSyncSnapshot,
+    getConversationListSyncSnapshot
+  );
+  return sets;
+};

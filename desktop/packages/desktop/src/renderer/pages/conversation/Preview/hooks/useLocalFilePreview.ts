@@ -7,7 +7,11 @@
 import { localFileRef } from '@/common/types/chatFile';
 import type { LocalFileLinkReference } from '@/renderer/components/Markdown/markdownUtils';
 import { getContentTypeByExtension } from '@/renderer/pages/conversation/Preview/fileUtils';
-import { usePreviewContext } from '@/renderer/pages/conversation/Preview/context/PreviewContext';
+import {
+  useOptionalPreviewContext,
+  usePreviewContext,
+  type PreviewContextValue,
+} from '@/renderer/pages/conversation/Preview/context/PreviewContext';
 import { resolvePreviewPayload, upgradeFileRef } from '@/renderer/utils/file/previewPayload';
 import { resolveWorkspacePath } from '@/renderer/utils/file/workspacePath';
 import { getCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
@@ -23,16 +27,14 @@ const getPreviewLanguage = (file_name: string): string => {
   return dotIndex >= 0 ? file_name.slice(dotIndex + 1).toLowerCase() : '';
 };
 
-/**
- * @param workspace the conversation's workspace, recorded on the tab
- * @param relativeTo what a relative link is relative to: the workspace, or the directory of the document that carries
- *   the link
- */
-export const useLocalFilePreview = (workspace?: string, relativeTo: string | undefined = workspace) => {
-  const { openPreview } = usePreviewContext();
-
-  return useCallback(
+const useLocalFileOpener = (
+  openPreview: PreviewContextValue['openPreview'] | undefined,
+  workspace: string | undefined,
+  relativeTo: string | undefined
+) =>
+  useCallback(
     async (linkPath: string, reference?: LocalFileLinkReference) => {
+      if (!openPreview) return;
       // `index.html` in a message means the file under the workspace; nothing else reads it that way.
       const file_path = resolveWorkspacePath(linkPath, relativeTo);
       const fileName = getFileNameFromPath(file_path);
@@ -96,4 +98,23 @@ export const useLocalFilePreview = (workspace?: string, relativeTo: string | und
     },
     [openPreview, workspace, relativeTo]
   );
+
+/**
+ * @param workspace the conversation's workspace, recorded on the tab
+ * @param relativeTo what a relative link is relative to: the workspace, or the directory of the document that carries
+ *   the link
+ */
+export const useLocalFilePreview = (workspace?: string, relativeTo: string | undefined = workspace) => {
+  const { openPreview } = usePreviewContext();
+  return useLocalFileOpener(openPreview, workspace, relativeTo);
+};
+
+/**
+ * The same, for a place that may be drawn with no preview panel around it (a test, a window without one): undefined
+ * there, so the caller leaves the path as text.
+ */
+export const useOptionalLocalFilePreview = (workspace?: string) => {
+  const preview = useOptionalPreviewContext();
+  const open = useLocalFileOpener(preview?.openPreview, workspace, workspace);
+  return preview ? open : undefined;
 };

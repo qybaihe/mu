@@ -20,11 +20,11 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: hooks.t }),
 }));
 
-vi.mock('@/renderer/components/base/AionScrollArea', () => ({
+vi.mock('@/renderer/components/base/MuScrollArea', () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-vi.mock('@/renderer/components/base/AionSelect', () => {
+vi.mock('@/renderer/components/base/MuSelect', () => {
   const Select = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
   return { default: Object.assign(Select, { OptGroup: Select, Option: Select }) };
 });
@@ -95,6 +95,7 @@ vi.mock('@/common/adapter/ipcBridge', () => ({
 }));
 
 import ToolsModalContent from '@/renderer/components/settings/SettingsModal/contents/ToolsModalContent';
+import { BUILTIN_MCP_SERVER_NAMES } from '@/common/platform/legacyNames';
 
 describe('ToolsModalContent image model guide', () => {
   beforeEach(() => {
@@ -171,7 +172,7 @@ describe('ToolsModalContent image model that no longer resolves', () => {
     hooks.mcpServers = [
       {
         id: 'builtin-image-gen',
-        name: 'aionui-image-generation',
+        name: BUILTIN_MCP_SERVER_NAMES.imageGeneration,
         builtin: true,
         enabled: false,
         transport: { type: 'stdio', command: 'node', args: [], env: {} },

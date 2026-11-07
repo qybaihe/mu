@@ -168,7 +168,6 @@
     "judge": "Configuración del juez",
     "reload": "Recargar",
     "starting": "Iniciando mu…",
-    "startingHint": "Conectando con el núcleo local de mu y leyendo la configuración del modelo y del juez.",
     "startupError": "No se pudo iniciar mu",
     "hiveView": {
       "title": "Hive",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · último paso: {{step}}",
       "runs": "Ejecuciones de Hive",
       "graph": "Mapa de colaboración",
-      "graphHint": "Cuanto más gruesa la línea, más pasó por ella. Elige una abeja para abrir su fila; señala una línea para leer lo que llevó.",
       "map": "Mapa",
       "legend": "Leyenda",
       "legendDelivery": "entrega",
@@ -206,7 +204,6 @@
       "board": "Tablero compartido",
       "noNotes": "Aún no hay hallazgos compartidos.",
       "context": "Contexto de ejecución",
-      "contextHint": "Mensajes registrados y salida de herramientas completada, no la instrucción completa del modelo. La salida aparece al terminar.",
       "focus": "Asignación",
       "missingFocus": "No se registró la asignación para esta ejecución.",
       "current": "Actividad actual",
@@ -227,7 +224,7 @@
       "noteMissing": "Hallazgo no registrado.",
       "allFlow": "Todas las entregas",
       "beeFlow": "Entregas para {{name}}",
-      "audit": "Veredictos de Jev",
+      "audit": "Veredictos",
       "waitingRun": "Esperando los eventos registrados de este Hive.",
       "recordedAt": "Registrado a las {{time}}",
       "beeMissing": "Esta abeja no está en la instantánea registrada.",
@@ -296,6 +293,17 @@
       "batchFailures": "Sin respuesta; se usó la estrategia predeterminada: {{count}}.",
       "changedThinking": "Nivel de razonamiento: {{from}} → {{to}}",
       "sentHints": "Indicaciones enviadas al modelo principal",
+      "userAnswer": {
+        "once": "Lo has permitido una vez.",
+        "session": "Lo has permitido en esta conversación.",
+        "deny": "No lo has permitido.",
+        "dismissed": "Has cerrado la pregunta sin responder.",
+        "none": "No había nadie a quien preguntar, así que el paso se rechazó."
+      },
+      "markedWrong": "Has marcado este veredicto como erróneo.",
+      "markedWrongWhy": "Has marcado este veredicto como erróneo: {{note}}",
+      "markWrong": "Marcar como erróneo",
+      "markWrongHint": "Dile a mu que este veredicto fue erróneo. La marca se guarda junto al veredicto en el ledger de esta sesión.",
       "unlinked": "Registro independiente",
       "unlinkedHint": "Se registró sin correlación de turno. Se muestra por separado y no se combina con registros cercanos en el tiempo.",
       "state": {
@@ -959,7 +967,7 @@
       "auto_compaction_end": "Compactación terminada",
       "hive.note": "Hallazgo compartido",
       "hive.delivery": "Entrega confirmada",
-      "hive.gate": "Compuerta de Jev",
+      "hive.gate": "Compuerta de Hive",
       "hive.manifest": "Asignación de Hive",
       "bee.event": "Evento de abeja",
       "memory.recalled": "Experiencia recuperada",
@@ -1065,7 +1073,6 @@
     "compactionAborted": "Compactación cancelada",
     "compactionFailed": "La compactación ha fallado",
     "compactionSavings": "Reducción del contexto ≈{{saved}}",
-    "compactionEstimate": "Los tokens tras la compactación son una estimación; la siguiente respuesta del modelo actualizará el uso.",
     "cacheHit": "Aciertos de caché",
     "cachePending": "Aún no se ha informado del uso de caché",
     "cacheLabel": "Tasa de aciertos de caché de la sesión: {{percent}}",
@@ -1076,24 +1083,6 @@
         "idle": "Juez en espera",
         "judging": "Juez evaluando",
         "off": "Juez desactivado"
-      },
-      "starters": {
-        "hint": "¿No sabes por dónde empezar? Prueba una de estas opciones:",
-        "understand": {
-          "title": "Entender este proyecto",
-          "desc": "Repasar la estructura, los puntos de entrada y los módulos clave",
-          "prompt": "Primero lee este proyecto y explícame su estructura, sus principales puntos de entrada y los módulos más importantes. Señala los tres archivos que conviene leer primero."
-        },
-        "fix": {
-          "title": "Encontrar y corregir un problema",
-          "desc": "Partir de un error o un síntoma hasta llegar a la causa",
-          "prompt": "Me he encontrado con un problema: <describe el síntoma o pega el error>. Primero reprodúcelo y localiza la causa, después aplica la corrección mínima y ejecuta las pruebas relacionadas para comprobarlo."
-        },
-        "plan": {
-          "title": "Planificar un cambio",
-          "desc": "Primero el plan; los cambios, cuando lo confirmes",
-          "prompt": "Quiero implementar: <describe lo que necesitas>. Dame primero un plan de implementación con los archivos afectados y empieza a modificar solo cuando yo lo confirme."
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1096,7 @@
       "switch": "Tablero en lenguaje claro de este proyecto",
       "switching": "Cambiando…",
       "afterTurn": "Cambia cuando el agente termine este paso",
-      "unknown": "Esta conversación aún no tiene tablero. Aparece en las conversaciones de mu mientras el tablero en lenguaje claro está activado en Funciones.",
+      "unknown": "Esta conversación aún no tiene tablero. Aparece en las conversaciones de mu mientras el tablero en lenguaje claro está activado en Configuración → Funciones principales.",
       "off": "Cuando está activado, explica con palabras sencillas cómo va el trabajo, qué hace ahora el agente y qué necesita de ti.",
       "cost": "Solo para este proyecto. Cada actualización cuesta una llamada al modelo.",
       "empty": "Dale un momento al agente; aquí verás con palabras sencillas cómo va.",
@@ -1119,7 +1108,6 @@
       "needsYou": "Te necesita",
       "needsYouText": "El agente espera tu respuesta en la conversación.",
       "quote": "Citar en tu respuesta",
-      "quoteHint": "Haz clic en uno para citarlo en tu respuesta; no se envía nada hasta que lo envíes tú.",
       "account": "Lo que ha hecho",
       "earlierNotes": "{{count, number}} anteriores",
       "earlierNotes_one": "{{count, number}} anterior",
@@ -1132,7 +1120,8 @@
         "fixing": "Corrigiendo lo que encontró la revisión",
         "waiting": "Esperándote",
         "wrapping_up": "Terminando",
-        "stuck": "Parece atascado"
+        "stuck": "Parece atascado",
+        "blocked": "Esperando otra cosa"
       },
       "checks_one": "{{done}} de {{total}} comprobación hecha",
       "checks_other": "{{done}} de {{total}} comprobaciones hechas",
@@ -1158,8 +1147,9 @@
           "wrapping_up": "El trabajo está hecho; está dando los últimos retoques.",
           "stuck": "Parece que está dando vueltas en círculos; quizá necesite que le des una pista.",
           "unclear": "Está trabajando.",
-          "focus": "{{now}} (En curso: {{focus}})",
-          "planning": "Está pensando cómo hacerlo; aún no ha cambiado nada."
+          "planning": "Está pensando cómo hacerlo; aún no ha cambiado nada.",
+          "blocked": "Esperando a un comando, un ayudante o la red.",
+          "focus": "{{now}} (En curso: {{focus}})"
         }
       },
       "notes": {
@@ -1190,8 +1180,42 @@
         "did": "Ha usado {{tool}}: {{what}}",
         "said_quote": "Ha dicho: {{text}}",
         "ended": "Se ha detenido.",
-        "waiting_reply": "Se ha detenido y espera tu respuesta."
-      }
+        "waiting_reply": "Se ha detenido y espera tu respuesta.",
+        "still_running": "Sigue ejecutando {{what}}, lleva {{minutes, number}} min",
+        "still_running_who": "{{who}}: {{what}} lleva {{minutes, number}} min sin salida",
+        "helper_done": "{{name}} ha vuelto: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} ha fallado",
+          "timed_out": "A {{name}} se le acabó el tiempo",
+          "stopped": "Se detuvo a {{name}}"
+        },
+        "helpers_back_failed": "Han vuelto {{count, number}} ayudantes, {{failed, number}} con errores",
+        "helpers_back_failed_one": "Ha vuelto {{count, number}} ayudante, {{failed, number}} con errores",
+        "helpers_back_failed_other": "Han vuelto {{count, number}} ayudantes, {{failed, number}} con errores",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "list": {
+        "separator": ", "
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} ayudantes trabajando",
+        "helpers_working_one": "{{count, number}} ayudante trabajando",
+        "helpers_working_other": "{{count, number}} ayudantes trabajando",
+        "waiting_permission": "Esperando tu permiso: {{what}}"
+      },
+      "updated": "Actualizado hace {{ago}}",
+      "updatedNow": "Actualizado ahora mismo",
+      "blocked": "Bloqueado",
+      "blockedLine": "Bloqueado: {{text}}",
+      "next": "Lo siguiente",
+      "agents": "Quién hace qué",
+      "agentStates": {
+        "working": "Trabajando",
+        "waiting": "Esperando",
+        "stuck": "Atascado"
+      },
+      "stripOpen": "Tablero en lenguaje claro: {{headline}}",
+      "stripHint": "Haz clic para abrir el tablero"
     },
     "lessonsView": {
       "filterLabel": "Qué lecciones mostrar",
@@ -1279,7 +1303,7 @@
     "compactionDropped": "{{count}} llamadas eliminadas",
     "compactionDropped_one": "{{count}} llamada eliminada",
     "compactionDropped_other": "{{count}} llamadas eliminadas",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} está clasificando el mensaje…",
       "classified": "Clasificado por {{judge}}: {{type}}",
       "byRule": "Clasificado por regla: {{type}}",
@@ -1291,9 +1315,16 @@
       "setUp": "Configurar un juez",
       "skipped": "Clasificación omitida",
       "off": "La clasificación está desactivada",
-      "firstHint": "Esta línea es la valoración de Jev: Jev clasifica primero cada mensaje y luego mu decide cómo seguir. Cada valoración está en Veredictos, a la derecha."
+      "firstHint": "Esta línea es la valoración del juez: el juez clasifica primero cada mensaje y luego mu decide cómo seguir. Cada valoración está en Veredictos, a la derecha."
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "No hay clave de Jev: responde el Jev gratuito de OpenCode Zen",
+        "freeJevUnavailable": "El Jev gratuito dejó de responder: deciden reglas fijas hasta que configures una clave de Jev",
+        "openaiKeyMissing": "El modelo de decisión de OpenAI no tiene clave de API: deciden el siguiente juez o reglas fijas",
+        "openaiKeyRejected": "OpenAI rechazó la clave de API del modelo de decisión: deciden el siguiente juez o reglas fijas",
+        "layaRemoved": "Laya ya no viene integrado en mu: el juez ahora es {{judge}}"
+      },
       "detail": "Detalles: {{detail}}",
       "progress": {
         "frame": "Actualizando el marco de la tarea",
@@ -1301,7 +1332,7 @@
         "skills": "Eligiendo las habilidades que necesita esta sesión",
         "capabilities": "Eligiendo las capacidades que necesita esta tarea",
         "goal_check": "Comprobando si se ha alcanzado el objetivo",
-        "permissionReview": "Jev está revisando: {{summary}}"
+        "permissionReview": "El juez está revisando: {{summary}}"
       },
       "goal": {
         "paused": "En pausa: {{reason}}",
@@ -1428,6 +1459,26 @@
       "reviewer": "revisor",
       "scout": "explorador",
       "worker": "ejecutor"
+    },
+    "kernel": {
+      "free": "gratis",
+      "local": "local",
+      "judgeHint": "El juez que responde a los puntos de decisión de mu. Haz clic para cambiarlo.",
+      "points": "{{active}}/{{total}} puntos de decisión activos",
+      "shadow_one": "· {{count}} en modo sombra",
+      "shadow_other": "· {{count}} en modo sombra",
+      "off": "Juez desactivado",
+      "verdicts_one": "veredicto",
+      "verdicts_other": "veredictos",
+      "last": "último",
+      "context": "contexto",
+      "cache": "caché"
+    },
+    "hero": {
+      "kernel": "Núcleo de juicio",
+      "judgeReady": "{{judge}} está listo",
+      "judgeOff": "Juez desactivado",
+      "title": "¿En qué debe trabajar mu?"
     }
   },
   "menu": {
@@ -1464,7 +1515,8 @@
     "bringAllToFront": "Traer todo al frente",
     "help": "Ayuda",
     "checkForUpdates": "Buscar actualizaciones…",
-    "projectPage": "{{name}} en GitHub"
+    "projectPage": "{{name}} en GitHub",
+    "keyboardShortcuts": "Atajos de teclado"
   },
   "trayMenu": {
     "runningTasks": "Tareas en ejecución: {{count}}"
@@ -1486,7 +1538,10 @@
     "openSettings": "Abrir la configuración",
     "actions": {
       "newConversation": "Empezar un chat nuevo",
-      "scheduledTasks": "Abrir las tareas programadas"
+      "scheduledTasks": "Abrir las tareas programadas",
+      "quickOpen": "Abrir un archivo por su nombre",
+      "nextWaiting": "Ir a la siguiente conversación que te espera",
+      "shortcuts": "Mostrar atajos de teclado"
     },
     "commandWaits": "Se ejecutará cuando termine esta respuesta"
   },
@@ -1517,7 +1572,12 @@
     "previewEmpty": "Aún no hay nada que previsualizar. Aquí aparecen los archivos que se abren desde la conversación.",
     "previewHidden": "La vista previa está oculta.",
     "browserEmpty": "No hay páginas abiertas. Escribe una dirección o una búsqueda arriba. Las páginas que se abren desde la conversación también aparecen aquí.",
-    "firstHint": "Tablero cuenta el avance con palabras sencillas, Veredictos lista cada valoración de Jev y Archivos es la carpeta de esta conversación. Las demás pestañas aparecen cuando se usan."
+    "firstHint": "Tablero cuenta el avance con palabras sencillas, Veredictos lista cada valoración y Archivos es la carpeta de esta conversación. Las demás pestañas aparecen cuando se usan.",
+    "follow": {
+      "label": "Seguir al agente",
+      "on": "Siguiendo al agente: los archivos que edita y las páginas que abre aparecen aquí. Haz clic para dejar de seguirlo.",
+      "off": "Seguir al agente: mostrar aquí los archivos que edita y las páginas que abre."
+    }
   },
   "nodeRuntime": {
     "title": "¿Descargar Node.js?",
@@ -1530,5 +1590,46 @@
   },
   "firstHint": {
     "close": "Entendido"
+  },
+  "quickOpen": {
+    "title": "Abrir un archivo",
+    "placeholder": "Buscar archivos en la carpeta de esta conversación",
+    "loading": "Leyendo la carpeta…",
+    "failed": "No se pudo leer la carpeta de esta conversación.",
+    "more": "Esta carpeta tiene más archivos de los que se muestran. Escribe más del nombre para acotar.",
+    "noFolder": "Abre una conversación con carpeta para buscar sus archivos por nombre."
+  },
+  "shortcuts": {
+    "title": "Atajos de teclado",
+    "groups": {
+      "general": "General",
+      "conversations": "Conversaciones",
+      "panels": "Paneles",
+      "sendBox": "Cuadro de envío",
+      "view": "Vista"
+    },
+    "rows": {
+      "palette": "Buscar conversaciones, ajustes y comandos",
+      "quickOpen": "Abrir un archivo por su nombre",
+      "searchMessages": "Buscar en todos los mensajes",
+      "findInConversation": "Buscar en esta conversación",
+      "newConversation": "Nueva conversación",
+      "settings": "Ajustes",
+      "shortcuts": "Atajos de teclado",
+      "byPosition": "Abrir la conversación en esa posición de la barra lateral",
+      "nextWaiting": "Siguiente conversación que te espera",
+      "nextPrevious": "Conversación siguiente o anterior",
+      "sidebar": "Mostrar u ocultar la barra lateral",
+      "workPanel": "Mostrar u ocultar el panel de trabajo",
+      "closeTab": "Cerrar la pestaña de vista previa o la página del navegador en la que estás",
+      "saveFile": "Guardar el archivo que estás editando",
+      "send": "Enviar",
+      "newLine": "Nueva línea",
+      "history": "Recuperar un mensaje anterior",
+      "commands": "Ejecutar un comando",
+      "mention": "Mencionar un archivo",
+      "zoom": "Acercar o alejar",
+      "resetZoom": "Tamaño real"
+    }
   }
 }

@@ -168,7 +168,6 @@
     "judge": "判定器配置",
     "reload": "重新加载",
     "starting": "正在启动 mu…",
-    "startingHint": "正在连接本机的 mu 内核，读取模型与判定器配置。",
     "startupError": "mu 启动失败",
     "hiveView": {
       "title": "蜂群",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · 上一步：{{step}}",
       "runs": "蜂群运行记录",
       "graph": "协作关系图",
-      "graphHint": "线越粗，送达越多。点一个成员打开它的那一行；指向一条线，看它送达了什么。",
       "map": "连接图",
       "legend": "图例",
       "legendDelivery": "送达",
@@ -206,7 +204,6 @@
       "board": "共享看板",
       "noNotes": "尚无共享发现。",
       "context": "执行上下文",
-      "contextHint": "记录的消息和已完成的工具输出，不是完整的模型提示词。工具输出会在完成后显示。",
       "focus": "分配任务",
       "missingFocus": "此次运行未记录分配任务。",
       "current": "当前活动",
@@ -227,7 +224,7 @@
       "noteMissing": "未记录发现。",
       "allFlow": "全部送达",
       "beeFlow": "{{name}} 的送达",
-      "audit": "Jev 判定",
+      "audit": "判定",
       "waitingRun": "正在等待这次蜂群运行的记录。",
       "recordedAt": "记录时间 {{time}}",
       "beeMissing": "此蜂群成员不在已记录快照中。",
@@ -296,6 +293,17 @@
       "batchFailures": "未得到回答、已回退到默认策略：{{count}} 个。",
       "changedThinking": "思考强度：{{from}} → {{to}}",
       "sentHints": "发给主模型的提示",
+      "userAnswer": {
+        "once": "你选了「允许这一次」。",
+        "session": "你选了「这次对话都允许」。",
+        "deny": "你选了「不允许」。",
+        "dismissed": "你关掉了提问，没有作答。",
+        "none": "当时没人可问，这一步被拒绝了。"
+      },
+      "markedWrong": "你把这次判定标记为有误。",
+      "markedWrongWhy": "你把这次判定标记为有误：{{note}}",
+      "markWrong": "判错了",
+      "markWrongHint": "告诉 mu 这次判定判错了。这个标记和判定一起记在这次对话的 ledger 里。",
       "unlinked": "独立记录",
       "unlinkedHint": "这条记录没有轮次关联信息，因此单独显示，不会与时间相近的记录合并。",
       "state": {
@@ -959,7 +967,7 @@
       "auto_compaction_end": "压缩结束",
       "hive.note": "共享发现",
       "hive.delivery": "已确认送达",
-      "hive.gate": "Jev 闸门",
+      "hive.gate": "蜂群闸门",
       "hive.manifest": "蜂群任务分配",
       "bee.event": "执行步骤",
       "memory.recalled": "引用经验",
@@ -1065,7 +1073,6 @@
     "compactionAborted": "压缩已取消",
     "compactionFailed": "压缩失败",
     "compactionSavings": "上下文减少约 {{saved}}",
-    "compactionEstimate": "压缩后 tokens 为估算值；下次模型返回后更新用量。",
     "cacheHit": "缓存命中",
     "cachePending": "暂无缓存用量数据",
     "cacheLabel": "会话缓存命中率：{{percent}}",
@@ -1076,24 +1083,6 @@
         "idle": "判定器待命",
         "judging": "判定器正在判定",
         "off": "判定器未启用"
-      },
-      "starters": {
-        "hint": "不知道从哪开始？试试这些：",
-        "understand": {
-          "title": "读懂这个项目",
-          "desc": "梳理结构、入口和关键模块",
-          "prompt": "请先通读这个项目，告诉我它的整体结构、主要入口和关键模块，再指出最值得先看的三个文件。"
-        },
-        "fix": {
-          "title": "定位并修复问题",
-          "desc": "从报错或现象出发，找到根因",
-          "prompt": "我遇到了一个问题：<在这里描述现象或粘贴报错>。请先复现并定位根因，再给出最小修复，改完后运行相关测试验证。"
-        },
-        "plan": {
-          "title": "规划一项改动",
-          "desc": "先出方案，确认后再动手",
-          "prompt": "我想实现：<在这里描述需求>。请先给出实现方案和涉及的文件，等我确认后再开始修改。"
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1096,7 @@
       "switch": "这个项目的人话看板",
       "switching": "正在切换…",
       "afterTurn": "代理这一步做完就切换",
-      "unknown": "这个对话还没有人话看板。它只在 mu 的对话里、而且「功能」里开着人话看板时出现。",
+      "unknown": "这个对话还没有人话看板。它只在 mu 的对话里、而且「设置 → 核心功能」里开着人话看板时出现。",
       "off": "打开后，代理每做一段，这里就用大白话告诉你：进展到哪了、正在做什么、哪些需要你确认。",
       "cost": "只对这个项目生效。每次更新会调用一次模型。",
       "empty": "等代理做一会儿，这里会用大白话告诉你进展",
@@ -1119,7 +1108,6 @@
       "needsYou": "需要你确认",
       "needsYouText": "代理在对话里等你回答。",
       "quote": "引用到回复里",
-      "quoteHint": "点一条会引用到输入框，你发出去之前不会发送。",
       "account": "它做了什么",
       "earlierNotes": "更早的 {{count, number}} 条",
       "earlierNotes_one": "更早的 {{count, number}} 条",
@@ -1132,7 +1120,8 @@
         "fixing": "在修问题",
         "waiting": "在等你",
         "wrapping_up": "在收尾",
-        "stuck": "好像卡住了"
+        "stuck": "好像卡住了",
+        "blocked": "在等别的"
       },
       "checks_one": "验收 {{done}}/{{total}}",
       "checks_other": "验收 {{done}}/{{total}}",
@@ -1156,6 +1145,7 @@
           "wrapping_up": "手上的活做完了，正在收尾。",
           "stuck": "好像在原地打转，可能需要你给个方向。",
           "unclear": "正在干活。",
+          "blocked": "在等命令、助手或网络那边出结果。",
           "focus": "{{now}}（在做：{{focus}}）"
         },
         "confirm": {
@@ -1190,8 +1180,42 @@
         "did": "用 {{tool}} 做了：{{what}}",
         "said_quote": "它说：{{text}}",
         "ended": "停下来了。",
-        "waiting_reply": "停下来了，在等你回复。"
-      }
+        "waiting_reply": "停下来了，在等你回复。",
+        "still_running": "还在跑 {{what}}，{{minutes, number}} 分钟了",
+        "still_running_who": "{{who}} 跑 {{what}} {{minutes, number}} 分钟没动静",
+        "helper_done": "{{name}} 回来了：{{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} 出错了",
+          "timed_out": "{{name}} 超时了",
+          "stopped": "{{name}} 被停了"
+        },
+        "helpers_back_failed": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
+        "helpers_back_failed_one": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
+        "helpers_back_failed_other": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
+        "with_detail": "{{line}}：{{detail}}"
+      },
+      "list": {
+        "separator": "、"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} 个助手在干活",
+        "helpers_working_one": "{{count, number}} 个助手在干活",
+        "helpers_working_other": "{{count, number}} 个助手在干活",
+        "waiting_permission": "在等你允许：{{what}}"
+      },
+      "updated": "{{ago}}前更新",
+      "updatedNow": "刚刚更新",
+      "blocked": "卡住了",
+      "blockedLine": "卡住了：{{text}}",
+      "next": "接下来",
+      "agents": "谁在做什么",
+      "agentStates": {
+        "working": "在做",
+        "waiting": "在等",
+        "stuck": "卡住了"
+      },
+      "stripOpen": "人话看板：{{headline}}",
+      "stripHint": "点一下打开看板"
     },
     "lessonsView": {
       "filterLabel": "显示哪些经验",
@@ -1279,7 +1303,7 @@
     "compactionDropped": "移除 {{count}} 次调用",
     "compactionDropped_one": "移除 {{count}} 次调用",
     "compactionDropped_other": "移除 {{count}} 次调用",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} 正在归类…",
       "classified": "{{judge}} 归类为{{type}}",
       "byRule": "按规则归类为{{type}}",
@@ -1291,9 +1315,16 @@
       "setUp": "设置判定器",
       "skipped": "已跳过归类",
       "off": "归类已关闭",
-      "firstHint": "这一行是 Jev 的判断：每条消息先由 Jev 快速归类，mu 再决定怎么接。每次判断都在右侧「判定」里。"
+      "firstHint": "这一行是判定器的判断：每条消息先由判定器快速归类，mu 再决定怎么接。每次判断都在右侧「判定」里。"
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "未配置 Jev 密钥，使用 OpenCode Zen 上的免费 Jev",
+        "freeJevUnavailable": "免费 Jev 已停止回答：配置 Jev 密钥之前由固定规则决定",
+        "openaiKeyMissing": "OpenAI 的决策模型没有 API 密钥：由下一个判定器或固定规则决定",
+        "openaiKeyRejected": "OpenAI 拒绝了决策模型的 API 密钥：由下一个判定器或固定规则决定",
+        "layaRemoved": "mu 不再内置 Laya，判定器现在是 {{judge}}"
+      },
       "detail": "详情：{{detail}}",
       "progress": {
         "frame": "正在更新任务帧",
@@ -1301,7 +1332,7 @@
         "skills": "正在挑选本次会话需要的技能",
         "capabilities": "正在挑选这个任务需要的能力",
         "goal_check": "正在检查目标是否达成",
-        "permissionReview": "Jev 在审批：{{summary}}"
+        "permissionReview": "判定器在审批：{{summary}}"
       },
       "goal": {
         "paused": "已暂停：{{reason}}",
@@ -1428,6 +1459,26 @@
       "reviewer": "审查",
       "scout": "侦察",
       "worker": "执行"
+    },
+    "kernel": {
+      "free": "免费",
+      "local": "本机",
+      "judgeHint": "回答 mu 各判定点的判定器。点击可更换。",
+      "points": "{{active}}/{{total}} 个判定点生效",
+      "shadow_one": "· {{count}} 个影子模式",
+      "shadow_other": "· {{count}} 个影子模式",
+      "off": "判定已关闭",
+      "verdicts_one": "次判定",
+      "verdicts_other": "次判定",
+      "last": "上次",
+      "context": "上下文",
+      "cache": "缓存"
+    },
+    "hero": {
+      "kernel": "判定内核",
+      "judgeReady": "{{judge}} 已就绪",
+      "judgeOff": "判定已关闭",
+      "title": "让 mu 做点什么？"
     }
   },
   "menu": {
@@ -1464,7 +1515,8 @@
     "bringAllToFront": "前置全部窗口",
     "help": "帮助",
     "checkForUpdates": "检查更新…",
-    "projectPage": "GitHub 上的 {{name}}"
+    "projectPage": "GitHub 上的 {{name}}",
+    "keyboardShortcuts": "键盘快捷键"
   },
   "trayMenu": {
     "runningTasks": "运行中的任务：{{count}}"
@@ -1486,7 +1538,10 @@
     "openSettings": "打开设置",
     "actions": {
       "newConversation": "开始新会话",
-      "scheduledTasks": "打开定时任务"
+      "scheduledTasks": "打开定时任务",
+      "quickOpen": "按名称打开文件",
+      "nextWaiting": "转到下一个等你处理的会话",
+      "shortcuts": "显示键盘快捷键"
     },
     "commandWaits": "等这一轮结束后执行"
   },
@@ -1517,7 +1572,12 @@
     "previewEmpty": "还没有可预览的内容。从会话中打开的文件会显示在这里。",
     "previewHidden": "预览已隐藏。",
     "browserEmpty": "还没有打开的网页。在上方输入网址或搜索内容；从会话中打开的网页也会显示在这里。",
-    "firstHint": "看板用大白话说进度，判定列出 Jev 的每次判断，文件是这次对话的文件夹。其他标签用到时才出现。"
+    "firstHint": "看板用大白话说进度，判定列出每次判断，文件是这次对话的文件夹。其他标签用到时才出现。",
+    "follow": {
+      "label": "跟随代理",
+      "on": "正在跟随代理：它改过的文件、打开的网页会显示在这里。点击停止跟随。",
+      "off": "跟随代理：在这里显示它改过的文件和打开的网页。"
+    }
   },
   "nodeRuntime": {
     "title": "下载 Node.js？",
@@ -1530,5 +1590,46 @@
   },
   "firstHint": {
     "close": "知道了"
+  },
+  "quickOpen": {
+    "title": "打开文件",
+    "placeholder": "搜索本会话文件夹里的文件",
+    "loading": "正在读取文件夹…",
+    "failed": "无法读取本会话的文件夹。",
+    "more": "这个文件夹的文件比列出的多。多输入几个字可以缩小范围。",
+    "noFolder": "先打开一个带文件夹的会话，才能按名称找它的文件。"
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "groups": {
+      "general": "通用",
+      "conversations": "会话",
+      "panels": "面板",
+      "sendBox": "输入框",
+      "view": "显示"
+    },
+    "rows": {
+      "palette": "搜索会话、设置和命令",
+      "quickOpen": "按名称打开文件",
+      "searchMessages": "搜索所有消息",
+      "findInConversation": "在当前会话中查找",
+      "newConversation": "新会话",
+      "settings": "设置",
+      "shortcuts": "键盘快捷键",
+      "byPosition": "打开侧栏中对应位置的会话",
+      "nextWaiting": "下一个等你处理的会话",
+      "nextPrevious": "下一个或上一个会话",
+      "sidebar": "显示或隐藏侧栏",
+      "workPanel": "显示或隐藏工作面板",
+      "closeTab": "关闭你所在的预览标签或浏览器页面",
+      "saveFile": "保存正在编辑的文件",
+      "send": "发送",
+      "newLine": "换行",
+      "history": "调出之前发过的消息",
+      "commands": "运行命令",
+      "mention": "提及文件",
+      "zoom": "放大或缩小",
+      "resetZoom": "实际大小"
+    }
   }
 }

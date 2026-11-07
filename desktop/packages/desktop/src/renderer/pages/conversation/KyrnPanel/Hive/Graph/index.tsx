@@ -171,7 +171,6 @@ export default function HiveGraph({
           </li>
         ))}
       </ul>
-      <p className={styles.hint}>{t(`${KEY}.graphHint`)}</p>
     </section>
   );
 }

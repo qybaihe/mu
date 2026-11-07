@@ -265,6 +265,54 @@ describe("checkpoint store", () => {
 		]);
 	});
 
+	it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+		"reports a file it could not remove as left alone, not as removed",
+		async () => {
+			const root = temp("mu-unremovable-");
+			write(root, "kept.txt", "v1\n");
+			const store = await open(root);
+			const first = await snapshot(store, "s/1");
+			write(root, "locked/new.txt", "made by the attempt\n");
+			const plan = await planRestore(store, first.commit, (await scan(store)).tree);
+			expect(plan.remove).toEqual(["locked/new.txt"]);
+
+			// A folder that takes no change: its file cannot be unlinked.
+			chmodSync(join(root, "locked"), 0o555);
+			try {
+				const result = await applyRestore(store, plan);
+				expect(result.removed).toEqual([]);
+				expect(result.leftAlone).toEqual([{ path: "locked/new.txt", why: "it could not be removed (EACCES)" }]);
+				expect(read(root, "locked/new.txt")).toBe("made by the attempt\n");
+			} finally {
+				chmodSync(join(root, "locked"), 0o755);
+			}
+		},
+	);
+
+	it.skipIf(process.platform === "win32")(
+		"removes nothing through a folder that became a link after the restore was planned",
+		async () => {
+			const root = temp("mu-linked-");
+			const outside = temp("mu-outside-");
+			write(root, "kept.txt", "v1\n");
+			const store = await open(root);
+			const first = await snapshot(store, "s/1");
+			write(root, "made/new.txt", "made by the attempt\n");
+			const plan = await planRestore(store, first.commit, (await scan(store)).tree);
+			expect(plan.remove).toEqual(["made/new.txt"]);
+
+			// Between the plan and the restore the folder becomes a link to one outside the project.
+			write(outside, "new.txt", "not the project's\n");
+			rmSync(join(root, "made"), { recursive: true });
+			symlinkSync(outside, join(root, "made"));
+			const result = await applyRestore(store, plan);
+
+			expect(read(outside, "new.txt")).toBe("not the project's\n");
+			expect(result.removed).toEqual([]);
+			expect(result.leftAlone).toEqual([{ path: "made/new.txt", why: "a file is where its folder should be" }]);
+		},
+	);
+
 	it.skipIf(process.platform === "win32")(
 		"brings symlinks back as symlinks, and modes and line endings as they were",
 		async () => {

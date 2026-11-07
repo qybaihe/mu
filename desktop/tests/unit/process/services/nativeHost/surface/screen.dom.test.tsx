@@ -12,21 +12,28 @@ import { getCurrentConversation } from '@/renderer/pages/conversation/explorer/c
 import { getCurrentProject, setCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
 import { KernelBody } from '@/renderer/pages/conversation/KyrnPanel';
 import NativeConversationPage from '@/renderer/pages/native';
-import NativeSiderGroup from '@/renderer/pages/native/components/NativeSiderGroup';
+import NativeSiderGroup from '@/renderer/pages/native/sider/NativeSiderGroup';
 import { forgetNativeUnread } from '@/renderer/pages/native/hooks/useNativeAttention';
+import { nativeConversationAt, nextWaitingConversation } from '@/renderer/pages/native/sider/jump';
+import { forgetProjects, forgetRepoRoots } from '@/renderer/pages/native/sider/useProjects';
 import { NativeClientContext, type NativeClient } from '@/renderer/pages/native/utils/nativeClient';
-import { useNativeActivity, useNativeFolder } from '@/renderer/pages/native/utils/nativeActivityStore';
+import {
+  useNativeActivity,
+  useNativeCommand,
+  useNativeFolder,
+} from '@/renderer/pages/native/utils/nativeActivityStore';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
 import enConversation from '@/renderer/services/i18n/locales/en-US/conversation.json';
 import enMessages from '@/renderer/services/i18n/locales/en-US/messages.json';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
 import enSettings from '@/renderer/services/i18n/locales/en-US/settings.json';
+import { formatPrimaryShortcut } from '@/renderer/utils/ui/keyboardShortcuts';
 import { createFakeHost, type FakeHost } from './fakeClient';
 import { ended, frame, reply, text, user } from './records';
 
 /**
  * The native conversation page and the sidebar group against an in-memory host: the page in each state of its host,
- * one that cannot be opened, a flag that is off, a draft whose session gives it its id, the Jev panel's feed, and the
+ * one that cannot be opened, a flag that is off, a draft whose session gives it its id, the work panel's feed, and the
  * sidebar's list and new conversation. The message list runs for real; its text rows and tool box are stood in for.
  */
 
@@ -43,12 +50,15 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
 }));
 vi.mock('@/renderer/pages/conversation/Messages/components/MessageText', () => ({
   default: ({ message }: { message: IMessageText }) => {
-    // The real row's fork button, when the list's host forks its own session.
-    const fork = useMessageListRun()?.fork?.(message);
+    // The real row's fork and rewind buttons, when the list's host forks its own session and takes checkpoints.
+    const run = useMessageListRun();
+    const fork = run?.fork?.(message);
+    const rewind = message.position === 'right' ? run?.rewind?.(message) : undefined;
     return (
       <div data-testid={`row-text-${message.position}`}>
         {message.content.content}
         {fork ? <button type='button' data-testid='row-fork' onClick={fork} /> : null}
+        {rewind ? <button type='button' data-testid='row-rewind' onClick={rewind} /> : null}
       </div>
     );
   },
@@ -67,7 +77,11 @@ vi.mock('@/renderer/pages/conversation/Preview/browser/muBrowser/MuBrowserHost',
   ),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  forgetProjects();
+  forgetRepoRoots();
+});
 
 const i18n = createInstance();
 void i18n.init({
@@ -86,7 +100,15 @@ void i18n.init({
   interpolation: { escapeValue: false },
 });
 
-const Where: React.FC = () => <div data-testid='where'>{useLocation().pathname}</div>;
+/** Where the app is: the route, and the folder the home page was asked to start in (`state.workspace`). */
+const Where: React.FC = () => {
+  const { pathname, state } = useLocation();
+  return (
+    <div data-testid='where' data-workspace={(state as { workspace?: string } | null)?.workspace ?? ''}>
+      {pathname}
+    </div>
+  );
+};
 
 const Panel: React.FC<{ id: string }> = ({ id }) => {
   const activity = useNativeActivity(id);
@@ -122,6 +144,12 @@ const opened = async () => {
 
 const phase = () => screen.getByTestId('native-header-phase');
 
+/** mu's checkpoint entry #`id`, taken in the turn the person's message `entryId` started. */
+const checkpoint = (id: number, entryId: string) => ({
+  type: 'entry_appended',
+  entry: { type: 'custom', id: `k${id}`, customType: 'kyrn.checkpoint', data: { id, turn: id, entryId, label: '' } },
+});
+
 describe('the native conversation page', () => {
   it('shows a new conversation where mu will work, and the host as it goes from idle to running', async () => {
     const host = createFakeHost();
@@ -130,12 +158,13 @@ describe('the native conversation page', () => {
     await opened();
     expect(screen.getByRole('heading')).toHaveTextContent('New conversation');
     expect(screen.getByTestId('native-header-folder')).toHaveTextContent('alpha');
-    expect(screen.getByTestId('native-empty')).toHaveTextContent('A new conversation in alpha');
+    expect(screen.getByTestId('native-empty')).toHaveTextContent('New conversation in alpha');
     expect(phase()).toHaveAttribute('data-phase', 'idle');
     expect(phase()).toHaveTextContent('Not running');
     const steps: Array<[NativeHostStatus, string]> = [
       [{ phase: 'starting' }, 'Starting'],
-      [{ phase: 'running' }, 'Running'],
+      // Up and waiting for a message: nothing to see, as before it starts; screen readers still hear it.
+      [{ phase: 'running' }, 'Ready'],
       [{ phase: 'needs-model' }, 'No model'],
       [{ phase: 'failed', error: { kind: 'failed', message: 'spawn ENOENT', stderr: '' } }, 'Stopped'],
     ];
@@ -143,7 +172,24 @@ describe('the native conversation page', () => {
       act(() => host.setStatus('c1', status));
       expect(phase()).toHaveTextContent(words);
     }
-    expect(screen.getByTestId('native-failed')).toHaveTextContent('mu stopped before it started.');
+    expect(screen.getByTestId('native-failed')).toHaveTextContent('mu stopped before it could start.');
+  });
+
+  it('says Working only while a turn runs, and nothing once it has ended', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', title: 'Fix the build' });
+    page(host.client);
+    await opened();
+    act(() => host.setStatus('c1', { phase: 'running' }));
+    expect(phase()).toHaveClass('sr-only');
+    act(() => host.play('c1', [{ type: 'agent_start' }, ended(user('fix the build'))]));
+    await waitFor(() => expect(phase()).toHaveTextContent('Working'));
+    expect(phase()).toHaveAttribute('data-working', 'true');
+    expect(phase()).not.toHaveClass('sr-only');
+    act(() => host.play('c1', [{ type: 'agent_settled' }]));
+    await waitFor(() => expect(phase()).toHaveTextContent('Ready'));
+    expect(phase()).toHaveClass('sr-only');
+    expect(phase()).toHaveAttribute('data-phase', 'running');
   });
 
   it('shows the transcript as the host plays it, in the shared message list', async () => {
@@ -287,6 +333,99 @@ describe('the native conversation page', () => {
     expect(screen.getByTestId('native-send-input')).toHaveValue('');
   });
 
+  it('goes back to before a message that changed files with mu’s /rewind, and the request comes back into the box', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/app' });
+    host.answer(() => ({ ok: true, data: undefined }));
+    page(host.client);
+    await opened();
+    act(() =>
+      host.play('c1', [
+        ended(user('just asking'), 'u1'),
+        ended(reply([text('an answer')]), 'a1'),
+        ended(user('write the docs'), 'u2'),
+        checkpoint(1, 'u2'),
+        ended(reply([text('written')]), 'a2'),
+      ])
+    );
+    // Only the message whose turn changed files has one.
+    const rows = [...screen.getAllByTestId('row-text-right')];
+    expect(rows.map((row) => within(row).queryByTestId('row-rewind') !== null)).toEqual([false, true]);
+    fireEvent.click(within(rows[1]).getByTestId('row-rewind'));
+    await waitFor(() =>
+      expect(host.calls.filter((call) => call.method === 'request' && call.command?.type === 'prompt')).toEqual([
+        { method: 'request', id: 'c1', command: { type: 'prompt', message: '/rewind 1' } },
+      ])
+    );
+    // mu went back and gives the request back to send again: it goes into the box, before what was typed.
+    fireEvent.change(screen.getByTestId('native-send-input'), { target: { value: 'and the tests' } });
+    act(() =>
+      host.play('c1', [{ type: 'extension_ui_request', id: 'e1', method: 'set_editor_text', text: 'write the docs' }])
+    );
+    expect(screen.getByTestId('native-send-input')).toHaveValue('write the docs\n\nand the tests');
+    // Once: the same text again later is another request of mu's.
+    act(() => host.play('c1', [{ type: 'extension_ui_request', id: 'e2', method: 'set_editor_text', text: '' }]));
+    expect(screen.getByTestId('native-send-input')).toHaveValue('write the docs\n\nand the tests');
+  });
+
+  it('offers no rewind or fork while mu asks something, or while a rewind is on its way', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/app' });
+    let answered: (() => void) | undefined;
+    host.answer((_id, command) =>
+      command.type === 'prompt'
+        ? new Promise((resolve) => {
+            answered = () => resolve({ ok: true, data: undefined });
+          })
+        : { ok: true, data: undefined }
+    );
+    page(host.client);
+    await opened();
+    act(() =>
+      host.play('c1', [ended(user('write the docs'), 'u1'), checkpoint(1, 'u1'), ended(reply([text('written')]), 'a1')])
+    );
+    const offered = () => ({
+      rewind: screen.queryAllByTestId('row-rewind').length,
+      fork: screen.queryAllByTestId('row-fork').length,
+    });
+    expect(offered()).toEqual({ rewind: 1, fork: 2 });
+
+    // On its way: mu hasn't answered yet.
+    fireEvent.click(screen.getByTestId('row-rewind'));
+    await waitFor(() => expect(offered()).toEqual({ rewind: 0, fork: 0 }));
+    // mu asks what goes back: still none, until the question is answered.
+    act(() =>
+      host.play('c1', [
+        {
+          type: 'extension_ui_request',
+          id: 'q1',
+          method: 'select',
+          title: 'Rewind to checkpoint 1',
+          options: ['Files and conversation', 'Files only', 'Conversation only'],
+        },
+      ])
+    );
+    await act(async () => answered?.());
+    expect(offered()).toEqual({ rewind: 0, fork: 0 });
+    act(() => host.replace('c1', { ...host.viewOf('c1'), dialogs: [] }));
+    expect(offered()).toEqual({ rewind: 1, fork: 2 });
+  });
+
+  it('does not put back into the box a request mu gave back before the conversation was opened', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/app' });
+    host.play('c1', [
+      ended(user('write the docs'), 'u1'),
+      { type: 'extension_ui_request', id: 'e1', method: 'set_editor_text', text: 'write the docs' },
+    ]);
+    page(host.client);
+    await opened();
+    expect(screen.getByTestId('native-send-input')).toHaveValue('');
+    // One given while it is open goes in.
+    act(() => host.play('c1', [{ type: 'extension_ui_request', id: 'e2', method: 'set_editor_text', text: 'again' }]));
+    expect(screen.getByTestId('native-send-input')).toHaveValue('again');
+  });
+
   it('draws the button under the messages that have a fork point only', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1', cwd: '/work/app' });
@@ -324,7 +463,7 @@ describe('the native conversation page', () => {
     expect(screen.queryAllByTestId('row-fork')).toEqual([]);
   });
 
-  it('makes itself the current conversation and feeds the Jev panel from its view', async () => {
+  it('makes itself the current conversation and feeds the work panel from its view', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     // The conversation shown before had a project: the explorer must not keep showing it.
@@ -337,12 +476,39 @@ describe('the native conversation page', () => {
     // The folder it works in comes with it: the panel reads its lessons and files by it.
     expect(screen.getByTestId('panel')).toHaveAttribute('data-folder', '/project');
     act(() => {
-      host.play('c1', [{ type: 'agent_start' }, frame('preflight.pending', { judge: 'laya' })]);
+      host.play('c1', [{ type: 'agent_start' }, frame('preflight.pending', { judge: 'mude' })]);
     });
     // The panel reads the view at most twice a second.
     await waitFor(() => expect(screen.getByTestId('panel')).toHaveTextContent('2:true'));
     view.unmount();
     expect(getCurrentConversation()).toBeNull();
+  });
+
+  it('gives the work panel a line to its mu: a command the panel sends goes to pi as a prompt', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    const Sender: React.FC = () => {
+      const command = useNativeCommand('c1');
+      return (
+        <button
+          type='button'
+          data-testid='send'
+          disabled={!command}
+          onClick={() => void command?.('/ledger wrong rec-1')}
+        >
+          send
+        </button>
+      );
+    };
+    page(host.client, 'c1', <Sender />);
+    await opened();
+    await waitFor(() => expect(screen.getByTestId('send')).not.toBeDisabled());
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('send'));
+    });
+    expect(host.calls.filter((call) => call.method === 'request' && call.command?.type === 'prompt')).toEqual([
+      expect.objectContaining({ id: 'c1', command: { type: 'prompt', message: '/ledger wrong rec-1' } }),
+    ]);
   });
 
   it('says a native conversation’s lessons show once it has opened, while its folder is not known', () => {
@@ -358,7 +524,7 @@ describe('the native conversation page', () => {
         </MemoryRouter>
       </I18nextProvider>
     );
-    expect(screen.getByTestId('kernel-no-lessons')).toHaveTextContent('Lessons show once the conversation has opened.');
+    expect(screen.getByTestId('kernel-no-lessons')).toHaveTextContent('Lessons appear once the conversation opens.');
   });
 });
 
@@ -379,6 +545,9 @@ const items = () => screen.queryAllByTestId('native-sidebar-item');
 /** What this window keeps in its storage under `key`: a list of ids. */
 const stored = (key: string): string[] => JSON.parse(localStorage.getItem(key) ?? '[]');
 const shownIds = () => items().map((item) => item.dataset.id);
+const projectFolders = () => screen.queryAllByTestId('native-project-group').map((group) => group.dataset.folder);
+const projectOf = (folder: string) =>
+  document.querySelector<HTMLElement>(`[data-testid="native-project-group"][data-folder="${folder}"]`);
 const creates = (host: FakeHost) => host.calls.filter((call) => call.method === 'create');
 const openNew = async () => {
   await act(async () => {
@@ -404,10 +573,12 @@ describe('the sidebar’s native group', () => {
     sider(host.client);
     await waitFor(() => expect(shownIds()).toEqual(['b', 'a']));
     expect(screen.getByTestId('native-sidebar-group')).toBeInTheDocument();
+    // Each in its folder's project, the one changed last first: a row does not repeat its project's folder.
+    expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']);
     const [b, a] = items();
-    expect(b).toHaveTextContent('Fix the buildbeta');
+    expect(b).toHaveTextContent(/^Fix the build$/);
     expect(b.querySelector('[aria-label="Running"]')).not.toBeNull();
-    expect(a).toHaveTextContent('New conversationalpha');
+    expect(a).toHaveTextContent(/^New conversation$/);
     fireEvent.click(a);
     expect(screen.getByTestId('where')).toHaveTextContent('/conversation/native/a');
   });
@@ -438,9 +609,10 @@ describe('the sidebar’s native group', () => {
     expect(creates(host)).toEqual([{ method: 'create', cwd: '/work/gamma' }]);
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/conversation/native/draft-4'));
     await waitFor(() => expect(shownIds()).toContain('draft-4'));
-    expect(items().find((item) => item.dataset.id === 'draft-4')).toHaveTextContent('gamma');
+    // In a project of its own: the folder is in no repository and under no added folder.
+    expect(projectOf('/work/gamma')?.querySelector('[data-id="draft-4"]')).not.toBeNull();
 
-    // Again, in a recent folder, with Jev approving what mu does.
+    // Again, in a recent folder, with the judge approving what mu does.
     await openNew();
     const mode = screen.getByTestId('native-permissions');
     expect(mode).toHaveTextContent("mu's default");
@@ -448,13 +620,13 @@ describe('the sidebar’s native group', () => {
       fireEvent.click(mode);
     });
     await act(async () => {
-      fireEvent.click(within(mode.parentElement ?? document.body).getByRole('option', { name: 'Jev approves' }));
+      fireEvent.click(within(mode.parentElement ?? document.body).getByRole('option', { name: 'Judge mode' }));
     });
-    expect(mode).toHaveTextContent('Jev approves');
+    expect(mode).toHaveTextContent('Judge mode');
     await act(async () => {
       fireEvent.click(screen.getAllByTestId('native-recent-folder')[1]);
     });
-    expect(creates(host).at(-1)).toEqual({ method: 'create', cwd: '/work/alpha', permissions: 'jev' });
+    expect(creates(host).at(-1)).toEqual({ method: 'create', cwd: '/work/alpha', permissions: 'judge' });
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/conversation/native/draft-5'));
   });
 
@@ -468,7 +640,7 @@ describe('the sidebar’s native group', () => {
       fireEvent.click(screen.getByTestId('native-project'));
     });
     expect(screen.getByTestId('native-create-failed')).toHaveTextContent(
-      'The app cannot find a mu to run. no mu at /opt/mu'
+      "The app can't find mu to run. no mu at /opt/mu"
     );
     expect(screen.getByTestId('where')).toHaveTextContent('/guid');
   });
@@ -525,17 +697,24 @@ describe('the sidebar’s native group', () => {
     expect(shownIds()).toEqual(['new', 'a']);
   });
 
-  it('shows the newest few, and all of them when asked', async () => {
+  it('shows the newest few of a project, and all of them when asked, and gives the keys the rows on screen', async () => {
     const host = createFakeHost();
     for (let index = 1; index <= 10; index++) host.add({ id: `c${index}`, updatedAt: index });
     sider(host.client);
-    await waitFor(() => expect(shownIds()).toHaveLength(8));
+    await waitFor(() => expect(shownIds()).toHaveLength(5));
     expect(shownIds()[0]).toBe('c10');
-    expect(shownIds()).not.toContain('c2');
+    expect(shownIds()).not.toContain('c5');
+    // Cmd/Ctrl+1 to 9 count the rows on screen; the next one marked unread is looked for among all of them.
+    expect([nativeConversationAt(5), nativeConversationAt(6)]).toEqual(['c6', undefined]);
+    expect(nextWaitingConversation(new Set(['c1']), 'c10')).toBe('c1');
     expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (10)');
     fireEvent.click(screen.getByTestId('native-sidebar-more'));
     expect(shownIds()).toHaveLength(10);
     expect(shownIds()).toContain('c1');
+    expect(nativeConversationAt(6)).toBe('c5');
+    // The ninth row's tooltip says its key; the tenth has none.
+    expect(items()[8].getAttribute('title')).toContain(formatPrimaryShortcut({ key: '9' }));
+    expect(items()[9].getAttribute('title')).not.toMatch(/(⌘|Ctrl\+)\d/);
   });
 
   const menuOf = async (id: string) => {
@@ -590,14 +769,17 @@ describe('the sidebar’s native group', () => {
     for (let index = 1; index <= 10; index++)
       host.add({ id: `c${index}`, updatedAt: index, sessionFile: `/s/c${index}.jsonl` });
     sider(host.client);
-    await waitFor(() => expect(shownIds()).toHaveLength(8));
-    // The oldest, pinned, first; then the newest seven.
-    expect(shownIds()).toEqual(['c1', 'c10', 'c9', 'c8', 'c7', 'c6', 'c5', 'c4']);
-    expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (10)');
+    await waitFor(() => expect(shownIds()).toHaveLength(6));
+    // The oldest, pinned, above the project; then the project's newest five, of the nine it has.
+    expect(shownIds()).toEqual(['c1', 'c10', 'c9', 'c8', 'c7', 'c6']);
+    expect(screen.getByTestId('native-sidebar-pinned-label')).toHaveTextContent('Pinned');
+    expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (9)');
     pinsAre(['c1', 'c2']);
-    expect(shownIds()).toEqual(['c2', 'c1', 'c10', 'c9', 'c8', 'c7', 'c6', 'c5']);
+    expect(shownIds()).toEqual(['c2', 'c1', 'c10', 'c9', 'c8', 'c7', 'c6']);
+    expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (8)');
     pinsAre();
-    expect(shownIds()).toEqual(['c10', 'c9', 'c8', 'c7', 'c6', 'c5', 'c4', 'c3']);
+    expect(shownIds()).toEqual(['c10', 'c9', 'c8', 'c7', 'c6']);
+    expect(screen.queryByTestId('native-sidebar-pinned-label')).toBeNull();
   });
 
   it('offers no pin to a conversation with no session file yet: its id changes when pi names it', async () => {
@@ -701,7 +883,7 @@ describe('the sidebar’s native group', () => {
       fireEvent.click(within(archived).getByTestId('native-sidebar-item-menu'));
     });
     await waitFor(() => expect(screen.getByTestId('native-sidebar-restore')).toBeVisible());
-    expect(screen.getByTestId('native-sidebar-restore')).toHaveTextContent('Unarchive');
+    expect(screen.getByTestId('native-sidebar-restore')).toHaveTextContent('Restore');
     expect(screen.getByTestId('native-sidebar-rename')).toBeVisible();
     expect(screen.getByTestId('native-sidebar-delete')).toBeVisible();
     for (const gone of ['pin', 'mark', 'archive']) expect(screen.queryByTestId(`native-sidebar-${gone}`)).toBeNull();
@@ -722,7 +904,7 @@ describe('the sidebar’s native group', () => {
     for (let index = 1; index <= 11; index++)
       host.add({ id: `c${index}`, updatedAt: index, sessionFile: `/s/c${index}.jsonl` });
     sider(host.client);
-    await waitFor(() => expect(shownIds()).toHaveLength(8));
+    await waitFor(() => expect(shownIds()).toHaveLength(5));
     expect(shownIds()).not.toContain('c1');
     expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (9)');
     expect(screen.getByTestId('native-sidebar-archived-toggle')).toHaveTextContent('Archived (2)');
@@ -743,7 +925,7 @@ describe('the sidebar’s native group', () => {
     expect(screen.getByTestId('native-sidebar-delete')).toBeVisible();
   });
 
-  it('says the folder, how many messages and what a conversation was forked from in its row’s tooltip', async () => {
+  it('says the folder, how many messages, what a conversation was forked from and its key in its row’s tooltip', async () => {
     const host = createFakeHost();
     host.add({
       id: 'p',
@@ -758,10 +940,12 @@ describe('the sidebar’s native group', () => {
     sider(host.client);
     await waitFor(() => expect(shownIds()).toEqual(['g', 'f', 'p']));
     const [g, f, p] = items();
-    expect(p.getAttribute('title')).toBe('The plan\n/work/app\nMessages: 4');
-    expect(f.getAttribute('title')).toBe('Try B\n/work/app\nMessages: 6\nForked from “The plan”');
+    // The key that opens it from anywhere: its place among the rows on screen.
+    const key = (place: number) => formatPrimaryShortcut({ key: String(place) });
+    expect(p.getAttribute('title')).toBe(`The plan\n/work/app\nMessages: 4\n${key(3)}`);
+    expect(f.getAttribute('title')).toBe(`Try B\n/work/app\nMessages: 6\nForked from "The plan"\n${key(2)}`);
     // The parent is not in the list; how many messages is not known.
-    expect(g.getAttribute('title')).toBe('New conversation\n/work/app\nForked conversation');
+    expect(g.getAttribute('title')).toBe(`New conversation\n/work/app\nForked conversation\n${key(1)}`);
   });
 
   it('renames a conversation from its row’s menu', async () => {
@@ -786,7 +970,7 @@ describe('the sidebar’s native group', () => {
       { method: 'rename', id: 'a', name: 'Login work' },
     ]);
     await waitFor(() => expect(items()[0]).toHaveTextContent('Login work'));
-    expect(success).toHaveBeenCalledWith('Renamed successfully');
+    expect(success).toHaveBeenCalledWith('Renamed');
     // Opening the menu did not open the conversation.
     expect(screen.getByTestId('where')).toHaveTextContent('/guid');
     success.mockRestore();
@@ -809,7 +993,7 @@ describe('the sidebar’s native group', () => {
     await act(async () => {
       fireEvent.click(screen.getByTestId('native-rename-save'));
     });
-    expect(error).toHaveBeenCalledWith('mu refused the request. Session name cannot be empty');
+    expect(error).toHaveBeenCalledWith('mu rejected the request. Session name cannot be empty');
     expect(screen.getByTestId('native-rename-input')).toHaveValue('New');
     error.mockRestore();
   });
@@ -826,7 +1010,7 @@ describe('the sidebar’s native group', () => {
       fireEvent.click(screen.getByTestId('native-sidebar-delete'));
     });
     expect(await screen.findByTestId('native-delete')).toHaveTextContent(
-      'Delete “Fix the build”? Its session file goes to the bin, where you can still restore it.'
+      'Delete "Fix the build"? Its file moves to the trash, so you can still restore it.'
     );
     // Cancelled: nothing goes.
     await act(async () => {
@@ -845,7 +1029,7 @@ describe('the sidebar’s native group', () => {
     expect(host.calls.filter((call) => call.method === 'remove')).toEqual([{ method: 'remove', id: 'b' }]);
     await waitFor(() => expect(shownIds()).toEqual(['a']));
     expect(screen.getByTestId('where')).toHaveTextContent('/guid');
-    expect(success).toHaveBeenCalledWith('Deleted successfully');
+    expect(success).toHaveBeenCalledWith('Deleted');
     success.mockRestore();
   });
 
@@ -860,5 +1044,241 @@ describe('the sidebar’s native group', () => {
     await waitFor(() => expect(screen.getByTestId('native-sidebar-delete')).toBeVisible());
     fireEvent.keyDown(within(items()[0]).getByTestId('native-sidebar-item-menu'), { key: 'Enter' });
     expect(screen.getByTestId('where')).toHaveTextContent('/guid');
+  });
+
+  const rowsOf = (folder: string) =>
+    [...(projectOf(folder)?.querySelectorAll<HTMLElement>('[data-testid="native-sidebar-item"]') ?? [])].map(
+      (row) => row.dataset.id
+    );
+  const headOf = (folder: string) => {
+    const head = projectOf(folder)?.querySelector<HTMLElement>('[aria-expanded]');
+    if (!head) throw new Error(`no project ${folder}`);
+    return head;
+  };
+
+  it('groups the conversations by the repository their folder is in, else by the folder; a new folder makes its project', async () => {
+    const host = createFakeHost();
+    host.repo('/work/mu');
+    host.add({ id: 'a', cwd: '/work/mu', title: 'At the top', updatedAt: 1 });
+    host.add({ id: 'b', cwd: '/work/mu/packages/app', title: 'In a package', updatedAt: 3 });
+    host.add({ id: 'c', cwd: '/work/notes', title: 'Notes', updatedAt: 2 });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/mu', '/work/notes']));
+    expect(headOf('/work/mu')).toHaveTextContent('mu');
+    expect(rowsOf('/work/mu')).toEqual(['b', 'a']);
+    expect(rowsOf('/work/notes')).toEqual(['c']);
+    // A row says its folder where it is not the project's own.
+    expect(items()[0]).toHaveTextContent(/^In a packageapp$/);
+    expect(items()[1]).toHaveTextContent(/^At the top$/);
+
+    // Started from the command line in a folder no project has: a project of its own, at the top.
+    act(() =>
+      host.change({
+        conversation: { id: 'd', cwd: '/work/site', title: 'Site', createdAt: 4, updatedAt: 4, live: false },
+      })
+    );
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/site', '/work/mu', '/work/notes']));
+    // In another folder of a repository the list has: into its project, no project of its own on the way.
+    act(() =>
+      host.change({
+        conversation: { id: 'e', cwd: '/work/mu/docs', title: 'Docs', createdAt: 5, updatedAt: 5, live: false },
+      })
+    );
+    expect(projectFolders()).toEqual(['/work/mu', '/work/site', '/work/notes']);
+    expect(rowsOf('/work/mu')).toEqual(['e', 'b', 'a']);
+  });
+
+  it('adds a project from a picked folder: it shows, empty, and the home page opens to start a conversation there', async () => {
+    const host = createFakeHost();
+    host.repo('/work/mu');
+    host.add({ id: 'a', cwd: '/work/mu', updatedAt: 1 });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/mu']));
+    const add = screen.getByTestId('native-add-project-row');
+    expect(add).toHaveTextContent('Add project');
+    // No folder picked: nothing changes.
+    await act(async () => {
+      fireEvent.click(add);
+    });
+    expect(projectFolders()).toEqual(['/work/mu']);
+    expect(screen.getByTestId('where')).toHaveAttribute('data-workspace', '');
+
+    host.pick('/work/new');
+    await act(async () => {
+      fireEvent.click(add);
+    });
+    expect(projectFolders()).toEqual(['/work/new', '/work/mu']);
+    expect(rowsOf('/work/new')).toEqual([]);
+    expect(stored('mu.native.projects')).toEqual([{ folder: '/work/new', addedAt: expect.any(Number) }]);
+    expect(screen.getByTestId('where')).toHaveTextContent('/guid');
+    expect(screen.getByTestId('where')).toHaveAttribute('data-workspace', '/work/new');
+    // What is started in it, or in a folder inside it, is in it.
+    act(() =>
+      host.change({
+        conversation: { id: 'n', cwd: '/work/new/api', title: 'API', createdAt: 9, updatedAt: 9, live: false },
+      })
+    );
+    await waitFor(() => expect(rowsOf('/work/new')).toEqual(['n']));
+    expect(projectFolders()).toEqual(['/work/new', '/work/mu']);
+  });
+
+  it('starts a conversation in a project from its "+", and folds a project, which stays folded', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'a', cwd: '/work/alpha', updatedAt: 1 });
+    host.add({ id: 'b', cwd: '/work/beta', updatedAt: 2 });
+    sider(host.client, '/conversation/native/b');
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']));
+    await act(async () => {
+      fireEvent.click(within(projectOf('/work/alpha')!).getByTestId('native-project-new'));
+    });
+    expect(screen.getByTestId('where')).toHaveTextContent('/guid');
+    expect(screen.getByTestId('where')).toHaveAttribute('data-workspace', '/work/alpha');
+    // A click on the "+" does not fold the project.
+    expect(headOf('/work/alpha')).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(headOf('/work/alpha'));
+    expect(headOf('/work/alpha')).toHaveAttribute('aria-expanded', 'false');
+    expect(shownIds()).toEqual(['b']);
+    expect(stored('mu.native.foldedProjects')).toEqual(['/work/alpha']);
+    cleanup();
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']));
+    expect(shownIds()).toEqual(['b']);
+    fireEvent.keyDown(headOf('/work/alpha'), { key: 'Enter' });
+    expect(shownIds()).toEqual(['b', 'a']);
+    expect(stored('mu.native.foldedProjects')).toEqual([]);
+  });
+
+  it('keeps the open conversation in view past the newest few of its project', async () => {
+    const host = createFakeHost();
+    for (let index = 1; index <= 7; index++) host.add({ id: `c${index}`, updatedAt: index });
+    sider(host.client, '/conversation/native/c1');
+    await waitFor(() => expect(shownIds()).toEqual(['c7', 'c6', 'c5', 'c4', 'c3', 'c1']));
+    expect(items().at(-1)).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('archives a project with its conversations after a confirmation, and removes an empty one', async () => {
+    const success = vi.spyOn(Message, 'success').mockImplementation(() => undefined as never);
+    setIs('mu.native.archived');
+    const host = createFakeHost();
+    host.add({ id: 'a', cwd: '/work/alpha', updatedAt: 1, sessionFile: '/s/a.jsonl' });
+    host.add({ id: 'a2', cwd: '/work/alpha', updatedAt: 2, sessionFile: '/s/a2.jsonl' });
+    // A draft keeps its place: its id changes when pi names its session, so it could not be restored.
+    host.add({ id: 'draft-1', cwd: '/work/alpha', updatedAt: 3 });
+    host.add({ id: 'b', cwd: '/work/beta', updatedAt: 4, sessionFile: '/s/b.jsonl' });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']));
+    const menu = async (folder: string) => {
+      await act(async () => {
+        fireEvent.click(within(projectOf(folder)!).getByTestId('native-project-menu'));
+      });
+      await waitFor(() => expect(screen.getByTestId('native-project-archive')).toBeVisible());
+    };
+    await menu('/work/alpha');
+    expect(screen.getByTestId('native-project-archive')).toHaveTextContent('Archive project');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-project-archive'));
+    });
+    expect(await screen.findByTestId('native-project-archiving')).toHaveTextContent(
+      'Archive "alpha" and its conversations? You can restore them from Archived at the end of the list.'
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-project-archive-confirm'));
+    });
+    expect(stored('mu.native.archived').toSorted()).toEqual(['a', 'a2']);
+    expect(rowsOf('/work/alpha')).toEqual(['draft-1']);
+    expect(screen.getByTestId('native-sidebar-archived-toggle')).toHaveTextContent('Archived (2)');
+    expect(success).toHaveBeenLastCalledWith('Archived');
+
+    // An added project with nothing in it is only removed.
+    host.pick('/work/empty');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-add-project-row'));
+    });
+    expect(projectFolders()).toContain('/work/empty');
+    await menu('/work/empty');
+    expect(screen.getByTestId('native-project-archive')).toHaveTextContent('Remove project');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-project-archive'));
+    });
+    // No confirmation asked.
+    expect(screen.getByTestId('native-project-archiving')).toBeEmptyDOMElement();
+    expect(projectFolders()).not.toContain('/work/empty');
+    expect(stored('mu.native.projects')).toEqual([]);
+    setIs('mu.native.archived');
+    success.mockRestore();
+  });
+
+  it('shows a project’s "+" and menu under the pointer or the keyboard’s focus, and while its menu is open', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'a', cwd: '/work/alpha', updatedAt: 1, sessionFile: '/s/a.jsonl' });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/alpha']));
+    const project = within(projectOf('/work/alpha')!);
+    const buttons = () => [project.getByTestId('native-project-new'), project.getByTestId('native-project-menu')];
+    // Not for any focus inside the row: a click leaves its button focused, and they would stay after the pointer left.
+    for (const button of buttons()) {
+      expect(button).toHaveClass(
+        'hidden',
+        'group-hover:flex',
+        'group-focus-visible:flex',
+        'group-has-[:focus-visible]:flex'
+      );
+      expect(button).not.toHaveClass('group-focus-within:flex');
+    }
+    await act(async () => {
+      fireEvent.click(project.getByTestId('native-project-menu'));
+    });
+    await waitFor(() => expect(screen.getByTestId('native-project-archive')).toBeVisible());
+    expect(project.getByTestId('native-project-menu')).toHaveAttribute('aria-expanded', 'true');
+    // The pointer goes into the menu: both stay where they are.
+    for (const button of buttons()) {
+      expect(button).toHaveClass('flex');
+      expect(button).not.toHaveClass('hidden');
+    }
+    await act(async () => {
+      fireEvent.click(project.getByTestId('native-project-menu'));
+    });
+    expect(project.getByTestId('native-project-menu')).toHaveAttribute('aria-expanded', 'false');
+    for (const button of buttons()) expect(button).toHaveClass('hidden');
+  });
+
+  it('gives a row’s title the room before its folder: the folder gives way first, down to a few letters', async () => {
+    pinsAre(['b']);
+    const host = createFakeHost();
+    host.add({ id: 'b', cwd: '/work/release-notes-drafts', title: 'Draft the release notes', updatedAt: 2 });
+    host.add({ id: 'c', cwd: '/work/notes', updatedAt: 1 });
+    sider(host.client);
+    await waitFor(() => expect(shownIds()).toEqual(['b', 'c']));
+    const folder = within(items()[0]).getByTestId('native-sidebar-folder');
+    expect(folder).toHaveTextContent('release-notes-drafts');
+    // The title grows and shrinks from its own width; the folder shrinks a hundred times as fast, down to 3em (or all
+    // of a shorter name).
+    expect(folder.previousElementSibling).toHaveClass('flex-auto', 'min-w-0', 'truncate');
+    expect(folder).toHaveClass('shrink-[100]', 'min-w-[calc-size(max-content,min(size,3em))]', 'max-w-40%', 'truncate');
+    expect(folder).not.toHaveClass('shrink-0');
+    pinsAre();
+  });
+
+  it('keeps a project the person added when its only conversation is pinned; one its conversations made goes', async () => {
+    pinsAre();
+    const host = createFakeHost();
+    host.add({ id: 'a', cwd: '/work/alpha', updatedAt: 1, sessionFile: '/s/a.jsonl' });
+    host.add({ id: 'b', cwd: '/work/beta', updatedAt: 2, sessionFile: '/s/b.jsonl' });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']));
+    host.pick('/work/alpha');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-add-project-row'));
+    });
+    expect(stored('mu.native.projects')).toEqual([{ folder: '/work/alpha', addedAt: expect.any(Number) }]);
+    pinsAre(['a', 'b']);
+    // Both rows are above the projects; the added project stays, empty, with its "+" and menu.
+    expect(shownIds()).toEqual(['b', 'a']);
+    expect(projectFolders()).toEqual(['/work/alpha']);
+    expect(rowsOf('/work/alpha')).toEqual([]);
+    expect(within(projectOf('/work/alpha')!).getByTestId('native-project-new')).toBeInTheDocument();
+    pinsAre();
+    expect(projectFolders()).toEqual(['/work/alpha', '/work/beta']);
   });
 });

@@ -22,7 +22,7 @@ import {
 import { NativeHostError } from '../../../../../../packages/desktop/src/process/services/nativeHost/NativeHost.ts';
 import type { SessionFolders } from '../../../../../../packages/desktop/src/process/services/nativeHost/sessions/folders.ts';
 import { assistant, header, user, writeSession } from '../sessions/sessionFiles.ts';
-import { FakePi } from './fakePi.ts';
+import { FakePi, frame } from './fakePi.ts';
 
 /**
  * The native conversations (process/services/nativeHost/conversations/) on a stand-in pi (fakePi.ts): drafts and their
@@ -325,6 +325,28 @@ describe('native conversations', () => {
     expect(w.pi.last.disposed).toBe(true);
   });
 
+  it('keeps a host while a command it started runs in the background; the jobs end with the host', async () => {
+    vi.useFakeTimers();
+    const w = world({ idleMs: 1000 });
+    const draft = await w.conversations.create({ cwd: w.project });
+    await turn(w, draft.id, 'hello');
+    const id = w.pi.last.session.id;
+    w.pi.last.emit(frame('background.start', { id: 'bg1', name: 'dev', command: 'npm run dev' }));
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(w.pi.last.disposed).toBe(false);
+    w.pi.last.emit(frame('background.exit', { id: 'bg1', exitCode: 0, durationMs: 5000 }));
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(w.pi.last.disposed).toBe(true);
+
+    // Closed while one runs: the view lets go of it with the host.
+    await w.conversations.request(id, { type: 'get_state' });
+    w.pi.last.emit(frame('background.start', { id: 'bg2', name: 'watch', command: 'npm run watch' }));
+    await expect(w.conversations.open(id)).resolves.toMatchObject({ view: { host: { jobs: [{ id: 'bg2' }] } } });
+    await w.conversations.close(id);
+    expect(w.events.replaced.at(-1)?.view.host.jobs).toBeUndefined();
+    expect((await w.conversations.open(id)).view.host.jobs).toBeUndefined();
+  });
+
   it('ends a dialog pi stopped waiting on, so an idle host can end', async () => {
     vi.useFakeTimers();
     const w = world({ idleMs: 1000 });
@@ -411,7 +433,7 @@ describe('native conversations', () => {
     expect(w.events.replaced).toHaveLength(before + 1);
     const snapshot = await w.conversations.open(id);
     expect(snapshot.view.messages.map((message) => message.role)).toEqual(['user', 'assistant']);
-    // Rebuilt from the file; what only the live host said (the Jev panel's activity) stays.
+    // Rebuilt from the file; what only the live host said (the work panel's activity) stays.
     expect(durable(snapshot.view)).toEqual(fromEntries(w.pi.last.session.entries, kept));
     expect(snapshot.view.host.activity.map((line) => line.kind)).toContain('agent_settled');
     expect(w.events.replaced.at(-1)).toMatchObject({ id, seq: snapshot.seq });
@@ -552,6 +574,55 @@ describe('native conversations', () => {
     expect(w.pi.last.sent).toContainEqual({ type: 'set_model', provider: 'e2e', modelId: 'fake2' });
   });
 
+  it('moves the running conversations off a signed-out account’s models, and starts no host for it', async () => {
+    const w = world();
+    w.pi.model = { provider: 'openai-codex', id: 'gpt-5.5' };
+    w.pi.available = [
+      { provider: 'openai-codex', id: 'gpt-5.5' },
+      { provider: 'e2e', id: 'fake' },
+    ];
+    const onCodex = await w.conversations.create({ cwd: w.project });
+    await w.conversations.request(onCodex.id, { type: 'get_state' });
+    const codexHost = w.pi.last;
+    const onOther = await w.conversations.create({ cwd: w.project });
+    await w.conversations.request(onOther.id, { type: 'set_model', provider: 'e2e', modelId: 'fake' });
+    const otherHost = w.pi.last;
+    // A conversation read from its file has no host: pi falls back by itself when one resumes it.
+    writeSession(join(w.sessionsDir, '--project--', '2026_cli.jsonl'), [
+      header('cli', w.project, 1),
+      user('u', null, 'Hello', 2),
+      assistant('a', 'u', 'Hi', 3),
+    ]);
+    await w.conversations.open('cli');
+    await settled(w);
+
+    // Still offered (an API key for the same provider): nothing moves.
+    await expect(w.conversations.leave('openai-codex', { provider: 'e2e', id: 'fake' })).resolves.toEqual([]);
+    // Signed out: pi lists the account's models no more.
+    w.pi.available = [
+      { provider: 'e2e', id: 'fake' },
+      { provider: 'e2e', id: 'fake2' },
+    ];
+    await expect(w.conversations.leave('openai-codex', { provider: 'e2e', id: 'fake2' })).resolves.toEqual([
+      { provider: 'e2e', model: 'fake2', name: 'fake2' },
+    ]);
+    expect(codexHost.model).toEqual({ provider: 'e2e', id: 'fake2' });
+    expect(otherHost.model).toEqual({ provider: 'e2e', id: 'fake' });
+    expect(otherHost.sent.filter((command) => command.type === 'set_model')).toHaveLength(1);
+    expect(w.pi.hosts).toHaveLength(2);
+    // The switch goes out as pi's answer, so every window's model chip follows it.
+    const id = codexHost.session.id;
+    expect(w.events.records.filter((event) => event.id === id).map((event) => event.record)).toContainEqual(
+      expect.objectContaining({ type: 'response', command: 'set_model', success: true })
+    );
+    // Without a model it would rather have, it takes the first one pi offers.
+    w.pi.available = [{ provider: 'e2e', id: 'fake3' }];
+    await w.conversations.request(id, { type: 'set_model', provider: 'openai-codex', modelId: 'gpt-5.5' });
+    await expect(w.conversations.leave('openai-codex')).resolves.toEqual([
+      { provider: 'e2e', model: 'fake3', name: 'fake3' },
+    ]);
+  });
+
   it('answers a dialog, and closes it in the view', async () => {
     const w = world();
     const draft = await w.conversations.create({ cwd: w.project });
@@ -573,9 +644,9 @@ describe('native conversations', () => {
 
   it('starts mu in the conversation’s permission mode, and again in the one it last switched to', async () => {
     const w = world();
-    const draft = await w.conversations.create({ cwd: w.project, permissions: 'jev' });
+    const draft = await w.conversations.create({ cwd: w.project, permissions: 'judge' });
     await turn(w, draft.id, 'hello');
-    expect(w.pi.last.input.env.MU_PERMISSIONS).toBe('jev');
+    expect(w.pi.last.input.env.MU_PERMISSIONS).toBe('judge');
     const id = w.pi.last.session.id;
     await w.conversations.request(id, { type: 'prompt', message: '/permissions ask --here' });
     await w.conversations.close(id);
@@ -742,10 +813,10 @@ describe('the list and the names (milestone 3)', () => {
       assistant(`${id}-a`, `${id}-u`, 'Hello', minute + 2),
     ]);
 
-  it('leaves out the sessions AionCore’s conversations run, until their record goes', async () => {
+  it('leaves out the sessions the backend’s conversations run, until their record goes', async () => {
     const bound = new Set<string>();
     const w = world({ bound: async () => bound });
-    const taken = cliSession(w, 'taken', 'Run by AionCore');
+    const taken = cliSession(w, 'taken', 'Run by the backend');
     cliSession(w, 'free', 'Only here', 5);
     bound.add(taken);
     await expect(w.conversations.list()).resolves.toMatchObject([{ id: 'free' }]);

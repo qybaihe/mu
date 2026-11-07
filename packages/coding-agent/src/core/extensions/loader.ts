@@ -11,7 +11,7 @@ import type { Provider } from "@earendil-works/pi-ai";
 import type { KeyId } from "@earendil-works/pi-tui";
 import type { createJiti } from "jiti";
 import { CONFIG_DIR_NAME, getAgentDir, isBunBinary, isBundledNode } from "../../config.ts";
-import { resolvePath } from "../../utils/paths.ts";
+import { pathsEqual, resolvePath } from "../../utils/paths.ts";
 import { createEventBus, type EventBus } from "../event-bus.ts";
 import type { ExecOptions } from "../exec.ts";
 import { execCommand } from "../exec.ts";
@@ -32,9 +32,11 @@ import type {
 	MessageRenderer,
 	ProviderConfig,
 	RegisteredCommand,
+	ToolCallHandlerOptions,
 	ToolDefinition,
 	ToolRendererResolver,
 } from "./types.ts";
+import { FINAL_TOOL_CALL_HANDLERS } from "./types.ts";
 
 const require = createRequire(import.meta.url);
 
@@ -88,10 +90,12 @@ function getAliases(): Record<string, string> {
 	const piCodingAgentEntry = packageIndex;
 	const piAgentCoreEntry = resolveWorkspaceOrImport("agent/dist/index.js", "@earendil-works/pi-agent-core");
 	const piTuiEntry = resolveWorkspaceOrImport("tui/dist/index.js", "@earendil-works/pi-tui");
-	// Extensions resolve the pi-ai root to the compat entrypoint (a strict
-	// superset of the core entrypoint): existing extensions using the old
-	// global API keep working at runtime until compat is removed.
-	const piAiCompatEntry = resolveWorkspaceOrImport("ai/dist/compat.js", "@earendil-works/pi-ai/compat");
+	// Extensions resolve the pi-ai root to the extension view: the compat
+	// entrypoint (a strict superset of the core entrypoint) plus TypeBox's Type,
+	// Static and TSchema, so extensions using the old global API and pi-ai's
+	// former TypeBox re-exports keep working.
+	const piAiCompatEntry = path.resolve(__dirname, "pi-ai-extension-view.js");
+	const piAiModelsEntry = resolveWorkspaceOrImport("ai/dist/models.js", "@earendil-works/pi-ai/models");
 	const piAiOauthEntry = resolveWorkspaceOrImport("ai/dist/oauth.js", "@earendil-works/pi-ai/oauth");
 	const piAiProvidersEntry = resolveWorkspaceOrImport(
 		"ai/dist/providers/all.js",
@@ -104,6 +108,7 @@ function getAliases(): Record<string, string> {
 		"@earendil-works/pi-tui": piTuiEntry,
 		"@earendil-works/pi-ai/providers/all": piAiProvidersEntry,
 		"@earendil-works/pi-ai/compat": piAiCompatEntry,
+		"@earendil-works/pi-ai/models": piAiModelsEntry,
 		"@earendil-works/pi-ai/oauth": piAiOauthEntry,
 		"@earendil-works/pi-ai": piAiCompatEntry,
 		"@mariozechner/pi-coding-agent": piCodingAgentEntry,
@@ -111,6 +116,7 @@ function getAliases(): Record<string, string> {
 		"@mariozechner/pi-tui": piTuiEntry,
 		"@mariozechner/pi-ai/providers/all": piAiProvidersEntry,
 		"@mariozechner/pi-ai/compat": piAiCompatEntry,
+		"@mariozechner/pi-ai/models": piAiModelsEntry,
 		"@mariozechner/pi-ai/oauth": piAiOauthEntry,
 		"@mariozechner/pi-ai": piAiCompatEntry,
 		typebox: typeboxEntry,
@@ -143,7 +149,7 @@ export function clearExtensionCache(): void {
 
 function useExtensionCacheCwd(cwd: string): ExtensionCacheToken {
 	const resolvedCwd = resolvePath(cwd);
-	if (extensionCacheCwd !== undefined && extensionCacheCwd !== resolvedCwd) {
+	if (extensionCacheCwd !== undefined && !pathsEqual(extensionCacheCwd, resolvedCwd)) {
 		clearExtensionCache();
 	}
 	extensionCacheCwd = resolvedCwd;
@@ -269,20 +275,22 @@ function createExtensionAPI(
 
 	const api = {
 		// Registration methods - write to extension
-		on(event: string, handler: HandlerFn): () => void {
+		on(event: string, handler: HandlerFn, options?: ToolCallHandlerOptions): () => void {
 			assertActive();
+			// mu: final tool_call handlers are kept apart, and the runner calls them after every other one.
+			const key = event === "tool_call" && options?.final === true ? FINAL_TOOL_CALL_HANDLERS : event;
 			const registeredHandler: HandlerFn = (...args) => handler(...args);
-			const list = extension.handlers.get(event) ?? [];
+			const list = extension.handlers.get(key) ?? [];
 			list.push(registeredHandler);
-			extension.handlers.set(event, list);
+			extension.handlers.set(key, list);
 
 			return () => {
-				const handlers = extension.handlers.get(event);
+				const handlers = extension.handlers.get(key);
 				if (!handlers) return;
 				const handlerIndex = handlers.indexOf(registeredHandler);
 				if (handlerIndex === -1) return;
 				handlers.splice(handlerIndex, 1);
-				if (handlers.length === 0) extension.handlers.delete(event);
+				if (handlers.length === 0) extension.handlers.delete(key);
 			};
 		},
 

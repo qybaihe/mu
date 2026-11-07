@@ -157,7 +157,25 @@
     "tabLimitReached": "Sekme sınırına ulaşıldı ({{count}}). En eski sekme yeniden kullanıldı.",
     "agentFirstUseTitle": "Aracı uygulama içi tarayıcıyı kullanıyor",
     "agentFirstUseContent": "Bu panelde sayfa açabilir, tıklayabilir ve içerik okuyabilir. Oturum bilgileriniz korunur.",
-    "agentFirstUseAction": "Ayarları aç"
+    "agentFirstUseAction": "Ayarları aç",
+    "pick": {
+      "start": "mu'ya göstermek için bir öğe seç",
+      "stop": "Seçmeyi durdur",
+      "hint": "Mesajına eklemek için bir öğeye tıkla · ↑ üst öğeyi seçer · Esc iptal eder",
+      "added": "{{name}} mesajına eklendi",
+      "failed": "Bu sayfadaki öğeler seçilemiyor"
+    },
+    "screenshot": {
+      "send": "Bu sayfanın şu anki görünümünü mu'ya göster",
+      "chip": "{{site}} ekran görüntüsü",
+      "added": "{{site}} ekran görüntüsü mesajınıza eklendi",
+      "failed": "Bu sayfanın şu anda görüntüsü alınamıyor"
+    },
+    "console": {
+      "send": "Sayfanın konsol hatalarını ve uyarılarını mu'ya gönder",
+      "chip": "{{site}} konsolu",
+      "added": "{{site}} konsolu mesajınıza eklendi"
+    }
   },
   "saveConflict": "Kaydedilemedi: bu dosya siz açtıktan sonra diskte değişti. Diğer değişiklikleri görmek için yeniden yükleyin — düzenlemeleriniz kaydedilmemiş olarak duruyor.",
   "persistQuotaExceeded": "Yerel depolama dolu, bu proje için açık sekmeler artık hatırlanamıyor. Bazı sekmeleri kapatın veya site verilerini temizleyin.",
@@ -319,5 +337,31 @@
   "saveFailedWithDetail": "Kaydedilemedi: {{detail}}",
   "zoomActualSize": "Yakınlaştırmayı sıfırla",
   "zoomFit": "Sığdır",
-  "zoomFitTooltip": "Panel genişliğine sığdır"
+  "zoomFitTooltip": "Panel genişliğine sığdır",
+  "gallery": {
+    "label": "Görsel {{name}}",
+    "previous": "Önceki görsel",
+    "next": "Sonraki görsel",
+    "position": "{{index}} / {{count}}",
+    "gone": "Bu dosya artık orada değil. Taşınmış veya silinmiş olabilir.",
+    "tooLarge": "Bu görsel burada gösterilemeyecek kadar büyük ({{size}}). Lütfen varsayılan uygulamada açın."
+  },
+  "reveal": {
+    "mac": "Finder'da göster",
+    "windows": "Dosya Gezgini'nde göster",
+    "linux": "Klasörde göster"
+  },
+  "diffComment": {
+    "add": "Bu satıra yorum yap",
+    "placeholder": "mu burada neyi değiştirmeli?",
+    "save": "Yorum ekle",
+    "hint": "Yorumlar bir sonraki mesajınla gider",
+    "remove": "Yorumu kaldır"
+  },
+  "diffHunk": {
+    "stage": "Bu değişikliği hazırla",
+    "unstage": "Bu değişikliği hazırlıktan çıkar",
+    "stale": "Bu fark gösterildikten sonra dosya değişti, bu yüzden hiçbir şey değişmedi. İşte şu anki hâli.",
+    "failed": "Git bunu yapamadı: {{reason}}"
+  }
 }

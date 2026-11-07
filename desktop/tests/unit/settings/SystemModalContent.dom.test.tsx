@@ -22,6 +22,7 @@ const { systemInfoMock, updateSystemInfoMock, restartMock, showOpenMock, message
       get: vi.fn(() => undefined),
       set: vi.fn(() => Promise.resolve()),
       setLocal: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
     },
   }));
 const clientBusinessSettingsMocks = vi.hoisted(() => ({
@@ -41,7 +42,16 @@ vi.mock('@/renderer/utils/platform', () => ({
   isMacOS: platformMocks.isMacOS,
 }));
 
-vi.mock('@/renderer/components/base/AionScrollArea', () => ({
+const chimes = vi.hoisted(() => [] as string[]);
+vi.mock('@/renderer/hooks/system/notification/attentionSound', () => ({
+  COMPLETION_SOUND_SETTING: 'system.completionSound',
+  playAttentionSound: (kind: string) => {
+    chimes.push(kind);
+    return true;
+  },
+}));
+
+vi.mock('@/renderer/components/base/MuScrollArea', () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
@@ -207,7 +217,7 @@ describe('SystemModalContent directory settings', () => {
     await screen.findByText('/work');
     const workDirItem = screen.getByText('settings.workDir').closest('.arco-form-item');
     expect(workDirItem).not.toBeNull();
-    const fieldBody = (workDirItem as HTMLElement).querySelector('.aion-dir-input');
+    const fieldBody = (workDirItem as HTMLElement).querySelector('.mu-dir-input');
     expect(fieldBody).not.toBeNull();
 
     await user.click(fieldBody as HTMLElement);
@@ -275,6 +285,33 @@ describe('SystemModalContent directory settings', () => {
     expect(screen.queryByText('settings.promptTimeout')).not.toBeInTheDocument();
     expect(screen.queryByText('settings.crossSessionMessage')).not.toBeInTheDocument();
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+  });
+
+  it('keeps the computer awake while a conversation runs, on until it is turned off', async () => {
+    renderContent();
+
+    await screen.findByText('/work');
+    expect(screen.getByText('settings.keepAwakeWhileRunningDesc')).toBeInTheDocument();
+    const toggle = screen.getByRole('switch', { name: 'settings.keepAwakeWhileRunning' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(toggle);
+    expect(configServiceMock.set).toHaveBeenCalledWith('system.keepAwakeWhileRunning', false);
+  });
+
+  it('plays a sound when a conversation finishes or needs the person once turned on, and plays it as it is turned on', async () => {
+    renderContent();
+
+    await screen.findByText('/work');
+    expect(screen.getByText('settings.completionSoundDesc')).toBeInTheDocument();
+    const toggle = screen.getByRole('switch', { name: 'settings.completionSound' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    chimes.length = 0;
+    fireEvent.click(toggle);
+    expect(configServiceMock.set).toHaveBeenCalledWith('system.completionSound', true);
+    expect(chimes).toEqual(['done']);
+    fireEvent.click(toggle);
+    expect(configServiceMock.set).toHaveBeenLastCalledWith('system.completionSound', false);
+    expect(chimes).toEqual(['done']);
   });
 
   it('names the menu bar on a Mac, where the closed app lives on', async () => {

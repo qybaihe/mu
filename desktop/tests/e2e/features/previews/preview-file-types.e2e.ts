@@ -37,10 +37,10 @@ import { goToGuid } from '../../helpers';
 const PREVIEW_PANEL = '[data-project-preview-region]';
 
 /** `preview.unsupported.title`, both shipped locales. */
-const UNSUPPORTED_TITLE = /Preview not supported for this format|暂不支持预览此格式/;
+const UNSUPPORTED_TITLE = /Can't preview this file type|暂不支持预览此格式/;
 
 /** `preview.openInSystemApp`, both shipped locales. */
-const OPEN_IN_SYSTEM = /Open in system app|使用系统默认应用打开/;
+const OPEN_IN_SYSTEM = /Open in default app|使用系统默认应用打开/;
 
 type BackendWindow = Window & { __backendPort?: number };
 
@@ -77,7 +77,7 @@ const UNSUPPORTED_SAMPLES = [
 async function createProjectConversation(page: import('@playwright/test').Page, workspace: string): Promise<string> {
   const conversationId = await page.evaluate(async (ws) => {
     const port = (window as BackendWindow).__backendPort;
-    if (!port) throw new Error('window.__backendPort is not available — is aioncore running?');
+    if (!port) throw new Error('window.__backendPort is not available — is the backend running?');
 
     const created = await fetch(`http://127.0.0.1:${port}/api/conversations`, {
       method: 'POST',
@@ -122,7 +122,7 @@ test.describe('Preview — file type routing', () => {
   let conversationId: string | null = null;
 
   test.beforeAll(() => {
-    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-e2e-filetypes-'));
+    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'mu-e2e-filetypes-'));
     // Contents are irrelevant: routing is by extension, and these formats are
     // never parsed. Small stubs keep the tree fast to load.
     for (const { file } of UNSUPPORTED_SAMPLES) {

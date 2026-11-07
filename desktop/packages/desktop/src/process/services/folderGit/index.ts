@@ -1,6 +1,8 @@
 import { kyrnFailure, type KyrnResult } from '../../../common/kyrn/errors';
 import { kyrnGitBridge } from '../../../common/kyrn/gitBridge';
 import { createFolderGit, type FolderGit } from './folderGit';
+import { branchPr } from './githubPr';
+import { repoRoots } from './repoRoots';
 
 export { createFolderGit, type FolderGit } from './folderGit';
 
@@ -17,4 +19,10 @@ async function result<T>(work: () => Promise<T>): Promise<KyrnResult<T>> {
 export function initFolderGitBridge(git: FolderGit = createFolderGit()): void {
   kyrnGitBridge.status.provider(({ cwd }) => result(() => git.status(cwd)));
   kyrnGitBridge.diff.provider((request) => result(() => git.diff(request)));
+  kyrnGitBridge.roots.provider((request) => result(() => repoRoots(request?.folders)));
+  kyrnGitBridge.stage.provider((request) => result(() => git.stage(request)));
+  kyrnGitBridge.unstage.provider((request) => result(() => git.unstage(request)));
+  kyrnGitBridge.commit.provider((request) => result(() => git.commit(request)));
+  kyrnGitBridge.hunk.provider((request) => result(() => git.hunk(request)));
+  kyrnGitBridge.pr.provider(({ cwd }) => result(() => branchPr(cwd)));
 }

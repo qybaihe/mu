@@ -1,14 +1,8 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The errors the mu bridge raises into a conversation. The bridge runs as its own process without i18n and what it
  * raises is stored with the conversation, so it words them in fixed English (`MU_TURN_ERRORS` in
  * `process/agent/kyrn/KyrnAgent.ts`, plus the process errors of `piRpc.ts`) and the desktop recognises that text
- * here, wherever AionCore put it, to show a headline in the reader's language. The original text stays available as
+ * here, wherever the backend put it, to show a headline in the reader's language. The original text stays available as
  * a detail line.
  */
 const MU_TURN_ERROR_TEXTS = [

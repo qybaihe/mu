@@ -119,7 +119,7 @@ test.describe('Assistant Settings Skills / MCP', () => {
     const selectedSummary = (
       (await page.locator('[data-testid="select-assistant-default-skills"]').textContent()) ?? ''
     ).trim();
-    expect(selectedSummary).not.toMatch(/Not configured|暂不设置/i);
+    expect(selectedSummary).not.toMatch(/Not set|暂不设置/i);
     expect(selectedSummary).not.toBe(firstOptionText);
 
     await saveAssistant(page);

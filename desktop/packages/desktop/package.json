@@ -5,6 +5,6 @@
   "description": "mu desktop",
   "main": "../../out/main/index.js",
   "dependencies": {
-    "@aionui/web-host": "workspace:*"
+    "@mu/web-host": "workspace:*"
   }
 }

@@ -8,6 +8,7 @@ import {
 	SettingsManager,
 } from "@earendil-works/pi-coding-agent";
 import { exitWhenUnlocked } from "../auth/exit.ts";
+import { contextFromEnv, main as mudeMain, problems as mudeProblems } from "../mude/command.ts";
 import { muEnv, muHome } from "../naming.ts";
 import { redactSecrets } from "../redact.ts";
 import { readEnvEntries } from "./env-file.ts";
@@ -20,7 +21,8 @@ import { runSetup } from "./wizard.ts";
 /**
  * The entry of `mu setup` (wizard.ts), which kyrn/bin/mu.mjs starts: from its sources in a checkout, as
  * judge/dist/setup.js in the npm package. The launcher names the folders: MU_AGENT_DIR, MU_SETUP_HOME (mu's home, for
- * the backups) and MU_SETUP_ENV_FILE (the .env it reads for a session).
+ * the backups) and MU_SETUP_ENV_FILE (the .env it reads for a session), and mude's as `mu judge mude` gets them
+ * (MU_MUDE_HOME, MU_MUDE_ENV_FILE, MU_MUDE_LOCK), for the judge step's mude 1.0.
  */
 
 // A key given on the command line comes in the environment, never in this process's argv (the launcher moved it
@@ -87,6 +89,19 @@ async function main(): Promise<number> {
 		readStdin: () => readAll(),
 		givenKey,
 		proxy,
+		// mude 1.0 where this Mac can run it: `mu judge mude install`, here, its progress in this terminal.
+		mude:
+			mudeProblems().length === 0
+				? {
+						install: () =>
+							mudeMain(
+								["install"],
+								contextFromEnv(process.env),
+								(text) => process.stdout.write(text),
+								process.stdout.isTTY === true,
+							),
+					}
+				: undefined,
 	});
 }
 

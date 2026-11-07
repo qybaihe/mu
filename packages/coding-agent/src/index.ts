@@ -50,6 +50,8 @@ export {
 	serializeConversation,
 	shouldCompact,
 } from "./core/compaction/index.ts";
+// mu: `mu auth` reads and sets which of an account's models are enabled, also from pi's bundle.
+export { enabledModelIds, withProviderModels, withProviderOffered } from "./core/enabled-models.ts";
 export { createEventBus, type EventBus, type EventBusController } from "./core/event-bus.ts";
 // Extension system
 export type {
@@ -65,8 +67,10 @@ export type {
 	AppKeybinding,
 	AutocompleteProviderFactory,
 	BashToolCallEvent,
+	BeforeAgentStartCustomEvent,
 	BeforeAgentStartEvent,
 	BeforeAgentStartEventResult,
+	BeforeAgentStartUserEvent,
 	BeforeProviderHeadersEvent,
 	BeforeProviderRequestEvent,
 	BeforeProviderRequestEventResult,
@@ -117,6 +121,7 @@ export type {
 	InputEvent,
 	InputEventResult,
 	InputSource,
+	KeybindingHints,
 	KeybindingsManager,
 	LoadExtensionsResult,
 	LsToolCallEvent,
@@ -238,7 +243,10 @@ export {
 	ModelRuntime,
 	type ModelRuntimeAuthOverrides,
 } from "./core/model-runtime.ts";
+// mu: `mu auth logout` drops the list of models an account gave from pi's catalogue store, also from pi's bundle.
+export { FileModelsStore } from "./core/models-store.ts";
 export type {
+	PackageInstallFailure,
 	PackageManager,
 	PathMetadata,
 	ProgressCallback,
@@ -393,6 +401,7 @@ export {
 	type WriteToolOptions,
 	withFileMutationQueue,
 } from "./core/tools/index.ts";
+export { formatReadLineRange } from "./core/tools/render-utils.ts";
 export {
 	hasTrustRequiringProjectResources,
 	type ProjectTrustDecision,
@@ -504,5 +513,5 @@ export { parseFrontmatter, stripFrontmatter } from "./utils/frontmatter.ts";
 export { convertToPng } from "./utils/image-convert.ts";
 export { formatDimensionNote, type ResizedImage, resizeImage } from "./utils/image-resize.ts";
 export { detectSupportedImageMimeTypeFromFile } from "./utils/mime.ts";
-// Shell utilities
-export { getPowerShellConfig, getShellConfig } from "./utils/shell.ts";
+// Shell utilities. mu: `withoutCredentials` too, for the judgment layer's tools that run commands for the agent.
+export { ENV_PASS_ENV, getPowerShellConfig, getShellConfig, withoutCredentials } from "./utils/shell.ts";

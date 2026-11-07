@@ -4,7 +4,7 @@ import type { AnyModel, Api, ClassifierApi, ClassifierModel, ImageApi, ImageMode
 import { amazonBedrockProvider } from "./amazon-bedrock.ts";
 import { antLingProvider } from "./ant-ling.ts";
 import { anthropicProvider } from "./anthropic.ts";
-import { azureOpenAIResponsesProvider } from "./azure-openai-responses.ts";
+import { azureProvider } from "./azure.ts";
 import { basetenProvider } from "./baseten.ts";
 import { cerebrasProvider } from "./cerebras.ts";
 import { cloudflareAIGatewayProvider } from "./cloudflare-ai-gateway.ts";
@@ -24,6 +24,7 @@ import { minimaxCnProvider } from "./minimax-cn.ts";
 import { mistralProvider } from "./mistral.ts";
 import { moonshotaiProvider } from "./moonshotai.ts";
 import { moonshotaiCnProvider } from "./moonshotai-cn.ts";
+import { nebiusProvider } from "./nebius.ts";
 import { nvidiaProvider } from "./nvidia.ts";
 import { openaiProvider } from "./openai.ts";
 import { openaiCodexProvider } from "./openai-codex.ts";
@@ -138,7 +139,7 @@ export function builtinProviders(): Provider[] {
 		amazonBedrockProvider(),
 		antLingProvider(),
 		anthropicProvider(),
-		azureOpenAIResponsesProvider(),
+		azureProvider(),
 		basetenProvider(),
 		cerebrasProvider(),
 		cloudflareAIGatewayProvider(),
@@ -157,6 +158,7 @@ export function builtinProviders(): Provider[] {
 		mistralProvider(),
 		moonshotaiProvider(),
 		moonshotaiCnProvider(),
+		nebiusProvider(),
 		nvidiaProvider(),
 		openaiProvider(),
 		openaiCodexProvider(),

@@ -11,7 +11,7 @@ import SkillUsedByStack, { getAssistantsUsingSkill } from './SkillUsedByStack';
 import SettingsPageWrapper from '../components/SettingsPageWrapper';
 import SettingsPageHeader from '../components/SettingsPageHeader';
 import TalkToButlerButton from '@/renderer/components/base/TalkToButlerButton';
-import { AionSearchInput } from '@/renderer/components/base';
+import { MuSearchInput } from '@/renderer/components/base';
 import { formatDateTime } from '@/renderer/services/i18n/format';
 import { formatNameList } from '@/renderer/services/i18n/list';
 import { buildSkillImportNotice, formatSkillSize, getSkillImportErrorMessage } from './skillImportMessages';
@@ -304,7 +304,7 @@ const SkillsHubSettings: React.FC<SkillsHubSettingsProps> = ({ withWrapper = tru
           <div>
             {t('settings.skillsHub.batchDeleteConfirmContent', {
               count: selectedSkillNames.size,
-              defaultValue: `Are you sure you want to delete the ${selectedSkillNames.size} selected skill(s)?`,
+              defaultValue: `Delete the ${selectedSkillNames.size} selected skills?`,
             })}
           </div>
           <div className='text-12px text-t-tertiary mt-8px'>
@@ -661,7 +661,7 @@ const SkillsHubSettings: React.FC<SkillsHubSettingsProps> = ({ withWrapper = tru
   };
 
   const searchBox = (testId: string) => (
-    <AionSearchInput
+    <MuSearchInput
       className='shrink-0 w-[200px] hidden md:flex'
       data-testid={testId}
       placeholder={t('settings.skillsHub.searchPlaceholder', { defaultValue: 'Search skills...' })}
@@ -849,7 +849,7 @@ const SkillsHubSettings: React.FC<SkillsHubSettingsProps> = ({ withWrapper = tru
                             <div>
                               {t('settings.skillsHub.deleteConfirmContent', {
                                 name: skill.name,
-                                defaultValue: `Are you sure you want to delete "${skill.name}"?`,
+                                defaultValue: `Delete "${skill.name}"?`,
                               })}
                             </div>
                             <div className='text-12px text-t-tertiary mt-8px'>
@@ -973,7 +973,7 @@ const SkillsHubSettings: React.FC<SkillsHubSettingsProps> = ({ withWrapper = tru
             </Button>
             <TalkToButlerButton
               label={t('settings.skillsHub.addSkill', { defaultValue: 'Add Skill' })}
-              chatLabel={t('settings.talkToButler.addViaChat', { defaultValue: 'Add via chat' })}
+              chatLabel={t('settings.talkToButler.addViaChat', { defaultValue: 'Add in a conversation' })}
               onManual={handleManualImport}
               manualLabel={t('settings.skillsHub.manualImport', { defaultValue: 'Import Skills' })}
               prompt={t('settings.talkToButler.prompt.addSkill', {

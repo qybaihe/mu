@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mapEvent } from '../../../packages/desktop/src/process/agent/kyrn/events.ts';
 
-describe('KYRN events in native AionUi cards', () => {
+describe("KYRN events in the app's native cards", () => {
   it('updates one classification card and never invents reasoning tokens', () => {
     const frame = (kind: string, payload: object) =>
       mapEvent({
@@ -13,29 +13,29 @@ describe('KYRN events in native AionUi cards', () => {
     expect(frame('preflight.pending', {})[0]).toMatchObject({
       sessionUpdate: 'tool_call',
       toolCallId: 'jev:r:1',
-      title: 'Jev · Classifying',
+      title: 'Judge · Classifying',
       status: 'in_progress',
       rawOutput: { preflight: 'pending' },
     });
     // The judge that was asked names the row until a verdict says who answered.
-    expect(frame('preflight.pending', { judge: 'laya>jev-latest', mode: 'active' })[0]).toMatchObject({
-      rawOutput: { preflight: 'pending', judge: 'laya>jev-latest' },
+    expect(frame('preflight.pending', { judge: 'mude>jev-latest', mode: 'active' })[0]).toMatchObject({
+      rawOutput: { preflight: 'pending', judge: 'mude>jev-latest' },
     });
     expect(frame('preflight.verdict', { turnType: 'chat' })[0]).toMatchObject({
       sessionUpdate: 'tool_call_update',
       toolCallId: 'jev:r:1',
-      title: 'Jev · chat',
+      title: 'Judge · chat',
       status: 'completed',
       rawOutput: { turnType: 'chat', preflight: 'verdict' },
     });
     expect(frame('preflight.verdict', {})[0]).toMatchObject({
-      title: 'Jev · Default',
+      title: 'Judge · Default',
       rawOutput: { preflight: 'verdict' },
     });
     expect(frame('preflight.wait_end', { reason: 'timeout' })[0]).toMatchObject({
       sessionUpdate: 'tool_call_update',
       toolCallId: 'jev:r:1',
-      title: 'Jev · Fallback',
+      title: 'Judge · Fallback',
       status: 'completed',
       rawOutput: { preflight: 'fallback' },
     });

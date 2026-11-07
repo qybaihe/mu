@@ -1,20 +1,24 @@
 import { fileURLToPath } from 'node:url';
 
-// Use the same public API as AionUi's Add Custom Agent form; never edit its database.
+// Use the same public API as the app's Add Custom Agent form; never edit the backend's database.
 // The lookup and update rules are the ones in packages/desktop/src/process/agent/kyrn/product.ts.
-if (!process.env.AIONUI_BACKEND_URL) throw new Error('Set AIONUI_BACKEND_URL to the running local backend URL');
-const base = new URL(process.env.AIONUI_BACKEND_URL);
+if (!process.env.MU_BACKEND_URL) throw new Error('Set MU_BACKEND_URL to the running local backend URL');
+const base = new URL(process.env.MU_BACKEND_URL);
 if (base.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(base.hostname)) {
-  throw new Error('Registration requires the local AionUi backend URL');
+  throw new Error('Registration requires the local backend URL');
 }
 const NAME = 'mu';
 const FORMER_NAMES = ['KYRN'];
-const DESCRIPTION = 'mu harness · local Codex login · Jev judgment';
-// Compared case-insensitively: a record written before the judge's name took its present capitalization is ours.
-const OWN_DESCRIPTIONS = ['KYRN', 'KYRN harness · local Codex login · Jev judgment', DESCRIPTION].map((text) =>
-  text.toLowerCase()
-);
-// Scheduled tasks and team agents run in AionCore's "full auto", read from `yolo_id`: mu's full access.
+const DESCRIPTION = 'mu harness · local Codex login · judge model';
+// Compared case-insensitively: a record written before the judge's name took its present capitalization, or while the
+// description named the judge Jev, is ours.
+const OWN_DESCRIPTIONS = [
+  'KYRN',
+  'KYRN harness · local Codex login · Jev judgment',
+  'mu harness · local Codex login · Jev judgment',
+  DESCRIPTION,
+].map((text) => text.toLowerCase());
+// Scheduled tasks and team agents run in the backend's "full auto", read from `yolo_id`: mu's full access.
 const FULL_AUTO_MODE = 'full';
 const LEGACY_FULL_AUTO = ['yolo', 'yoloNoSandbox'];
 const needsFullAuto = (row) => !row.yolo_id?.trim() || LEGACY_FULL_AUTO.includes(row.yolo_id.trim());
@@ -35,9 +39,9 @@ async function request(path, body, method = body === undefined ? 'GET' : 'POST')
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: AbortSignal.timeout(60000),
   });
-  if (!response.ok) throw new Error(`AionUi ${path}: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`The backend ${path}: HTTP ${response.status}`);
   const result = await response.json();
-  if (result.success === false) throw new Error('AionUi rejected registration');
+  if (result.success === false) throw new Error('The backend rejected registration');
   return result.data ?? result;
 }
 // The agent list does not return `env`, and no route reads a single record. Setting `enabled` to the value it

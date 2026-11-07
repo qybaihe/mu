@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { Api, Earth, Editor, FileText, PeopleSpeak, Search, Terminal } from '@icon-park/react';
 import React from 'react';
 import styles from './MessageToolGroupSummary.module.css';

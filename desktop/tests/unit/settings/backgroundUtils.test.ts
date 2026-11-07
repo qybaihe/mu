@@ -6,6 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  hasBackgroundBlock,
   injectBackgroundCssBlock,
   BACKGROUND_BLOCK_START,
   BACKGROUND_BLOCK_END,
@@ -64,10 +65,20 @@ describe('backgroundUtils', () => {
     const existingCss = `${BACKGROUND_BLOCK_START}\nOLD BLOCK CONTENT\n${BACKGROUND_BLOCK_END}`;
     const result = injectBackgroundCssBlock(existingCss, testImageUrl);
     expect(result).not.toContain('OLD BLOCK CONTENT');
-    const startCount = (result.match(/\/\* AionUi Theme Background Start \*\//g) || []).length;
-    const endCount = (result.match(/\/\* AionUi Theme Background End \*\//g) || []).length;
+    const startCount = result.split(BACKGROUND_BLOCK_START).length - 1;
+    const endCount = result.split(BACKGROUND_BLOCK_END).length - 1;
     expect(startCount).toBe(1);
     expect(endCount).toBe(1);
+  });
+
+  it('replaces a block an earlier version wrote, under its old markers', () => {
+    const existingCss = `body { color: red; }\n/* AionUi Theme Background Start */\nOLD\n/* AionUi Theme Background End */`;
+    const result = injectBackgroundCssBlock(existingCss, testImageUrl);
+    expect(result).not.toContain('OLD');
+    expect(result).not.toContain('AionUi Theme Background');
+    expect(result).toContain('body { color: red; }');
+    expect(result).toContain(BACKGROUND_BLOCK_START);
+    expect(hasBackgroundBlock(existingCss)).toBe(true);
   });
 
   it('preserves other CSS when no existing block', () => {

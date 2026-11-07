@@ -16,7 +16,7 @@ import {
   type LauncherDeps,
 } from '../../../../packages/desktop/src/process/agent/kyrn/windows/launcherCommand.ts';
 
-// Issue #4: the installer's default folder, C:\Program Files\mu. AionCore started the launcher as `C:\Program`.
+// Issue #4: the installer's default folder, C:\Program Files\mu. The backend started the launcher as `C:\Program`.
 const INSTALLED = 'C:\\Program Files\\mu\\resources\\mu\\acp.cmd';
 const SHORT = 'C:\\PROGRA~1\\mu\\resources\\mu\\acp.cmd';
 const ENV: NodeJS.ProcessEnv = {
@@ -222,6 +222,66 @@ describe('which registered commands run this launcher', () => {
   });
 });
 
+// https://github.com/qybaihe/mu/issues/14: only absent packaged launchers are eligible for restoration.
+describe('restoring an uninstalled launcher', () => {
+  it('recognizes missing Windows launchers, including old short paths, without probing arbitrary commands', async () => {
+    const checked: string[] = [];
+    const existing = 'D:\\other\\resources\\mu\\acp.cmd';
+    const { deps } = machine({ files: { [INSTALLED]: INSTALLED }, short: SHORT });
+    const own = await ownLauncher('C:\\mu\\resources\\mu\\acp.cmd', {
+      ...deps,
+      missing: (file) => {
+        checked.push(file);
+        return file !== existing;
+      },
+    });
+    for (const file of [INSTALLED, SHORT, 'c:/old/RESOURCES/mu/ACP.CMD']) expect(own.canRestore?.(file)).toBe(true);
+    expect(own.canRestore?.(existing)).toBe(false);
+    const before = checked.length;
+    for (const file of [
+      'npx mu-acp',
+      'resources\\mu\\acp.cmd',
+      'C:\\custom\\acp.cmd',
+      '\\\\server\\share\\resources\\mu\\acp.cmd',
+      'C:\\mu\\resources\\mu\\acp.cmd --flag',
+    ])
+      expect(own.canRestore?.(file), file).toBe(false);
+    expect(checked).toHaveLength(before);
+  });
+
+  it('never lets a development checkout restore a packaged registration', async () => {
+    const own = await ownLauncher('/checkout/desktop/scripts/kyrn/acp', {
+      platform: 'linux',
+      missing: () => {
+        throw new Error('must not probe');
+      },
+    });
+    expect(own.canRestore?.('/opt/mu/resources/mu/acp')).toBe(false);
+  });
+
+  it('checks actual file removal on the host platform before allowing restoration', async () => {
+    const platform = process.platform;
+    const root = mkdtempSync(join(tmpdir(), 'mu-reinstall-'));
+    try {
+      const filename = platform === 'win32' ? 'acp.cmd' : 'acp';
+      const old = join(root, 'old', platform === 'darwin' ? 'Resources' : 'resources', 'mu', filename);
+      mkdirSync(join(old, '..'), { recursive: true });
+      writeFileSync(old, '');
+      const current = join(root, 'new', 'resources', 'mu', filename);
+      mkdirSync(join(current, '..'), { recursive: true });
+      writeFileSync(current, '');
+      const own = await ownLauncher(current, { env: { ...process.env, LOCALAPPDATA: join(root, 'local') } });
+      expect(own.canRestore?.(old)).toBe(false);
+      rmSync(old);
+      expect(own.canRestore?.(old)).toBe(true);
+      expect(own.canRestore?.('//server/resources/mu/acp')).toBe(false);
+      expect(own.canRestore?.('/opt/custom/acp')).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('the forwarder', () => {
   it('goes to the user’s own local app data first, then ProgramData, then the public profile', () => {
     expect(forwarderFolders(ENV)).toEqual([
@@ -297,7 +357,7 @@ describe.runIf(process.platform === 'win32')('on Windows', () => {
     writeFileSync(launcher, ['@echo off', 'echo %*> "%~dp0args.txt"', 'exit /b 7', ''].join('\r\n'));
     return { root, launcher };
   }
-  /** Runs a command the way AionCore runs a .cmd: `cmd /d /c <command> <args>`. */
+  /** Runs a command the way the backend runs a .cmd: `cmd /d /c <command> <args>`. */
   const run = (command: string, args: string[]) =>
     spawnSync(process.env.ComSpec || 'cmd.exe', ['/d', '/c', command, ...args], {
       encoding: 'utf8',

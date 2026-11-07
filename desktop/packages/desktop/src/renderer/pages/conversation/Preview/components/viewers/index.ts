@@ -12,7 +12,7 @@
  * Read-only preview components for displaying various file types
  */
 
-export { default as DiffViewer } from './DiffViewer';
+export { default as DiffViewer } from './diff/DiffViewer';
 export { default as MarkdownViewer } from './MarkdownViewer';
 export { default as HTMLViewer } from './HTMLViewer';
 export { default as PDFViewer } from './PDFViewer';

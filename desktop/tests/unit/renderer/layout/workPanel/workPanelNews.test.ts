@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { describe, expect, it } from 'vitest';
 import type { Activity } from '@/common/kyrn/types';
 import {
@@ -54,6 +48,17 @@ describe('what counts as news in each tab', () => {
     expect(boardSignature([board(), board({ now: 'Running the tests' })])).not.toBe(first);
   });
 
+  it('the board: a new headline or a new blocked line is news, the same ones again are not', () => {
+    const v2 = (payload: Record<string, unknown> = {}) =>
+      board({ headline: 'Running npm test, 3 min in', blocked: '', updatedAt: 1_000, ...payload });
+    const first = boardSignature([v2()]);
+    expect(boardSignature([board()])).not.toBe(first);
+    // Made again later with the same words: nothing new to see.
+    expect(boardSignature([v2(), v2({ updatedAt: 2_000 })])).toBe(first);
+    expect(boardSignature([v2(), v2({ headline: 'Running npm test, 4 min in' })])).not.toBe(first);
+    expect(boardSignature([v2(), v2({ blocked: 'npm test has run 4 min with no output.' })])).not.toBe(first);
+  });
+
   it('the judge: a verdict is news, the wait before it is not', () => {
     const turn = { runtimeId: 'runtime-a', turnId: 1 };
     const waiting = [event('preflight.pending', { judge: 'jev' }, { ...turn, sequence: 1 })];
@@ -97,16 +102,25 @@ describe('what counts as news in each tab', () => {
   it('the files: an edit the agent finished, told once, whatever the stream it came in', () => {
     const edited = createEditWatcher();
     // The kind comes with the call's start only; the status alone comes with its end.
-    expect(edited(acp({ tool_call_id: 't1', kind: 'edit', status: 'in_progress' }))).toBe(false);
-    expect(edited(acp({ tool_call_id: 't1', status: 'completed' }))).toBe(true);
-    expect(edited(acp({ tool_call_id: 't2', kind: 'read', status: 'completed' }))).toBe(false);
-    expect(edited(acp({ tool_call_id: 't3', status: 'completed', content: [{ type: 'diff' }] }))).toBe(true);
-    expect(edited(acp({ tool_call_id: 't4', kind: 'edit', status: 'failed' }))).toBe(false);
+    expect(edited(acp({ tool_call_id: 't1', kind: 'edit', status: 'in_progress' }))).toBeUndefined();
+    expect(edited(acp({ tool_call_id: 't1', status: 'completed' }))).toEqual({});
+    expect(edited(acp({ tool_call_id: 't2', kind: 'read', status: 'completed' }))).toBeUndefined();
+    expect(edited(acp({ tool_call_id: 't3', status: 'completed', content: [{ type: 'diff' }] }))).toEqual({});
+    expect(edited(acp({ tool_call_id: 't4', kind: 'edit', status: 'failed' }))).toBeUndefined();
 
-    expect(edited(group('Executing'))).toBe(false);
-    expect(edited(group('Success'))).toBe(true);
+    expect(edited(group('Executing'))).toBeUndefined();
+    expect(edited(group('Success'))).toEqual({});
     // The same finished call streamed again is not a second edit.
-    expect(edited(group('Success'))).toBe(false);
-    expect(edited({ type: 'content', data: 'hello' })).toBe(false);
+    expect(edited(group('Success'))).toBeUndefined();
+    expect(edited({ type: 'content', data: 'hello' })).toBeUndefined();
+  });
+
+  it('the files: which file an edit changed, when its start or its diff names it', () => {
+    const edited = createEditWatcher();
+    edited(acp({ tool_call_id: 'p1', kind: 'edit', status: 'in_progress', locations: [{ path: '/work/app/a.ts' }] }));
+    expect(edited(acp({ tool_call_id: 'p1', status: 'completed' }))).toEqual({ path: '/work/app/a.ts' });
+    expect(
+      edited(acp({ tool_call_id: 'p2', status: 'completed', content: [{ type: 'diff', path: '/work/app/b.ts' }] }))
+    ).toEqual({ path: '/work/app/b.ts' });
   });
 });

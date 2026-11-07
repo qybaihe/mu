@@ -16,6 +16,7 @@ import {
   MU_NOTICE_KEYS,
   MU_NOTICE_LINKS,
   muNotice,
+  OPENAI_KEY_KEYS,
 } from '@/renderer/pages/conversation/Messages/acp/muNotice';
 import { openExternalUrl } from '@/renderer/utils/platform';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
@@ -23,11 +24,14 @@ import zhMu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 
 // The mu bridge's notices (a `mu:notice:` tool call with the code in its input) are one line in the reader's language.
 
-vi.mock('@/renderer/utils/platform', () => ({ openExternalUrl: vi.fn(async () => {}) }));
+/** Whether the app runs on a Mac, where it adds decision models from Hugging Face. */
+const platform = vi.hoisted(() => ({ mac: true }));
+vi.mock('@/renderer/utils/platform', () => ({ openExternalUrl: vi.fn(async () => {}), isMacOS: () => platform.mac }));
 
 afterEach(() => {
   cleanup();
   vi.mocked(openExternalUrl).mockClear();
+  platform.mac = true;
 });
 
 const LOCALES = join(__dirname, '../../../packages/desktop/src/renderer/services/i18n/locales');
@@ -75,7 +79,11 @@ describe('the bridge’s notices', () => {
           .reduce<unknown>((at, name) => (at as Record<string, unknown> | undefined)?.[name], mu);
       for (const code of MU_NOTICE_CODES)
         expect(sentence(MU_NOTICE_KEYS[code]), `${language} ${code}`).toEqual(expect.any(String));
-      for (const key of Object.values(FREE_JEV_UNAVAILABLE_KEYS))
+      for (const key of [
+        ...Object.values(FREE_JEV_UNAVAILABLE_KEYS),
+        ...Object.values(OPENAI_KEY_KEYS),
+        'mu.notices.layaRemovedNoModels',
+      ])
         expect(sentence(key), `${language} ${key}`).toEqual(expect.any(String));
     }
   });
@@ -101,7 +109,9 @@ describe('the bridge’s notices', () => {
     expect(screen.getByTestId('mu-notice')).toHaveTextContent(zhMu.notices.answerLost);
     zh.unmount();
     const en = show('en', lost);
-    expect(screen.getByTestId('mu-notice')).toHaveTextContent(MU_NOTICES.answer_lost);
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(
+      "mu didn't receive your answer, so it continued as if you had declined."
+    );
     en.unmount();
     show('zh', notice({ title: 'Something new', raw_input: { notice: 'newer' } }));
     expect(screen.getByTestId('mu-notice')).toHaveTextContent('Something new');
@@ -252,6 +262,69 @@ describe('the free Jev', () => {
   });
 });
 
+describe('OpenAI’s decision model without a usable key', () => {
+  it('says why, as a warning, in the reader’s language', () => {
+    const keyless = (code?: string) =>
+      notice({ title: 'mu: no OpenAI key', raw_input: { notice: 'openai_key', ...(code ? { code } : {}) } });
+    expect(muNotice(keyless('rejected'))).toEqual({
+      code: 'openai_key',
+      title: 'mu: no OpenAI key',
+      reason: 'rejected',
+    });
+    const rejected = showNotice('en', keyless('rejected'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(enMu.notices.openaiKey.rejected);
+    expect(screen.getByTestId('mu-notice')).toHaveAttribute('data-code', 'openai_key');
+    // The warning's mark, not the quiet one of a notice that only informs.
+    expect(screen.getByTestId('mu-notice').querySelector('.text-warning')).not.toBeNull();
+    rejected.unmount();
+    const missing = showNotice('zh', keyless('missing'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(zhMu.notices.openaiKey.missing);
+    missing.unmount();
+    // A reason this build has no words for is said in mu's own; none at all, the missing key's line.
+    const newer = showNotice('en', keyless('newer'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent('mu: no OpenAI key');
+    newer.unmount();
+    showNotice('en', notice({ title: '', raw_input: { notice: 'openai_key' } }));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(enMu.notices.openaiKey.missing);
+  });
+});
+
+describe('Laya, gone from mu', () => {
+  const removed = (judge?: string) =>
+    notice({
+      title: 'mu: Laya is no longer built in, so your judge is now mude 1.0.',
+      raw_input: { notice: 'laya_removed', ...(judge ? { judge } : {}) },
+    });
+
+  it('says which judge took its place, and that another decision model comes from Hugging Face', () => {
+    expect(muNotice(removed('mude'))).toEqual({
+      code: 'laya_removed',
+      title: 'mu: Laya is no longer built in, so your judge is now mude 1.0.',
+      judge: 'mude',
+    });
+    const mude = showNotice('en', removed('mude'));
+    expect(screen.getByTestId('mu-notice')).toHaveAttribute('data-code', 'laya_removed');
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(
+      'Laya is no longer built into mu, so your judge is now mude 1.0. To use another decision model, add it from ' +
+        'Hugging Face under Settings → Judges.'
+    );
+    mude.unmount();
+    // No judge named: Jev, mu's default.
+    showNotice('zh', removed());
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(
+      'mu 不再内置 Laya，你的判定器现在是 Jev。想用其他决策模型，在「设置 → 判定器」里从 Hugging Face 添加。'
+    );
+  });
+
+  it('offers no decision model from Hugging Face where the app adds none (Windows, Linux)', () => {
+    platform.mac = false;
+    showNotice('en', removed('jev'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(
+      /^Laya is no longer built into mu, so your judge is now Jev\.$/
+    );
+  });
+});
+
 describe('a stopped reply, and what mu notified', () => {
   it('ends a stopped reply with a line that says so', () => {
     showNotice('zh', notice({ title: MU_NOTICES.stopped, raw_input: { notice: 'stopped' } }));
@@ -294,5 +367,17 @@ describe('what mu told the model', () => {
   it('says it in general words for a kind this build does not know', () => {
     showNotice('en', notice({ title: 'Psst', rawInput: { notice: 'to_model', kind: 'kyrn.newer', text: 'Psst' } }));
     expect(screen.getByTestId('mu-notice')).toHaveTextContent(enMu.notices.toModel.other);
+  });
+
+  it('marks a reminder to finish with the judge’s diamond, since only a verdict sends one, and the rest with a bell', () => {
+    const sent = 'Your last message said what you would do next, and the run ended before you did it. Do it now.';
+    showNotice('en', notice({ title: sent, rawInput: { notice: 'to_model', kind: 'kyrn.nudge', text: sent } }));
+    expect(screen.getByTestId('mu-notice').querySelector('[data-mark="judge"]')).not.toBeNull();
+    cleanup();
+    showNotice(
+      'en',
+      notice({ title: 'Psst', rawInput: { notice: 'to_model', kind: 'kyrn.diagnostics', text: 'Psst' } })
+    );
+    expect(screen.getByTestId('mu-notice').querySelector('[data-mark="judge"]')).toBeNull();
   });
 });

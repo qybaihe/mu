@@ -22,10 +22,10 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -39,12 +39,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      # Builds every package and refreshes the model catalog that the type check reads.
+      # Builds every package with the model catalog in packages/ai/model-catalog.json (see model-catalog.yml).
       - name: Build
-        run: npm run build
+        run: npm run build:pinned
 
       - name: Check (lint, format, types)
         run: npm run check
+
+      - name: Build the pi-env daemon
+        run: npm run build:daemon --workspace packages/env
 
       # Tests that need a real provider skip themselves without API keys. mu's own tests use a mock judge
       # and a fake model, and never call a real one.
@@ -60,11 +63,11 @@ jobs:
         working-directory: desktop
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Node 24, as on the developers' machines: the duration and list formats in the tests follow its ICU.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
 
@@ -79,7 +82,7 @@ jobs:
       - name: Run postinstall
         run: bun run postinstall || true
 
-      # What AionUi checked before every commit (desktop/.pre-commit-config.yaml): oxlint's errors (its warnings stay
+      # What the desktop app checks before every commit (desktop/.pre-commit-config.yaml): oxlint's errors (its warnings stay
       # advisory), oxfmt's formatting, and the locale files against the generated i18n-keys.d.ts.
       - name: Lint
         run: bun run lint
@@ -96,6 +99,31 @@ jobs:
       - name: Unit tests
         run: bunx vitest run
 
+  # Every file of pi's that mu changes has an entry in kyrn/docs/fork-ledger.md saying why, so a weekly upstream merge
+  # that conflicts there shows what mu's side is for. Compared with the last upstream commit merged into this one.
+  fork-ledger:
+    name: Fork ledger
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Fetch pi upstream
+        run: |
+          git remote add upstream https://github.com/earendil-works/pi.git
+          git fetch upstream main --no-tags
+
+      - name: Check the ledger
+        run: node scripts/fork-ledger.mjs --require-upstream
+
   mcp-conformance:
     runs-on: ubuntu-latest
     steps:
@@ -103,7 +131,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
           cache: npm

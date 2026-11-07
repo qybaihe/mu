@@ -758,10 +758,10 @@ Please check your local CLI tool authentication status`,
       entries.push({
         key: 'mcp',
         icon: <Shield theme='outline' size='16' />,
-        label: t('conversation.mcp.selected', { defaultValue: 'Selected MCP' }),
+        label: t('conversation.mcp.selected', { defaultValue: 'Selected MCP servers' }),
         variant: 'muted',
         submenu: {
-          title: t('conversation.mcp.selected', { defaultValue: 'Selected MCP' }),
+          title: t('conversation.mcp.selected', { defaultValue: 'Selected MCP servers' }),
           selectable: false,
           options: mcpOptions,
           onSelect: () => undefined,

@@ -302,7 +302,7 @@ export async function applyPlan(
 			input: Buffer.from(patch, "latin1"),
 			signal,
 		});
-		if (staged.code !== 0) return restore(step, `the patch did not apply: ${lastLine(staged.stderr)}`);
+		if (staged.code !== 0) return restore(step, `the patch didn't apply: ${lastLine(staged.stderr)}`);
 		const committed = await git(["commit", "-q", "-m", commit.message], { cwd, signal, timeoutMs: 300_000 });
 		if (committed.code !== 0)
 			return restore(step, lastLine(committed.stderr) || committed.stdout.toString("utf8").trim());

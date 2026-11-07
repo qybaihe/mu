@@ -13,16 +13,16 @@ import {
 
 describe('resolveBrowserUrl', () => {
   it('builds the URL from the port inherited down the process tree', () => {
-    expect(resolveBrowserUrl({ env: { AIONUI_CDP_ACTIVE_PORT: '9230' } })).toBe('http://127.0.0.1:9230');
+    expect(resolveBrowserUrl({ env: { MU_CDP_ACTIVE_PORT: '9230' } })).toBe('http://127.0.0.1:9230');
   });
 
   it('pins the host to loopback so the agent can never be aimed at a remote debugger', () => {
-    expect(resolveBrowserUrl({ env: { AIONUI_CDP_ACTIVE_PORT: '9230' } })).toMatch(/^http:\/\/127\.0\.0\.1:/);
+    expect(resolveBrowserUrl({ env: { MU_CDP_ACTIVE_PORT: '9230' } })).toMatch(/^http:\/\/127\.0\.0\.1:/);
   });
 
   it('rejects malformed or out-of-range ports', () => {
     for (const port of ['0', '-1', 'abc', '70000', '9230.5', '']) {
-      expect(resolveBrowserUrl({ env: { AIONUI_CDP_ACTIVE_PORT: port } })).toBeNull();
+      expect(resolveBrowserUrl({ env: { MU_CDP_ACTIVE_PORT: port } })).toBeNull();
     }
   });
 
@@ -36,21 +36,21 @@ describe('resolveBrowserUrl', () => {
     expect(resolveBrowserUrl({ env: {} })).toBeNull();
   });
 
-  it('ignores the user-facing AIONUI_CDP_PORT so a disabled setting cannot be re-enabled by inheritance', () => {
-    // AIONUI_CDP_PORT 是「用户输入」,优先级高于配置文件。如果这里也读它,
+  it('ignores the user-facing MU_CDP_PORT so a disabled setting cannot be re-enabled by inheritance', () => {
+    // MU_CDP_PORT 是「用户输入」,优先级高于配置文件。如果这里也读它,
     // 用户关掉 CDP 后点应用内重启,继承来的值会被当成「用户要求开启」,
     // 把刚保存的设置悄悄覆盖掉。两个用途必须分开。
     //
-    // AIONUI_CDP_PORT is user input that outranks the config file. Reading it here
+    // MU_CDP_PORT is user input that outranks the config file. Reading it here
     // too would mean a disabled setting gets silently re-enabled after an in-app
     // restart, because the relaunched process inherits the value.
-    expect(resolveBrowserUrl({ env: { AIONUI_CDP_PORT: '9230' } })).toBeNull();
+    expect(resolveBrowserUrl({ env: { MU_CDP_PORT: '9230' } })).toBeNull();
   });
 });
 
 describe('resolveBridgeToken', () => {
   it('returns the token inherited from the process tree', () => {
-    expect(resolveBridgeToken({ env: { AIONUI_CDP_BRIDGE_TOKEN: 'abc123' } })).toBe('abc123');
+    expect(resolveBridgeToken({ env: { MU_CDP_BRIDGE_TOKEN: 'abc123' } })).toBe('abc123');
   });
 
   it('returns null when absent, so the caller refuses to start rather than connecting unauthenticated', () => {
@@ -58,16 +58,16 @@ describe('resolveBridgeToken', () => {
   });
 
   it('treats a whitespace-only token as absent', () => {
-    expect(resolveBridgeToken({ env: { AIONUI_CDP_BRIDGE_TOKEN: '   ' } })).toBeNull();
+    expect(resolveBridgeToken({ env: { MU_CDP_BRIDGE_TOKEN: '   ' } })).toBeNull();
   });
 
   it('trims surrounding whitespace picked up from env plumbing', () => {
-    expect(resolveBridgeToken({ env: { AIONUI_CDP_BRIDGE_TOKEN: ' tok \n' } })).toBe('tok');
+    expect(resolveBridgeToken({ env: { MU_CDP_BRIDGE_TOKEN: ' tok \n' } })).toBe('tok');
   });
 });
 
 /**
- * 回归测试：issue #3883 —— Windows 上 aionui-browser MCP 完全起不来。
+ * 回归测试：Windows 上内置浏览器 MCP 完全起不来。
  *
  * npx 在 Windows 上是 npx.cmd，批处理文件没有终端无法自己执行，直接 spawn 会抛 EINVAL
  * （CVE-2024-27980 之后 Node 收紧了 .cmd 处理）。旧代码只是把可执行名换成 'npx.cmd'，
@@ -76,7 +76,7 @@ describe('resolveBridgeToken', () => {
  * 这条分支此前没有任何测试覆盖（spawn 在模块顶层，单测 import 不了 browserServer.ts），
  * 所以缺陷得以合并进主干。现在命令行的组装被抽成纯函数，能直接钉住。
  *
- * Regression test for issue #3883: the aionui-browser MCP never starts on Windows. npx is
+ * Regression test: the built-in browser MCP never started on Windows. npx is
  * npx.cmd there, a batch file that cannot execute without a terminal, so spawning it directly
  * throws EINVAL (Node tightened .cmd handling after CVE-2024-27980). The old code merely
  * renamed the executable to 'npx.cmd' while its own comment said spawning without a shell

@@ -8,6 +8,7 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { TChatConversation } from '@/common/config/storage';
 import { resolveAssistantConfigId, usePresetAssistantInfo } from '@/renderer/hooks/agent/usePresetAssistantInfo';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const useSWRMock = vi.fn();
 let currentLanguage = 'en-US';
@@ -204,7 +205,7 @@ describe('usePresetAssistantInfo', () => {
         id: 'assistant-local-avatar',
         source: 'user',
         name: 'Local Avatar',
-        avatar: '/Users/demo/.aionui/assistant-avatars/assistant-local-avatar.jpg',
+        avatar: '/Users/demo/.mu-desktop/assistant-avatars/assistant-local-avatar.jpg',
         backend: 'codex',
       },
     } as TChatConversation;
@@ -236,7 +237,7 @@ describe('usePresetAssistantInfo', () => {
         id: 'assistant-local-avatar',
         source: 'user',
         name: 'Local Avatar',
-        avatar: '/Users/demo/.aionui/assistant-avatars/assistant-local-avatar.jpg',
+        avatar: '/Users/demo/.mu-desktop/assistant-avatars/assistant-local-avatar.jpg',
         backend: 'codex',
       },
     } as TChatConversation;
@@ -531,12 +532,14 @@ describe('usePresetAssistantInfo', () => {
     });
 
     const named = renderHook(() =>
-      usePresetAssistantInfo(makeConversation({ agent_id: 'runtime-1', agent_name: 'Aion CLI', backend: 'aionrs' }))
+      usePresetAssistantInfo(
+        makeConversation({ agent_id: 'runtime-1', agent_name: 'Aion CLI', backend: BUILTIN_AGENT })
+      )
     );
     expect(named.result.current.info?.name).toBe('mu');
 
     const unnamed = renderHook(() =>
-      usePresetAssistantInfo(makeConversation({ agent_id: 'runtime-1', backend: 'aionrs' }))
+      usePresetAssistantInfo(makeConversation({ agent_id: 'runtime-1', backend: BUILTIN_AGENT }))
     );
     expect(unnamed.result.current.info?.name).toBe('mu');
   });
@@ -569,7 +572,7 @@ describe('usePresetAssistantInfo', () => {
 
     const conversation = {
       ...makeConversation({}),
-      assistant: { id: 'aionui-assistant', name: 'AionUi Butler', avatar: '🤵', backend: 'aionrs' },
+      assistant: { id: 'aionui-assistant', name: 'AionUi Butler', avatar: '🤵', backend: BUILTIN_AGENT },
     } as TChatConversation;
     const { result } = renderHook(() => usePresetAssistantInfo(conversation));
 

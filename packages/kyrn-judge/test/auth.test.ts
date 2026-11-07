@@ -1,10 +1,11 @@
 import { existsSync, mkdirSync, mkdtempSync, rmdirSync, rmSync } from "node:fs";
+import { createServer, get } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AuthInteraction, ModelsStore, Provider } from "@earendil-works/pi-ai";
+import type { Api, AuthInteraction, LoginOptions, Model, ModelsStore, Provider } from "@earendil-works/pi-ai";
 import * as pi from "@earendil-works/pi-coding-agent";
-import { afterEach, describe, expect, it } from "vitest";
-import { AUTH_COMMANDS as LAUNCHER_COMMANDS } from "../../../kyrn/bin/mu.mjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { AUTH_USAGE, AUTH_COMMANDS as LAUNCHER_COMMANDS } from "../../../kyrn/bin/mu.mjs";
 import { exitWhenUnlocked, holdLocksUntilExit } from "../src/auth/exit.ts";
 import {
 	AUTH_COMMANDS,
@@ -29,14 +30,23 @@ class FakeRuntime implements AuthRuntime {
 	registered: string[] = [];
 	refreshed: { providers?: string[]; allowNetwork?: boolean }[] = [];
 	loggedOut: string[] = [];
+	/** What each sign-in told the flow about this mu. */
+	loginOptions: (LoginOptions | undefined)[] = [];
 	models: Record<string, { id: string; name?: string }[]> = {
 		"openai-codex": [{ id: "gpt-5.4", name: "GPT-5.4" }, { id: "gpt-5.5", name: "GPT-5.5" }, { id: "gpt-5.5-mini" }],
+		openai: [{ id: "gpt-5.4", name: "GPT-5.4" }, { id: "gpt-5.5", name: "GPT-5.5" }, { id: "gpt-5.5-mini" }],
 		anthropic: [{ id: "claude-opus-4-8", name: "Claude Opus 4.8" }],
 		"google-antigravity": [{ id: "gemini-3.1-pro", name: "Gemini 3.1 Pro" }],
 	};
 	flow: (interaction: AuthInteraction) => Promise<void> = async () => {};
 
-	async login(providerId: string, type: "oauth", interaction: AuthInteraction): Promise<unknown> {
+	async login(
+		providerId: string,
+		type: "oauth",
+		interaction: AuthInteraction,
+		options?: LoginOptions,
+	): Promise<unknown> {
+		this.loginOptions.push(options);
 		await this.flow(interaction);
 		this.credentials.push({ providerId, type });
 		// What pi hands back is the credential itself: it must stay inside the runner.
@@ -48,6 +58,14 @@ class FakeRuntime implements AuthRuntime {
 	}
 	getModels(providerId?: string) {
 		return providerId ? (this.models[providerId] ?? []) : Object.values(this.models).flat();
+	}
+	/** The models of every provider with a credential, as pi's runtime gives them (only what enabledModels reads). */
+	async getAvailable() {
+		return this.credentials.flatMap(({ providerId }) =>
+			(this.models[providerId] ?? []).map(
+				(model) => ({ ...model, name: model.name ?? model.id, provider: providerId }) as unknown as Model<Api>,
+			),
+		);
 	}
 	async listCredentials() {
 		return this.credentials;
@@ -85,16 +103,22 @@ function pipe() {
 	};
 }
 
-const preferred = { "openai-codex": "gpt-5.5", anthropic: "claude-opus-4-8" };
+const preferred = { "openai-codex": "gpt-5.5", openai: "gpt-5.5", anthropic: "claude-opus-4-8" };
 const googleish = (id: string) => ({ id }) as Provider;
+
+const USAGE =
+	"usage: mu auth status | mu auth login <provider> [--paste] | mu auth logout <provider> | mu auth enable <provider> [--default | <model>...]";
 
 describe("mu auth", () => {
 	it("says who is signed in with a subscription, and what this mu can sign in to", async () => {
+		// ChatGPT is offered through Sign in with ChatGPT (`openai`). An account signed in before through the Codex CLI's
+		// login or with a Claude subscription still shows and signs out, but neither sign-in is offered any more.
 		const runtime = new FakeRuntime();
 		runtime.credentials = [
 			{ providerId: "openai-codex", type: "oauth" },
+			{ providerId: "anthropic", type: "oauth" },
 			// A key is not a subscription sign-in, and an unknown provider is not the app's business.
-			{ providerId: "anthropic", type: "api_key" },
+			{ providerId: "xai", type: "api_key" },
 			{ providerId: "openrouter", type: "oauth" },
 		];
 		const { io, said } = pipe();
@@ -103,7 +127,7 @@ describe("mu auth", () => {
 		expect(said).toEqual([
 			{
 				type: "status",
-				offered: ["openai-codex", "anthropic", "xai"],
+				offered: ["openai", "xai"],
 				signedIn: [
 					{
 						provider: "openai-codex",
@@ -113,8 +137,17 @@ describe("mu auth", () => {
 							{ id: "gpt-5.4", name: "GPT-5.4" },
 							{ id: "gpt-5.5-mini", name: "gpt-5.5-mini" },
 						],
+						// Nothing chosen yet: every model is enabled.
+						enabled: ["gpt-5.5", "gpt-5.4", "gpt-5.5-mini"],
+					},
+					{
+						provider: "anthropic",
+						models: [{ id: "claude-opus-4-8", name: "Claude Opus 4.8" }],
+						enabled: ["claude-opus-4-8"],
 					},
 				],
+				// Nothing else has a usable model here.
+				usable: [],
 			},
 		]);
 		expect(runtime.refreshed).toEqual([]);
@@ -146,6 +179,28 @@ describe("mu auth", () => {
 		expect(said.at(-1)).toMatchObject({ type: "status", signedIn: [] });
 	});
 
+	it("drops the list of models an account gave when it signs out, and keeps pi's own catalogue", async () => {
+		const runtime = new FakeRuntime();
+		runtime.credentials = [
+			{ providerId: "google-antigravity", type: "oauth" },
+			{ providerId: "openai-codex", type: "oauth" },
+			{ providerId: "xai", type: "api_key" },
+		];
+		const forgotten: string[] = [];
+		const forgetModels = async (providerId: string) => {
+			forgotten.push(providerId);
+		};
+		const extra = [googleish("google-antigravity")];
+		const { io } = pipe();
+		expect(await runAuth(["logout", "google-antigravity"], { runtime, preferred, extra, io, forgetModels })).toBe(0);
+		// Codex's models come from pi's catalogue, the same for every account: they stay for the next sign-in.
+		expect(await runAuth(["logout", "openai-codex"], { runtime, preferred, extra, io, forgetModels })).toBe(0);
+		// A key is not signed out, and nothing of its provider is dropped.
+		expect(await runAuth(["logout", "xai"], { runtime, preferred, extra, io, forgetModels })).toBe(0);
+		expect(runtime.loggedOut).toEqual(["google-antigravity", "openai-codex"]);
+		expect(forgotten).toEqual(["google-antigravity"]);
+	});
+
 	it("walks a sign-in: the page to open, the browser chosen for the person, a pasted code, then the models", async () => {
 		const runtime = new FakeRuntime();
 		const asked: string[] = [];
@@ -169,7 +224,7 @@ describe("mu auth", () => {
 			);
 		};
 		const app = pipe();
-		const running = runAuth(["login", "openai-codex"], { runtime, preferred, extra: [], io: app.io });
+		const running = runAuth(["login", "openai"], { runtime, preferred, extra: [], io: app.io });
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		// The method question never reaches the app: from the app it is always the browser on this machine.
 		expect(app.said).toEqual([
@@ -187,15 +242,26 @@ describe("mu auth", () => {
 			{ type: "signed_in" },
 			{
 				type: "done",
-				provider: "openai-codex",
+				provider: "openai",
 				models: [
 					{ id: "gpt-5.5", name: "GPT-5.5" },
 					{ id: "gpt-5.4", name: "GPT-5.4" },
 					{ id: "gpt-5.5-mini", name: "gpt-5.5-mini" },
 				],
+				enabled: ["gpt-5.5", "gpt-5.4", "gpt-5.5-mini"],
 			},
 		]);
 		expect(JSON.stringify(app.said)).not.toContain(SECRET);
+	});
+
+	it("signs in with ChatGPT as mu, with this installation's id", async () => {
+		const runtime = new FakeRuntime();
+		const login: LoginOptions = { agentName: "mu", getDeviceId: () => "device-1" };
+		const app = pipe();
+		expect(await runAuth(["login", "openai"], { runtime, preferred, extra: [], io: app.io, login })).toBe(0);
+		expect(runtime.loginOptions).toEqual([login]);
+		expect(runtime.credentials).toEqual([{ providerId: "openai", type: "oauth" }]);
+		expect(app.said.at(-1)).toMatchObject({ type: "done", provider: "openai" });
 	});
 
 	it("reads what an account can use once it is signed in, where the account decides that", async () => {
@@ -211,7 +277,148 @@ describe("mu auth", () => {
 				{ id: "gemini-3.1-pro", name: "Gemini 3.1 Pro" },
 				{ id: "claude-sonnet-4-6", name: "claude-sonnet-4-6" },
 			],
+			enabled: ["gemini-3.1-pro", "claude-sonnet-4-6"],
 		});
+	});
+
+	/** pi's global `enabledModels`, kept in memory. */
+	function setting(patterns?: string[]) {
+		const state = { patterns, writes: 0 };
+		return {
+			state,
+			enabledModels: {
+				read: () => state.patterns,
+				write: async (next: string[] | undefined) => {
+					state.patterns = next;
+					state.writes += 1;
+				},
+			},
+		};
+	}
+
+	it("chooses which of an account's models are enabled, and leaves the others as they were", async () => {
+		const runtime = new FakeRuntime();
+		runtime.credentials = [
+			{ providerId: "openai", type: "oauth" },
+			{ providerId: "google-antigravity", type: "oauth" },
+		];
+		const extra = [googleish("google-antigravity")];
+		const { state, enabledModels } = setting();
+		const run = async (argv: string[]) => {
+			const app = pipe();
+			const code = await runAuth(argv, { runtime, preferred, extra, io: app.io, enabledModels });
+			return { code, line: app.said.at(-1) };
+		};
+
+		const narrowed = await run(["enable", "openai", "gpt-5.5", "gpt-5.4"]);
+		expect(narrowed.code).toBe(0);
+		expect(state.patterns).toEqual(["google-antigravity/**", "openai/gpt-5.5", "openai/gpt-5.4"]);
+		expect(narrowed.line).toMatchObject({
+			type: "status",
+			signedIn: [
+				{ provider: "openai", enabled: ["gpt-5.5", "gpt-5.4"] },
+				{ provider: "google-antigravity", enabled: ["gemini-3.1-pro"] },
+			],
+		});
+
+		// None of Antigravity's: the ChatGPT models stay.
+		expect((await run(["enable", "google-antigravity"])).code).toBe(0);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "openai/gpt-5.4"]);
+
+		// Back to the default for both: no list is left.
+		expect((await run(["enable", "google-antigravity", "--default"])).code).toBe(0);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "openai/gpt-5.4", "google-antigravity/**"]);
+		expect((await run(["enable", "openai", "--default"])).code).toBe(0);
+		expect(state.patterns).toBeUndefined();
+	});
+
+	it("lists the providers an API key makes usable, and chooses their models the same way", async () => {
+		const runtime = new FakeRuntime();
+		runtime.models.openrouter = [
+			{ id: "anthropic/claude-opus-4.8", name: "Claude Opus 4.8" },
+			{ id: "openai/gpt-5.5", name: "GPT-5.5" },
+			{ id: "qwen/qwen3-coder" },
+		];
+		runtime.credentials = [
+			{ providerId: "openai", type: "oauth" },
+			{ providerId: "openrouter", type: "api_key" },
+		];
+		const { state, enabledModels } = setting();
+		const run = async (argv: string[]) => {
+			const app = pipe();
+			const code = await runAuth(argv, { runtime, preferred, extra: [], io: app.io, enabledModels });
+			return { code, line: app.said.at(-1) };
+		};
+
+		const before = await run(["status"]);
+		expect(before.line).toMatchObject({
+			signedIn: [{ provider: "openai", enabled: ["gpt-5.5", "gpt-5.4", "gpt-5.5-mini"] }],
+			usable: [
+				{
+					provider: "openrouter",
+					models: [
+						{ id: "anthropic/claude-opus-4.8", name: "Claude Opus 4.8" },
+						{ id: "openai/gpt-5.5", name: "GPT-5.5" },
+						{ id: "qwen/qwen3-coder", name: "qwen/qwen3-coder" },
+					],
+					enabled: ["anthropic/claude-opus-4.8", "openai/gpt-5.5", "qwen/qwen3-coder"],
+				},
+			],
+		});
+
+		// A model id with a slash of its own is one model, not a provider.
+		const narrowed = await run(["enable", "openrouter", "qwen/qwen3-coder"]);
+		expect(narrowed.code).toBe(0);
+		expect(state.patterns).toEqual(["openai/**", "openrouter/qwen/qwen3-coder"]);
+		expect(narrowed.line).toMatchObject({
+			signedIn: [{ provider: "openai", enabled: ["gpt-5.5", "gpt-5.4", "gpt-5.5-mini"] }],
+			usable: [{ provider: "openrouter", enabled: ["qwen/qwen3-coder"] }],
+		});
+		expect((await run(["enable", "openrouter", "--default"])).code).toBe(0);
+		expect(state.patterns).toBeUndefined();
+	});
+
+	it("refuses a model the account does not have, and a choice that leaves no model at all", async () => {
+		const runtime = new FakeRuntime();
+		runtime.credentials = [{ providerId: "openai", type: "oauth" }];
+		const { state, enabledModels } = setting();
+		const cases: [string[], string][] = [
+			[["enable", "openai", "gpt-9"], "openai has no model gpt-9"],
+			[["enable", "openai"], "At least one model must stay enabled"],
+			[["enable", "xai", "grok-5"], "xai has no model grok-5"],
+			[
+				["enable", "xai", "--default"],
+				"No models of xai are available: sign in to it, or give it an API key, first",
+			],
+			[["enable", "openai", "gpt-5.5", "--default"], USAGE],
+		];
+		for (const [argv, message] of cases) {
+			const app = pipe();
+			expect(await runAuth(argv, { runtime, preferred, extra: [], io: app.io, enabledModels })).toBe(1);
+			expect(app.said).toEqual([{ type: "error", message }]);
+		}
+		expect(state.writes).toBe(0);
+		const app = pipe();
+		expect(await runAuth(["enable", "openai", "--default"], { runtime, preferred, extra: [], io: app.io })).toBe(1);
+		expect(app.said).toEqual([{ type: "error", message: "This version of mu can't choose an account's models" }]);
+	});
+
+	it("offers a newly signed-in account that a chosen list leaves out", async () => {
+		const runtime = new FakeRuntime();
+		runtime.credentials = [{ providerId: "openai", type: "oauth" }];
+		const { state, enabledModels } = setting(["openai/gpt-5.5"]);
+		const app = pipe();
+		const extra = [googleish("google-antigravity")];
+		expect(
+			await runAuth(["login", "google-antigravity"], { runtime, preferred, extra, io: app.io, enabledModels }),
+		).toBe(0);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "google-antigravity/**"]);
+		expect(app.said.at(-1)).toMatchObject({ type: "done", enabled: ["gemini-3.1-pro", "claude-sonnet-4-6"] });
+
+		// Signed in again: its models are already offered, and nothing is written.
+		const again = pipe();
+		await runAuth(["login", "google-antigravity"], { runtime, preferred, extra, io: again.io, enabledModels });
+		expect(state.writes).toBe(1);
 	});
 
 	it("stops when the app cancels, and when the app goes away", async () => {
@@ -223,7 +430,7 @@ describe("mu auth", () => {
 				await interaction.prompt({ type: "text", message: "Your e-mail" });
 			};
 			const app = pipe();
-			const running = runAuth(["login", "anthropic"], { runtime, preferred, extra: [], io: app.io });
+			const running = runAuth(["login", "xai"], { runtime, preferred, extra: [], io: app.io });
 			await new Promise((resolve) => setTimeout(resolve, 0));
 			if (stop === "cancel") app.send({ type: "cancel" });
 			else app.close();
@@ -257,11 +464,20 @@ describe("mu auth", () => {
 	});
 
 	it("says what went wrong, as a line, with exit code 1", async () => {
+		const usage = USAGE;
 		const cases: [string[], string][] = [
-			[[], "usage: mu auth status | mu auth login <provider> | mu auth logout <provider>"],
-			[["login"], "usage: mu auth status | mu auth login <provider> | mu auth logout <provider>"],
-			[["login", "google-gemini-cli"], "Signing in to google-gemini-cli is not available in this mu"],
-			[["logout", "openrouter"], "Signing in to openrouter is not available in this mu"],
+			[[], usage],
+			[["enable", "openai", "--paste"], usage],
+			[["login", "openai", "--default"], usage],
+			[["login"], usage],
+			[["login", "openai", "--fast"], usage],
+			[["logout", "openai", "--paste"], usage],
+			[["login", "openai", "xai"], usage],
+			[["login", "google-gemini-cli"], "This version of mu can't sign in to google-gemini-cli"],
+			[["logout", "openrouter"], "This version of mu can't sign in to openrouter"],
+			// No longer offered: signed out, never signed in anew.
+			[["login", "anthropic"], "This version of mu can't sign in to anthropic"],
+			[["login", "openai-codex"], "This version of mu can't sign in to openai-codex"],
 		];
 		for (const [argv, message] of cases) {
 			const app = pipe();
@@ -273,8 +489,76 @@ describe("mu auth", () => {
 			throw new Error("Login cancelled");
 		};
 		const app = pipe();
-		expect(await runAuth(["login", "openai-codex"], { runtime: failing, preferred, extra: [], io: app.io })).toBe(1);
+		expect(await runAuth(["login", "openai"], { runtime: failing, preferred, extra: [], io: app.io })).toBe(1);
 		expect(app.said).toEqual([{ type: "error", message: "Login cancelled" }]);
+	});
+
+	it("passes on the code of an error the app can act on, with the program holding the callback port", async () => {
+		const runtime = new FakeRuntime();
+		runtime.flow = async () => {
+			// As pi's flows throw it (callback-port.ts); what the app is told is picked from it, nothing more.
+			throw Object.assign(new Error("Port 1455 is in use by codex (process 4321)"), {
+				code: "port_in_use",
+				port: 1455,
+				holder: { pid: 4321, command: "codex", cwd: "/somewhere/private" },
+				stack: "never sent",
+			});
+		};
+		const app = pipe();
+		expect(await runAuth(["login", "openai"], { runtime, preferred, extra: [], io: app.io })).toBe(1);
+		expect(app.said).toEqual([
+			{
+				type: "error",
+				message: "Port 1455 is in use by codex (process 4321)",
+				code: "port_in_use",
+				port: 1455,
+				holder: { pid: 4321, command: "codex" },
+			},
+		]);
+
+		// A code of the system's own (a socket's, say) is no part of the contract.
+		runtime.flow = async () => {
+			throw Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" });
+		};
+		const other = pipe();
+		await runAuth(["login", "openai"], { runtime, preferred, extra: [], io: other.io });
+		expect(other.said).toEqual([{ type: "error", message: "read ECONNRESET" }]);
+	});
+
+	it("signs in with the pasted address alone when asked to, telling the flow not to listen", async () => {
+		const runtime = new FakeRuntime();
+		const login: LoginOptions = { agentName: "mu", getDeviceId: () => "device-1" };
+		const app = pipe();
+		expect(await runAuth(["login", "openai", "--paste"], { runtime, preferred, extra: [], io: app.io, login })).toBe(
+			0,
+		);
+		expect(runtime.loginOptions).toEqual([{ ...login, pasteOnly: true }]);
+		expect(app.said.at(-1)).toMatchObject({ type: "done", provider: "openai" });
+	});
+
+	it("stops a sign-in at once when the process is told to end", async () => {
+		const runtime = new FakeRuntime();
+		let signal: AbortSignal | undefined;
+		runtime.flow = (interaction) => {
+			signal = interaction.signal;
+			return new Promise((_resolve, reject) => {
+				interaction.signal?.addEventListener("abort", () => reject(new Error("Login cancelled")), { once: true });
+			});
+		};
+		const ending = new AbortController();
+		const app = pipe();
+		const running = runAuth(["login", "openai"], {
+			runtime,
+			preferred,
+			extra: [],
+			io: app.io,
+			signal: ending.signal,
+		});
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(signal?.aborted).toBe(false);
+		ending.abort();
+		expect(await running).toBe(1);
+		expect(signal?.aborted).toBe(true);
 	});
 
 	it("keeps an account's model order when pi starts it on its first model, or knows no starting model", () => {
@@ -289,9 +573,150 @@ describe("mu auth", () => {
 
 	it("answers the same subcommands the launcher sends it, and finds its starting models in pi's own index", () => {
 		expect(LAUNCHER_COMMANDS).toEqual(AUTH_COMMANDS);
+		// mu auth --help names them before pi's own auth commands.
+		for (const command of AUTH_COMMANDS) expect(AUTH_USAGE).toContain(`mu auth ${command}`);
 		// The npm package runs `mu auth` on pi's bundle, whose index must carry both.
 		expect(typeof pi.ModelRuntime.create).toBe("function");
+		expect(typeof pi.FileModelsStore).toBe("function");
 		expect(pi.defaultModelPerProvider["openai-codex"]).toEqual(expect.any(String));
+	});
+});
+
+/**
+ * The desktop app's Sign in with ChatGPT, through `mu auth` on pi's own runtime and flow, on the real callback port
+ * (1455), into a credential store in a folder of its own. QA, 2026-10-23: the app's sign-in failed with "Port 1455 is
+ * in use, probably by an unfinished login in another pi session or by the Codex CLI". No account, no network: the
+ * browser is a request to the port, and OpenAI's token endpoint is a stub.
+ */
+describe.sequential("Sign in with ChatGPT through mu auth, on its callback port", () => {
+	const PORT = 1455;
+	const DEVICE_ID = "e61bbe28-07ef-466d-8e5d-a344f94ab305";
+	const login: LoginOptions = { agentName: "mu", getDeviceId: () => DEVICE_ID };
+	const dirs: string[] = [];
+
+	const portFree = () =>
+		new Promise<boolean>((resolve) => {
+			const probe = createServer();
+			probe.once("error", () => resolve(false));
+			probe.listen(PORT, "127.0.0.1", () => probe.close(() => resolve(true)));
+		});
+
+	/** pi's model runtime on a credential store of its own. */
+	const runtime = async () => {
+		const dir = mkdtempSync(join(tmpdir(), "mu-auth-port-"));
+		dirs.push(dir);
+		return pi.ModelRuntime.create({ authPath: join(dir, "auth.json"), modelsPath: null, refreshOnCreate: false });
+	};
+
+	/** One `mu auth login openai`, as the app runs it. `browser` comes back to the port once the page is opened. */
+	const signIn = (runtime: AuthRuntime, { browser }: { browser: boolean }) => {
+		const app = pipe();
+		let opened: () => void = () => {};
+		const page = new Promise<void>((resolve) => {
+			opened = resolve;
+		});
+		const say = app.io.say;
+		app.io.say = (message) => {
+			say(message);
+			const event = message.event as { type?: string; url?: string } | undefined;
+			if (message.type !== "event" || event?.type !== "auth_url" || !event.url) return;
+			opened();
+			if (!browser) return;
+			const authorize = new URL(event.url);
+			const callback = new URL(authorize.searchParams.get("redirect_uri") ?? "");
+			callback.searchParams.set("code", "authorization-code");
+			callback.searchParams.set("state", authorize.searchParams.get("state") ?? "");
+			callback.searchParams.set("client_id", "oaiapp_issued");
+			get(callback, { agent: false }, (response) => response.resume());
+		};
+		const done = runAuth(["login", "openai"], { runtime, preferred, extra: [], io: app.io, login });
+		return { app, page, done };
+	};
+
+	beforeEach(async (context) => {
+		// A real program on this machine holds the port (the Codex CLI's login): leave it alone.
+		if (!(await portFree())) context.skip();
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: string | URL | Request) => {
+				const url = input instanceof Request ? input.url : String(input);
+				if (url !== "https://auth.openai.com/api/accounts/oauth/token") return new Response("", { status: 404 });
+				return Response.json({
+					access_token: "access-token",
+					refresh_token: "refresh-token",
+					expires_in: 3600,
+					id_token: "id-token",
+					scope: "openid profile email offline_access resource.invoke chatgpt.tokens.use.direct",
+				});
+			}),
+		);
+	});
+
+	afterEach(async () => {
+		vi.unstubAllGlobals();
+		while (dirs.length > 0) rmSync(dirs.pop() as string, { recursive: true, force: true });
+		expect(await portFree()).toBe(true);
+	});
+
+	it("signs in twice in a row, and after a cancel, and after a sign-out", async () => {
+		const models = await runtime();
+		const first = signIn(models, { browser: true });
+		expect(await first.done).toBe(0);
+		expect(first.app.said.at(-1)).toMatchObject({ type: "done", provider: "openai" });
+		expect(await portFree()).toBe(true);
+
+		const again = signIn(models, { browser: true });
+		expect(await again.done).toBe(0);
+
+		// The person cancels: the port is given back with the answer.
+		const cancelled = signIn(models, { browser: false });
+		await cancelled.page;
+		expect(await portFree()).toBe(false);
+		cancelled.app.send({ type: "cancel" });
+		expect(await cancelled.done).toBe(1);
+		expect(await portFree()).toBe(true);
+		const afterCancel = signIn(models, { browser: true });
+		expect(await afterCancel.done).toBe(0);
+
+		const out = pipe();
+		expect(await runAuth(["logout", "openai"], { runtime: models, preferred, extra: [], io: out.io })).toBe(0);
+		expect(out.said.at(-1)).toMatchObject({ type: "status", signedIn: [] });
+		const afterSignOut = signIn(models, { browser: true });
+		expect(await afterSignOut.done).toBe(0);
+		expect(JSON.stringify(afterSignOut.app.said)).not.toContain("refresh-token");
+	});
+
+	it("takes the port over from a sign-in still waiting in another run, which says why it stopped", async () => {
+		const earlier = signIn(await runtime(), { browser: false });
+		await earlier.page;
+		const later = signIn(await runtime(), { browser: true });
+
+		expect(await earlier.done).toBe(1);
+		expect(earlier.app.said.at(-1)).toEqual({
+			type: "error",
+			message: "Sign-in stopped: a newer sign-in started and took over port 1455.",
+			code: "login_taken_over",
+		});
+		expect(await later.done).toBe(0);
+	});
+
+	it("tells the app which program keeps the port, and leaves that program alone", async () => {
+		const seen: string[] = [];
+		const codex = createServer((request, response) => {
+			seen.push(`${request.method} ${request.url}`);
+			response.writeHead(404).end("Not Found");
+		});
+		await new Promise<void>((resolve) => codex.listen(PORT, "127.0.0.1", resolve));
+		try {
+			const blocked = signIn(await runtime(), { browser: true });
+			expect(await blocked.done).toBe(1);
+			const line = blocked.app.said.at(-1);
+			expect(line).toMatchObject({ type: "error", code: "port_in_use", port: 1455 });
+			if (process.platform === "darwin") expect(line?.holder).toMatchObject({ pid: process.pid });
+			expect(seen).toEqual(["GET /pi-login"]);
+		} finally {
+			await new Promise((resolve) => codex.close(resolve));
+		}
 	});
 });
 

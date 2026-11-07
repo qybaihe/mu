@@ -1,5 +1,5 @@
 /**
- * Conversations people had in Claude Code or Codex, brought into mu to go on with them here.
+ * Conversations people had in Claude Code, Codex or ZCode, brought into mu to go on with them here.
  *
  * The harness reads the transcripts and writes each one as a mu session (`mu import`, `packages/kyrn-judge/src/import`
  * in the MU repository). With the native host on, that session is the conversation: the sidebar lists mu's sessions.
@@ -9,17 +9,30 @@
  * DOM.
  */
 
-export const IMPORT_TOOLS = ['claude-code', 'codex'] as const;
+export const IMPORT_TOOLS = ['claude-code', 'codex', 'zcode'] as const;
 export type ImportTool = (typeof IMPORT_TOOLS)[number];
 export const isImportTool = (value: unknown): value is ImportTool => IMPORT_TOOLS.includes(value as ImportTool);
 
 /** The tools' own names, the same in every language. */
-export const IMPORT_TOOL_NAMES: Record<ImportTool, string> = { 'claude-code': 'Claude Code', codex: 'Codex' };
+export const IMPORT_TOOL_NAMES: Record<ImportTool, string> = {
+  'claude-code': 'Claude Code',
+  codex: 'Codex',
+  zcode: 'ZCode',
+};
+
+/**
+ * The tool an imported session's first entry names. The harness writes that note in English, the same in every
+ * language (`importNote` in the MU repository): "This conversation was imported from Claude Code (…)".
+ */
+export function importToolOf(note: string): ImportTool | undefined {
+  const named = /\bimported from (.+?) \(/.exec(note)?.[1];
+  return IMPORT_TOOLS.find((tool) => IMPORT_TOOL_NAMES[tool] === named);
+}
 
 /** One conversation `mu import --list` found on this computer. */
 export type FoundChat = {
   tool: ImportTool;
-  /** The transcript. */
+  /** The transcript; a ZCode conversation is `<its database>#<its id>`. */
   path: string;
   /** The project folder it ran in; unset when the transcript does not say. */
   cwd?: string;
@@ -31,6 +44,8 @@ export type FoundChat = {
   size: number;
   /** The mu session made from it before, if any. */
   importedAs?: string;
+  /** It changed after it was imported: importing it again brings what is new. */
+  changed?: true;
   /** The app conversation that holds that session, if there is one. */
   conversationId?: string;
   /**
@@ -51,11 +66,13 @@ export const IMPORT_FAILURES = ['missing', 'notFile', 'notTranscript', 'empty', 
 export type ImportFailure = (typeof IMPORT_FAILURES)[number];
 
 /**
- * What became of one transcript: a new app conversation, the conversation that already holds it, or why it was left
- * out. `source` is the transcript's path.
+ * What became of one transcript: a new app conversation, the conversation that holds it brought up to date with what
+ * is new in it, the conversation that already holds it as it is, or why it was left out. `source` is the transcript's
+ * path.
  */
 export type ImportOutcome =
   | { status: 'imported'; source: string; tool: ImportTool; conversationId: string; name: string; native?: true }
+  | { status: 'updated'; source: string; tool: ImportTool; conversationId: string; name: string; native?: true }
   | { status: 'listed'; source: string; conversationId: string; name: string; native?: true }
   | { status: 'failed'; source: string; reason: ImportFailure; detail: string };
 
@@ -100,6 +117,14 @@ export type ImportedHistoryItem =
 export type ImportedHistory = { tool: ImportTool; source: string; items: ImportedHistoryItem[]; earlier: number };
 
 export type ChatGroup = { tool: ImportTool; chats: FoundChat[] };
+
+/** How many conversations each tool has that are not in the app yet, or changed since: what an import would bring. */
+export function importableByTool(chats: readonly FoundChat[]): { tool: ImportTool; count: number }[] {
+  return IMPORT_TOOLS.map((tool) => ({
+    tool,
+    count: chats.filter((chat) => chat.tool === tool && (!chat.conversationId || chat.changed)).length,
+  })).filter((entry) => entry.count > 0);
+}
 
 /**
  * The conversations under their tool, Claude Code first, each in the order the list came in (newest first). A query

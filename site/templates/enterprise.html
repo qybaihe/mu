@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% set E = L.enterprise %}
+{% set hf = "https://huggingface.co/qybaihe/" %}
+{% block title %}{{ E.title }} · mu{% endblock %}
+{% block description %}{{ E.lead | striptags }}{% endblock %}
+{% block content %}
+  <section class="wrap page-head">
+    <h1 class="intro" style="--d: 180ms">{{ E.h1 }}</h1>
+    <p class="page-lead intro" style="--d: 260ms">{{ E.lead }}</p>
+    <p class="ent-actions intro" style="--d: 320ms"><a class="btn primary" href="#contact">{{ E.cta }}</a><a class="btn" href="{{ url(L, pages.models) }}">{{ E.cta_models }}</a></p>
+  </section>
+
+  <section class="wrap models-section" id="mude">
+    <h2 data-reveal>{{ E.mude_h2 }}</h2>
+    <div class="grid two ent-run">
+      {% for C in E.run %}{% set name = ["mude-1.0-mlx-8bit", "mude-1.0"][loop.index0] %}<div class="card" data-reveal style="--d: {{ loop.index0 * 70 }}ms"><h3>{{ C.h3 }}</h3><p>{{ C.p }}</p><a class="card-code" href="{{ hf }}{{ name }}">huggingface.co/qybaihe/{{ name }}</a></div>
+      {% endfor %}
+    </div>
+    <a class="principles-more" data-reveal href="{{ url(L, pages.models) }}">{{ E.mude_link }}<span aria-hidden="true">→</span></a>
+  </section>
+
+  <section class="wrap models-section" id="custom">
+    <h2 data-reveal>{{ E.custom_h2 }}</h2>
+    <ol class="grid four ent-steps">
+      {% for S in E.steps %}<li class="card" data-reveal style="--d: {{ loop.index0 * 70 }}ms"><span class="num" aria-hidden="true">{{ "%02d" | format(loop.index) }}</span><h3>{{ S.h3 }}</h3><p>{{ S.p }}</p></li>
+      {% endfor %}
+    </ol>
+    <a class="principles-more" data-reveal href="{{ url(L, pages.mubench) }}#scoring">{{ E.custom_link }}<span aria-hidden="true">→</span></a>
+  </section>
+
+  <section class="wrap models-section" id="with-mu">
+    <h2 data-reveal>{{ E.mu_h2 }}</h2>
+    <div class="list">
+      {% for A in E.mu %}<div data-reveal style="--d: {{ (loop.index0 % 2) * 70 }}ms"><b>{{ A.b }}</b>{{ A.text }}</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="wrap models-section" id="questions">
+    <h2 data-reveal>{{ E.faq_h2 }}</h2>
+    <div class="list ent-faq">
+      {% for Q in E.faq %}<div data-reveal style="--d: {{ (loop.index0 % 2) * 70 }}ms"><b>{{ Q.q }}</b>{{ Q.a }}</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="wrap models-section" id="contact">
+    <h2 id="ent-contact-h2" data-reveal>{{ E.contact_h2 }}</h2>
+    {#- The form isn't connected to anything. Its fields have no names and method="dialog" outside a dialog submits
+        nowhere, so even without the script nothing leaves the page; the script only says "coming soon". -#}
+    <form class="ent-form" method="dialog" aria-labelledby="ent-contact-h2" aria-describedby="ent-form-flag ent-form-note" data-ent-form data-reveal>
+      <p class="ent-form-note"><span class="opt-flag on" id="ent-form-flag">{{ E.soon }}</span><span id="ent-form-note">{{ E.form_note }}</span></p>
+      <div class="ent-fields">
+        <div class="ent-field"><label for="ent-name">{{ E.f_name }}</label><input id="ent-name" type="text" autocomplete="name"></div>
+        <div class="ent-field"><label for="ent-email">{{ E.f_email }}</label><input id="ent-email" type="email" autocomplete="email" spellcheck="false"></div>
+        <div class="ent-field ent-wide"><label for="ent-company">{{ E.f_company }}</label><input id="ent-company" type="text" autocomplete="organization"></div>
+        <div class="ent-field ent-wide"><label for="ent-need">{{ E.f_need }}</label><textarea id="ent-need" rows="5"></textarea></div>
+      </div>
+      <div class="ent-submit">
+        <button class="btn primary" type="submit">{{ E.send }}</button>
+        <p class="ent-status" role="status" data-ent-status data-title="{{ E.sent }}" data-text="{{ E.sent_p }}"></p>
+      </div>
+    </form>
+  </section>
+{% endblock %}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -10,6 +11,7 @@ import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
 import enSettings from '@/renderer/services/i18n/locales/en-US/settings.json';
 import SettingsArea from '@/renderer/pages/settings/KyrnSettings/SettingsArea';
+import { summarize } from '@/renderer/components/kernel/kernelSummary';
 import Welcome from '@/renderer/pages/welcome';
 import { ONBOARDING_KEY } from '@/renderer/pages/welcome/onboarding';
 import { useFirstRunWelcome } from '@/renderer/pages/welcome/useFirstRunWelcome';
@@ -29,8 +31,6 @@ const bridge = vi.hoisted(() => ({
   loginAnswer: vi.fn(),
   loginCancel: vi.fn(),
   loginLogout: vi.fn(),
-  localJudgeState: vi.fn(),
-  localJudgeRun: vi.fn(),
   importList: vi.fn(),
 }));
 vi.mock('@/common/kyrn/bridge', () => ({
@@ -46,8 +46,6 @@ vi.mock('@/common/kyrn/bridge', () => ({
     loginAnswer: { invoke: bridge.loginAnswer },
     loginCancel: { invoke: bridge.loginCancel },
     loginLogout: { invoke: bridge.loginLogout },
-    localJudgeState: { invoke: bridge.localJudgeState },
-    localJudgeRun: { invoke: bridge.localJudgeRun },
     importList: { invoke: bridge.importList },
   },
   // As the real one: a failure keeps the code the store gave it.
@@ -56,7 +54,7 @@ vi.mock('@/common/kyrn/bridge', () => ({
     return result.data;
   },
 }));
-// The import dialog's frame (AionModal) sizes itself by the font scale, which the app's theme provider gives.
+// The import dialog's frame (MuModal) sizes itself by the font scale, which the app's theme provider gives.
 vi.mock('@/renderer/hooks/context/ThemeContext', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/renderer/hooks/context/ThemeContext')>()),
   useThemeContext: () => ({ fontScale: 1 }),
@@ -79,10 +77,10 @@ vi.mock('@/renderer/components/settings/LanguageSwitcher', () => ({
 function newUser(patch: Partial<KyrnSettings> = {}): KyrnSettings {
   return {
     revision: 'r1',
-    tiers: ['laya'],
+    tiers: ['jev'],
     judges: {
       jev: { type: 'jev', model: 'jev-latest', baseUrl: '', apiKeyEnv: 'TYPESAFE_API_KEY', timeoutMs: 10000 },
-      laya: { type: 'local', model: '', baseUrl: 'http://127.0.0.1:47823', apiKeyEnv: '', timeoutMs: 4000 },
+      clm: { type: 'clm', model: 'clm-latest', baseUrl: '', apiKeyEnv: 'MU_JUDGE_CLM_API_KEY', timeoutMs: 10000 },
     },
     mode: 'shadow',
     betaCompression: false,
@@ -123,10 +121,6 @@ beforeEach(() => {
   bridge.importList.mockResolvedValue({ ok: true, data: { conversations: [] } });
   bridge.loginStatus.mockResolvedValue({ ok: true, data: { signedIn: [] } });
   bridge.loginState.mockResolvedValue({ ok: true, data: { id: 0, phase: 'idle' } });
-  bridge.localJudgeState.mockResolvedValue({
-    ok: true,
-    data: { support: 'ok', installed: true, running: true, url: 'http://127.0.0.1:47823' },
-  });
   bridge.save.mockImplementation(async ({ models, credentials: _credentials, ...input }: SaveSettings) => {
     const base = newUser();
     return { ok: true, data: { ...base, ...input, revision: 'r2', models: { ...base.models, ...models } } };
@@ -167,65 +161,6 @@ describe('a settings section as its own page', () => {
     expect(saved.credentials).toEqual([{ name: 'TYPESAFE_API_KEY', value: 'jev-key' }]);
   });
 
-  it('installs Laya with one click, only after the person agrees to the download, and ends with it running', async () => {
-    const url = 'http://127.0.0.1:47823';
-    const task = {
-      id: 1,
-      action: 'setup',
-      phase: 'running',
-      output: ['Resolved 26 packages', 'Downloading coremltools'],
-    };
-    bridge.localJudgeState.mockResolvedValue({
-      ok: true,
-      data: { support: 'ok', installed: false, running: false, url },
-    });
-    bridge.localJudgeRun.mockResolvedValue({
-      ok: true,
-      data: { support: 'ok', installed: false, running: false, url, task },
-    });
-    at('/settings/judges', <SettingsArea page='judges' />);
-    const panel = await screen.findByTestId('mu-laya');
-    await waitFor(() => expect(panel).toHaveTextContent('Not installed yet.'));
-    fireEvent.click(within(panel).getByTestId('mu-laya-install'));
-    // Nothing is downloaded before the person says yes, and they are told how much.
-    expect(await screen.findByText(/downloads about 800 MB from PyPI and Hugging Face/)).toBeInTheDocument();
-    expect(bridge.localJudgeRun).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Download and install' }));
-    await waitFor(() => expect(bridge.localJudgeRun).toHaveBeenCalledWith({ action: 'setup', consent: true }));
-    expect(await within(panel).findByTestId('mu-laya-output')).toHaveTextContent('Downloading coremltools');
-    expect(panel).toHaveTextContent('Installing Laya…');
-    // Its state is read while it works; the setup goes on to start it.
-    bridge.localJudgeState.mockResolvedValue({
-      ok: true,
-      data: { support: 'ok', installed: true, running: true, url, task: { ...task, action: 'start', phase: 'done' } },
-    });
-    await waitFor(() => expect(panel).toHaveTextContent('Running on this machine'), { timeout: 3000 });
-    expect(within(panel).getByTestId('mu-laya-stop')).toBeInTheDocument();
-    expect(within(panel).queryByTestId('mu-laya-output')).not.toBeInTheDocument();
-  });
-
-  it('says why Laya cannot be installed on this machine, and where uv comes from', async () => {
-    const url = 'http://127.0.0.1:47823';
-    bridge.localJudgeState.mockResolvedValue({
-      ok: true,
-      data: { support: 'uv', installed: false, running: false, url },
-    });
-    const { unmount } = at('/settings/judges', <SettingsArea page='judges' />);
-    const panel = await screen.findByTestId('mu-laya');
-    await waitFor(() => expect(panel).toHaveTextContent('Installing needs uv'));
-    expect(within(panel).getByTestId('mu-laya-uv')).toBeInTheDocument();
-    expect(within(panel).queryByTestId('mu-laya-install')).not.toBeInTheDocument();
-    unmount();
-    bridge.localJudgeState.mockResolvedValue({
-      ok: true,
-      data: { support: 'platform', installed: false, running: false, url },
-    });
-    at('/settings/judges', <SettingsArea page='judges' />);
-    const other = await screen.findByTestId('mu-laya');
-    await waitFor(() => expect(other).toHaveTextContent('or a Mac with Apple Silicon'));
-    expect(within(other).queryByRole('button')).not.toBeInTheDocument();
-  });
-
   it('keeps the order of several judges on a page of its own, in the open, each judge by its name', async () => {
     at('/settings/judge-order', <SettingsArea page='judge-order' />);
     const tiers = await screen.findByTestId('mu-judge-tiers');
@@ -233,10 +168,11 @@ describe('a settings section as its own page', () => {
     expect(within(tiers).getByRole('combobox', { name: 'Order' })).toBeInTheDocument();
     // Its typing input, which takes the focus, says the same.
     expect(within(tiers).getByRole('textbox', { name: 'Order' })).toBeInTheDocument();
-    // Laya, the one judge here, needs nothing in the order: the choice on the judges page installs and starts it.
-    const laya = within(tiers).getByTestId('mu-judge-tier-0');
-    expect(laya).toHaveTextContent('Tier 1: Local Laya');
-    expect(within(laya).queryByRole('textbox')).not.toBeInTheDocument();
+    // Jev, the one judge here: only its model in the order. Its service and key are the judges page's.
+    const jev = within(tiers).getByTestId('mu-judge-tier-0');
+    expect(jev).toHaveTextContent('Tier 1: Jev');
+    expect(within(jev).getByLabelText(enMu.judges.model)).toHaveValue('jev-latest');
+    expect(within(jev).queryByLabelText(enMu.judges.service)).not.toBeInTheDocument();
     expect(within(tiers).queryByTestId('mu-judge-tier-1')).not.toBeInTheDocument();
   });
 });
@@ -247,14 +183,14 @@ describe('the first-run guide', () => {
     fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
     expect(within(await screen.findByTestId('mu-welcome-way-openai')).getByText('Most common')).toBeInTheDocument();
     const anthropic = screen.getByTestId('mu-welcome-way-anthropic');
-    expect(anthropic).toHaveTextContent('Claude, and services that speak the Messages format');
+    expect(anthropic).toHaveTextContent('Claude and services that support the Messages format');
     expect(within(anthropic).queryByText('Claude')).not.toBeInTheDocument();
   });
 
   it('says what mu is, connects an API model, takes a judge key, saves once at the end, and is not shown again', async () => {
     at('/welcome', <Welcome />);
     expect(await screen.findByText('Welcome to mu')).toBeInTheDocument();
-    expect(screen.getByText('A check at every step')).toBeInTheDocument();
+    expect(screen.getByTestId('mu-welcome-turn')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('mu-welcome-begin'));
     fireEvent.click(await screen.findByTestId('mu-welcome-way-openai'));
     // Nothing filled in: the step stays and says why, and the field in question is marked.
@@ -271,7 +207,7 @@ describe('the first-run guide', () => {
     await screen.findByTestId('mu-welcome-step-judge');
     fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
     // With no key the free Jev answers: the step says so, and the service and key wait behind one link.
-    expect(screen.getByTestId('mu-welcome-judge-ready')).toHaveTextContent('The free Jev is ready');
+    expect(screen.getByTestId('mu-welcome-judge-ready')).toHaveTextContent('Jev is ready, free for now');
     expect(screen.queryByLabelText('TypeSafe API key')).toBeNull();
     fireEvent.click(screen.getByTestId('mu-welcome-judge-more'));
     fireEvent.change(screen.getByLabelText('TypeSafe API key'), { target: { value: 'jev-key' } });
@@ -324,17 +260,16 @@ describe('the first-run guide', () => {
     expect(screen.getByLabelText('Model name')).toHaveValue('my-model');
   });
 
-  it('sets Laya up without its address or a Stop: those are for the settings', async () => {
+  it('offers Jev and mude 1.0 and no Laya, while CLM waits in the settings', async () => {
     at('/welcome', <Welcome />);
     fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
     fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
-    await screen.findByTestId('mu-welcome-step-judge');
-    // A new user's order starts with Laya: its tile is the chosen one, open.
-    const tile = screen.getByTestId('mu-judge-choice-local');
-    const panel = await within(tile).findByTestId('mu-laya');
-    expect(await within(panel).findByTestId('mu-laya-status')).toHaveTextContent(enMu.judges.laya.running);
-    expect(within(panel).queryByTestId('mu-laya-stop')).not.toBeInTheDocument();
-    expect(tile).not.toHaveTextContent('127.0.0.1');
+    const step = await screen.findByTestId('mu-welcome-step-judge');
+    expect(within(step).getByTestId('mu-judge-choice-jev')).toBeInTheDocument();
+    expect(within(step).getByTestId('mu-judge-choice-mude')).toBeInTheDocument();
+    expect(within(step).queryByTestId('mu-judge-choice-local')).not.toBeInTheDocument();
+    expect(within(step).queryByTestId('mu-judge-choice-clm')).not.toBeInTheDocument();
+    expect(step).not.toHaveTextContent(/laya/i);
   });
 
   it('says what already works when the guide is opened again, so nothing reads as the first time', async () => {
@@ -426,8 +361,8 @@ describe('the first-run guide', () => {
       error: "EACCES: permission denied, open '/home/me/.mu/agent/settings.json'",
     });
     at('/welcome', <Welcome />);
-    expect(await screen.findByText('The settings could not be loaded')).toBeInTheDocument();
-    expect(screen.getByText('/home/me/.mu/agent/settings.json could not be read.')).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't load the settings")).toBeInTheDocument();
+    expect(screen.getByText("Couldn't read /home/me/.mu/agent/settings.json.")).toBeInTheDocument();
     expect(screen.getByTestId('mu-error-detail')).toHaveTextContent('EACCES: permission denied');
     fireEvent.click(screen.getByText('Reload'));
 
@@ -442,13 +377,51 @@ describe('the first-run guide', () => {
     fireEvent.click(await screen.findByTestId('mu-welcome-start'));
     expect(
       await screen.findByText(
-        'Saving did not work: The key contains characters a key cannot have, such as spaces, quotes or line breaks. Paste it again.'
+        "Couldn't save: The key contains characters that aren't allowed, such as spaces, quotes or line breaks. Paste it again."
       )
     ).toBeInTheDocument();
     expect(screen.queryByText(/Invalid credential/)).not.toBeInTheDocument();
   });
 
-  it('offers, at the end, the Claude Code and Codex conversations not brought in yet, and stays on the guide', async () => {
+  it('offers, on the first screen, the conversations of other coding agents under their marks', async () => {
+    const chat = { cwd: '/work', title: 'Fix it', modified: '2026-10-01T00:00:00Z', size: 10 };
+    bridge.importList.mockResolvedValue({
+      ok: true,
+      data: {
+        conversations: [
+          { ...chat, tool: 'claude-code', path: '/t/a.jsonl' },
+          { ...chat, tool: 'claude-code', path: '/t/b.jsonl' },
+          { ...chat, tool: 'zcode', path: '/z/db.sqlite#sess_1' },
+          // In the app already, nothing new: not counted. Changed since: counted, to bring it up to date.
+          { ...chat, tool: 'codex', path: '/t/c.jsonl', importedAs: '/s/c.jsonl', conversationId: 's-c', native: true },
+          {
+            ...chat,
+            tool: 'codex',
+            path: '/t/d.jsonl',
+            importedAs: '/s/d.jsonl',
+            conversationId: 's-d',
+            native: true,
+            changed: true,
+          },
+        ],
+      },
+    });
+    at('/welcome', <Welcome />);
+    const offer = await screen.findByTestId('mu-welcome-intro-import');
+    expect(offer).toHaveTextContent('mu found 4 conversations from other coding agents on this computer');
+    const sources = within(offer).getByTestId('import-sources');
+    expect([...sources.querySelectorAll('li')].map((li) => [li.dataset.tool, li.textContent])).toEqual([
+      ['claude-code', 'Claude Code2'],
+      ['codex', 'Codex1'],
+      ['zcode', 'ZCode1'],
+    ]);
+    fireEvent.click(within(offer).getByTestId('mu-welcome-intro-import-open'));
+    expect(await screen.findByTestId('import-chats-start')).toBeInTheDocument();
+    // Still on the first screen of the guide.
+    expect(screen.getByTestId('mu-welcome-step-intro')).toBeInTheDocument();
+  });
+
+  it('offers, at the end, the conversations not brought in yet, and stays on the guide', async () => {
     const chat = { tool: 'claude-code', cwd: '/work', title: 'Fix it', modified: '2026-10-01T00:00:00Z', size: 10 };
     bridge.importList.mockResolvedValue({
       ok: true,
@@ -464,7 +437,9 @@ describe('the first-run guide', () => {
     fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
     fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
     fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
-    expect(await screen.findByTestId('mu-welcome-import')).toHaveTextContent('2 Claude Code or Codex conversations');
+    expect(await screen.findByTestId('mu-welcome-import')).toHaveTextContent(
+      '2 Claude Code, Codex or ZCode conversations'
+    );
     fireEvent.click(screen.getByTestId('mu-welcome-import-open'));
     expect(await screen.findByTestId('import-chats-start')).toBeInTheDocument();
     // A conversation imported before has no way out of the guide here.
@@ -491,6 +466,106 @@ describe('the first-run guide', () => {
     fireEvent.click(screen.getByTestId('mu-welcome-skip'));
     expect(await screen.findByTestId('mu-welcome-step-judge')).toBeInTheDocument();
     expect(bridge.save).not.toHaveBeenCalled();
+  });
+
+  it('offers no judge at all, which turns every decision point off so nothing is sent to one', async () => {
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-judge');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    expect(screen.getByTestId('mu-welcome-judge-ready')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('mu-welcome-judge-none'));
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'false');
+    // Nothing answers, so nothing says Jev is ready, and the judges' fields are not offered.
+    expect(screen.queryByTestId('mu-welcome-judge-ready')).toBeNull();
+    expect(screen.queryByTestId('mu-welcome-judge-more')).toBeNull();
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+
+    await screen.findByTestId('mu-welcome-step-done');
+    expect(screen.getByTestId('mu-welcome-done-judge')).toHaveTextContent('No judge');
+    expect(screen.queryByTestId('mu-welcome-kernel')).toBeNull();
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).mode).toBe('off');
+  });
+
+  it('turns the verdicts back on when a judge is picked after none, and leaves a stored shadow alone', async () => {
+    bridge.settings.mockResolvedValue({ ok: true, data: newUser({ mode: 'off' }) });
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-judge');
+    // Set up before without a judge (mu setup's "Not now"): the guide says so.
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    await screen.findByTestId('mu-welcome-step-done');
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).mode).toBe('active');
+
+    // Settings that record shadow (here with CLM, which the guide does not offer): picking a judge keeps it.
+    cleanup();
+    bridge.save.mockClear();
+    localStorage.clear();
+    bridge.settings.mockResolvedValue({ ok: true, data: newUser({ tiers: ['clm'] }) });
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-judge');
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    await screen.findByTestId('mu-welcome-step-done');
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).mode).toBe('shadow');
+  });
+
+  it('shows a turn as the judge sees it, and ends on what the kernel bar will say', async () => {
+    const parsed = parseManifest(withOwnPlaces(manifestJson));
+    if (parsed.status !== 'ok') throw new Error('the manifest fixture is not readable');
+    const features = Object.fromEntries(
+      parsed.manifest.features.map((feature) => [feature.name, defaultFeatureState(feature)])
+    );
+    const settings = newUser({ harness: parsed, features, mode: 'active' });
+    bridge.settings.mockResolvedValue({ ok: true, data: settings });
+    at('/welcome', <Welcome />);
+
+    // Decision point ids and timings stay as they are; the verdicts are words.
+    const turn = await screen.findByTestId('mu-welcome-turn');
+    expect(turn).toHaveTextContent('A turn, as the judge sees it');
+    expect(turn).toHaveTextContent('input.preflightMulti-step task: look first340 ms');
+    expect(within(turn).getAllByRole('listitem')).toHaveLength(3);
+
+    fireEvent.click(screen.getByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-done');
+    const { active, total } = summarize(settings);
+    expect(active).toBeGreaterThan(0);
+    expect(screen.getByTestId('mu-welcome-kernel')).toHaveTextContent(`${active}/${total} decision points active`);
+  });
+
+  it('takes a plain HTTP name, which the hosts file may point at this machine, and says the key is not encrypted', async () => {
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-way-openai'));
+    fireEvent.change(screen.getByLabelText('Base URL'), { target: { value: 'http://llm.internal:8000/v1' } });
+    expect(screen.getByTestId('mu-field-warning')).toHaveTextContent(enMu.endpointPlain);
+    fireEvent.change(screen.getByLabelText('API key'), { target: { value: 'sk-local' } });
+    fireEvent.change(screen.getByLabelText('Model name'), { target: { value: 'big-local' } });
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    expect(await screen.findByTestId('mu-welcome-step-judge')).toBeInTheDocument();
+    // On this machine or a private-network literal, there is nothing to warn about.
+    fireEvent.click(screen.getByText('Back'));
+    fireEvent.change(await screen.findByLabelText('Base URL'), { target: { value: 'http://192.168.1.20:8000/v1' } });
+    expect(screen.queryByTestId('mu-field-warning')).toBeNull();
   });
 
   it('can be skipped from the first page without saving anything', async () => {
@@ -562,7 +637,7 @@ describe('the first-run guide', () => {
 
 describe('the permission step', () => {
   /** Someone new on a mu with permission modes, in `permissions`, the feature on or off. */
-  function withModes(permissions: KyrnSettings['permissions'] = { mode: 'jev', from: 'default' }, enabled = true) {
+  function withModes(permissions: KyrnSettings['permissions'] = { mode: 'judge', from: 'default' }, enabled = true) {
     const parsed = parseManifest(withOwnPlaces(manifestJson));
     if (parsed.status !== 'ok') throw new Error('manifest with permission modes is not readable');
     const features = Object.fromEntries(
@@ -588,13 +663,13 @@ describe('the permission step', () => {
     return bridge.save.mock.calls[0][0] as SaveSettings;
   }
 
-  it('comes after the model, starts on Jev approves, and saves a pick as the feature’s option', async () => {
+  it('comes after the model, starts on judge mode, and saves a pick as the feature’s option', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: withModes() });
     await toPermissions();
     expect(screen.getByRole('list', { name: 'Setup progress' })).toHaveTextContent('ModelPermissionsJudgeDone');
-    const jev = screen.getByTestId('mu-welcome-permission-jev');
-    expect(jev).toHaveAttribute('aria-checked', 'true');
-    expect(jev).toHaveTextContent('Recommended');
+    const judge = screen.getByTestId('mu-welcome-permission-judge');
+    expect(judge).toHaveAttribute('aria-checked', 'true');
+    expect(judge).toHaveTextContent('Recommended');
     // A mode is always chosen: there is nothing to skip.
     expect(screen.queryByTestId('mu-welcome-skip')).toBeNull();
     fireEvent.click(screen.getByTestId('mu-welcome-permission-full'));
@@ -610,15 +685,15 @@ describe('the permission step', () => {
     bridge.settings.mockResolvedValue({ ok: true, data: withModes({ mode: 'ask', from: 'picked' }) });
     await toPermissions();
     expect(screen.getByTestId('mu-welcome-permission-ask')).toHaveAttribute('aria-checked', 'true');
-    fireEvent.click(screen.getByTestId('mu-welcome-permission-jev'));
+    fireEvent.click(screen.getByTestId('mu-welcome-permission-judge'));
     fireEvent.click(screen.getByTestId('mu-welcome-next'));
     fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
-    expect(await screen.findByTestId('mu-welcome-step-done')).toHaveTextContent('PermissionsJev approves');
+    expect(await screen.findByTestId('mu-welcome-step-done')).toHaveTextContent('PermissionsJudge mode');
     fireEvent.click(screen.getByTestId('mu-welcome-start'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
     const saved = bridge.save.mock.calls[0][0] as SaveSettings;
-    expect(saved.permissions).toEqual({ mode: 'jev' });
-    expect(saved.features?.permissions.options).toEqual({ mode: 'jev' });
+    expect(saved.permissions).toEqual({ mode: 'judge' });
+    expect(saved.features?.permissions.options).toEqual({ mode: 'judge' });
   });
 
   it('saves nothing for a mode left as it was', async () => {
@@ -643,7 +718,7 @@ describe('the permission step', () => {
 });
 
 describe('signing in with a subscription', () => {
-  const running = { id: 1, provider: 'openai-codex', phase: 'running', url: 'https://auth.openai.com/oauth/authorize' };
+  const running = { id: 1, provider: 'openai', phase: 'running', url: 'https://auth.openai.com/oauth/authorize' };
   const toSubscriptions = async () => {
     at('/welcome', <Welcome />);
     fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
@@ -662,8 +737,8 @@ describe('signing in with a subscription', () => {
       ok: true,
       data: { ...running, prompt: { type: 'manual_code', message: 'Paste the code' } },
     });
-    fireEvent.click(await screen.findByTestId('mu-login-openai-codex'));
-    expect(bridge.loginStart).toHaveBeenCalledWith({ provider: 'openai-codex' });
+    fireEvent.click(await screen.findByTestId('mu-login-openai'));
+    expect(bridge.loginStart).toHaveBeenCalledWith({ provider: 'openai' });
     expect(await screen.findByTestId('mu-login-waiting')).toHaveTextContent('ChatGPT');
 
     // The browser finishes it by itself; the code field is the way out, not the first thing shown.
@@ -684,17 +759,18 @@ describe('signing in with a subscription', () => {
         ],
       },
     });
-    await waitFor(() => expect(screen.getByTestId('mu-login-openai-codex')).toHaveTextContent('Signed in'), {
+    await waitFor(() => expect(screen.getByTestId('mu-login-openai')).toHaveTextContent('Signed in'), {
       timeout: 3000,
     });
     expect(screen.queryByTestId('mu-login-waiting')).not.toBeInTheDocument();
 
     await toSummary();
-    expect(screen.getByText('ChatGPT / gpt-5.5')).toBeInTheDocument();
+    // The model is OpenAI's, as the model picker names it; the sign-in above said ChatGPT.
+    expect(screen.getByText('OpenAI / gpt-5.5')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('mu-welcome-start'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
     const saved = bridge.save.mock.calls[0][0] as SaveSettings;
-    expect(saved.models?.defaults).toMatchObject({ provider: 'openai-codex', model: 'gpt-5.5' });
+    expect(saved.models?.defaults).toMatchObject({ provider: 'openai', model: 'gpt-5.5' });
     expect(saved.models?.providers ?? []).toEqual([]);
     expect(saved.credentials ?? []).toEqual([]);
   });
@@ -713,6 +789,36 @@ describe('signing in with a subscription', () => {
     expect(screen.getByText('Claude / claude-opus-4-8')).toBeInTheDocument();
   });
 
+  it('starts an account signed in before on a model it offers, and offers only those', async () => {
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: {
+        signedIn: [
+          {
+            provider: 'xai',
+            models: [
+              { id: 'grok-5', name: 'Grok 5' },
+              { id: 'grok-5-mini', name: 'Grok 5 Mini' },
+              { id: 'grok-5-fast', name: 'Grok 5 Fast' },
+            ],
+            // Grok 5 was unchecked for the model menus in Settings.
+            enabled: ['grok-5-mini', 'grok-5-fast'],
+          },
+        ],
+      },
+    });
+    await toSubscriptions();
+    await waitFor(() => expect(screen.getByTestId('mu-login-xai')).toHaveTextContent('Signed in'));
+    fireEvent.click(screen.getByTestId('mu-login-xai'));
+    const user = userEvent.setup();
+    await user.click(screen.getByLabelText('Model'));
+    expect(await screen.findByText('Grok 5 Fast', { selector: '.arco-select-option' })).toBeInTheDocument();
+    expect(screen.queryByText('Grok 5', { selector: '.arco-select-option' })).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await toSummary();
+    expect(screen.getByText('Grok / grok-5-mini')).toBeInTheDocument();
+  });
+
   it('offers Google only when the harness does, and asks about the risk before anything opens', async () => {
     await toSubscriptions();
     await waitFor(() => expect(bridge.loginStatus).toHaveBeenCalled());
@@ -722,7 +828,7 @@ describe('signing in with a subscription', () => {
 
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [], offered: ['openai-codex', 'anthropic', 'xai', 'google-gemini-cli', 'google-antigravity'] },
+      data: { signedIn: [], offered: ['openai', 'anthropic', 'xai', 'google-gemini-cli', 'google-antigravity'] },
     });
     await toSubscriptions();
     const google = await screen.findByTestId('mu-login-google-gemini-cli');
@@ -747,7 +853,7 @@ describe('signing in with a subscription', () => {
     bridge.loginState.mockResolvedValue({ ok: true, data: asking });
     fireEvent.click(google);
     const risk = await screen.findByTestId('mu-login-risk');
-    expect(risk).toHaveTextContent('the login Google made for Gemini CLI itself');
+    expect(risk).toHaveTextContent('the login Google built for Gemini CLI');
     expect(risk).toHaveTextContent('Gemini API key');
     expect(screen.queryByTestId('mu-login-waiting')).not.toBeInTheDocument();
     // Nothing is answered for the person.
@@ -761,7 +867,7 @@ describe('signing in with a subscription', () => {
   it('turns a no to the risk into a cancelled sign-in', async () => {
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [], offered: ['openai-codex', 'anthropic', 'xai', 'google-antigravity'] },
+      data: { signedIn: [], offered: ['openai', 'anthropic', 'xai', 'google-antigravity'] },
     });
     const asking = {
       id: 4,
@@ -802,13 +908,13 @@ describe('signing in with a subscription', () => {
     fireEvent.click(await screen.findByTestId('mu-login-xai'));
     expect(await screen.findByTestId('mu-login-device-code')).toHaveTextContent('WDJB-MJHT');
     expect(screen.getByTestId('mu-login-waiting')).toHaveTextContent('The Grok verification page is open');
-    expect(screen.getByRole('button', { name: 'Open the page again' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reopen the page' })).toBeInTheDocument();
   });
 
   it('says the account is signed in while its models are still being read', async () => {
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [], offered: ['openai-codex', 'anthropic', 'xai', 'google-antigravity'] },
+      data: { signedIn: [], offered: ['openai', 'anthropic', 'xai', 'google-antigravity'] },
     });
     const reading = {
       id: 6,
@@ -822,9 +928,9 @@ describe('signing in with a subscription', () => {
     await toSubscriptions();
     fireEvent.click(await screen.findByTestId('mu-login-google-antigravity'));
     expect(await screen.findByTestId('mu-login-waiting')).toHaveTextContent(
-      'Signed in to Antigravity. Reading the models this account can use'
+      'Signed in to Antigravity. Loading the models this account can use'
     );
-    expect(screen.queryByRole('button', { name: 'Open the page again' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reopen the page' })).not.toBeInTheDocument();
   });
 
   it('says whose question it is above a question pi asks in its own words', async () => {
@@ -832,9 +938,9 @@ describe('signing in with a subscription', () => {
     const asking = { ...running, prompt: { type: 'text', message: 'Enter your workspace id:' } };
     bridge.loginStart.mockResolvedValue({ ok: true, data: asking });
     bridge.loginState.mockResolvedValue({ ok: true, data: asking });
-    fireEvent.click(screen.getByTestId('mu-login-openai-codex'));
+    fireEvent.click(screen.getByTestId('mu-login-openai'));
     const waiting = await screen.findByTestId('mu-login-waiting');
-    expect(waiting).toHaveTextContent('ChatGPT asks (in its own words):');
+    expect(waiting).toHaveTextContent('ChatGPT asks:');
     expect(waiting).toHaveTextContent('Enter your workspace id:');
   });
 
@@ -848,10 +954,72 @@ describe('signing in with a subscription', () => {
       ok: true,
       data: { ...running, phase: 'failed', error: 'Token exchange request failed' },
     });
-    fireEvent.click(screen.getByTestId('mu-login-openai-codex'));
-    const alert = await screen.findByText('Signing in did not finish. You can try again.', {}, { timeout: 3000 });
+    fireEvent.click(screen.getByTestId('mu-login-openai'));
+    const alert = await screen.findByText("Couldn't sign in. Try again.", {}, { timeout: 3000 });
     expect(alert).toHaveTextContent('Token exchange request failed');
-    expect(screen.getByTestId('mu-login-openai-codex')).not.toBeDisabled();
+    expect(screen.getByTestId('mu-login-openai')).not.toBeDisabled();
+  });
+
+  // QA, 2026-10-23: "Port 1455 is in use, probably by an unfinished login in another pi session or by the Codex CLI".
+  it('names the program keeping the callback port, tries again, and signs in by the pasted address instead', async () => {
+    await toSubscriptions();
+    const portTaken = {
+      ...running,
+      phase: 'failed',
+      error: 'Port 1455 is in use by codex (process 4321), probably for its own sign-in',
+      code: 'port_in_use',
+      port: 1455,
+      holder: { pid: 4321, command: 'codex' },
+    };
+    bridge.loginStart.mockResolvedValue({ ok: true, data: running });
+    bridge.loginState.mockResolvedValue({ ok: true, data: portTaken });
+    fireEvent.click(screen.getByTestId('mu-login-openai'));
+    const alert = await screen.findByText(
+      'Port 1455 is in use by codex (process 4321), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry.',
+      {},
+      { timeout: 3000 }
+    );
+    // One sentence in the app language, not the flow's English under it.
+    expect(alert).not.toHaveTextContent('Couldn');
+    expect(screen.getByTestId('mu-login-problem')).not.toHaveTextContent('probably for its own sign-in Finish');
+
+    bridge.loginStart.mockResolvedValue({ ok: true, data: { ...running, id: 2 } });
+    bridge.loginState.mockResolvedValue({ ok: true, data: { ...portTaken, id: 2 } });
+    fireEvent.click(screen.getByTestId('mu-login-retry'));
+    await waitFor(() => expect(bridge.loginStart).toHaveBeenCalledTimes(2));
+    expect(bridge.loginStart).toHaveBeenLastCalledWith({ provider: 'openai' });
+    await screen.findByTestId('mu-login-paste-instead', {}, { timeout: 3000 });
+
+    const pasting = {
+      ...running,
+      id: 3,
+      paste: true,
+      prompt: {
+        type: 'manual_code',
+        message: 'Paste the address your browser ends on after sign-in:',
+        placeholder: 'http://127.0.0.1:1455/auth/callback',
+      },
+    };
+    bridge.loginStart.mockResolvedValue({ ok: true, data: pasting });
+    bridge.loginState.mockResolvedValue({ ok: true, data: pasting });
+    fireEvent.click(screen.getByTestId('mu-login-paste-instead'));
+    await waitFor(() => expect(bridge.loginStart).toHaveBeenLastCalledWith({ provider: 'openai', paste: true }));
+    // The field is there at once, with what to paste: nothing listens for the browser.
+    expect(await screen.findByTestId('mu-login-paste-hint')).toHaveTextContent(
+      'your browser goes to an address that starts with http://127.0.0.1:1455/auth/callback'
+    );
+    expect(screen.queryByTestId('mu-login-paste')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Authorization code'), {
+      target: { value: 'http://127.0.0.1:1455/auth/callback?code=c&state=s' },
+    });
+    bridge.loginAnswer.mockResolvedValue({ ok: true, data: { ...pasting, prompt: undefined } });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    await waitFor(() =>
+      expect(bridge.loginAnswer).toHaveBeenCalledWith({
+        id: 3,
+        value: 'http://127.0.0.1:1455/auth/callback?code=c&state=s',
+      })
+    );
   });
 });
 
@@ -911,7 +1079,7 @@ describe('pasting an API key', () => {
     await toKeyTile();
     paste(` ${glmKey} `);
     expect(screen.getByTestId('mu-welcome-key-service')).toHaveTextContent('GLM (Zhipu AI)');
-    expect(screen.getByTestId('mu-welcome-key-hint')).toHaveTextContent('Found from the key.');
+    expect(screen.getByTestId('mu-welcome-key-hint')).toHaveTextContent('Detected from the key.');
     expect(screen.getByTestId('mu-welcome-key-status')).toHaveTextContent('Checking the key with GLM');
     await said('The key works.');
     expect(bridge.testProvider).toHaveBeenCalledTimes(1);
@@ -950,7 +1118,9 @@ describe('pasting an API key', () => {
     bridge.testProvider.mockResolvedValue(listing(['deepseek-chat', 'deepseek-v4-pro']));
     await toKeyTile();
     paste(sharedShape);
-    expect(screen.getByTestId('mu-welcome-key-hint')).toHaveTextContent('Keys of more than one service look like this');
+    expect(screen.getByTestId('mu-welcome-key-hint')).toHaveTextContent(
+      'Several services use keys that look like this'
+    );
     await new Promise((resolve) => setTimeout(resolve, SETTLE_MS + 200));
     expect(bridge.testProvider).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('mu-welcome-next'));
@@ -977,17 +1147,31 @@ describe('pasting an API key', () => {
     expect(settings.credentials).toEqual([{ name: 'MU_PROVIDER_DEEPSEEK_CUSTOM_API_KEY', value: sharedShape }]);
   });
 
+  it('refuses a Claude subscription token and sends it nowhere; an Anthropic API key in its place is checked', async () => {
+    await toKeyTile();
+    paste(`sk-ant-oat01-${'t'.repeat(40)}`);
+    expect(screen.getByText(/That's a Claude subscription token/)).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_MS + 200));
+    expect(bridge.testProvider).not.toHaveBeenCalled();
+
+    bridge.testProvider.mockResolvedValue(listing(['claude-opus-4-8']));
+    paste(`sk-ant-api03-${'k'.repeat(40)}`);
+    expect(screen.queryByText(/Claude subscription token/)).not.toBeInTheDocument();
+    await said('The key works.');
+    expect(hosts()).toEqual(['api.anthropic.com']);
+  });
+
   it('tries a Kimi key at Moonshot’s other address and nowhere else, and keeps the address that took it', async () => {
     bridge.testProvider.mockResolvedValue(refused);
     await toKeyTile();
     paste(kimiKey);
-    await said('Kimi did not accept this key.');
+    await said('Kimi rejected this key.');
     expect(hosts()).toEqual(['api.moonshot.cn', 'api.moonshot.ai']);
     expect(screen.getByText('The endpoint said: Invalid Authentication')).toBeInTheDocument();
     // A key that does not work is not written.
     fireEvent.click(screen.getByTestId('mu-welcome-next'));
     expect(screen.getByTestId('mu-welcome-step-model')).toBeInTheDocument();
-    expect(screen.getByText(/The key does not work yet/)).toBeInTheDocument();
+    expect(screen.getByText(/The key doesn't work yet/)).toBeInTheDocument();
 
     // Made on the international site: it works there, and that address is the one kept.
     bridge.testProvider.mockReset();
@@ -1009,8 +1193,8 @@ describe('pasting an API key', () => {
     bridge.testProvider.mockResolvedValue(listing(['qwen3:8b', 'llama3.3']));
     await toKeyTile();
     fireEvent.click(screen.getByLabelText('Service'));
-    fireEvent.click(await screen.findByText('Ollama (this machine)', { selector: '.arco-select-option' }));
-    await said('Ollama is running on this machine.');
+    fireEvent.click(await screen.findByText('Ollama (this computer)', { selector: '.arco-select-option' }));
+    await said('Ollama is running on this computer.');
     expect(bridge.testProvider).toHaveBeenCalledTimes(1);
     expect(bridge.testProvider.mock.calls[0][0]).toEqual({
       id: '',
@@ -1036,19 +1220,19 @@ describe('pasting an API key', () => {
     });
     await toKeyTile();
     fireEvent.click(screen.getByLabelText('Service'));
-    fireEvent.click(await screen.findByText('Ollama (this machine)', { selector: '.arco-select-option' }));
-    await said('Ollama is not answering on this machine. Start it, then check again.');
+    fireEvent.click(await screen.findByText('Ollama (this computer)', { selector: '.arco-select-option' }));
+    await said("Ollama isn't responding on this computer. Start it, then check again.");
     fireEvent.click(screen.getByTestId('mu-welcome-next'));
     expect(screen.getByTestId('mu-welcome-step-model')).toBeInTheDocument();
-    expect(screen.getByText(/Ollama is not ready yet/)).toBeInTheDocument();
-    expect(screen.queryByText(/The key does not work yet/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Ollama isn't ready yet/)).toBeInTheDocument();
+    expect(screen.queryByText(/The key doesn't work yet/)).not.toBeInTheDocument();
   });
 
   it('starts on the service’s usual model when it lists none for a key it took', async () => {
     bridge.testProvider.mockResolvedValue(listing([]));
     await toKeyTile();
     paste(kimiKey);
-    await said('The key works, but Kimi lists no models for it.');
+    await said("The key works, but Kimi doesn't list any models for it.");
     // Asked once: a key .cn took is not tried at .ai.
     expect(hosts()).toEqual(['api.moonshot.cn']);
     expect(screen.getByLabelText('mu will start with')).toHaveValue('kimi-k2.6');

@@ -3,8 +3,8 @@
  *
  *   node scripts/kyrn/theme/contrast.mts          # print the table, exit 1 if a pair is under its floor
  *
- * The page is neutral; the pastel lavender and pink are for the accent fills, tints, borders and
- * marks. What carries text is checked here: dark text on the accent fill and the send button's wash,
+ * The page is neutral and primary actions are monochrome (ink on paper, paper on ink); ultraviolet and pink
+ * are for tints, borders and marks. What carries text is checked here: text on the primary action fill,
  * white on the violet fill, accent text on the surfaces, body text, and the judge's pink. tests/unit/kyrn/themeContrast.test.ts runs the same table, so a palette edit that drops a
  * pair below its floor fails the tests rather than shipping.
  */
@@ -24,9 +24,6 @@ export const PAIRS: Pair[] = [
   { name: 'text on the accent fill (primary buttons)', fg: '--mu-accent-on', bg: '--mu-accent-fill', floor: 4.5 },
   { name: 'text on the accent fill, hover', fg: '--mu-accent-on', bg: '--mu-accent-fill-hover', floor: 4.5 },
   { name: 'text on the accent fill, active', fg: '--mu-accent-on', bg: '--mu-accent-fill-active', floor: 4.5 },
-  { name: 'arrow on the send button wash, start', fg: '--mu-accent-on', bg: '--mu-accent-from', floor: 4.5 },
-  { name: 'arrow on the send button wash, middle', fg: '--mu-accent-on', bg: '--mu-accent-via', floor: 4.5 },
-  { name: 'arrow on the send button wash, end', fg: '--mu-accent-on', bg: '--mu-accent-to', floor: 4.5 },
   { name: 'white text on the primary fill', fg: '--text-white', bg: '--mu-primary-fill', floor: 4.5 },
   { name: 'white text on the primary fill, hover', fg: '--text-white', bg: '--mu-primary-fill-hover', floor: 4.5 },
   { name: 'white text on the primary fill, active', fg: '--text-white', bg: '--mu-primary-fill-active', floor: 4.5 },

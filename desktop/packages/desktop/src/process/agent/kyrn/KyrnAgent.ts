@@ -16,6 +16,7 @@ import {
   type SessionConfigOption,
   type SessionUpdate,
 } from '@agentclientprotocol/sdk';
+import { BACKEND_CONVERSATION_ID_ENV } from '../../../common/platform/backendNames.ts';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
@@ -27,7 +28,7 @@ import { isConversationId, readImportRecord, writeImportRecord, type ImportRecor
 import { muEnv, muHome } from './naming.ts';
 import { Telemetry } from './telemetry.ts';
 import { slashCommands } from './commands.ts';
-import { supportedThinkingLevels, UNOFFERED_PROVIDER_IDS } from '../../../common/kyrn/models.ts';
+import { enabledModels, supportedThinkingLevels, UNOFFERED_PROVIDER_IDS } from '../../../common/kyrn/models.ts';
 import {
   answerIndex,
   answerKind,
@@ -188,25 +189,37 @@ export function readDefaultModel(home?: string): { provider: string; id: string 
  */
 export const MU_NOTICES = {
   /** A question of mu's got no usable answer (the app failed to ask, or answered with none of the choices). */
-  answer_lost: 'mu did not get your answer, so it went on as if you had declined.',
+  answer_lost: "mu didn't receive your answer, so it continued as if you had declined.",
   /** A command failed because mu found no bash on Windows: Git for Windows is missing (see `bashMissing`). */
   bash_missing:
-    'mu needs Git for Windows to run commands. Once it is installed, send your message again. Download it here: https://git-scm.com/download/win',
+    'mu needs Git for Windows to run commands. Install it, then send your message again. Download it here: https://git-scm.com/download/win',
   /**
    * The conversation goes without checkpoints (mu's `checkpoint.off`). The input carries mu's reason code and what it
    * names (`code`, `params`); the title is mu's own line, already in the app's language, and this only its stand-in.
    */
-  checkpoint_off: 'mu: checkpoints are off in this session.',
+  checkpoint_off: 'mu: checkpoints are off in this conversation.',
   /**
    * No Jev key is set, so the judge answers with the free Jev on OpenCode Zen (mu's `judge.notice`). The title is mu's
    * own line, already in the app's language, and this only its stand-in.
    */
-  free_jev: 'mu: no Jev key is set, so the judge uses the free Jev on OpenCode Zen for now.',
+  free_jev: 'mu: no Jev key is set, so the judge is the free Jev on OpenCode Zen for now.',
   /**
    * The free Jev stopped answering (mu's `judge.notice`); the input's `code` says why: `paid` (it asks for a key or
    * payment) or `gone` (no longer offered). Plain rules decide until a Jev key is set.
    */
   free_jev_unavailable: 'mu: the free Jev stopped answering, so plain rules decide until a Jev key is set.',
+  /**
+   * The configuration named Laya, which mu no longer has, and mu moved it on (mu's `judge.notice`); the input's `judge`
+   * is the judge in its place by its name in the order (`mude`, `jev`, …). Said once, in the first session after it.
+   */
+  laya_removed: 'mu: Laya is no longer built in, so another judge answers now.',
+  /**
+   * OpenAI's decision model has no usable API key (mu's `judge.notice`); the input's `code` says why: `missing` (signed
+   * out of OpenAI, or its key removed) or `rejected` (OpenAI refused the key). The next judge answers, or mu's
+   * fallbacks when it is the last one, until a key is set.
+   */
+  openai_key:
+    "mu: OpenAI's decision model has no usable API key, so another judge or mu's fallbacks decide until one is set.",
   /** The person stopped the reply: what came before this line is all of it. */
   stopped: 'You stopped this reply.',
 } as const;
@@ -256,7 +269,7 @@ const CONFIRM_OPTIONS = [
   { optionId: 'reject', name: 'Reject', kind: 'reject_once' },
 ] as const;
 
-/** ACP adapter only: AionUi owns the UI and projects; mu owns all execution and judgment. */
+/** ACP adapter only: the app owns the UI and projects; mu owns all execution and judgment. */
 export class KyrnAgent implements Agent {
   private connection: Connection;
   private store: string;
@@ -516,10 +529,17 @@ export class KyrnAgent implements Agent {
       if (wait) await delay(wait);
       if (this.sessions.get(id) !== session || session.stopped) return;
       // eslint-disable-next-line no-await-in-loop
-      const models = array((await session.rpc.send({ type: 'get_available_models' })).models).map(asRecord);
+      const answer = await session.rpc.send({ type: 'get_available_models' });
+      const models = array(answer.models).map(asRecord);
+      const enabled = enabledModels(answer);
+      const offered = models.filter(
+        (each) => text(each.provider) && text(each.id) && !UNOFFERED_PROVIDER_IDS.has(text(each.provider))
+      );
+      // The model new sessions start on, else the first one offered: the first enabled one when there is one.
       const pick =
         models.find((each) => text(each.provider) === wanted?.provider && text(each.id) === wanted?.id) ??
-        models.find((each) => text(each.provider) && text(each.id) && !UNOFFERED_PROVIDER_IDS.has(text(each.provider)));
+        offered.find((each) => enabled?.has(`${text(each.provider)}/${text(each.id)}`)) ??
+        offered[0];
       if (!pick) continue;
       // eslint-disable-next-line no-await-in-loop
       if (!isNoModel((await this.state(id)).model)) return;
@@ -573,7 +593,7 @@ export class KyrnAgent implements Agent {
       // A switch typed in the conversation, or made by the send box: the picker follows either way.
       if (session.opened && before !== modes.mode) {
         this.announce(id, session);
-        // AionCore sets the mode it last saw whenever it reopens a conversation; one that was never switched would
+        // The backend sets the mode it last saw whenever it reopens a conversation; one that was never switched would
         // otherwise come back in mu's current default, and that set would then switch it (and save it as mu's default).
         try {
           if (session.file) this.save(id, session);
@@ -645,14 +665,16 @@ export class KyrnAgent implements Agent {
     const current = asRecord(state.model);
     // No model is no value: pi's placeholder (`unknown/unknown`) is not a model the send box could name.
     const currentValue = isNoModel(current) ? '' : `${text(current.provider)}/${text(current.id)}`;
+    // The models the person chose to offer (Settings, per account); every one while no choice is made.
+    const enabled = enabledModels(models);
     const offered = array(models.models)
       .map(asRecord)
       // A model already in use stays listed, so the picker still shows what the conversation runs on.
-      .filter(
-        (model) =>
-          !UNOFFERED_PROVIDER_IDS.has(text(model.provider)) ||
-          `${text(model.provider)}/${text(model.id)}` === currentValue
-      );
+      .filter((model) => {
+        const value = `${text(model.provider)}/${text(model.id)}`;
+        if (value === currentValue) return true;
+        return !UNOFFERED_PROVIDER_IDS.has(text(model.provider)) && (!enabled || enabled.has(value));
+      });
     // What each model takes, by pi's own rule, beside the options: an ACP select option has no room for it. The send
     // box offers each model with its levels, so one pick can switch both.
     session.telemetry.levels(
@@ -718,12 +740,12 @@ export class KyrnAgent implements Agent {
     return { sessionId: id, configOptions };
   }
   /**
-   * The session a conversation the app made from a Claude Code or Codex transcript goes on with, until an adapter
-   * session has opened it (process/agent/kyrn/importChats.ts). The backend starts an adapter for each conversation and
-   * names the conversation in the adapter's environment (`AIONUI_CONVERSATION_ID`, the backend's own variable).
+   * The session a conversation the app made from a Claude Code, Codex or ZCode conversation goes on with, until an
+   * adapter session has opened it (process/agent/kyrn/importChats.ts). The backend starts an adapter for each conversation and
+   * names the conversation in the adapter's environment (`BACKEND_CONVERSATION_ID_ENV`).
    */
   private async importFor(cwd: string): Promise<{ conversationId: string; record: ImportRecord } | undefined> {
-    const conversationId = process.env.AIONUI_CONVERSATION_ID;
+    const conversationId = process.env[BACKEND_CONVERSATION_ID_ENV];
     if (!isConversationId(conversationId)) return undefined;
     const record = readImportRecord(this.store, conversationId);
     if (!record || record.session || !existsSync(record.file)) return undefined;
@@ -990,14 +1012,17 @@ export class KyrnAgent implements Agent {
     });
   }
   /**
-   * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), or the free Jev stopped
-   * (`free_jev_unavailable`, why in `reason`). One line each per conversation, by code, which the desktop words in the
-   * app's language; mu's own line, its title, comes right after as a notification and is not said again. A code this
-   * build does not know leaves mu's line to say it.
+   * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), the free Jev stopped
+   * (`free_jev_unavailable`, why in `reason`), Laya is gone and `judge` answers in its place (`laya_removed`, said in
+   * the first session after mu moved the configuration on), or OpenAI's decision model has no usable key (`openai_key`,
+   * why in `reason`). One line each per conversation, by code, which the desktop
+   * words in the app's language; mu's own line, its title, comes right after as a notification and is not said again.
+   * A code this build does not know leaves mu's line to say it.
    */
   private judgeNotice(id: string, session: Session, payload: JsonRecord): void {
     const code = text(payload.code);
-    if (code !== 'free_jev' && code !== 'free_jev_unavailable') return;
+    if (code !== 'free_jev' && code !== 'free_jev_unavailable' && code !== 'laya_removed' && code !== 'openai_key')
+      return;
     const message = text(payload.message).trim();
     if (message) {
       session.said.add(`coded:${message}`);
@@ -1006,7 +1031,11 @@ export class KyrnAgent implements Agent {
     if (session.said.has(code)) return;
     session.said.add(code);
     const reason = text(payload.reason);
-    this.notice(id, session, code, { title: message, input: reason ? { code: reason } : {} });
+    const judge = code === 'laya_removed' ? text(payload.judge) : '';
+    this.notice(id, session, code, {
+      title: message,
+      input: { ...(reason ? { code: reason } : {}), ...(judge ? { judge } : {}) },
+    });
   }
   /**
    * Asks the app one of mu's questions and answers mu exactly once, whatever happens: a failure to ask, an answer that

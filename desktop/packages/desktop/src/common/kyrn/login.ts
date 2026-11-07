@@ -1,12 +1,18 @@
 /**
- * Signing in to a model provider's subscription (ChatGPT, Claude, Grok, and a Google account through Gemini CLI or
- * Antigravity) with pi's own OAuth flows, from the app. The main process runs the flow in a child process and opens
+ * Signing in to a model provider's subscription (ChatGPT, Grok, and a Google account through Gemini CLI or
+ * Antigravity) with pi's own OAuth flows, from the app. A Claude subscription is no longer offered: Anthropic doesn't
+ * allow other apps to sign in with one (an account signed in before can still be signed out). The main process runs the flow in a child process and opens
  * the browser; the screen polls the state and answers what a flow asks (a code to paste, a choice). No credential
  * ever comes back to the screen.
  */
 
-/** Every subscription the app knows how to sign in to, by pi's provider id, in the order they are shown. */
+/**
+ * Every subscription the app knows how to sign in to, by pi's provider id, in the order they are shown. ChatGPT is
+ * OpenAI's own Sign in with ChatGPT on the `openai` provider; `openai-codex` is the Codex CLI's login it replaces, shown
+ * only for an account signed in with it before.
+ */
 export const SUBSCRIPTION_PROVIDERS = [
+  'openai',
   'openai-codex',
   'anthropic',
   'xai',
@@ -27,12 +33,23 @@ export const isGoogleProvider = (provider: SubscriptionProvider | undefined) =>
   provider !== undefined && GOOGLE_PROVIDERS.includes(provider);
 
 /** What every harness can sign in to: pi's own flows. The rest is only offered when the runner says so. */
-export const BUILT_IN_PROVIDERS: readonly SubscriptionProvider[] = ['openai-codex', 'anthropic', 'xai'];
+export const BUILT_IN_PROVIDERS: readonly SubscriptionProvider[] = ['openai', 'xai'];
 /**
- * Subscriptions whose provider id also takes an API key (pi reads ANTHROPIC_API_KEY and XAI_API_KEY): mu can report
- * them as usable while nobody is signed in. The others are usable only signed in.
+ * Sign-ins no longer offered: an account signed in with one is shown (and can sign out), never a new one. ChatGPT
+ * through the Codex CLI's login, which Sign in with ChatGPT replaces; a Claude subscription, which Anthropic doesn't
+ * allow other apps to sign in with.
  */
-export const KEY_PROVIDERS: readonly SubscriptionProvider[] = ['anthropic', 'xai'];
+export const LEGACY_PROVIDERS: readonly SubscriptionProvider[] = ['openai-codex', 'anthropic'];
+/**
+ * Subscriptions whose provider id also takes an API key (pi reads OPENAI_API_KEY, ANTHROPIC_API_KEY and XAI_API_KEY):
+ * mu can report them as usable while nobody is signed in. The others are usable only signed in.
+ */
+export const KEY_PROVIDERS: readonly SubscriptionProvider[] = ['openai', 'anthropic', 'xai'];
+/**
+ * Subscriptions named by their maker outside the sign-in screens: an OpenAI API key's models are not ChatGPT's, so
+ * the model picker says OpenAI, while the sign-in says ChatGPT.
+ */
+export const MAKER_NAMED: readonly SubscriptionProvider[] = ['openai'];
 
 export type LoginModel = { id: string; name: string };
 
@@ -45,6 +62,17 @@ export type LoginPrompt = {
 };
 
 export type LoginPhase = 'idle' | 'running' | 'done' | 'failed' | 'cancelled';
+
+/**
+ * Why a sign-in failed, when the flow says in a way the app can act on: `port_in_use`, another program keeps the port
+ * the browser comes back to (the Codex CLI's or the Codex app's own login, on ChatGPT's 1455); `login_taken_over`, a
+ * newer sign-in took that port over from this one.
+ */
+export type LoginErrorCode = 'port_in_use' | 'login_taken_over';
+export const LOGIN_ERROR_CODES: readonly LoginErrorCode[] = ['port_in_use', 'login_taken_over'];
+
+/** The program keeping the port, as far as the system says; `pi` when it is an older mu or pi's unfinished sign-in. */
+export type LoginPortHolder = { pid?: number; command?: string; pi?: boolean };
 
 export type LoginState = {
   /** Grows with every start, so a screen can tell an old answer from the current one. */
@@ -62,21 +90,80 @@ export type LoginState = {
   prompt?: LoginPrompt;
   /** After success: what the account can use, from pi's catalogue. */
   models?: LoginModel[];
+  /** After success: the ids of those models the model menus offer (pi's `enabledModels`). */
+  enabled?: string[];
   error?: string;
+  /** With a failure the app can act on: what it was, and for `port_in_use` the port and who keeps it. */
+  code?: LoginErrorCode;
+  port?: number;
+  holder?: LoginPortHolder;
+  /** The sign-in takes the address the browser ends on as pasted, and listens on no port. */
+  paste?: boolean;
 };
+
+/** How a sign-in is started: `paste`, by the pasted address alone, for when another program keeps the port. */
+export type LoginStartOptions = { paste?: boolean };
 
 /**
  * Who is signed in already, by provider, with what they can use, and what this harness can sign in to (`offered`,
  * in the order they are shown; absent when the runner did not say).
  */
 export type LoginStatus = {
-  signedIn: { provider: SubscriptionProvider; models: LoginModel[] }[];
+  /**
+   * `enabled`: the ids of the account's models the model menus offer, from pi's global `enabledModels` (all of them
+   * until a choice is made); absent from an older harness, which offers them all.
+   */
+  signedIn: { provider: SubscriptionProvider; models: LoginModel[]; enabled?: string[] }[];
   offered?: SubscriptionProvider[];
+  /**
+   * The other providers with a usable model, by pi's provider id: an API key's (OpenRouter, OpenAI's with a key),
+   * models.json's. Each with its models and `enabled` as an account has them; absent from an older harness.
+   */
+  usable?: UsableProvider[];
 };
 
-/** The providers to show: what the runner offers, or pi's own ones until it has said. Always in the app's order. */
+/** A provider usable without a sign-in here, with its models and the ones the model menus offer. */
+export type UsableProvider = { provider: string; models: LoginModel[]; enabled?: string[] };
+
+/** A provider id as `mu auth enable` takes it: one argument, never a flag. */
+export const PROVIDER_ARG = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
+
+/**
+ * The account's models the model menus offer, in the account's order: the ones `enabled` names, or every one when it
+ * is absent (an older harness offers them all).
+ */
+export function enabledAccountModels(account: { models: LoginModel[]; enabled?: string[] }): LoginModel[] {
+  const { models, enabled } = account;
+  return enabled ? models.filter((model) => enabled.includes(model.id)) : models;
+}
+
+/**
+ * Which of a provider's models the model menus offer (`mu auth enable`): `models`, the ids to offer, or `byDefault`,
+ * all of them, the ones the provider gains later too, which is how a provider starts. A signed-in account, or a
+ * provider in `usable`.
+ */
+export type LoginEnable = { provider: string; models?: string[]; byDefault?: boolean };
+
+/** A model a sign-out switched to: pi's provider and model ids, and the model's name. */
+export type SwitchedModel = { provider: string; model: string; name: string };
+
+/**
+ * What a sign-out moved off the account's models besides its credential: the model new conversations start on
+ * (`defaultMoved`) and the running conversations (`conversations`, how many), each when it was one of the account's
+ * models and mu no longer offers it. `to` is the model they went on with; left out when no other model is set up.
+ */
+export type SignOutSwitch = { defaultMoved: boolean; conversations: number; to?: SwitchedModel };
+
+/**
+ * The providers to show: what the runner offers (or pi's own ones until it has said), and any other one an account is
+ * signed in to (a login no longer offered), so it can still be seen and signed out. Always in the app's order.
+ */
 export const offeredProviders = (status: LoginStatus): SubscriptionProvider[] =>
-  SUBSCRIPTION_PROVIDERS.filter((provider) => (status.offered ?? BUILT_IN_PROVIDERS).includes(provider));
+  SUBSCRIPTION_PROVIDERS.filter(
+    (provider) =>
+      (status.offered ?? BUILT_IN_PROVIDERS).includes(provider) ||
+      status.signedIn.some((account) => account.provider === provider)
+  );
 
 /** The risk question of a Google sign-in: a choice to go on or not, asked before any browser or port is opened. */
 export const isRiskConsent = (provider: SubscriptionProvider | undefined, prompt: LoginPrompt | undefined) =>

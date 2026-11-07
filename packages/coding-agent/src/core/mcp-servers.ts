@@ -6,6 +6,41 @@
  */
 
 /**
+ * Regular expression for a tool name pattern where `*` matches any characters, as `toolExposure`,
+ * `--tools`, and `--exclude-tools` accept them.
+ */
+function toolPatternRegExp(pattern: string): RegExp {
+	const source = pattern
+		.split("*")
+		.map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+		.join(".*");
+	return new RegExp(`^${source}$`);
+}
+
+/** Whether a tool name matches any of the entries, each an exact name or a pattern. */
+export function createToolNameMatcher(entries: readonly string[]): (name: string) => boolean {
+	const names = new Set(entries.filter((entry) => !entry.includes("*")));
+	const patterns = entries.filter((entry) => entry.includes("*")).map(toolPatternRegExp);
+	return (name) => names.has(name) || patterns.some((pattern) => pattern.test(name));
+}
+
+/** MCP resource tools, which reach every server with resources. */
+export const LIST_MCP_RESOURCES_TOOL = "list_mcp_resources";
+export const LIST_MCP_RESOURCE_TEMPLATES_TOOL = "list_mcp_resource_templates";
+export const READ_MCP_RESOURCE_TOOL = "read_mcp_resource";
+
+const MCP_RESOURCE_TOOLS: ReadonlySet<string> = new Set([
+	LIST_MCP_RESOURCES_TOOL,
+	LIST_MCP_RESOURCE_TEMPLATES_TOOL,
+	READ_MCP_RESOURCE_TOOL,
+]);
+
+/** Whether a tool comes from MCP: a server tool (`mcp__<server>__<tool>`) or a resource tool. */
+export function isMcpToolName(name: string): boolean {
+	return name.startsWith("mcp__") || MCP_RESOURCE_TOOLS.has(name);
+}
+
+/**
  * - `codemode`: tools are callable from codemode scripts but neither declared to the model nor
  *   listed in the codemode description, which lists only the server's namespace. Scripts find them
  *   with `searchTools()`. `codemode-deferred` is accepted as an alias.
@@ -51,9 +86,10 @@ export interface McpStdioServerConfig extends McpServerConfigBase {
 	/** Relative paths resolve against the session working directory. */
 	cwd?: string;
 	/**
-	 * mu: false starts the server with `env` only, without pi's own environment, which holds model keys. mu
-	 * registers the servers it takes over from other tools this way, with the few variables a program needs.
-	 * Default: true.
+	 * mu: what of pi's own environment, which holds model keys, the server starts with besides `env`. Unset: all of it
+	 * except the variables that hold credentials (as for the agent's commands; `MU_PASS_ENV` names ones to keep).
+	 * true: all of it. false: none, `env` only; mu registers the servers it takes over from other tools this way,
+	 * with the few variables a program needs.
 	 */
 	inheritEnv?: boolean;
 }
@@ -83,11 +119,13 @@ export interface McpOAuthConfig {
 	 */
 	clientName?: string;
 	/**
-	 * How pi identifies itself without `clientId`. `dcr` (default): dynamic client registration. `cimd`:
-	 * pi's Client ID Metadata Document on pi.dev, for authorization servers that allow pi by that URL. The
-	 * server must support it for public clients, and the callback must use the default path `/callback`.
+	 * How pi identifies itself without `clientId`. `auto` (default): pi's Client ID Metadata Document on
+	 * pi.dev when the authorization server supports it for public clients, otherwise dynamic client
+	 * registration; with `clientName` or a `callbackUrl` other than `/callback` on localhost or 127.0.0.1,
+	 * always dynamic client registration. `cimd`: always the document, and sign-in fails without support.
+	 * `dcr`: always dynamic client registration.
 	 */
-	clientRegistration?: "dcr" | "cimd";
+	clientRegistration?: "auto" | "dcr" | "cimd";
 	/**
 	 * Authorization server metadata document (RFC 8414 or OpenID Connect discovery) to use instead of
 	 * discovery through the server, for servers that advertise a wrong authorization server or none.
@@ -103,6 +141,16 @@ export function isLoopbackRedirectUri(value: string): boolean {
 	if (!URL.canParse(value)) return false;
 	const url = new URL(value);
 	return url.protocol === "http:" && LOOPBACK_HOSTS.includes(url.hostname) && url.search === "" && url.hash === "";
+}
+
+/**
+ * Whether pi's Client ID Metadata Documents list a redirect URI for the loopback `callbackUrl`: they list
+ * `/callback` on localhost and 127.0.0.1, on any port. Without `callbackUrl`, pi uses such a URI.
+ */
+export function isClientMetadataDocumentCallback(callbackUrl: string | undefined): boolean {
+	if (callbackUrl === undefined) return true;
+	const url = new URL(callbackUrl);
+	return url.hostname !== "[::1]" && url.pathname === "/callback";
 }
 
 export interface McpHttpServerConfig extends McpServerConfigBase {
@@ -159,13 +207,13 @@ function validateOAuth(value: unknown): string | undefined {
 	if (value.clientName !== undefined && (typeof value.clientName !== "string" || !value.clientName.trim())) {
 		return "oauth.clientName must be a non-empty string";
 	}
-	if (value.clientRegistration !== undefined && value.clientRegistration !== "dcr") {
-		if (value.clientRegistration !== "cimd") return 'oauth.clientRegistration must be "dcr" or "cimd"';
+	const registration = value.clientRegistration;
+	if (registration !== undefined && registration !== "auto" && registration !== "dcr") {
+		if (registration !== "cimd") return 'oauth.clientRegistration must be "auto", "dcr", or "cimd"';
 		if (value.clientId !== undefined || value.clientName !== undefined) {
 			return 'oauth.clientRegistration "cimd" cannot be combined with oauth.clientId or oauth.clientName';
 		}
-		const callback = typeof value.callbackUrl === "string" ? new URL(value.callbackUrl) : undefined;
-		if (callback && (callback.hostname === "[::1]" || callback.pathname !== "/callback")) {
+		if (!isClientMetadataDocumentCallback(typeof value.callbackUrl === "string" ? value.callbackUrl : undefined)) {
 			return 'oauth.clientRegistration "cimd" requires oauth.callbackUrl on localhost or 127.0.0.1 with path /callback';
 		}
 	}
@@ -199,14 +247,6 @@ function resolveExposureAliases(value: Record<string, unknown>): Record<string, 
 		);
 	}
 	return resolved;
-}
-
-function toolPatternRegExp(pattern: string): RegExp {
-	const source = pattern
-		.split("*")
-		.map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
-		.join(".*");
-	return new RegExp(`^${source}$`);
 }
 
 /** Exposure of one tool of a server: its `toolExposure` entry, else the server's `exposure`. */

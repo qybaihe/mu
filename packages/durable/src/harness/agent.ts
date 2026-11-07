@@ -1,5 +1,6 @@
 import { copyJson, type Draft } from "@earendil-works/chord";
 import { defineDoc } from "../documents.ts";
+import { documentRetention, persistWithin } from "../session/session.ts";
 import type { ConversationId, ConversationRecord, Tx } from "../types.ts";
 import type {
 	Agent,
@@ -33,6 +34,7 @@ export const DEFAULT_COMPACTION_POLICY: CompactionPolicy = {
 export const DEFAULT_PROGRESS_POLICY: ProgressPolicy = {
 	partialIntervalMs: 100,
 	outputIntervalMs: 100,
+	persistWithinMs: 1_000,
 };
 
 /** The reserved section key of the agent's `instructions`. */
@@ -49,6 +51,17 @@ export const AgentDoc = defineDoc<AgentState>({
 	checkpointWhen: () => true,
 });
 
+/** Default `settings.contextRetentionMs`: ten minutes. */
+const DEFAULT_CONTEXT_RETENTION_MS = 600_000;
+
+/** Default `settings.restartLimit`. */
+export const DEFAULT_RESTART_LIMIT = 5;
+
+/** A restart limit as given when it is a number of restarts, `1` or more, rounded down (`Infinity`: no task ends for restarts); else the default. */
+function restartLimit(limit: number | undefined): number {
+	return typeof limit === "number" && limit >= 1 ? Math.floor(limit) : DEFAULT_RESTART_LIMIT;
+}
+
 /** Resolve the host settings: every field over its built-in default, object fields merged. */
 export function resolveSettings(settings: HarnessSettings | undefined): Settings {
 	const extensions = settings?.extensions;
@@ -57,10 +70,19 @@ export function resolveSettings(settings: HarnessSettings | undefined): Settings
 		stream: { ...settings?.stream },
 		retry: { ...DEFAULT_RETRY_POLICY, ...settings?.retry },
 		compaction: { ...DEFAULT_COMPACTION_POLICY, ...settings?.compaction },
-		progress: { ...DEFAULT_PROGRESS_POLICY, ...settings?.progress },
+		// Field by field, so an explicitly undefined interval keeps its default.
+		progress: {
+			partialIntervalMs: settings?.progress?.partialIntervalMs ?? DEFAULT_PROGRESS_POLICY.partialIntervalMs,
+			outputIntervalMs: settings?.progress?.outputIntervalMs ?? DEFAULT_PROGRESS_POLICY.outputIntervalMs,
+			persistWithinMs: persistWithin(settings?.progress?.persistWithinMs),
+		},
 		toolExecution: settings?.toolExecution ?? "parallel",
 		steeringMode: settings?.steeringMode ?? "one-at-a-time",
 		followUpMode: settings?.followUpMode ?? "one-at-a-time",
+		contextRetentionMs: settings?.contextRetentionMs ?? DEFAULT_CONTEXT_RETENTION_MS,
+		documentRetentionMs: documentRetention(settings?.documentRetentionMs),
+		afterFailedRun: settings?.afterFailedRun ?? "keep",
+		restartLimit: restartLimit(settings?.restartLimit),
 	};
 }
 
@@ -71,21 +93,30 @@ export async function configure(tx: Tx, conversationId: ConversationId, change: 
 }
 
 /**
- * `addTools` of a tool round: an array gets each name it lacks appended, `{ remove }` loses the names, and unset tools
- * already offer every tool, so nothing is written.
+ * `addTools` of a tool round, applied to `tools` and `modelTools`, so the next request offers the tools: an array gets
+ * each name it lacks appended, and `{ remove }` loses the names. An unset `tools` already enables every tool, so nothing
+ * is written for it. An unset or object `modelTools` also gets each name appended to its `add`, which loads deferred
+ * tools and has no effect for others. By name, without the registry: a tool that is not registered now, such as one of
+ * an MCP server that is reconnecting, is offered once it is again.
  */
 export async function addTools(tx: Tx, conversationId: ConversationId, added: readonly string[]): Promise<void> {
 	const state = await tx.doc(AgentDoc, conversationId);
 	const tools = state.tools;
-	if (tools === undefined) return;
 	if (Array.isArray(tools)) {
 		for (const name of added) if (!tools.includes(name)) tools.push(name);
-	} else {
-		const remove = (tools as { remove: string[] }).remove;
-		if (remove.some((name) => added.includes(name))) {
-			state.tools = { remove: remove.filter((name) => !added.includes(name)) };
-		}
+	} else if (tools?.remove.some((name) => added.includes(name))) {
+		state.tools = { remove: tools.remove.filter((name) => !added.includes(name)) };
 	}
+	const modelTools = state.modelTools;
+	if (Array.isArray(modelTools)) {
+		for (const name of added) if (!modelTools.includes(name)) modelTools.push(name);
+		return;
+	}
+	// Assigned whole; a document write of an equal value records no change.
+	const remove = (modelTools?.remove ?? []).filter((name) => !added.includes(name));
+	const add = [...(modelTools?.add ?? [])];
+	for (const name of added) if (!add.includes(name)) add.push(name);
+	state.modelTools = { ...(remove.length === 0 ? {} : { remove }), add };
 }
 
 function applyChange(state: Draft<AgentState>, change: AgentChange): void {
@@ -113,8 +144,25 @@ function applyChange(state: Draft<AgentState>, change: AgentChange): void {
 		"tools",
 		tools === undefined || tools === null ? tools : isList(tools) ? names(tools) : { remove: names(tools.remove) },
 	);
+	const modelTools = change.modelTools;
+	set(
+		"modelTools",
+		modelTools === undefined || modelTools === null
+			? modelTools
+			: isList(modelTools)
+				? names(modelTools)
+				: {
+						...(modelTools.remove === undefined ? {} : { remove: names(modelTools.remove) }),
+						...(modelTools.add === undefined ? {} : { add: names(modelTools.add) }),
+					},
+	);
 	set("instructions", change.instructions);
 	set("cwd", change.cwd);
+	const maxTurns = change.maxTurns;
+	if (maxTurns !== undefined && maxTurns !== null && !(Number.isSafeInteger(maxTurns) && maxTurns >= 1)) {
+		throw new RangeError(`maxTurns must be an integer 1 or more, got ${String(maxTurns)}`);
+	}
+	set("maxTurns", maxTurns);
 }
 
 function isList<T>(value: readonly T[] | object): value is readonly T[] {
@@ -139,12 +187,39 @@ export async function createAgent(tx: Tx, conversation: ConversationRecord): Pro
 }
 
 /** Handlers of the selected extensions' hooks for a task name, in extension order. */
-export function agentHooks(agent: Agent, taskName: string): object[] {
-	const handlers: object[] = [];
+export function agentHooks(
+	agent: Agent,
+	taskName: string,
+): { readonly extension: string; readonly handlers: object }[] {
+	const handlers: { readonly extension: string; readonly handlers: object }[] = [];
 	for (const extension of agent.extensions) {
-		for (const hook of extension.hooks ?? []) if (hook.task === taskName) handlers.push(hook.handlers);
+		for (const hook of extension.hooks ?? []) {
+			if (hook.task === taskName) handlers.push({ extension: extension.name, handlers: hook.handlers });
+		}
 	}
 	return handlers;
+}
+
+/** The extension whose code a section of `agent` runs: the last selected one that provides or wraps it. */
+export function sectionExtension(agent: Agent, key: string): string | undefined {
+	let found: string | undefined;
+	for (const extension of agent.extensions) {
+		const provides = extension.sections?.some((section) => section.key === key) === true;
+		const wraps = extension.wraps?.some((wrap) => "section" in wrap && wrap.section === key) === true;
+		if (provides || wraps) found = extension.name;
+	}
+	return found;
+}
+
+/** The extension whose code a tool of `agent` runs: the last selected one that provides or wraps it. */
+export function toolExtension(agent: Agent, name: string): string | undefined {
+	let found: string | undefined;
+	for (const extension of agent.extensions) {
+		const provides = extension.tools?.some((tool) => tool.name === name) === true;
+		const wraps = extension.wraps?.some((wrap) => "tool" in wrap && wrap.tool === name) === true;
+		if (provides || wraps) found = extension.name;
+	}
+	return found;
 }
 
 /**
@@ -155,7 +230,8 @@ export function resolveAgent<Tool extends ToolRegistration>(
 	state: Readonly<AgentState> | undefined,
 	snapshot: RegistrySnapshot<Tool>,
 	settings: Settings,
-	report: (error: unknown) => void,
+	/** Gets a wrapper's failure with the name of the wrapper's extension. */
+	report: (error: unknown, extension: string) => void,
 ): Agent<Tool> {
 	const extensions = selectExtensions(state?.extensions, snapshot, settings);
 
@@ -167,13 +243,14 @@ export function resolveAgent<Tool extends ToolRegistration>(
 	}
 	for (const extension of extensions) {
 		for (const wrap of extension.wraps ?? []) {
+			const wrapReport = (error: unknown) => report(error, extension.name);
 			if ("tool" in wrap)
 				applyWrap(
 					composed,
 					wrap.tool,
 					(tool) => wrap.wrap(tool),
 					(tool) => tool.name,
-					report,
+					wrapReport,
 				);
 			else
 				applyWrap(
@@ -181,24 +258,19 @@ export function resolveAgent<Tool extends ToolRegistration>(
 					wrap.section,
 					(section) => wrap.wrap(section),
 					(section) => section.key,
-					report,
+					wrapReport,
 				);
 		}
 	}
 
-	const filter = state?.tools;
-	let tools: Tool[];
-	if (filter === undefined) tools = [...composed.values()];
-	else if (Array.isArray(filter)) {
-		tools = [];
-		for (const name of new Set(filter)) {
-			const tool = composed.get(name);
-			if (tool !== undefined) tools.push(tool);
-		}
-	} else {
-		const removed = new Set((filter as { remove: string[] }).remove);
-		tools = [...composed.values()].filter((tool) => !removed.has(tool.name));
-	}
+	const enabled = filterTools([...composed.values()], state?.tools);
+	const callableBy = (caller: "model" | "tools") => (tool: Tool) =>
+		tool.callers === undefined || tool.callers.includes(caller);
+	const modelCallable = enabled.filter(callableBy("model"));
+	const tools = offeredTools(modelCallable, state?.modelTools);
+	const offered = new Set(tools);
+	const deferred = modelCallable.filter((tool) => tool.deferred === true && !offered.has(tool));
+	const callable = enabled.filter(callableBy("tools"));
 
 	const instructions = state?.instructions;
 	const agentSections = [...sections.values()];
@@ -209,11 +281,42 @@ export function resolveAgent<Tool extends ToolRegistration>(
 		thinkingLevel: state?.thinkingLevel ?? "off",
 		extensions,
 		tools,
+		callable,
+		deferred,
 		sections: agentSections,
 		...(instructions === undefined ? {} : { instructions }),
 		...(state?.cwd === undefined ? {} : { cwd: state.cwd }),
+		...(state?.maxTurns === undefined ? {} : { maxTurns: state.maxTurns }),
 	};
 	return agent;
+}
+
+/** The tools offered to the model, as `AgentState.modelTools` describes. */
+function offeredTools<Tool extends ToolRegistration>(tools: Tool[], filter: AgentState["modelTools"]): Tool[] {
+	if (Array.isArray(filter)) return filterTools(tools, filter);
+	const removed = new Set(filter?.remove ?? []);
+	const kept = tools.filter((tool) => tool.deferred !== true && !removed.has(tool.name));
+	// Loaded deferred tools follow in load order, so loading one appends to the declared tools.
+	const byName = new Map(tools.map((tool) => [tool.name, tool]));
+	const loaded = [...new Set(filter?.add ?? [])].flatMap((name) => {
+		const tool = byName.get(name);
+		return tool?.deferred === true && !removed.has(name) ? [tool] : [];
+	});
+	return [...kept, ...loaded];
+}
+
+/** `tools` through a stored filter: an array selects exactly its names, in its order; `{ remove }` drops names. */
+function filterTools<Tool extends ToolRegistration>(tools: Tool[], filter: AgentState["tools"]): Tool[] {
+	if (filter === undefined) return tools;
+	if (Array.isArray(filter)) {
+		const byName = new Map(tools.map((tool) => [tool.name, tool]));
+		return [...new Set(filter)].flatMap((name) => {
+			const tool = byName.get(name);
+			return tool === undefined ? [] : [tool];
+		});
+	}
+	const removed = new Set((filter as { remove: string[] }).remove);
+	return tools.filter((tool) => !removed.has(tool.name));
 }
 
 /** Selected installed extensions: the stored array, or the default selection edited by `{ add, remove }`. */

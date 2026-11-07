@@ -1,4 +1,4 @@
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import type { SelectHandle } from '@arco-design/web-react/es/Select/interface';
 import React, { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,7 +30,7 @@ const LanguageSwitcher: React.FC = () => {
 
   return (
     <div className='flex items-center gap-8px'>
-      <AionSelect
+      <MuSelect
         ref={selectRef}
         className='w-160px'
         value={i18n.language}
@@ -39,11 +39,11 @@ const LanguageSwitcher: React.FC = () => {
       >
         {/* The language in use on top, the others by their own names (see languageOrder). */}
         {languageListOrder(i18n.language).map((language) => (
-          <AionSelect.Option key={language} value={language}>
+          <MuSelect.Option key={language} value={language}>
             {nativeLanguageName(language)}
-          </AionSelect.Option>
+          </MuSelect.Option>
         ))}
-      </AionSelect>
+      </MuSelect>
     </div>
   );
 };

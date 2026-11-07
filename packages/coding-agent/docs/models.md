@@ -32,6 +32,8 @@ Run `/thinking` to select the thinking level for the current model. Press `Ctrl+
 
 `Ctrl+P` cycles through available models. Use `/scoped-models` to control that cycle and save the selection, or configure model patterns through [Settings](settings.md#model-cycling).
 
+The saved selection (`enabledModels`) also decides what `/model` shows first (`Tab` there shows every model). `/scoped-models <provider>` chooses one provider's models and leaves the others as they are; all of a provider's models, saved as `<provider>/**` (`**`, not `*`, so ids with a slash, as OpenRouter's, are taken too), is the default. After a subscription sign-in with several models (ChatGPT, Antigravity), the same selector opens for that provider, and a sign-in to a provider the saved selection leaves out adds `<provider>/**` so its models show.
+
 A session records model and thinking-level changes. Resuming the session restores them without changing defaults for new sessions.
 
 ## Connect local models
@@ -48,6 +50,7 @@ Use [`models.json`](configuration.md#agent-directory) when an endpoint speaks an
 
 ```json
 {
+  "$schema": "https://pi.dev/schemas/models.schema.json",
   "providers": {
     "ollama": {
       "baseUrl": "http://localhost:11434/v1",
@@ -61,9 +64,43 @@ Use [`models.json`](configuration.md#agent-directory) when an endpoint speaks an
 }
 ```
 
-The dummy key makes the model available to Pi; Ollama ignores it. For an authenticated endpoint, `apiKey` and header values can use `$NAME` or `${NAME}` environment interpolation, a literal value, or a leading `!command`. Commands in `models.json` run at request time and are not cached by Pi.
+The dummy key makes the model available to Pi; Ollama ignores it. For an authenticated endpoint, `apiKey` and header values can use `$NAME` or `${NAME}` environment interpolation, a literal value, or a leading `!command`. `$$` and `$!` produce a literal `$` and `!`. Commands in `models.json` run at request time and are not cached by Pi.
 
 Opening `/model` reloads the file. A `models` entry adds or replaces a model with the same ID on that provider. Use `modelOverrides` to change metadata for an existing built-in or extension-provided model without replacing the provider's model list. Unknown override IDs are ignored.
+
+To route a built-in provider through a proxy, set only its `baseUrl`. Its models and authentication stay unchanged:
+
+```json
+{
+  "providers": {
+    "anthropic": { "baseUrl": "https://proxy.example.com/v1" }
+  }
+}
+```
+
+[Models Configuration](models-configuration.md) lists every field.
+
+### Third-party OpenAI-compatible endpoints
+
+With `"api": "openai-completions"`, Pi sends OpenAI's newer request shape only to endpoints documented to take it: `api.openai.com`, Azure OpenAI, and Xiaomi MiMo. There, a reasoning model's system prompt goes as a `developer` message and the output limit as `max_completion_tokens`, with `store: false` on OpenAI and Azure. Every other endpoint, including a relay or gateway, gets the shape all OpenAI-compatible servers accept: a `system` message, `max_tokens`, and no `store`.
+
+If an endpoint still rejects part of a request, for example with `unknown role developer` or `Unrecognized request argument supplied: max_completion_tokens`, Pi sends the request again with that part changed before any reply appears, and keeps the change for that model until Pi restarts. This covers the `developer` role, the max tokens field, `reasoning_effort`, `stream_options`, `store`, and the prompt cache fields, each changed at most once per request. A rejection of a value, such as a `max_tokens` above the model's limit, is shown as it is. Requests to `api.openai.com` are never changed this way.
+
+To choose yourself, set `compat` on the provider or a model. A relay in front of OpenAI's reasoning models can take OpenAI's shape:
+
+```json
+{
+  "providers": {
+    "my-relay": {
+      "baseUrl": "https://relay.example.com/v1",
+      "api": "openai-completions",
+      "apiKey": "$MY_RELAY_KEY",
+      "compat": { "supportsDeveloperRole": true, "maxTokensField": "max_completion_tokens" },
+      "models": [{ "id": "gpt-5.5", "reasoning": true }]
+    }
+  }
+}
+```
 
 ### Describe model input and caching
 
@@ -128,17 +165,20 @@ Compatibility settings should describe verified differences in the endpoint's re
 
 ## Use classifier models
 
-Classifier models do not chat. They answer typed questions about JSON state: pick one of several choices, answer yes or no, or give a score, each with probabilities. Pi includes TypeSafe's Jev model from these providers, and Cloudflare's Clef and Clef Flash models from Workers AI:
+Classifier models do not chat. They answer typed questions about JSON state: pick one of several choices, answer yes or no, or give a score, each with probabilities. Pi includes TypeSafe's Jev model from these providers, Cloudflare's Clef, Clef Flash, and Clef Omni models from Workers AI and OpenRouter, and OpenAI's GPT-6 Luna through the [Decisions API](https://developers.openai.com/api/docs/guides/decisions):
 
 | Provider | Model IDs | Authentication |
 |---|---|---|
 | `typesafe` | `jev-latest` | `TYPESAFE_API_KEY` |
-| `openrouter` | `typesafe/jev-1.13`, `~typesafe/jev-latest` | `OPENROUTER_API_KEY` or `/login` |
-| `cloudflare-workers-ai` | `typesafe/jev`, `@cf/cloudflare/clef`, `@cf/cloudflare/clef-flash` | `CLOUDFLARE_API_KEY` and `CLOUDFLARE_ACCOUNT_ID` |
+| `openrouter` | `typesafe/jev-1.13`, `typesafe/jev-1.14`, `~typesafe/jev-latest`, `cloudflare/clef`, `cloudflare/clef-flash`, `cloudflare/clef-omni` | `OPENROUTER_API_KEY` or `/login` |
+| `cloudflare-workers-ai` | `typesafe/jev`, `typesafe/jev-1.14.0`, `@cf/cloudflare/clef`, `@cf/cloudflare/clef-flash`, `@cf/cloudflare/clef-omni` | `CLOUDFLARE_API_KEY` and `CLOUDFLARE_ACCOUNT_ID` |
 | `vercel-ai-gateway` | `typesafe-ai/jev` | `AI_GATEWAY_API_KEY` |
 | `opencode` | `jev-1.13`, `jev-1.13-free` | `OPENCODE_API_KEY` |
+| `openai` | `gpt-6-luna` | `OPENAI_API_KEY` |
 
 Chat models on a [llama.cpp router](llama-cpp.md#classification) are also listed as classifier models.
+
+OpenAI's Decisions API needs an API key. Sign in with ChatGPT credentials do not work with it, so `gpt-6-luna` is not listed as available while `openai` is logged in through `/login`, even when `OPENAI_API_KEY` is set; log out of `openai` to use the key. The API rejects inputs above 922K tokens, but requests that run longer than about five seconds, currently above roughly 600K input tokens, fail with a gateway timeout.
 
 Classifier models do not appear in `/model`. The model reaches them through the [`codemode`](cli.md#enable-codemode) tool, which is off unless an MCP server turned it on. Enable it with `"defaultTools": ["+codemode"]` in [settings](settings.md#tools). Scripts then list classifier models with `models.getAvailableOfType("classifier")` and call `models.classify(model, { state, questions })`:
 
@@ -158,6 +198,10 @@ return result.answers;
 ```
 
 [Codemode](codemode.md#classify) describes the question and answer types.
+
+Classifier models whose `input` includes `"image"` also judge images passed in `images`; other classifier models return an error for them. Image input works with GPT-6 Luna, with Jev from `typesafe` and `cloudflare-workers-ai`, with Clef from `cloudflare-workers-ai`, and with the OpenRouter models whose catalog lists image input. Jev takes PNG and JPEG images, and image input is experimental on TypeSafe's own API. Clef takes PNG, JPEG, and WebP images, at most four per request. Jev from `vercel-ai-gateway` and `opencode` takes text only.
+
+Each System One service takes images in its own request format, set by the model's `compat.imageInput`. Built-in models set it, so overriding a provider's `baseUrl` keeps it. A custom provider that proxies another service's classifiers sets it in its provider-level `compat` in `models.json` (see [System One compatibility](models-configuration.md#typesafe-system-one)). OpenRouter in particular answers requests in TypeSafe's format without an error but drops the images.
 
 When the service reports token counts, as all System One services do, `result.usage` carries them with their cost. Pi adds the usage of a script's classifier calls to the `codemode` tool result, so it counts toward the session cost in the footer and `/session`. The cost uses the model's catalog price; models without one, such as TypeSafe's direct `jev-latest`, report tokens at no cost.
 
@@ -202,4 +246,4 @@ Complete the provider's headless authentication flow when available. Some provid
 
 ### A compatible endpoint rejects requests
 
-Check its API type and compatibility settings in `models.json`. The upstream server must support the corresponding request fields and behavior.
+Check its API type and compatibility settings in `models.json`. The upstream server must support the corresponding request fields and behavior. Pi already resends a request whose `developer` role or optional field an OpenAI-compatible endpoint rejects; see [Third-party OpenAI-compatible endpoints](#third-party-openai-compatible-endpoints). For any other field the error names, set the matching `compat` field from [Models Configuration](models-configuration.md#openai-completions).

@@ -113,7 +113,7 @@ Tool execution mode is configurable:
 
 In parallel mode, tool completion events follow tool completion order, but persisted toolResult messages still follow assistant source order.
 
-The mode can be set globally via `toolExecution` in the agent config, or per-tool via `executionMode` on `AgentTool`. If any tool call in a batch targets a tool with `executionMode: "sequential"`, the entire batch executes sequentially regardless of the global setting.
+The mode can be set globally via `toolExecution` in the agent config, or per-tool via `executionMode` on `AgentTool`. A call of a tool with `executionMode: "sequential"` is a barrier in its batch: the calls before it have ended when it starts, and the calls after it start when it has ended. The calls between two barriers still run in parallel.
 
 The `beforeToolCall` hook runs after `tool_execution_start` and validated argument parsing. It can block execution and attach `terminate: true` to the blocked result. The `afterToolCall` hook runs after tool execution finishes and before `tool_execution_end` and final tool result message events are emitted.
 
@@ -231,6 +231,11 @@ const agent = new Agent({
 
   // Session ID for provider caching
   sessionId: "session-123",
+
+  // How requests identify the app to providers (pi-ai ClientIdentity), merged over
+  // DEFAULT_AGENT_IDENTITY ({ attribution: PI_ATTRIBUTION }: provider attribution headers name pi).
+  // Pass your app's attribution, or null to send none.
+  identity: { attribution: { name: "my-app", url: "https://my-app.example" } },
 
   // Dynamic API key resolution (for expiring OAuth tokens)
   getApiKey: async (provider) => refreshToken(),
@@ -450,20 +455,22 @@ const agent = new Agent({
 
 ## Tools
 
-Define tools using `AgentTool`:
+Define tools using `AgentTool`. `parameters` is any JSON Schema object; built with `@earendil-works/pi-schema`'s builders, it also types `params` (other schemas give `unknown`, `AgentTool<any>` gives `any`):
 
 ```typescript
-import { Type } from "typebox";
+import { obj, str } from "@earendil-works/pi-schema";
 
-const readFileTool: AgentTool = {
+const readFileParameters = obj({
+  path: str({ description: "File path" }),
+});
+
+const readFileTool: AgentTool<typeof readFileParameters> = {
   name: "read_file",
   label: "Read File",  // For UI display
   description: "Read a file's contents",
-  parameters: Type.Object({
-    path: Type.String({ description: "File path" }),
-  }),
+  parameters: readFileParameters,
   // Override execution mode for this tool (optional).
-  // "sequential" forces the entire batch to run one at a time.
+  // "sequential" runs this tool alone: the calls before it in the batch end first, the calls after it start after it.
   // "parallel" allows concurrent execution with other tool calls.
   // If omitted, the global toolExecution config applies.
   executionMode: "sequential",

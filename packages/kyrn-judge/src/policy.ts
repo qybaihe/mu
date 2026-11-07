@@ -1,4 +1,12 @@
-import type { Answer, BooleanAnswer, ChoiceAnswer, ChoiceQuestion, Question, ScoreAnswer } from "./types.ts";
+import type {
+	Answer,
+	AnswerSignals,
+	BooleanAnswer,
+	ChoiceAnswer,
+	ChoiceQuestion,
+	Question,
+	ScoreAnswer,
+} from "./types.ts";
 
 /**
  * Policies turn probabilities into actions. The middle zone exists so a
@@ -62,6 +70,14 @@ export function pickChoice<Option extends string>(
 /** Nearest rubric level, zero-based. */
 export function scoreLevel(answer: ScoreAnswer): number {
 	return Math.round(answer.score);
+}
+
+/**
+ * Whether an answer is the neutral stand-in a cascade puts where no judge answered: none is trusted with the question
+ * (`untrusted`), or the ones that are failed (`unavailable`). It looks like a verdict of 0.5 but nobody gave it.
+ */
+export function isStandIn(answer: AnswerSignals | undefined): boolean {
+	return answer?.judge === "untrusted" || answer?.judge === "unavailable";
 }
 
 /** A maximally uncertain answer: every three-zone policy reads it as "unsure" and every choice as "nothing fits". */

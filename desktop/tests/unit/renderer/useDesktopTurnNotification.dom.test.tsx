@@ -28,7 +28,18 @@ vi.mock('@/common', () => ({
   },
 }));
 vi.mock('@/renderer/utils/platform', () => ({ isElectronDesktop: () => isDesktop }));
-vi.mock('@/common/config/configService', () => ({ configService: { get: () => settingEnabled } }));
+let soundOn: boolean | undefined;
+vi.mock('@/common/config/configService', () => ({
+  configService: { get: (key: string) => (key === 'system.completionSound' ? soundOn : settingEnabled) },
+}));
+const chimes = vi.hoisted(() => [] as string[]);
+vi.mock('@/renderer/hooks/system/notification/attentionSound', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/renderer/hooks/system/notification/attentionSound')>()),
+  playAttentionSound: (kind: string) => {
+    chimes.push(kind);
+    return true;
+  },
+}));
 vi.mock('@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync', () => ({
   getSnapshotConversationName: () => snapshotName,
 }));
@@ -47,6 +58,8 @@ beforeEach(() => {
   isDesktop = true;
   settingEnabled = true;
   snapshotName = undefined;
+  soundOn = undefined;
+  chimes.length = 0;
 });
 
 describe('useDesktopTurnNotification', () => {
@@ -97,6 +110,23 @@ describe('useDesktopTurnNotification', () => {
     renderHook(() => useDesktopTurnNotification());
     emitStream({ type: 'finish', conversation_id: 's1', turn_id: 't1' });
     expect(showInvoke).not.toHaveBeenCalled();
+  });
+
+  it('chimes for a finished turn and a confirmation when the person turned the sound on, notifications or not', () => {
+    soundOn = true;
+    settingEnabled = false;
+    renderHook(() => useDesktopTurnNotification());
+    emitStream({ type: 'finish', conversation_id: 's1', turn_id: 't1' });
+    emitStream({ type: 'acp_permission', conversation_id: 's1', data: {} });
+    expect(chimes).toEqual(['done', 'question']);
+    expect(showInvoke).not.toHaveBeenCalled();
+  });
+
+  it('does not chime while the sound is off', () => {
+    renderHook(() => useDesktopTurnNotification());
+    emitStream({ type: 'finish', conversation_id: 's1', turn_id: 't1' });
+    expect(chimes).toEqual([]);
+    expect(showInvoke).toHaveBeenCalledTimes(1);
   });
 
   it('is a no-op outside the Electron desktop runtime', () => {

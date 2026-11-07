@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Agent } from "@earendil-works/pi-agent-core";
-import { type AssistantMessage, type AssistantMessageEvent, EventStream, getModel } from "@earendil-works/pi-ai/compat";
+import { type AssistantMessage, createAssistantMessageEventStream, getModel } from "@earendil-works/pi-ai/compat";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AgentSession } from "../src/core/agent-session.ts";
 import type { AgentSessionRuntime } from "../src/core/agent-session-runtime.ts";
@@ -23,19 +23,6 @@ vi.mock("../src/core/output-guard.js", () => ({
 }));
 
 vi.mock("../src/modes/interactive/theme/theme.js", () => ({ theme: {} }));
-
-class MockAssistantStream extends EventStream<AssistantMessageEvent, AssistantMessage> {
-	constructor() {
-		super(
-			(event) => event.type === "done" || event.type === "error",
-			(event) => {
-				if (event.type === "done") return event.message;
-				if (event.type === "error") return event.error;
-				throw new Error("Unexpected event type");
-			},
-		);
-	}
-}
 
 function assistantMessage(text: string): AssistantMessage {
 	return {
@@ -115,7 +102,7 @@ async function runtimeHost(): Promise<AgentSessionRuntime> {
 		getApiKey: () => "test-key",
 		initialState: { model, systemPrompt: "Test", tools: [] },
 		streamFn: () => {
-			const stream = new MockAssistantStream();
+			const stream = createAssistantMessageEventStream();
 			queueMicrotask(() => {
 				stream.push({ type: "start", partial: assistantMessage("") });
 				stream.push({ type: "done", reason: "stop", message: assistantMessage("done") });

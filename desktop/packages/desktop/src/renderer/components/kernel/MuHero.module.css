@@ -1,0 +1,63 @@
+/* The home page's header: a mono status line and a large question. Left-aligned with the input. */
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 4px 26px;
+  animation: mu-hero-in 520ms var(--mu-ease, ease) both;
+  transition: opacity 220ms ease;
+}
+
+.leaving {
+  opacity: 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding: 0 10px 0 6px;
+  border: 1px solid var(--border-base);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-1) 72%, transparent);
+  backdrop-filter: blur(8px);
+  color: var(--bg-6);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.judge {
+  color: var(--text-secondary);
+}
+
+.title {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-size: clamp(26px, 3.4vw, 34px);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+
+@keyframes mu-hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    animation: none;
+    transition: none;
+  }
+}

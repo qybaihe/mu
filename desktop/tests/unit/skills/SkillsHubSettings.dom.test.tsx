@@ -67,6 +67,7 @@ vi.mock('@arco-design/web-react', async (importOriginal) => {
 });
 
 vi.mock('react-router-dom', () => ({
+  useInRouterContext: () => true,
   useLocation: () => ({ pathname: searchParamsMock.pathname, state: searchParamsMock.state }),
   useNavigate: () => searchParamsMock.navigate,
   useSearchParams: () => [searchParamsMock.current, searchParamsMock.setSearchParams],

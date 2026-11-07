@@ -6,6 +6,7 @@ import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 describe("desktop presentation events", () => {
 	it("announces the real pending decision before execution and never inserts UI events into model context", async () => {
@@ -23,7 +24,7 @@ describe("desktop presentation events", () => {
 					mode: "active",
 					only: ["preflight"],
 					onPresentation: (event) => events.push(event),
-					config: parseConfig({ recordState: true }),
+					config: parseConfig({ recordState: true, features: attended() }),
 				}),
 			],
 		});
@@ -65,7 +66,7 @@ describe("desktop presentation events", () => {
 					mode: "active",
 					only: ["preflight"],
 					onPresentation: (event) => events.push(event),
-					config: parseConfig({ features: { preflight: { waitMs: 20 } } }),
+					config: parseConfig({ features: attended({ preflight: { waitMs: 20 } }) }),
 				}),
 			],
 		});

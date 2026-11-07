@@ -2,8 +2,13 @@
 // The source tab beside a native conversation, end to end: pi runs inside the app (native is the default), the project
 // folder is a git repository with one commit, and the main process reads it with the git the app's PATH finds. The
 // fake model writes a new file (listed as untracked after the run), then changes the committed README.md (listed as
-// changed after that run, with nothing clicked; a click shows its diff in 预览); a file the test stages shows under
-// staged after the refresh button. Pictured light and dark. Run it with
+// changed after that run, with nothing clicked; a click shows its diff in 预览); a comment on a line of that diff
+// reaches the model's request with the next message; a file the test stages shows under staged after the refresh
+// button; the tab takes that file out of the index and back with its row's buttons, and commits it with a message
+// from its box (as the person the profile's git config names); README.md's one hunk goes into the index from the
+// header in its diff, and out again from the staged diff's. Pictured light and dark. Last, the rewind button on the message that changed README.md: mu asks what goes
+// back, and with files and conversation README.md is as committed again, the message leaves the transcript and comes
+// back into the send box. Run it with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-source.spec.mjs` (nativeWorld.mjs, profile.mjs).
 //
 // A working git first on the app's PATH: the app takes its PATH from the login shell (fix-path), which in the
@@ -12,7 +17,7 @@
 // a link to a git that runs here first on PATH.
 import { expect, test } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createNativeWorld } from './nativeWorld.mjs';
@@ -45,8 +50,23 @@ function workingGit() {
 const GIT = workingGit();
 test.skip(!GIT || process.platform === 'win32', 'No git that runs on this machine (or Windows: no login shell here)');
 
-const { run, page, paths, sleep, start, stop, expectNoProblems, shot, reachSidebar, send, replyWith, newConversation } =
-  createNativeWorld({ desktopRoot });
+const {
+  run,
+  page,
+  paths,
+  sleep,
+  start,
+  stop,
+  expectNoProblems,
+  shot,
+  reachSidebar,
+  send,
+  replyWith,
+  newConversation,
+  requests,
+  userRows,
+  dialogs,
+} = createNativeWorld({ desktopRoot });
 
 /** Runs the test's own git in the project: a name and address on the line, the profile's home, no system config. */
 const gitIn = (...args) =>
@@ -72,6 +92,11 @@ test.beforeAll(() => {
   const line = `export PATH='${bin}':"$PATH"\n`;
   writeFileSync(join(home, '.zprofile'), line);
   writeFileSync(join(home, '.bash_profile'), line);
+  // The person the app commits as, when the source tab commits: as a person who commits has in their git config.
+  writeFileSync(
+    join(home, '.gitconfig'),
+    '[user]\n\tname = mu E2E\n\temail = e2e@mu.invalid\n[commit]\n\tgpgsign = false\n'
+  );
   console.log(`[mu e2e] git for the app: ${GIT} (linked in ${bin})`);
 });
 
@@ -120,18 +145,46 @@ test('源码 lists the new file as untracked, under the branch, and not the comm
 });
 
 test('a change to the committed file shows after the run, and its diff on a click', async () => {
-  // The tab stays in view: the run's end has it read again, with nothing clicked.
+  // The run's end has the tab read again, with nothing clicked. The app shows the file the model wrote in the preview,
+  // so the person goes back to 源码 to see it listed.
   await send('E2E:WRITE README.md');
   await replyWith('README.md');
   await expect(row('README.md')).toHaveAttribute('data-group', 'unstaged', { timeout: 15_000 });
   await expect(row('README.md')).toHaveAttribute('data-kind', 'modified');
+  await showTab('source');
   await shot('source-changed');
-  await row('README.md').getByRole('button').click();
+  await row('README.md').locator('[data-scm-resource]').click();
   await expect(tab('preview')).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
   const preview = body('preview');
   await expect(preview).toContainText('Written by the fake model for the E2E test.', { timeout: 15_000 });
   await expect(preview).toContainText('E2E project');
   await shot('source-diff');
+  expectNoProblems();
+});
+
+test('a comment on a line of the diff goes to the model with the next message', async () => {
+  const p = page();
+  const preview = body('preview');
+  const line = preview.locator('tr').filter({ hasText: 'Written by the fake model for the E2E test.' }).first();
+  await expect(line).toBeVisible({ timeout: 15_000 });
+  await line.hover();
+  const add = p.getByTestId('diff-comment-add');
+  await expect(add).toBeVisible();
+  await add.click();
+  await p.getByTestId('diff-comment-editor').getByRole('textbox').fill('Say which test wrote this.');
+  await shot('diff-comment-editor');
+  await p.getByTestId('diff-comment-save').click();
+  await expect(p.getByTestId('diff-comment')).toContainText('Say which test wrote this.');
+  await expect(p.locator('[data-composer-zone]').getByText(/^README\.md:\d+$/)).toBeVisible();
+  await shot('diff-comment');
+
+  await send('E2E:ECHO COMMENT-OK');
+  await replyWith('COMMENT-OK');
+  const asked = requests().findLast((request) => request.lastUser.includes('Say which test wrote this.'));
+  expect(asked?.lastUser).toMatch(/Comment on `README\.md`, added line \d+:\nSay which test wrote this\./);
+  expect(asked?.lastUser).toContain('```diff\n+Written by the fake model for the E2E test.');
+  // Sent: the comment leaves the diff and the send box.
+  await expect(p.getByTestId('diff-comment')).toHaveCount(0);
   expectNoProblems();
 });
 
@@ -147,6 +200,56 @@ test('a file staged outside the app shows under staged after a refresh', async (
   expectNoProblems();
 });
 
+test('the source tab takes a file out of the index and back, and commits it with a message', async () => {
+  const p = page();
+  await showTab('source');
+  await row('notes/hello.txt').hover();
+  await row('notes/hello.txt').locator('[data-scm-action="unstage"]').click();
+  await expect(row('notes/hello.txt')).toHaveAttribute('data-group', 'untracked', { timeout: 15_000 });
+  await row('notes/hello.txt').hover();
+  await row('notes/hello.txt').locator('[data-scm-action="stage"]').click();
+  await expect(row('notes/hello.txt')).toHaveAttribute('data-group', 'staged', { timeout: 15_000 });
+  // Something is staged: the button commits that, not everything.
+  await expect(p.getByTestId('native-commit')).not.toHaveAttribute('data-all', 'true');
+  await p.getByTestId('native-commit-message').fill('E2E: the hello note');
+  await shot('source-commit');
+  await p.getByTestId('native-commit').click();
+  await expect(row('notes/hello.txt')).toHaveCount(0, { timeout: 30_000 });
+  expect(gitIn('log', '-1', '--format=%an|%s').trim()).toBe('mu E2E|E2E: the hello note');
+  expect(gitIn('show', '--name-only', '--format=', 'HEAD').trim()).toBe('notes/hello.txt');
+  await expect(row('README.md')).toHaveAttribute('data-group', 'unstaged');
+  await expect(p.getByTestId('native-commit-message')).toHaveValue('');
+  expectNoProblems();
+});
+
+test('the diff’s one hunk goes into the index from its header, and out of it again', async () => {
+  const preview = body('preview');
+  const hunk = preview.getByTestId('diff-hunk-action');
+  await showTab('source');
+  await row('README.md').locator('[data-scm-resource]').click();
+  await expect(preview).toContainText('Written by the fake model for the E2E test.', { timeout: 15_000 });
+  await expect(hunk).toHaveCount(1);
+  await expect(hunk).toHaveAttribute('data-action', 'stage');
+  await shot('diff-hunk-stage');
+  await hunk.click();
+  // In the index, the working tree untouched; the diff shown is the file's unstaged one as it is now: none.
+  await expect.poll(() => gitIn('diff', '--cached', '--name-only').trim(), { timeout: 15_000 }).toBe('README.md');
+  expect(gitIn('diff', '--name-only').trim()).toBe('');
+  await expect(hunk).toHaveCount(0, { timeout: 15_000 });
+  await showTab('source');
+  await expect(row('README.md')).toHaveAttribute('data-group', 'staged', { timeout: 15_000 });
+
+  await row('README.md').locator('[data-scm-resource]').click();
+  await expect(hunk).toHaveAttribute('data-action', 'unstage', { timeout: 15_000 });
+  await shot('diff-hunk-unstage');
+  await hunk.click();
+  await expect.poll(() => gitIn('diff', '--cached', '--name-only').trim(), { timeout: 15_000 }).toBe('');
+  await expect(hunk).toHaveCount(0, { timeout: 15_000 });
+  await showTab('source');
+  await expect(row('README.md')).toHaveAttribute('data-group', 'unstaged', { timeout: 15_000 });
+  expectNoProblems();
+});
+
 test('the same tab and diff in the dark theme', async () => {
   const p = page();
   await p.getByTestId('theme-toggle').click();
@@ -154,12 +257,35 @@ test('the same tab and diff in the dark theme', async () => {
   await showTab('source');
   await sleep(200);
   await shot('source-dark');
-  await row('README.md').getByRole('button').click();
+  await row('README.md').locator('[data-scm-resource]').click();
   await expect(body('preview')).toContainText('Written by the fake model for the E2E test.', { timeout: 15_000 });
   await sleep(200);
   await shot('source-diff-dark');
   await p.getByTestId('theme-toggle').click();
   await sleep(600);
+  expectNoProblems();
+});
+
+test('going back to before the README change puts the file back and the message into the send box', async () => {
+  const p = page();
+  const readme = () => readFileSync(join(paths().project, 'README.md'), 'utf8');
+  const committed = gitIn('show', 'HEAD:README.md');
+  expect(readme()).not.toBe(committed);
+  // Both messages changed files: each has a checkpoint to go back to.
+  await expect(p.getByTestId('message-rewind-button')).toHaveCount(2);
+  const asked = userRows().filter({ hasText: 'E2E:WRITE README.md' });
+  // The message itself, not the middle of its row: a person's message sits at the row's far end, and its buttons show
+  // while the pointer is on it.
+  await asked.getByTestId('message-text-content').hover();
+  await asked.getByTestId('message-rewind-button').click();
+  await expect(dialogs()).toContainText('go back to checkpoint #2', { timeout: 15_000 });
+  await shot('rewind-question');
+  await dialogs().getByTestId('native-dialog-option').filter({ hasText: 'Files and conversation' }).click();
+  await expect.poll(readme, { timeout: 15_000 }).toBe(committed);
+  await expect(userRows().filter({ hasText: 'E2E:WRITE README.md' })).toHaveCount(0, { timeout: 15_000 });
+  await expect(userRows().filter({ hasText: 'E2E:WRITE notes/hello.txt' })).toHaveCount(1);
+  await expect(p.getByTestId('native-send-input')).toHaveValue('E2E:WRITE README.md', { timeout: 15_000 });
+  await shot('rewound');
   await stop();
   expectNoProblems();
   run.passed = true;

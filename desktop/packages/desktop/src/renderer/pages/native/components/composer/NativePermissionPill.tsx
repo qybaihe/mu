@@ -1,5 +1,5 @@
 /**
- * What mu may do without asking in this conversation (full access, Jev approves, minimal), as a pill at the left of
+ * What mu may do without asking in this conversation (full access, judge mode, minimal), as a pill at the left of
  * the send box, with the look of the permission pill in mu's other conversations (AgentModeSelector, compact). The mode
  * in force is mu's latest `permissions.mode` frame, else what the session file says, else mu's default; a pick sends
  * mu's own `/permissions <mode> --here`, which switches this conversation only (the mode new conversations start in is

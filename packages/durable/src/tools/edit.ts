@@ -1,4 +1,4 @@
-import { type Static, Type } from "typebox";
+import { arr, obj, type Static, str } from "@earendil-works/pi-schema";
 import type { FileError } from "../env/index.ts";
 import { defineTool } from "../harness/define.ts";
 import type { ToolRegistration } from "../harness/types.ts";
@@ -16,21 +16,27 @@ import { requireEnv } from "./env.ts";
 import { withFileMutationQueue } from "./file-mutation-queue.ts";
 import { resolveToolPath } from "./path-utils.ts";
 
-const replaceEditSchema = Type.Object({
-	oldText: Type.String({
-		description:
-			"Exact text for one targeted replacement. It must be unique in the original file and must not overlap with any other edits[].oldText in the same call.",
-	}),
-	newText: Type.String({ description: "Replacement text for this targeted edit." }),
-});
+const replaceEditSchema = obj(
+	{
+		oldText: str({
+			description:
+				"Exact text for one targeted replacement. It must be unique in the original file and must not overlap with any other edits[].oldText in the same call.",
+		}),
+		newText: str({ description: "Replacement text for this targeted edit." }),
+	},
+	{ open: true },
+);
 
-const editSchema = Type.Object({
-	path: Type.String({ description: "Path to the file to edit (relative or absolute)" }),
-	edits: Type.Array(replaceEditSchema, {
-		description:
-			"One or more targeted replacements. Each edit is matched against the original file, not incrementally. Do not include overlapping or nested edits. If two changes touch the same block or nearby lines, merge them into one edit instead.",
-	}),
-});
+const editSchema = obj(
+	{
+		path: str({ description: "Path to the file to edit (relative or absolute)" }),
+		edits: arr(replaceEditSchema, {
+			description:
+				"One or more targeted replacements. Each edit is matched against the original file, not incrementally. Do not include overlapping or nested edits. If two changes touch the same block or nearby lines, merge them into one edit instead.",
+		}),
+	},
+	{ open: true },
+);
 
 export type EditToolInput = Static<typeof editSchema>;
 type LegacyEditToolInput = EditToolInput & { oldText?: unknown; newText?: unknown };
@@ -133,7 +139,7 @@ export function createEditTool(): ToolRegistration<typeof editSchema, EditToolDe
 							: { firstChangedLine: diffResult.firstChangedLine }),
 					};
 					return {
-						content: [{ type: "text", text: `Successfully replaced ${edits.length} block(s) in ${path}.` }],
+						output: [{ type: "text", text: `Successfully replaced ${edits.length} block(s) in ${path}.` }],
 						details,
 					};
 				},

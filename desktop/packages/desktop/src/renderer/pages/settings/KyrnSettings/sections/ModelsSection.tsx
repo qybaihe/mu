@@ -36,12 +36,7 @@ export default function ProvidersSection({ draft, base, available, onDraft }: Mo
   const setModels = (patch: Partial<KyrnSettings['models']>) =>
     onDraft((now) => ({ ...now, settings: { ...now.settings, models: { ...now.settings.models, ...patch } } }));
   return (
-    <SectionShell
-      id='providers'
-      title={t('mu.sections.providers')}
-      description={t('mu.providers.lead')}
-      actions={inRouter ? <ReopenGuide /> : undefined}
-    >
+    <SectionShell id='providers' title={t('mu.sections.providers')} actions={inRouter ? <ReopenGuide /> : undefined}>
       <ProviderManager
         draft={draft}
         base={base}
@@ -73,15 +68,20 @@ export default function ProvidersSection({ draft, base, available, onDraft }: Mo
  */
 export function DefaultModelSection({ draft, base, available, onDraft }: ModelsSectionProps) {
   const { t } = useTranslation();
-  const { accounts } = useSubscriptionLogin();
+  const { accounts, usable } = useSubscriptionLogin();
+  const hidden = hiddenOf(draft.settings);
+  // An API key's provider is offered with the models chosen for the menus; an entry of models.json is edited here.
+  const { providers, foreign } = draft.settings.models;
+  const own = new Set([...providers.map((provider) => provider.id), ...foreign.map((entry) => entry.id), ...hidden]);
+  const chosen = [...accounts, ...usable.filter((entry) => !own.has(entry.provider))];
   return (
-    <SectionShell id='defaultModel' title={t('mu.sections.defaultModel')} description={t('mu.defaults.summary')}>
+    <SectionShell id='defaultModel' title={t('mu.sections.defaultModel')}>
       <DefaultModelCard
         settings={draft.settings}
         base={base}
         available={available}
-        accounts={accounts}
-        hidden={hiddenOf(draft.settings)}
+        accounts={chosen}
+        hidden={hidden}
         onChange={(defaults) =>
           onDraft((now) => ({
             ...now,

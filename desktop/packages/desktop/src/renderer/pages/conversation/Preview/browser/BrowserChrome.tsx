@@ -1,16 +1,24 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Dropdown, Input, Menu } from '@arco-design/web-react';
 import type { RefInputType } from '@arco-design/web-react/es/Input/interface';
-import { Close, Earth, FullScreen, Left, Loading, OffScreen, Plus, Refresh, Right } from '@icon-park/react';
+import {
+  Bug,
+  Click,
+  Close,
+  Earth,
+  FullScreen,
+  Left,
+  Loading,
+  OffScreen,
+  Plus,
+  Refresh,
+  Right,
+  Screenshot,
+} from '@icon-park/react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { WebviewNavigationState } from '@/renderer/components/media/WebviewHost';
+import { formatNumber } from '@/renderer/services/i18n/format';
 import type { BrowserTab } from './browserStore';
 import { BROWSER_BLANK_URL, BROWSER_TAB_FALLBACK_TITLE, browserTabLabelFromUrl } from './constants';
 import styles from './BrowserPanel.module.css';
@@ -34,6 +42,16 @@ export type BrowserChromeProps = {
   onReload: () => void;
   /** What the person typed into the address field, not yet resolved to an address. */
   onSubmit: (input: string) => void;
+  /** The element picker runs on the page in front. */
+  picking?: boolean;
+  /** Starts or stops the element picker; absent with no page in front (no button then). */
+  onPick?: () => void;
+  /** Puts a picture of the page in front, as it is on screen, into the next message; absent: no button. */
+  onScreenshot?: () => void;
+  /** What the page in front wrote to its console since it loaded: its button shows only when there is something. */
+  pageConsole?: { errors: number; warnings: number };
+  /** Puts the page's console into the next message; absent: no button. */
+  onSendConsole?: () => void;
   maximized: boolean;
   /** Absent where the browser cannot fill the page (a phone's sheet): no button then. */
   onToggleMaximize?: () => void;
@@ -79,10 +97,15 @@ export default function BrowserChrome({
   onForward,
   onReload,
   onSubmit,
+  picking = false,
+  onPick,
+  onScreenshot,
+  pageConsole,
+  onSendConsole,
   maximized,
   onToggleMaximize,
 }: BrowserChromeProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const active = tabs.find((tab) => tab.id === activeTabId);
   const where = navigation?.url ?? active?.url ?? '';
   const address = where === BROWSER_BLANK_URL ? '' : where;
@@ -253,6 +276,46 @@ export default function BrowserChrome({
         </div>
 
         <div className={styles.actions}>
+          {onPick ? (
+            <Button
+              type='text'
+              size='mini'
+              className={styles.actionButton}
+              icon={<Click size={14} />}
+              aria-label={picking ? t('preview.browser.pick.stop') : t('preview.browser.pick.start')}
+              title={picking ? t('preview.browser.pick.stop') : t('preview.browser.pick.start')}
+              aria-pressed={picking}
+              data-testid='browser-pick-element'
+              onClick={onPick}
+            />
+          ) : null}
+          {onScreenshot ? (
+            <Button
+              type='text'
+              size='mini'
+              className={styles.actionButton}
+              icon={<Screenshot size={14} />}
+              aria-label={t('preview.browser.screenshot.send')}
+              title={t('preview.browser.screenshot.send')}
+              data-testid='browser-send-screenshot'
+              onClick={onScreenshot}
+            />
+          ) : null}
+          {onSendConsole && pageConsole && pageConsole.errors + pageConsole.warnings > 0 ? (
+            <Button
+              type='text'
+              size='mini'
+              className={pageConsole.errors ? styles.consoleErrors : styles.consoleWarnings}
+              icon={<Bug size={14} />}
+              aria-label={t('preview.browser.console.send')}
+              title={t('preview.browser.console.send')}
+              data-testid='browser-send-console'
+              data-errors={pageConsole.errors}
+              onClick={onSendConsole}
+            >
+              {formatNumber(pageConsole.errors + pageConsole.warnings, i18n.language)}
+            </Button>
+          ) : null}
           {onToggleMaximize ? (
             <Button
               type='text'

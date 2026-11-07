@@ -141,6 +141,10 @@ export type AuthEvent =
 			type: "device_code";
 			userCode: string;
 			verificationUri: string;
+			/** Offer best-effort browser opening on user confirmation. Defaults to true; clients may ignore it. */
+			openBrowserOnConfirm?: boolean;
+			/** Offer copying of userCode on user confirmation, replacing the clipboard. Defaults to true. */
+			copyCodeOnConfirm?: boolean;
 			intervalSeconds?: number;
 			expiresInSeconds?: number;
 	  }
@@ -206,6 +210,17 @@ export interface LoginOptions {
 	 * the ID on first use and must return the same ID on every later call.
 	 */
 	getDeviceId?: () => string;
+	/**
+	 * Name this app introduces itself with during login, e.g. OpenAI's agent name hint and
+	 * Codex originator. Defaults to pi's own name.
+	 */
+	agentName?: string;
+	/**
+	 * Don't listen for the browser's redirect on this machine: the flow takes only the redirect address the person
+	 * pastes. For when another program keeps a fixed callback port (the Codex CLI's login on 1455, which Sign in with
+	 * ChatGPT shares). Flows without a fixed port ignore it.
+	 */
+	pasteOnly?: boolean;
 }
 
 /**

@@ -1,4 +1,4 @@
-# Local judge: the virtualenv and downloaded weights are rebuilt by `kyrn/bin/kyrn-judge-local setup`
+# What Laya's sidecar (mu 0.2.4 and earlier) left in a checkout: its virtualenv and weights
 local-judge/.venv/
 local-judge/models/
 __pycache__/

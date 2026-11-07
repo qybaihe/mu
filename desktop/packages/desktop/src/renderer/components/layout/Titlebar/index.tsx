@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { ArrowCircleLeft, ArrowLeft, ArrowRight, ExpandLeft, ExpandRight, Peoples } from '@icon-park/react';
+import { ArrowCircleLeft, ArrowLeft, ArrowRight, ExpandLeft, ExpandRight } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { ipcBridge } from '@/common';
-import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 import MobileConversationBrand from './MobileConversationBrand';
 import WindowControls from '../WindowControls';
 import { WORKSPACE_STATE_EVENT, dispatchWorkspaceToggleEvent } from '@renderer/utils/workspace/workspaceEvents';
@@ -90,7 +89,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const workspaceTooltip = workspaceCollapsed
     ? t('conversation.workspace.expandPanel')
     : t('conversation.workspace.collapsePanel');
-  const backToChatTooltip = t('common.back', { defaultValue: 'Back to Chat' });
+  const backToChatTooltip = t('common.back', { defaultValue: 'Back' });
   const isSettingsRoute = location.pathname.startsWith('/settings');
   const iconSize = 18;
   // Desktop uses slimmer strokes to match macOS-native chrome aesthetics;
@@ -134,14 +133,14 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
       const path = `${location.pathname}${location.search}${location.hash}`;
       lastNonSettingsPathRef.current = path;
       try {
-        sessionStorage.setItem('aion:last-non-settings-path', path);
+        sessionStorage.setItem('mu:last-non-settings-path', path);
       } catch {
         // ignore
       }
       return;
     }
     try {
-      const stored = sessionStorage.getItem('aion:last-non-settings-path');
+      const stored = sessionStorage.getItem('mu:last-non-settings-path');
       if (stored) {
         lastNonSettingsPathRef.current = stored;
       }
@@ -156,29 +155,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
       return;
     }
 
-    // Team mode: show team name
-    if (TEAM_MODE_ENABLED) {
-      const teamMatch = location.pathname.match(/^\/team\/([^/]+)/);
-      const team_id = teamMatch?.[1];
-      if (team_id) {
-        let cancelled = false;
-        void ipcBridge.team.get
-          .invoke({ id: team_id })
-          .then((team) => {
-            if (cancelled) return;
-            setMobileCenterTitle(team?.name || appTitle);
-          })
-          .catch(() => {
-            if (cancelled) return;
-            setMobileCenterTitle(appTitle);
-          });
-        return () => {
-          cancelled = true;
-        };
-      }
-    }
-
-    // Single agent mode: show conversation name
+    // Show the conversation's name
     const match = location.pathname.match(/^\/conversation\/([^/]+)/);
     const conversation_id = match?.[1];
     if (!conversation_id) {
@@ -317,14 +294,8 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
             if (conversation_id) {
               return <MobileConversationBrand conversation_id={conversation_id} fallbackTitle={mobileCenterTitle} />;
             }
-            const isTeamRoute = TEAM_MODE_ENABLED && /^\/team\/[^/]+/.test(location.pathname);
             return (
               <span className='app-titlebar__brand-mobile'>
-                {isTeamRoute && (
-                  <span className='app-titlebar__brand-icon' aria-hidden='true'>
-                    <Peoples theme='outline' size='16' fill='currentColor' />
-                  </span>
-                )}
                 <span className='app-titlebar__brand-text'>{mobileCenterTitle}</span>
               </span>
             );

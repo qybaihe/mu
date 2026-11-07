@@ -24,9 +24,19 @@ export type PrimaryShortcutOptions = {
  */
 export const COMMAND_PALETTE_SHORTCUT: PrimaryShortcutOptions = { key: 'k', targetGuard: 'embedded-editor' };
 
+/** Cmd/Ctrl+P: quick open, a file of the open conversation's folder by its name. Not from an embedded editor. */
+export const QUICK_OPEN_SHORTCUT: PrimaryShortcutOptions = { key: 'p', targetGuard: 'embedded-editor' };
+
 /** Cmd/Ctrl+Shift+F: the search through what was said in every conversation. */
 export const MESSAGE_SEARCH_SHORTCUT: PrimaryShortcutOptions = {
   key: 'f',
+  shiftKey: true,
+  targetGuard: 'embedded-editor',
+};
+
+/** Cmd/Ctrl+Shift+A: the next conversation that wants its person (marked unread in the sidebar). */
+export const NEXT_WAITING_SHORTCUT: PrimaryShortcutOptions = {
+  key: 'a',
   shiftKey: true,
   targetGuard: 'embedded-editor',
 };
@@ -82,6 +92,19 @@ export const isPrimaryApplicationShortcut = (
   }
 
   return event.key.toLowerCase() === key.toLowerCase() && !isShortcutBlockedByTarget(event, targetGuard);
+};
+
+/**
+ * Cmd/Ctrl with a digit from 1 to 9, and nothing else: the place in the sidebar's list it goes to, else null. The key's
+ * place on the keyboard counts (`Digit3`), so a layout whose digits need Shift (AZERTY) has them too. Not from an
+ * embedded editor or terminal, which keep their own chords.
+ */
+export const primaryDigit = (event: KeyboardEvent): number | null => {
+  if (event.defaultPrevented || event.isComposing || event.repeat || event.altKey || event.shiftKey) return null;
+  if (!isPlatformPrimaryModifier(event)) return null;
+  const digit = /^Digit([1-9])$/.exec(event.code ?? '')?.[1] ?? (/^[1-9]$/.test(event.key) ? event.key : undefined);
+  if (!digit || isShortcutBlockedByTarget(event, 'embedded-editor')) return null;
+  return Number(digit);
 };
 
 /** A primary-modifier shortcut as the platform writes it: ⌘K on macOS, Ctrl+K elsewhere. */

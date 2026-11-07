@@ -101,7 +101,7 @@ describe('a judgment, opened', () => {
     const card = within(cards()[0]);
     expect(card.getByText(copy.state.returned)).toBeInTheDocument();
     expect(card.getByText(copy.actions.toRuntime)).toBeInTheDocument();
-    expect(copy.actions.toRuntime).toMatch(/not proof that the operation completed/);
+    expect(copy.actions.toRuntime).toMatch(/doesn't confirm the action finished/);
     expect(card.queryByText(copy.state.confirmed)).not.toBeInTheDocument();
     expect(card.queryByText(copy.actions.mainGiven)).not.toBeInTheDocument();
   });
@@ -131,8 +131,10 @@ describe('a judgment, opened', () => {
       new Set([copy.state.shadow, copy.state.late, copy.state.fallback, copy.state.rule, copy.state.returned]).size
     ).toBe(5);
     expect(cards().map((card) => card.getAttribute('data-state'))).toEqual(['rule', 'fallback', 'late', 'shadow']);
+    // Each state tag carries the judge's diamond, in the tone of the card's edge.
+    for (const card of cards()) expect(within(card).getByTestId('judge-state-mark')).toBeInTheDocument();
     // A default is described as a default, never as permission.
-    expect(copy.actions.useDefault).toMatch(/not permission to proceed/);
+    expect(copy.actions.useDefault).toMatch(/isn't permission to proceed/);
   });
 
   it('separates permission to deliver from a confirmed delivery', () => {
@@ -180,7 +182,7 @@ describe('a judgment, opened', () => {
     expect(publish.getByText(`${copy.fields.publish}`).parentElement).toHaveTextContent(copy.values.false);
     expect(publish.queryByText(copy.actions.allowPublish)).not.toBeInTheDocument();
     expect(admission.getByText(/Candidates covered by this record: 4\./)).toBeInTheDocument();
-    expect(admission.getByText(/default strategy used: 4\./)).toBeInTheDocument();
+    expect(admission.getByText(/\(default used\): 4\./)).toBeInTheDocument();
   });
 
   it('does not present token savings, cost or a model reasoning trace', () => {
@@ -249,7 +251,7 @@ describe('a judgment, opened', () => {
     expect(screen.queryByText(copy.questions.other)).not.toBeInTheDocument();
   });
 
-  it('asks the hive’s relate question and Jev’s approval question, not a nameless recorded judgment', () => {
+  it('asks the hive’s relate question and the judge’s approval question, not a nameless recorded judgment', () => {
     view([
       event(
         'decision',
@@ -265,6 +267,57 @@ describe('a judgment, opened', () => {
     expect(approval.getByText(copy.questions.approval)).toBeInTheDocument();
     expect(approval.getByText(copy.fields.result).parentElement).toHaveTextContent(copy.values.beyond);
     expect(screen.queryByText(copy.questions.other)).not.toBeInTheDocument();
+  });
+
+  it('says what the person answered to the question a judgment sent them to, and that they marked it wrong', () => {
+    view([
+      event(
+        'decision',
+        ledger({ id: 'ask-1', specId: 'tool.approval', outcome: 'unsure', userAnswer: 'session' }),
+        turn('r', 4, 2)
+      ),
+      event(
+        'decision',
+        ledger({
+          id: 'ask-2',
+          specId: 'tool.approval',
+          outcome: 'beyond',
+          userAnswer: 'deny',
+          markedWrong: { note: 'it was the test I asked for' },
+        }),
+        turn('r', 4, 3)
+      ),
+      event('decision', ledger({ id: 'ask-3', specId: 'tool.approval', outcome: 'approve' }), turn('r', 4, 4)),
+    ]);
+
+    const [approved, denied, answered] = cards().map((card) => within(card));
+    expect(answered.getByTestId('judge-user-answer')).toHaveTextContent(copy.userAnswer.session);
+    expect(answered.queryByTestId('judge-marked-wrong')).not.toBeInTheDocument();
+    expect(denied.getByTestId('judge-user-answer')).toHaveTextContent(copy.userAnswer.deny);
+    expect(denied.getByTestId('judge-marked-wrong')).toHaveTextContent(
+      'You marked this verdict as wrong: it was the test I asked for'
+    );
+    // A verdict that let the step run sent nobody a question.
+    expect(approved.queryByTestId('judge-user-answer')).not.toBeInTheDocument();
+  });
+
+  it('says the person’s answer in Chinese with mu’s own words for it', async () => {
+    const zh = createInstance();
+    await zh.init({
+      lng: 'zh-CN',
+      resources: { 'zh-CN': { translation: { common: zhCommon, mu: zhMu } } },
+      interpolation: { escapeValue: false },
+    });
+    render(
+      <I18nextProvider i18n={zh}>
+        <Judge
+          events={[
+            event('decision', ledger({ id: 'ask-1', specId: 'tool.approval', userAnswer: 'once' }), turn('r', 5, 2)),
+          ]}
+        />
+      </I18nextProvider>
+    );
+    expect(screen.getByTestId('judge-user-answer')).toHaveTextContent('你选了「允许这一次」。');
   });
 
   it('asks the experience library’s questions and says which lessons were followed', () => {
@@ -311,14 +364,14 @@ describe('a judgment, opened', () => {
     ]);
 
     const card = within(cards()[0]);
-    // The counted answers are values ("Keep"), never a field's label ("Suggested retention") or the raw id.
+    // The counted answers are values ("Keep"), never a field's label ("Parts kept") or the raw id.
     expect(card.getByText(copy.values.keep).parentElement).toHaveTextContent(`${copy.values.keep}×2`);
     expect(card.getByText(copy.values.shrink).parentElement).toHaveTextContent(`${copy.values.shrink}×1`);
     expect(card.getByText(copy.values.now)).toBeInTheDocument();
     expect(card.queryByText(copy.fields.keep)).not.toBeInTheDocument();
     expect(card.queryByText('shrink')).not.toBeInTheDocument();
     expect(card.getByText('Candidates covered by this record: 4.')).toBeInTheDocument();
-    expect(card.getByText('Without an answer, default strategy used: 1.')).toBeInTheDocument();
+    expect(card.getByText('Candidates with no answer (default used): 1.')).toBeInTheDocument();
   });
 
   it('formats numbers in the app language rather than the operating system’s', async () => {
@@ -582,7 +635,7 @@ function measure(scroller: HTMLElement) {
 }
 
 describe('the judge log', () => {
-  it('says what happened one line at a time, oldest first: the time and a short sentence, the code only once opened', () => {
+  it('says what happened one line at a time, oldest first: the time and a short sentence, a verdict with its readout', () => {
     showLog([
       event('preflight.verdict', verdict(), turn('runtime-a', 1, 2)),
       event('decision', ledger({ id: 'drift-1', specId: 'turn.drift', outcome: 'on_track' }), turn('runtime-a', 1, 5)),
@@ -596,11 +649,14 @@ describe('the judge log', () => {
     ]);
     expect(lines()[0]).toHaveTextContent(`Classified by Jev: ${copy.values.multi_step_task}`);
     expect(lines()[1]).toHaveTextContent(`${copy.questions.drift} · ${copy.state.returned}`);
-    expect(lines()[2]).toHaveTextContent('github: it did not answer in time');
-    // No line leads with a code: it reads as a sentence, not a log record.
-    for (const [line, code] of lines().map((each) => [each, each.getAttribute('data-code')!] as const))
-      expect(line).not.toHaveTextContent(code);
-    // A line is one line: the whole record waits until it is opened, and the code with it.
+    expect(lines()[2]).toHaveTextContent("github: it didn't respond in time");
+    // A line leads with its sentence. A verdict follows it with a readout, the decision point that asked as the
+    // ledger names it; an event of the run has none, and its code waits until the line is opened.
+    expect(within(lines()[0]).getByTestId('judge-line-readout')).toHaveTextContent('input.preflight');
+    expect(within(lines()[1]).getByTestId('judge-line-readout')).toHaveTextContent('turn.drift');
+    expect(within(lines()[2]).queryByTestId('judge-line-readout')).not.toBeInTheDocument();
+    expect(lines()[2]).not.toHaveTextContent('mcp.failed');
+    // A line is one line: the whole record waits until it is opened.
     expect(screen.queryByTestId('judge-card')).not.toBeInTheDocument();
     fireEvent.click(within(lines()[1]).getByRole('button'));
     expect(within(lines()[1]).getByTestId('judge-line-code')).toHaveTextContent('turn.drift');
@@ -608,11 +664,11 @@ describe('the judge log', () => {
 
   it('says the permission mode in words, by the name the permission menu gives it', () => {
     showLog([
-      event('permissions.mode', { mode: 'jev', label: 'Jev approves', conversationSwitch: true, modes: [] }),
+      event('permissions.mode', { mode: 'judge', label: 'Judge mode', conversationSwitch: true, modes: [] }),
       event('permissions.mode', { mode: 'someday', conversationSwitch: true, modes: [] }),
     ]);
 
-    expect(lines()[0]).toHaveTextContent(`Permission mode: ${mu.permissions.modes.jev.title}`);
+    expect(lines()[0]).toHaveTextContent(`Permission mode: ${mu.permissions.modes.judge.title}`);
     // A mode this build does not know, without a label of its own, is named by the event alone.
     expect(lines()[1]).toHaveTextContent(common.kyrn.event.permissions.mode);
     expect(lines()[1]).not.toHaveTextContent('permissions.mode');
@@ -621,7 +677,7 @@ describe('the judge log', () => {
   it('says how things stand once: reopening the conversation adds no lines, a change adds one', () => {
     // Each open starts the harness again, and each start reports the permission mode, the board and what it inherited.
     const opened = (runtime: string, sequence: number) => [
-      event('permissions.mode', { mode: 'jev', label: 'Jev approves', modes: [] }, turn(runtime, 0, sequence)),
+      event('permissions.mode', { mode: 'judge', label: 'Judge mode', modes: [] }, turn(runtime, 0, sequence)),
       event(
         'board.switched',
         { on: false, cwd: '/p', model: null, modelChosen: false },
@@ -659,7 +715,7 @@ describe('the judge log', () => {
       'mcp.failed',
       'board.switched',
       'permissions.mode',
-      // The next open reports the board off and the mode Jev again: both changed back, so both get a line.
+      // The next open reports the board off and judge mode again: both changed back, so both get a line.
       'permissions.mode',
       'board.switched',
     ]);
@@ -699,6 +755,8 @@ describe('the judge log', () => {
     const [judgment, followed] = lines();
     fireEvent.click(within(judgment).getByRole('button'));
     const card = within(within(judgment).getByTestId('judge-card'));
+    // The log's opened line says what it is already: its tag has no diamond.
+    expect(card.queryByTestId('judge-state-mark')).toBeNull();
     expect(card.getByText(copy.fields.applied).parentElement).toHaveTextContent(
       'Run the tests before saying it is done.'
     );
@@ -720,6 +778,81 @@ describe('the judge log', () => {
     );
     await act(async () => undefined);
     expect(lessons).not.toHaveBeenCalled();
+  });
+
+  it('offers to tell mu a verdict was wrong, where it can send mu a command, and sends exactly /ledger wrong <id>', async () => {
+    const record = 'c0ffee00-1d2e-4f00-9a00-000000000001';
+    const judged = [
+      // A verdict with no ledger record of its own: nothing to name.
+      event('preflight.verdict', verdict(), turn('r', 1, 2)),
+      event('decision', ledger({ id: record, specId: 'tool.approval', outcome: 'unsure' }), turn('r', 1, 3)),
+      event(
+        'decision',
+        ledger({ id: 'already', specId: 'tool.risk', outcome: 'confirm', markedWrong: {} }),
+        turn('r', 1, 4)
+      ),
+    ];
+    let answer: ((taken: boolean) => void) | undefined;
+    const command = vi.fn((_text: string) => new Promise<boolean>((resolve) => (answer = resolve)));
+    const shown = (events: Activity[], send?: typeof command) => (
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>
+          <JudgeLog events={events} command={send} />
+        </MemoryRouter>
+      </I18nextProvider>
+    );
+    const result = render(shown(judged, command));
+    const open = () => lines().forEach((line) => fireEvent.click(within(line).getAllByRole('button')[0]));
+    open();
+    const buttons = () => screen.queryAllByTestId('judge-mark-wrong');
+    // Only the verdict with a record that is not marked yet.
+    expect(buttons()).toHaveLength(1);
+    expect(within(lines()[1]).getByTestId('judge-mark-wrong')).toHaveTextContent(copy.markWrong);
+
+    fireEvent.click(buttons()[0]);
+    expect(command).toHaveBeenCalledTimes(1);
+    expect(command).toHaveBeenCalledWith(`/ledger wrong ${record}`);
+    // It waits while mu takes it, and after: the mark comes back as an entry.
+    expect(buttons()[0]).toBeDisabled();
+    await act(async () => answer?.(true));
+    expect(buttons()[0]).toBeDisabled();
+    fireEvent.click(buttons()[0]);
+    expect(command).toHaveBeenCalledTimes(1);
+
+    // The mark arrived: the card says so, and offers nothing more.
+    result.rerender(
+      shown(
+        judged.map((each) =>
+          each.payload.id === record ? { ...each, payload: { ...each.payload, markedWrong: {} } } : each
+        ),
+        command
+      )
+    );
+    expect(buttons()).toHaveLength(0);
+    expect(within(lines()[1]).getByTestId('judge-marked-wrong')).toHaveTextContent(copy.markedWrong);
+
+    // Where the app has no line to the conversation's mu, there is no button at all.
+    result.rerender(shown(judged));
+    expect(buttons()).toHaveLength(0);
+  });
+
+  it('lets a mark mu did not take be sent again', async () => {
+    const command = vi.fn(async (_text: string) => false);
+    render(
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>
+          <JudgeLog
+            events={[event('decision', ledger({ id: 'r1', specId: 'tool.risk', outcome: 'confirm' }), turn('r', 2, 2))]}
+            command={command}
+          />
+        </MemoryRouter>
+      </I18nextProvider>
+    );
+    fireEvent.click(within(lines()[0]).getAllByRole('button')[0]);
+    const button = screen.getByTestId('judge-mark-wrong');
+    await act(async () => fireEvent.click(button));
+    expect(command).toHaveBeenCalledWith('/ledger wrong r1');
+    expect(button).not.toBeDisabled();
   });
 
   it('opens a line to the whole record: a judgment as its card, an event as its words and raw payload', () => {

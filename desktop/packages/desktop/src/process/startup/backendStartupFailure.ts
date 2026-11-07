@@ -34,8 +34,8 @@ const GLIBC_VERSION_RE = /GLIBC_(\d+\.\d+)/g;
 const GLIBC_NOT_FOUND_RE = /GLIBC_\d+\.\d+[\s\S]{0,160}not found|not found[\s\S]{0,160}GLIBC_\d+\.\d+/i;
 const PACKAGED_APP_MARKER_ENTRIES = new Set(['app.asar', 'app.asar.unpacked/']);
 const DATA_MIGRATION_BOUNDARY_STAGES = new Set(['database.migration', 'database.schema_repair']);
-// aioncore's downgrade detection: the local database was written by a NEWER
-// AionUi than the one currently running (see AionCore `database.rs`,
+// The backend's downgrade detection: the local database was written by a NEWER
+// version of the app than the one currently running (see the backend's `database.rs`,
 // DATABASE_NEWER_THAN_APP_STAGE). The database is intact — the fix is
 // upgrading, so this must not fall into the generic migration-failure bucket.
 const DATABASE_NEWER_THAN_APP_BOUNDARY_STAGE = 'database.newer_than_app';
@@ -52,7 +52,7 @@ const STARTUP_DIRECTORY_PERMISSION_RE = /\b(?:EACCES|EPERM)\b|permission denied|
 const STARTUP_DIRECTORY_UNAVAILABLE_RE =
   /startup directory preparation failed|(?:\b(?:ENOENT|ENOTDIR|EEXIST)\b[\s\S]{0,160}\bmkdir\b)|(?:\bmkdir\b[\s\S]{0,160}\b(?:ENOENT|ENOTDIR|EEXIST)\b)/i;
 const ASSISTANT_STORAGE_BOOTSTRAP_BOUNDARY_CODE = 'BOOTSTRAP_SERVER_FAILED';
-// Benign boundary code emitted by an aioncore instance that yielded the
+// Benign boundary code emitted by a backend instance that yielded the
 // data-dir instance guard to a peer (Sentry 135525166 Option A).
 const TRANSIENT_CONCURRENT_STARTUP_PEER_CODE = 'BOOTSTRAP_PEER_ALREADY_RUNNING';
 // Distinct bootstrap stage emitted when assistant storage bootstrap loses a
@@ -132,11 +132,11 @@ function classifyIncompleteInstallation(details: ErrorWithDetails['details']): B
   const hasPackagedApp = resourcesDirEntries.some((entry) => PACKAGED_APP_MARKER_ENTRIES.has(entry));
   if (!hasPackagedApp) return undefined;
 
-  const missingBundledAioncoreDir = !resourcesDirEntries.includes('bundled-aioncore/');
+  const missingBundledBackendDir = !resourcesDirEntries.includes('bundled-backend/');
   const missingRuntimeDir = details.runtimeDirExists === false && typeof details.runtimeKey === 'string';
-  const missingResources = missingBundledAioncoreDir ? ['bundled-aioncore/'] : [];
+  const missingResources = missingBundledBackendDir ? ['bundled-backend/'] : [];
   if (details.runtimeDirExists === false && typeof details.runtimeKey === 'string') {
-    missingResources.push(`bundled-aioncore/${details.runtimeKey}/`);
+    missingResources.push(`bundled-backend/${details.runtimeKey}/`);
   }
   const runtimeDirEntries = getStringArray(details.runtimeDirEntries);
   const missingManagedResourcesDir =
@@ -145,7 +145,7 @@ function classifyIncompleteInstallation(details: ErrorWithDetails['details']): B
     runtimeDirEntries !== undefined &&
     !runtimeDirEntries.includes('managed-resources/');
   if (missingManagedResourcesDir && typeof details.runtimeKey === 'string') {
-    missingResources.push(`bundled-aioncore/${details.runtimeKey}/managed-resources/`);
+    missingResources.push(`bundled-backend/${details.runtimeKey}/managed-resources/`);
   }
   const missingRuntimeBinary =
     details.runtimeDirExists === true &&
@@ -154,19 +154,19 @@ function classifyIncompleteInstallation(details: ErrorWithDetails['details']): B
     runtimeDirEntries !== undefined &&
     !runtimeDirEntries.includes(details.binaryName);
   if (missingRuntimeBinary && typeof details.runtimeKey === 'string' && typeof details.binaryName === 'string') {
-    missingResources.push(`bundled-aioncore/${details.runtimeKey}/${details.binaryName}`);
+    missingResources.push(`bundled-backend/${details.runtimeKey}/${details.binaryName}`);
   }
 
   if (missingResources.length === 0) return undefined;
 
   return {
     incompleteInstallationKind:
-      missingBundledAioncoreDir || missingRuntimeDir || missingManagedResourcesDir
+      missingBundledBackendDir || missingRuntimeDir || missingManagedResourcesDir
         ? 'missing_directory_resources'
         : 'missing_backend_binary',
     missingBackendBinary:
-      missingBundledAioncoreDir || missingRuntimeDir || missingManagedResourcesDir || missingRuntimeBinary,
-    missingBundledAioncoreDir,
+      missingBundledBackendDir || missingRuntimeDir || missingManagedResourcesDir || missingRuntimeBinary,
+    missingBundledBackendDir,
     missingHubDir: getMissingDirectoryFlag(resourcesDirEntries, 'hub/'),
     missingPwaDir: getMissingDirectoryFlag(resourcesDirEntries, 'pwa/'),
     reason: 'backend_incomplete_installation',
@@ -195,7 +195,7 @@ function classifyLocalDataRepairFailure(
   };
 }
 
-// A transient concurrent-startup race (two aioncore instances briefly bootstrapping
+// A transient concurrent-startup race (two backend instances briefly bootstrapping
 // the same data directory) is self-recoverable and must NOT be reported as local
 // data corruption. It is signalled either by the benign peer-yield boundary code
 // (Option A) or by the assistant-bootstrap contention stage after retries are

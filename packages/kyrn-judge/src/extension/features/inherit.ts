@@ -1,6 +1,7 @@
-import { isAbsolute, join, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { canonical } from "../../inherit/files.ts";
+import { folderInstructions } from "../../inherit/folders.ts";
 import { ruleLabel, rulesForFile } from "../../inherit/rules.ts";
 import {
 	type InheritanceScan,
@@ -31,7 +32,9 @@ export const INHERIT_DEFAULTS = {
 	rules: true,
 	skills: true,
 	mcp: true,
-	/** A rule handed over because a file matched is cut to this length; the rest stays a `read` away. */
+	/** The AGENTS.md or CLAUDE.md of a folder below the project folder, handed over when a tool first touches a file there. */
+	folders: true,
+	/** A rule handed over because a file matched, or a folder's instructions, is cut to this length; the rest stays a `read` away. */
 	maxRuleChars: 4000,
 	/** All always-on rules together. What does not fit is offered by description instead. */
 	maxAlwaysChars: 16000,
@@ -87,6 +90,11 @@ export function inheritedFor(
  * then it rides along with that tool's result, once. After a compaction the
  * note is gone from the context, so it may be handed over once more. Rules
  * with neither are listed by description and read on demand.
+ *
+ * A folder below the project folder can have instructions of its own, an AGENTS.md or CLAUDE.md, as one package of a
+ * monorepo does. pi loads only the project folder's and those above it; this hands a folder's over with the result of
+ * the first tool that touches a file in it, once, as Claude Code and Codex read them when the work gets there. pi's
+ * `--no-context-files` turns these off with its own.
  *
  * Nothing is ever written to the other tools' folders.
  */
@@ -145,7 +153,7 @@ export function registerInherit(runtime: KyrnRuntime, roots: HarnessRoots | unde
 			if (!ctx.hasUI || process.env.KYRN_SWARM_DEPTH) return undefined;
 			const summary = inheritanceSummary(found);
 			if (!summary || readInheritState(roots.agentDir).noticeShownAt) return undefined;
-			ctx.ui.notify(`${summary} /inherit lists them; features.inherit in mu.json switches sources off.`, "info");
+			ctx.ui.notify(`${summary} /inherit lists them; turn sources off with features.inherit in mu.json.`, "info");
 			writeInheritState(roots.agentDir, { noticeShownAt: new Date().toISOString() });
 			return undefined;
 		}),
@@ -177,24 +185,40 @@ export function registerInherit(runtime: KyrnRuntime, roots: HarnessRoots | unde
 		}),
 	);
 
+	/** pi's switch for AGENTS.md and CLAUDE.md: with it, no folder's are handed over either. */
+	const noContextFiles = process.argv.includes("--no-context-files") || process.argv.includes("-nc");
+	const cut = (content: string, what: string) =>
+		content.length > options.maxRuleChars
+			? `${content.slice(0, options.maxRuleChars)}\n[cut here; the whole ${what}]`
+			: content;
+
 	pi.on(
 		"tool_result",
 		failOpen((event, ctx) => {
-			if (!scan || event.isError || !TOUCHING_TOOLS.includes(event.toolName)) return undefined;
+			if (event.isError || !TOUCHING_TOOLS.includes(event.toolName)) return undefined;
 			const path = (event.input as { path?: unknown }).path;
 			if (typeof path !== "string" || !path) return undefined;
 			const file = isAbsolute(path) ? path : resolve(ctx.cwd, path);
-			const matching = rulesForFile(scan.rules, file).filter((rule) => !delivered.has(rule.path));
-			if (matching.length === 0) return undefined;
-			const notes = matching.map((rule) => {
+			const notes: string[] = [];
+			if (options.folders && !noContextFiles) {
+				for (const found of folderInstructions(ctx.cwd, file)) {
+					if (delivered.has(found.path)) continue;
+					delivered.add(found.path);
+					const name = relative(ctx.cwd, found.path).replaceAll("\\", "/");
+					notes.push(
+						`[mu: the folder ${found.folder}/ has instructions of its own (${name}). Follow them for work in that folder for the rest of the session.]\n${cut(found.content, `file: ${found.path}`)}`,
+					);
+				}
+			}
+			const matching = scan ? rulesForFile(scan.rules, file).filter((rule) => !delivered.has(rule.path)) : [];
+			for (const rule of matching) {
 				delivered.add(rule.path);
 				runtime.present("inherit.rule", { rule: ruleLabel(rule), tool: rule.tool, file: path });
-				const body =
-					rule.content.length > options.maxRuleChars
-						? `${rule.content.slice(0, options.maxRuleChars)}\n[cut here; the whole rule: ${rule.path}]`
-						: rule.content;
-				return `[mu: a project rule applies to files like this one (${ruleLabel(rule)}, for ${rule.globs.join(", ")}). Follow it for the rest of the session.]\n${body}`;
-			});
+				notes.push(
+					`[mu: a project rule applies to files like this one (${ruleLabel(rule)}, for ${rule.globs.join(", ")}). Follow it for the rest of the session.]\n${cut(rule.content, `rule: ${rule.path}`)}`,
+				);
+			}
+			if (notes.length === 0) return undefined;
 			return { content: [...event.content, { type: "text" as const, text: notes.join("\n\n") }] };
 		}),
 	);
@@ -211,7 +235,7 @@ export function registerInherit(runtime: KyrnRuntime, roots: HarnessRoots | unde
 	pi.registerCommand("inherit", {
 		description: say({
 			zh: "mu 从 Claude Code、Cursor 和 Codex 沿用了什么，各来自哪个文件",
-			en: "What mu took over from Claude Code, Cursor and Codex, and from where",
+			en: "Show what mu inherited from Claude Code, Cursor and Codex, and from which files",
 		}),
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
@@ -225,10 +249,11 @@ export function registerInherit(runtime: KyrnRuntime, roots: HarnessRoots | unde
 			if (found.skills.length > 0) lines.push("", "Skills:");
 			for (const skill of found.skills) lines.push(`  ${skill.name}  ${skill.dir}`);
 			const servers = found.servers.filter((server) => server.tool !== "mu");
-			if (servers.length > 0) lines.push("", "MCP servers (each a capability: /capabilities; once open, /mcp):");
+			if (servers.length > 0)
+				lines.push("", "MCP servers (each is a capability: see /capabilities, and /mcp once it's open):");
 			for (const server of servers)
 				lines.push(`  ${server.name}  ${server.source}${server.scope === "project" ? "  (project)" : ""}`);
-			if (found.skipped.length > 0) lines.push("", "Not used:");
+			if (found.skipped.length > 0) lines.push("", "Skipped:");
 			for (const entry of found.skipped) lines.push(`  ${entry.name}  ${entry.source}: ${entry.reason}`);
 			if (found.problems.length > 0) lines.push("", "Problems:");
 			for (const problem of found.problems) lines.push(`  ${problem.source}: ${problem.message}`);

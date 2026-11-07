@@ -1,11 +1,11 @@
-# mu in the original AionUi application
+# mu in the desktop app
 
 > The project was renamed from KYRN to **mu** on 2026-09-21. What the app shows says mu; folder, module, channel,
 > i18n-key and stored event names still say `kyrn`, on purpose. The data home is `~/.mu`, or `~/.kyrn` on a machine
 > that has not moved it yet: `~/.mu` is never created beside an existing `~/.kyrn`. The full list is in
 > `kyrn/docs/10-rename-to-mu.md` of the harness repository. Below, "KYRN" in the verification notes is the same project.
 
-The integration is an ACP adapter, not a second desktop interface. AionUi's
+The integration is an ACP adapter, not a second desktop interface. The app's
 existing projects, conversations, model/thinking selector, file panel, tool cards
 and permissions remain the product UI. mu remains the execution engine.
 
@@ -15,15 +15,15 @@ and a refused rename never blocks startup. The backend's update replaces the who
 leaves the record's environment variables out, so the rename first reads the whole record (setting `enabled` to the
 value it already has answers with it) and sends everything back with only the name changed. If the whole record
 cannot be read, the old name stays: an old label costs less than a user's cleared variables. Checked against a real
-AionCore v0.2.2 on a throw-away data directory, not only against a mock: `node scripts/kyrn/registration-check/check.mjs`
-(19 checks; run it again after every AionCore upgrade, since none of this is a documented contract). Other agents and
+backend (v0.2.2) on a throw-away data directory, not only against a mock: `node scripts/kyrn/registration-check/check.mjs`
+(19 checks; run it again after every backend upgrade, since none of this is a documented contract). Other agents and
 assistants are disabled in the backend, not merely hidden. Their upstream source
 remains in the checkout; existing conversation history is not deleted.
 The adapter reuses
-the local mu login and judgment configuration; do not put API keys in AionUi.
+the local mu login and judgment configuration; do not put API keys in the app.
 The model and thinking choices come from the live mu process, not a hardcoded
 list. Changes are confirmed through ACP and persisted in the pi session.
-Jev classification and tools appear in AionUi's existing tool cards. Actual model
+The judge's classification and tools appear in the app's existing tool cards. Actual model
 thinking streams through ACP thought chunks, including history replay; encrypted
 signatures and redacted placeholders are not shown.
 
@@ -39,8 +39,8 @@ Built-in mu browser, hive, skills and tools still run inside mu.
 Where mu comes from (`process/agent/kyrn/harness.ts`): `MU_ROOT` / `KYRN_ROOT` when set; else the copy the packaged
 app carries (`<resources>/harness/mu-agent`, below); else a checkout beside this one (`../KYRN`, or `..` in the MU
 monorepo); else `mu-agent` installed with npm (`npm i -g mu-agent`), found from `mu` on PATH or in npm's usual global
-folders. The npm package, the app's copy included, keeps its keys in `~/.mu/.env` and its Laya venv in
-`~/.mu/local-judge`, and the settings follow it there.
+folders. The npm package, the app's copy included, keeps its keys in `~/.mu/.env` and mude 1.0 in
+`~/.mu/local-judge/mude`, and the settings follow it there.
 
 Windows has no bash. There the registration's command is `acp.cmd`, which runs `acp.mjs` with Node (22.19 or newer
 on PATH), and the adapter starts the harness as `node <root>/kyrn/bin/mu.mjs --mode rpc`, with no shell; closing a
@@ -48,7 +48,7 @@ conversation ends the harness's whole process tree with `taskkill /T`. macOS and
 checkout's bash forwarder: the registration is found by its command, so that path must not change there. Not run on
 a real Windows machine yet.
 
-AionCore runs a registration's command only up to its first space, and the installer puts the app for all users in
+The backend runs a registration's command only up to its first space, and the installer puts the app for all users in
 `C:\Program Files\mu` (#4). So on Windows a launcher whose path has whitespace is registered by a spelling without it
 (`process/agent/kyrn/windows/launcherCommand.ts`): its real path when that has none, else its 8.3 short path
 (`C:\PROGRA~1\mu\resources\mu\acp.cmd`), else a forwarder: `mu-desktop\acp.cmd`, an ASCII batch file that hands over
@@ -81,12 +81,12 @@ WSL (`process/agent/kyrn/windows/wsl.ts`): on Windows, a conversation whose fold
 install when it is missing. The harness shares the Windows side's agent folder (one sign-in, one configuration:
 `MU_AGENT_DIR`) and the app's session file, both translated by WSL through `WSLENV` (`/p`); keys in a `.env` come
 from the distribution's own `~/.mu/.env`. Closing a conversation ends mu's input first (it then shuts down by
-itself), and ends the `wsl.exe` tree only if that did not work. The app's local judge and browser bridge listen on
-Windows' loopback, which WSL reaches only in mirrored networking mode. The start script is tested with bash; nothing
+itself), and ends the `wsl.exe` tree only if that did not work. The app's browser bridge listens on Windows'
+loopback, which WSL reaches only in mirrored networking mode. The start script is tested with bash; nothing
 of this has run on a real Windows machine with WSL yet.
 
 `node scripts/kyrn/start-check/check.mjs [--packaged]` checks this whole chain on the machine it runs on, the way the
-app and AionCore run it (on Windows: `acp.cmd` through `cmd /d /c`, the harness as `node mu.mjs`, `taskkill /T` at the
+app and the backend run it (on Windows: `acp.cmd` through `cmd /d /c`, the harness as `node mu.mjs`, `taskkill /T` at the
 end): the harness is found, mu answers over RPC, the registration's command answers the ACP handshake and opens a
 session, and ending each leaves no process behind. With `--packaged` it does the same for the bundled adapter and
 `resources/mu`. It uses a throwaway home, calls no model and needs no key, so CI can run it on Windows runners.
@@ -95,18 +95,18 @@ The earlier `kyrn/` prototype is paused. It is not the product UI direction.
 
 ## Local verification (2026-09-21)
 
-- Original AionUi dev app starts with its original components and KYRN additions.
+- The desktop dev app starts with its original components and KYRN additions.
 - Backend custom-agent registration `KYRN` passes its own health check (`online`).
 - Real ACP handshake: 256 authenticated models; current Codex Sol, medium;
   seven supported thinking levels. Setting medium returns a confirmed update.
 - In the original UI: KYRN is the sole enabled agent. Native project folder
   picker and original combined model/thinking menu remain in place.
 - Focused adapter tests cover streaming, cancellation, invalid configuration,
-  session replay and real-shaped Jev/hive events. No model tokens in unit tests.
+  session replay and real-shaped judge/hive events. No model tokens in unit tests.
 - pi's prompt response acknowledges preflight only. The adapter waits for
-  `agent_settled` before completing the ACP turn; otherwise AionUi stops accepting
+  `agent_settled` before completing the ACP turn; otherwise the app stops accepting
   text too early. A regression test guards this boundary.
-- Native end-to-end check: original AionUi shows Jev classification and the actual
+- Native end-to-end check: the original UI shows the judge's classification and the actual
   Codex response `KYRN connected`. After the native additions, 21 focused tests,
   full TypeScript check, focused lint and i18n validation pass.
 - Native UI shows actual thinking and replays two real completed delegate workers
@@ -114,12 +114,12 @@ The earlier `kyrn/` prototype is paused. It is not the product UI direction.
   the user's configuration; settings persistence tests use temporary fixtures.
 
 Start the original app with `scripts/kyrn/start`. It uses the verified local
-Electron runtime and AionCore v0.2.2 ARM64 binary. The upstream dependencies are
+Electron runtime and the backend's v0.2.2 ARM64 binary. The upstream dependencies are
 installed from `bun.lock` with `--frozen-lockfile --ignore-scripts`; no npm
-lifecycle hooks were run. Agent registration is saved by AionUi itself.
+lifecycle hooks were run. Agent registration is saved by the backend itself.
 
-For a different local AionUi instance, set
-`AIONUI_BACKEND_URL` to that instance's loopback URL and run
+For a different local instance of the app, set
+`MU_BACKEND_URL` to that instance's loopback URL and run
 `node scripts/kyrn/register.mjs`. It follows the same rules as startup and never replaces an unrelated registration.
 
 ## Native settings and collaboration
@@ -136,7 +136,7 @@ The original resizable project panel has Collaboration and Files views:
 
 - Swarm: per-bee state, model/thinking, tool/turn counters, progress and errors;
   durable execution records, accepted/rejected gates and confirmed deliveries.
-- Jev: classification and decision probabilities, outcomes, fallback and timing;
+- Judge: classification and decision probabilities, outcomes, fallback and timing;
   these are decisions, not invented reasoning text.
 - Memory: actual recall, capture decisions and stored lessons.
 - Images: actual tool-returned raster images with run/bee provenance, not image
@@ -148,7 +148,7 @@ never enter the model context. Canonical mu temp run directories (still named `k
 allowed source; external symlink targets are excluded. Observation failures never
 fail a model turn. Events before this recorder was installed are not fabricated.
 
-AionCore v0.2.2 stores the ACP resume anchor in `acp_session`, not in
+The backend (v0.2.2) stores the ACP resume anchor in `acp_session`, not in
 `conversation.extra.acp_session_id`. The main process reads only that binding via
 Node SQLite in read-only mode, keyed by conversation ID and agent ID. The backend
 remains the sole database writer. This version-specific seam should move to a
@@ -165,7 +165,7 @@ Raw evidence. Other tools and delegate runs retain their existing views.
 
 The Hive panel has a run selector, clickable bee map, execution inspector and
 information feed. Directed map edges come only from confirmed `hive.delivery`
-records joined to notes in the same run. Jev gate approval is not a delivery;
+records joined to notes in the same run. The judge's gate approval is not a delivery;
 gates and shared findings have separate disclosures. Unknown sources do not
 create an inferred edge. Selecting a bee pins its run while newer runs arrive.
 
@@ -297,9 +297,10 @@ provider, and not in the real Electron app.
 ## First-run guide and subscription sign-in (2026-09-22)
 
 - **The guide** (`/welcome`) opens once for someone without a startup model (`mu.onboarding.v1` in localStorage marks
-  it seen) and again from Settings → Models → "新手引导": what mu is, a model, a judge (Jev with its key, or the local
-  Laya), a summary. Everything is written in one save at the end, keys only as credentials. The OpenAI tile asks for
-  Chat Completions or Responses; the judge page offers Jev and Laya only, the full tier editor stays under "高级设置".
+  it seen) and again from Settings → Models → "新手引导": what mu is, a model, a judge (Jev with its key; since 0.2.0
+  mude 1.0 too, and the local Laya until 0.2.5), a summary. Everything is written in one save at the end, keys only as
+  credentials. The OpenAI tile asks for Chat Completions or Responses; the judge page offers Jev and mude 1.0 only, the
+  full tier editor stays under "高级设置".
 - **Signing in with a subscription** (ChatGPT Plus/Pro as pi's `openai-codex`, Claude Pro/Max as `anthropic`) runs pi's
   own OAuth flow in a child process, `mu auth status | login <provider> | logout <provider>` (the harness's
   `packages/kyrn-judge/src/auth`), started by `LoginManager` (`process/agent/kyrn/login.ts`) through the harness's

@@ -5,12 +5,6 @@
   "agentTabAutoSwitch": "Modell nicht kompatibel mit Gemini, automatisch zu {{fallback}} gewechselt",
   "autoSwitchToAgent": "Gemini ist nicht konfiguriert, automatischer Wechsel zu {{agent}}",
   "autoSwitchedAgent": "{{from}} ist nicht verfügbar, zu {{to}} gewechselt",
-  "promptExamplesHint": "Diese Anweisungen ausprobieren",
-  "defaultPrompts": {
-    "understand": "Verschaffe dir einen Überblick über dieses Projekt und erkläre mir in einfachen Worten, was es macht und wo ich anfangen sollte",
-    "cleanup": "Finde doppelte und unnötige Dateien in diesem Ordner und liste sie zur Bestätigung auf",
-    "create": "Erstelle mir eine schöne persönliche Homepage und öffne sie, sobald sie fertig ist"
-  },
   "selectAssistantHint": "Wähle einen Assistenten, um eine Aufgabe zu starten",
   "agentSwitcherLabel": "Agent",
   "switchedToAgent": "Zu {{agent}} gewechselt",

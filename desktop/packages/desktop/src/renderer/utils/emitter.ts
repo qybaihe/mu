@@ -24,10 +24,10 @@ interface EventTypes {
   // conversation matches consumes the event (team renders one send box per
   // member column, so a bare type prefix alone would leak to same-type peers).
   // `undefined` = no target = any same-type box accepts (back-compat).
-  'aionrs.selected.file': [Array<string | FileOrFolderItem>, string | undefined];
-  'aionrs.selected.file.append': [Array<string | FileOrFolderItem>, string | undefined];
-  'aionrs.selected.file.clear': void;
-  'aionrs.workspace.refresh': void;
+  'builtinAgent.selected.file': [Array<string | FileOrFolderItem>, string | undefined];
+  'builtinAgent.selected.file.append': [Array<string | FileOrFolderItem>, string | undefined];
+  'builtinAgent.selected.file.clear': void;
+  'builtinAgent.workspace.refresh': void;
   'acp.selected.file': [Array<string | FileOrFolderItem>, string | undefined];
   'acp.selected.file.append': [Array<string | FileOrFolderItem>, string | undefined];
   'acp.selected.file.clear': void;
@@ -72,8 +72,21 @@ interface EventTypes {
   'sendbox.mention.session': [{ id: string; name: string }, string | undefined];
   /** Open the command palette, or close it when it is open: Cmd/Ctrl+K and the sidebar's search entry. */
   'commandPalette.toggle': void;
+  /** Open quick open, or close it when it is open: Cmd/Ctrl+P and the command palette's row. */
+  'quickOpen.toggle': void;
+  /** Go to the next native conversation that wants its person: the command palette's row (Cmd/Ctrl+Shift+A's twin). */
+  'conversation.nextWaiting': void;
+  /** Open the keyboard shortcuts, or close them when they are open: Cmd/Ctrl+/, the palette's row, Help's item. */
+  'shortcuts.toggle': void;
   /** Open the message search with a query already typed in: the command palette hands its query on. */
   'conversationSearch.open': [string];
+  /**
+   * The backend checked mu again (recheckMu: after a save, a sign-in, a sign-out): a copy of what mu offers is read
+   * again, so a signed-out account's models leave every list at once.
+   */
+  'mu.rechecked': void;
+  /** The app changed mu's settings files outside a settings save (a sign-out moved the default model). */
+  'mu.files.changed': void;
 }
 
 export const emitter = new EventEmitter<EventTypes>();

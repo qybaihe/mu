@@ -26,7 +26,7 @@ import {
 export type FakeModel = { provider: string; id: string };
 type Session = { id: string; file: string; header: JsonObject; entries: JsonObject[]; leafId: string | null };
 
-const MODES = [{ id: 'full' }, { id: 'jev' }, { id: 'ask' }];
+const MODES = [{ id: 'full' }, { id: 'judge' }, { id: 'ask' }];
 const tick = (): Promise<void> => new Promise((resolve) => queueMicrotask(resolve));
 
 /** A presentation frame of the judgment layer, as pi's RPC mode carries it. */

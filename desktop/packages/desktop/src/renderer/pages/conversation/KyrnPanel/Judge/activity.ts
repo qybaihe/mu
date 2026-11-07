@@ -148,7 +148,31 @@ export type JudgeCard = {
   /** A classification record without correlation fields. It stands alone; nothing is merged into it. */
   unlinked: boolean;
   evidence: Activity[];
+  /** The ledger record the card is of, by its whole id: what `/ledger wrong` names. Absent for a card with none. */
+  recordId?: string;
+  /** What the person answered to the permission question this judgment sent them to. */
+  userAnswer?: JudgeUserAnswer;
+  /** The person marked this judgment wrong, with what they said when they did. */
+  markedWrong?: { note?: string };
 };
+
+/** The person's answer to a permission question: allowed once, for the session, not allowed, closed, nobody to ask. */
+export type JudgeUserAnswer = 'once' | 'session' | 'deny' | 'dismissed' | 'none';
+const USER_ANSWERS: ReadonlySet<string> = new Set(['once', 'session', 'deny', 'dismissed', 'none']);
+
+/** The command that tells mu a verdict was wrong (`/ledger wrong`), for the record of that id. */
+export const markWrongCommand = (recordId: string): string => `/ledger wrong ${recordId}`;
+
+/** What the person did about a judgment, as its record carries it beside the ledger's fields. */
+function personOf(ledger: Payload): Pick<JudgeCard, 'userAnswer' | 'markedWrong'> {
+  const answer = str(ledger.userAnswer);
+  const mark = ledger.markedWrong === undefined ? undefined : record(ledger.markedWrong);
+  const note = mark ? str(mark.note).trim() : '';
+  return {
+    ...(USER_ANSWERS.has(answer) ? { userAnswer: answer as JudgeUserAnswer } : {}),
+    ...(mark ? { markedWrong: note ? { note } : {} } : {}),
+  };
+}
 
 type Payload = Record<string, unknown>;
 type Group = { id: string; specId: string; unlinked: boolean; events: Activity[] };
@@ -206,6 +230,8 @@ function decisionCard(group: Group, ledger: Payload): JudgeCard {
     preview: '',
     unlinked: group.unlinked,
     evidence: group.events,
+    ...(str(ledger.id) ? { recordId: str(ledger.id) } : {}),
+    ...personOf(ledger),
   };
 }
 
@@ -555,7 +581,7 @@ export function answerRows(card: JudgeCard): { rows: JudgeAnswer[]; more: number
   return { rows: rows.slice(0, ANSWER_LIMIT), more: Math.max(0, rows.length - ANSWER_LIMIT) };
 }
 
-/** Events the Jev tab lists under its cards: everything that is neither a judgment nor another tab's record. */
+/** Events the judge tab lists under its cards: everything that is neither a judgment nor another tab's record. */
 export function runtimeEvents(events: Activity[]): Activity[] {
   return events.filter(
     (event) =>

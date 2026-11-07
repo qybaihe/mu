@@ -6,8 +6,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 let notificationEnabled: boolean | undefined = true;
+let completionSound: boolean | undefined;
 const clickedEmit = vi.fn();
 const platformSend = vi.fn();
+const setBadgeCount = vi.hoisted(() => vi.fn());
 
 // Defined via vi.hoisted so the hoisted vi.mock factory can reference the class
 // at evaluation time without a temporal-dead-zone error.
@@ -17,7 +19,7 @@ const { FakeElectronNotification } = vi.hoisted(() => {
     static isSupported = vi.fn(() => true);
     handlers: Record<string, () => void> = {};
     show = vi.fn();
-    constructor(public options: { title: string; body: string; icon?: string }) {
+    constructor(public options: { title: string; body: string; icon?: string; silent?: boolean }) {
       FakeElectronNotification.instances.push(this);
     }
     on(event: string, cb: () => void): this {
@@ -45,16 +47,45 @@ vi.mock('@/common/platform', () => ({
 }));
 
 vi.mock('@process/utils/initStorage', () => ({
-  ProcessConfig: { get: vi.fn(async () => notificationEnabled) },
+  ProcessConfig: {
+    get: vi.fn(async (key: string) => (key === 'system.completionSound' ? completionSound : notificationEnabled)),
+  },
 }));
 
 vi.mock('@/common/electronSafe', () => ({
   electronNotification: FakeElectronNotification,
+  electronApp: { setBadgeCount },
 }));
 
 vi.mock('fs', () => ({ default: { existsSync: () => false }, existsSync: () => false }));
 
-import { showNotification, setNotificationMainWindow } from '@/process/bridge/notificationBridge';
+import { setAppBadge, showNotification, setNotificationMainWindow } from '@/process/bridge/notificationBridge';
+
+describe('the number on the app’s icon', () => {
+  const platform = process.platform;
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: platform });
+    setBadgeCount.mockReset();
+  });
+
+  it('shows how many conversations wait, and goes away at 0, on macOS and Linux', () => {
+    for (const os of ['darwin', 'linux']) {
+      Object.defineProperty(process, 'platform', { value: os });
+      setAppBadge(3);
+      setAppBadge(0);
+      setAppBadge(-2);
+      setAppBadge(Number.NaN);
+      setAppBadge('4');
+    }
+    expect(setBadgeCount.mock.calls.flat()).toEqual([3, 0, 0, 0, 0, 3, 0, 0, 0, 0]);
+  });
+
+  it('leaves Windows alone, which has no such number', () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    setAppBadge(3);
+    expect(setBadgeCount).not.toHaveBeenCalled();
+  });
+});
 
 const makeWindow = (focused: boolean) => ({
   isDestroyed: () => false,
@@ -69,6 +100,7 @@ let logSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   notificationEnabled = true;
+  completionSound = undefined;
   clickedEmit.mockClear();
   platformSend.mockClear();
   FakeElectronNotification.instances.length = 0;
@@ -82,28 +114,37 @@ afterEach(() => {
 describe('showNotification', () => {
   it('shows a native notification when the main window is not focused', async () => {
     setNotificationMainWindow(makeWindow(false) as never);
-    await showNotification({ title: 'AionUi', body: 'done', conversation_id: 'c1' });
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
     expect(FakeElectronNotification.instances).toHaveLength(1);
     expect(FakeElectronNotification.instances[0].show).toHaveBeenCalledTimes(1);
   });
 
+  it('is silent while the app plays its own chime, and makes the system sound otherwise', async () => {
+    setNotificationMainWindow(makeWindow(false) as never);
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
+    expect(FakeElectronNotification.instances[0].options.silent).toBeUndefined();
+    completionSound = true;
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
+    expect(FakeElectronNotification.instances[1].options.silent).toBe(true);
+  });
+
   it('does not notify when the main window is focused', async () => {
     setNotificationMainWindow(makeWindow(true) as never);
-    await showNotification({ title: 'AionUi', body: 'done', conversation_id: 'c1' });
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
     expect(FakeElectronNotification.instances).toHaveLength(0);
   });
 
   it('does not notify when the setting is disabled', async () => {
     notificationEnabled = false;
     setNotificationMainWindow(makeWindow(false) as never);
-    await showNotification({ title: 'AionUi', body: 'done', conversation_id: 'c1' });
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
     expect(FakeElectronNotification.instances).toHaveLength(0);
   });
 
   it('focuses the window and emits notification.clicked on click', async () => {
     const win = makeWindow(false);
     setNotificationMainWindow(win as never);
-    await showNotification({ title: 'AionUi', body: 'done', conversation_id: 'c1' });
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
 
     FakeElectronNotification.instances[0].handlers.click?.();
 
@@ -112,7 +153,7 @@ describe('showNotification', () => {
     expect(clickedEmit).toHaveBeenCalledWith({ conversation_id: 'c1' });
   });
 
-  it('says a click is on a native conversation, whose page is not an AionCore conversation’s', async () => {
+  it('says a click is on a native conversation, whose page is not a backend conversation’s', async () => {
     setNotificationMainWindow(makeWindow(false) as never);
     await showNotification({ title: 'mu', body: 'done', conversation_id: 'n1', native: true });
 
@@ -124,19 +165,19 @@ describe('showNotification', () => {
   it('logs when skipping because notifications are disabled in settings', async () => {
     notificationEnabled = false;
     setNotificationMainWindow(makeWindow(false) as never);
-    await showNotification({ title: 'AionUi', body: 'done', conversation_id: 'c1' });
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
     expect(logSpy).toHaveBeenCalledWith('[Notification] Skipped: notifications are disabled in settings');
   });
 
   it('logs when skipping because the main window is focused', async () => {
     setNotificationMainWindow(makeWindow(true) as never);
-    await showNotification({ title: 'AionUi', body: 'done', conversation_id: 'c1' });
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
     expect(logSpy).toHaveBeenCalledWith('[Notification] Skipped: main window is focused');
   });
 
   it('logs after calling show() including the isSupported result', async () => {
     setNotificationMainWindow(makeWindow(false) as never);
-    await showNotification({ title: 'AionUi', body: 'done', conversation_id: 'c1' });
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
     expect(FakeElectronNotification.instances[0].show).toHaveBeenCalledTimes(1);
     expect(logSpy).toHaveBeenCalledWith('[Notification] show() called (isSupported=true)');
   });

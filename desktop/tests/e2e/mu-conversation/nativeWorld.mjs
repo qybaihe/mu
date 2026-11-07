@@ -17,6 +17,7 @@ import {
   problems,
   processTree,
   quitApp,
+  startedSince,
   warmUpProcessLook,
 } from './app.mjs';
 import { FAKE_API_KEY, FAKE_MODEL_ID, startFakeModel } from './fakeModel.mjs';
@@ -50,9 +51,10 @@ export function createNativeWorld({ desktopRoot, prepare }) {
    *   conversationUrl: string,
    *   untouched: Array<{ path: string, before: string }>,
    *   passed: boolean,
+   *   beganAt: number,
    * }}
    */
-  const run = { starts: 0, seen: new Map(), conversationUrl: '', untouched: [], passed: false };
+  const run = { starts: 0, seen: new Map(), conversationUrl: '', untouched: [], passed: false, beganAt: Date.now() };
 
   const page = () => {
     if (!run.state) throw new Error('the app is not running');
@@ -166,11 +168,11 @@ export function createNativeWorld({ desktopRoot, prepare }) {
     const p = page();
     const welcome = p.getByTestId('mu-welcome');
     const group = p.getByTestId('native-sidebar-group');
-    const unfold = p.getByRole('button', { name: '展开侧边栏' });
+    const unfold = p.getByRole('button', { name: run.profile.language === 'zh-CN' ? '展开侧边栏' : 'Expand sidebar' });
     // The guide and the sidebar can both be there (a start with no model shows the guide over the app).
     await expect(welcome.or(group).or(unfold).first()).toBeVisible({ timeout: 60_000 });
     if (await welcome.isVisible().catch(() => false)) {
-      await p.getByText('跳过引导', { exact: true }).click();
+      await p.getByTestId('mu-welcome-skip-all').click();
       await p.waitForURL(/#\/guid/);
     }
     if (await unfold.isVisible().catch(() => false)) await unfold.click();
@@ -182,7 +184,7 @@ export function createNativeWorld({ desktopRoot, prepare }) {
 
   /**
    * Types a message into the conversation's send box and sends it; returns once the person's row shows. (The row shows
-   * at once: the run it starts does not begin until Jev has read the message and pi took it.)
+   * at once: the run it starts does not begin until the judge has read the message and pi took it.)
    */
   async function send(text) {
     const rows = await userRows().count();
@@ -259,7 +261,9 @@ export function createNativeWorld({ desktopRoot, prepare }) {
     const app = named ? packagedApp(named) : undefined;
     if (named && !app)
       throw new Error(`MU_E2E_APP names no packaged app for ${process.platform}-${process.arch}: ${named}`);
-    run.profile = createProfile({ desktopRoot, root: process.env.MU_E2E_ROOT, app });
+    // MU_E2E_LANGUAGE=en-US: the app in English (the tests read test ids and data, not words), for screenshots in it.
+    const language = process.env.MU_E2E_LANGUAGE || undefined;
+    run.profile = createProfile({ desktopRoot, root: process.env.MU_E2E_ROOT, app, language });
     const { harness, paths: where } = run.profile;
     // Nothing names MU_NATIVE_HOST: the native host is on by itself, where the app finds a mu that can run inside it,
     // as it is for a person who never heard of the variable. mu has the fake model and no decision point on (each
@@ -288,14 +292,26 @@ export function createNativeWorld({ desktopRoot, prepare }) {
 
   test.afterAll(async () => {
     await stop().catch(() => {});
-    endProcessLook();
     await run.fake?.close();
     const root = run.profile?.paths.root;
-    if (!root) return;
-    if (run.passed && process.env.MU_E2E_KEEP !== '1' && !process.env.MU_E2E_ROOT) {
-      rmSync(root, { recursive: true, force: true });
-    } else {
-      console.log(`[mu e2e] kept for a look: ${root} (logs in ${join(root, 'logs')})`);
+    try {
+      if (!root) return;
+      if (run.passed && process.env.MU_E2E_KEEP !== '1' && !process.env.MU_E2E_ROOT) {
+        // On Windows a folder can stay locked for a moment after the app quits (EBUSY), so rmSync tries again.
+        try {
+          rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+        } catch (error) {
+          // What holds it, if a process does: one in the folder, maybe left by a job whose shell has ended.
+          const running = await startedSince(run.beganAt).catch((look) => [`(no look: ${look.message})`]);
+          console.log(`[mu e2e] ${root} cannot be removed (${error.code}). Started during the run and still running:`);
+          console.log(running.join('\n') || '(none)');
+          throw error;
+        }
+      } else {
+        console.log(`[mu e2e] kept for a look: ${root} (logs in ${join(root, 'logs')})`);
+      }
+    } finally {
+      endProcessLook();
     }
   });
 
@@ -347,10 +363,14 @@ export function createNativeWorld({ desktopRoot, prepare }) {
       await p.getByTestId('native-permissions').click();
       await p.locator('.arco-select-popup:visible .arco-select-option', { hasText: permissions }).click();
     }
+    const before = p.url();
     await p.getByTestId('native-project').click();
-    await p.waitForURL(/#\/conversation\/native\//, { timeout: 30_000 });
+    // From inside a conversation the old URL already matches, so wait for a different one.
+    await p.waitForURL((url) => /#\/conversation\/native\//.test(url.href) && url.href !== before, { timeout: 30_000 });
     run.conversationUrl = p.url();
     await expect(p.getByTestId('native-conversation')).toBeVisible();
+    // The route changes before the old conversation's rows leave the screen; a new one has none.
+    await expect(userRows()).toHaveCount(0, { timeout: 15_000 });
   }
 
   /**

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { reduceAll, type NativeView } from '@/common/utils/nativeHost';
-import { forkableIds, forkPoint } from '@/renderer/pages/native/utils/forkPoint';
+import { forkableIds, forkPoint, rewindPoints } from '@/renderer/pages/native/utils/forkPoint';
 import { delta, ended, reply, text, user } from './records';
 
 /**
@@ -85,5 +85,30 @@ describe('forkableIds', () => {
     }
     // The first view has all four.
     expect(forkableIds(views[0]).size).toBe(4);
+  });
+});
+
+/** mu's checkpoint entry #`id`, taken in the turn the person's message `entryId` started. */
+const checkpoint = (id: number, entryId: string) => ({
+  type: 'entry_appended',
+  entry: { type: 'custom', id: `k${id}`, customType: 'kyrn.checkpoint', data: { id, turn: id, entryId, label: '' } },
+});
+
+describe('rewindPoints', () => {
+  it('gives the person’s message whose turn changed files the checkpoint taken then', () => {
+    const view = reduceAll([
+      ended(user('first question'), 'u1'),
+      ended(reply([text('first answer')]), 'a1'),
+      ended(user('second question'), 'u2'),
+      checkpoint(1, 'u2'),
+      ended(reply([text('second answer')]), 'a2'),
+    ]);
+    expect([...rewindPoints(view)]).toEqual([[idOf(view, 'user', 1), 1]]);
+  });
+
+  it('has none without checkpoints, nor for a checkpoint whose message is not in the view', () => {
+    expect(rewindPoints(twoTurns()).size).toBe(0);
+    const view = reduceAll([ended(user('first question'), 'u1'), checkpoint(4, 'gone')]);
+    expect(rewindPoints(view).size).toBe(0);
   });
 });

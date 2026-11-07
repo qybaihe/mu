@@ -124,7 +124,17 @@ const OfficialAssistantsGrid: React.FC<OfficialAssistantsGridProps> = ({
               key={assistant.id}
               data-testid={`official-card-${assistant.id}`}
               className='group flex cursor-pointer flex-col rounded-8px border border-solid border-transparent bg-base p-16px transition-all duration-180 hover:border-border-2'
+              role='button'
+              tabIndex={0}
               onClick={() => onOpenSettings(assistant)}
+              onKeyDown={(event) => {
+                // The card's own key, not one pressed on its switch or its menu.
+                if (event.target !== event.currentTarget) return;
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onOpenSettings(assistant);
+                }
+              }}
             >
               {/* Header row: avatar on the left, enable switch on the right. */}
               <div className='flex items-start justify-between'>

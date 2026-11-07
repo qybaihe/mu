@@ -3,12 +3,13 @@
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
  */
+import { BUILTIN_MCP_SERVER_NAMES, FIRST_IMAGE_GEN_SERVER_NAME } from '@/common/platform/legacyNames';
 
 // Keep this constant local to avoid pulling in common/config/storage side effects
 // when the built-in MCP server boots in a standalone stdio process.
 export const BUILTIN_IMAGE_GEN_ID = 'builtin-image-gen';
-export const BUILTIN_IMAGE_GEN_NAME = 'aionui-image-generation';
-export const BUILTIN_IMAGE_GEN_LEGACY_NAMES = ['AionUi Image Generation', BUILTIN_IMAGE_GEN_ID] as const;
+export const BUILTIN_IMAGE_GEN_NAME = BUILTIN_MCP_SERVER_NAMES.imageGeneration;
+export const BUILTIN_IMAGE_GEN_LEGACY_NAMES = [FIRST_IMAGE_GEN_SERVER_NAME, BUILTIN_IMAGE_GEN_ID] as const;
 
 export function isBuiltinImageGenName(name?: string | null): boolean {
   if (!name) return false;

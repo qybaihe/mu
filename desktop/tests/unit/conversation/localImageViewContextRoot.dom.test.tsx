@@ -55,10 +55,10 @@ describe('LocalImageView workspace root from ConversationContext', () => {
   });
 
   it('passes an absolute src through untouched while still forwarding the workspace', async () => {
-    renderInConversation('/workspace/demo', '/var/tmp/aionui/pic.png');
+    renderInConversation('/workspace/demo', '/var/tmp/mu/pic.png');
     await waitFor(() => expect(hoisted.getImageBase64).toHaveBeenCalled());
     expect(hoisted.getImageBase64).toHaveBeenCalledWith({
-      path: '/var/tmp/aionui/pic.png',
+      path: '/var/tmp/mu/pic.png',
       workspace: '/workspace/demo',
     });
   });

@@ -6,7 +6,7 @@
 
 import type { BadgeProps } from '@arco-design/web-react';
 import { Badge, Button, Message, Tooltip } from '@arco-design/web-react';
-import { Download, Right } from '@icon-park/react';
+import { Browser, Download, Right } from '@icon-park/react';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
@@ -14,8 +14,11 @@ import { getAcpImageFileName } from '@/common/chat/acpToolCallOutput';
 import type { NormalizedToolCall, NormalizedToolStatus, ToolMessage } from '@/common/chat/normalizeToolCall';
 import { normalizeToolMessages } from '@/common/chat/normalizeToolCall';
 import LocalImageView from '@/renderer/components/media/LocalImageView';
+import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { HiveToolCard } from '@/renderer/pages/conversation/KyrnPanel/Hive';
 import { swarmProgressText } from '@/renderer/pages/conversation/KyrnPanel/Hive/codes';
+import { openBrowserPage } from '@/renderer/pages/conversation/Preview/browser/browserStore';
+import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
 import { useMessageListRun } from '../hooks';
@@ -29,8 +32,11 @@ import {
   toolActivityDenied,
   toolActivityErrors,
   toolActivityParts,
+  toolActivityKind,
+  toolActivityLocalUrls,
   toolDiffSummary,
   toolErrorLine,
+  toolLocalUrls,
   toolLabel,
   toolLiveTail,
   shortPath,
@@ -63,9 +69,11 @@ const labelText = ({ verb, target }: ToolLabel): string => (target ? `${verb} ${
 
 /**
  * What a call ran on, whole on hover. The home folder reads as `~`. A path cut for a narrow row gives up the middle of
- * its folders, never its own name: `~/project/src/…/index.ts`, not `~/project/src/comp…`.
+ * its folders, never its own name: `~/project/src/…/index.ts`, not `~/project/src/comp…`. `onOpen`: the path names a
+ * file the preview panel can show, and a click shows it there.
  */
-const CallTarget: React.FC<{ label: ToolLabel }> = ({ label }) => {
+const CallTarget: React.FC<{ label: ToolLabel; onOpen?: () => void }> = ({ label, onOpen }) => {
+  const { t } = useTranslation();
   const { target } = label;
   if (!target) return null;
   if (!label.path)
@@ -76,11 +84,68 @@ const CallTarget: React.FC<{ label: ToolLabel }> = ({ label }) => {
     );
   const shown = shortPath(target);
   const cut = Math.max(shown.lastIndexOf('/'), shown.lastIndexOf('\\')) + 1;
-  return (
-    <code className={`${styles.callPreview} ${styles.pathPreview}`} title={target} data-testid='tool-call-path'>
+  const parts = (
+    <>
       <span className={styles.pathHead}>{shown.slice(0, cut)}</span>
       <span className={styles.pathTail}>{shown.slice(cut)}</span>
+    </>
+  );
+  if (onOpen)
+    return (
+      <Button
+        className={styles.pathLink}
+        type='text'
+        size='mini'
+        title={target}
+        aria-label={t('messages.fileRef.preview', { name: shown })}
+        data-testid='tool-call-path'
+        onClick={onOpen}
+      >
+        {parts}
+      </Button>
+    );
+  return (
+    <code className={`${styles.callPreview} ${styles.pathPreview}`} title={target} data-testid='tool-call-path'>
+      {parts}
     </code>
+  );
+};
+
+/** The calls whose path names one file: reading it, writing it, editing it. A lookup's path may be a folder. */
+const opensFile = (item: NormalizedToolCall, label: ToolLabel): boolean => {
+  if (!label.path || !label.target || label.target.startsWith('~') || /[\\/]$/.test(label.target)) return false;
+  const kind = toolActivityKind(item.name);
+  return kind === 'read' || kind === 'edit';
+};
+
+/**
+ * The local web addresses a command printed (a dev server's `http://localhost:5173/`), each a chip that opens it in
+ * the work panel's browser, beside the conversation. A second click comes back to the page already open.
+ */
+const LocalUrlChips: React.FC<{ urls: string[] }> = ({ urls }) => {
+  const { t } = useTranslation();
+  if (!urls.length) return null;
+  return (
+    <div className={styles.localUrls}>
+      {urls.map((url) => {
+        const address = url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+        return (
+          <Button
+            key={url}
+            className={styles.localUrl}
+            type='secondary'
+            size='mini'
+            icon={<Browser theme='outline' size='12' />}
+            title={url}
+            aria-label={t('tools.execution.openInBrowser', { address })}
+            data-testid='tool-local-url'
+            onClick={() => openBrowserPage(url, { by: 'user', reuse: true })}
+          >
+            {address}
+          </Button>
+        );
+      })}
+    </div>
   );
 };
 
@@ -107,6 +172,17 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
   const [loadError, setLoadError] = useState(false);
   const displayItem = fullItem ?? item;
   const label = toolLabel(displayItem);
+  // A file the call read or wrote opens in the preview panel, read against the conversation's folder.
+  const run = useMessageListRun();
+  const conversation = useConversationContextSafe();
+  const openFile = useOptionalLocalFilePreview(conversation?.workspace ?? run?.workspace);
+  const target = label.target;
+  const openTarget =
+    openFile && target && opensFile(displayItem, label)
+      ? (): void => {
+          void openFile(target);
+        }
+      : undefined;
   const statusKey = statusLabelKey(item.status, item.denied);
   // A refused call's output is mu's refusal, written for the model: the row says what happened instead.
   const output = item.denied ? undefined : displayItem.output;
@@ -120,6 +196,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
   );
   const diffSummary = useMemo(() => toolDiffSummary(displayItem), [displayItem]);
   const hasDetail = Boolean(displayItem.input || output || item.truncated || item.imagePath);
+  const urls = useMemo(() => toolLocalUrls(displayItem), [displayItem]);
   const [messageApi, messageContext] = Message.useMessage();
   const handleDownloadImage = useCallback(
     async (path: string) => {
@@ -166,7 +243,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
       />
       <ToolKindIcon name={displayItem.name} />
       <span className={`${styles.callName} ${item.status === 'running' ? styles.runningText : ''}`}>{label.verb}</span>
-      <CallTarget label={label} />
+      <CallTarget label={label} onOpen={openTarget} />
       {diffSummary && (diffSummary.additions > 0 || diffSummary.deletions > 0) && (
         <span className={styles.diffStats} data-testid='tool-call-diff-stats' aria-hidden='true'>
           {diffSummary.additions > 0 && <span className={styles.diffAdd}>+{diffSummary.additions}</span>}
@@ -175,9 +252,15 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
       )}
     </>
   );
+  const callAria = t('tools.execution.callAria', { name: displayItem.name, status: t(`tools.status.${statusKey}`) });
+  const chevron = (
+    <span className={`${styles.chevron} ${expanded ? styles.chevronExpanded : ''}`}>
+      <Right size={12} />
+    </span>
+  );
 
   // A native conversation's end-to-end tests read each call by pi's tool name and how it stands.
-  const native = useMessageListRun() !== undefined;
+  const native = run !== undefined;
   return (
     <div
       className={styles.call}
@@ -204,19 +287,31 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
             </Button>
           )}
         </>
+      ) : hasDetail && openTarget ? (
+        // The path is a control of its own, so the row's toggle lies under the line instead of around it.
+        <div className={styles.callLine}>
+          <Button
+            className={styles.callToggle}
+            type='text'
+            size='mini'
+            aria-label={callAria}
+            aria-expanded={expanded}
+            onClick={toggleExpanded}
+          />
+          {line}
+          {chevron}
+        </div>
       ) : hasDetail ? (
         <Button
           className={styles.callButton}
           type='text'
           size='mini'
-          aria-label={t('tools.execution.callAria', { name: displayItem.name, status: t(`tools.status.${statusKey}`) })}
+          aria-label={callAria}
           aria-expanded={expanded}
           onClick={toggleExpanded}
         >
           {line}
-          <span className={`${styles.chevron} ${expanded ? styles.chevronExpanded : ''}`}>
-            <Right size={12} />
-          </span>
+          {chevron}
         </Button>
       ) : (
         <div className={styles.callStatic}>{line}</div>
@@ -235,6 +330,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
       {!item.denied && item.status === 'error' && !expanded && !displayItem.hive && (
         <div className={styles.callError}>{toolErrorLine(displayItem)}</div>
       )}
+      <LocalUrlChips urls={urls} />
       {expanded && hasDetail && (
         <div className={styles.detailPanel}>
           {loadingFull && <div className={styles.detailLabel}>{t('tools.execution.loading')}</div>}
@@ -327,6 +423,7 @@ const ToolActivityGroup: React.FC<{ tools: NormalizedToolCall[]; language?: stri
   const errors = useMemo(() => toolActivityErrors(tools), [tools]);
   const refused = useMemo(() => toolActivityDenied(tools), [tools]);
   const liveTail = useMemo(() => (!expanded ? runningToolLiveTail(tools) : undefined), [expanded, tools]);
+  const urls = useMemo(() => toolActivityLocalUrls(tools), [tools]);
   const steps = formatNumber(summary.steps, language);
   // What the stretch did, by kind: "read 3 files · ran 1 command".
   const done = toolActivityParts(tools)
@@ -381,6 +478,7 @@ const ToolActivityGroup: React.FC<{ tools: NormalizedToolCall[]; language?: stri
             </span>
           </div>
         ))}
+      {!expanded && <LocalUrlChips urls={urls} />}
       {expanded && (
         <div className={styles.activityBody}>
           <ToolRows tools={tools} />

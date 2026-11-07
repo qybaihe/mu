@@ -4,7 +4,8 @@ import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
-import type { DialogAnswer, ViewDialog, ViewPermission } from '@/common/utils/nativeHost';
+import type { DialogAnswer, ViewDialog, ViewPermission, ViewQuestion } from '@/common/utils/nativeHost';
+import { pickAnyAnswer, QuestionsOpenLine } from '@/renderer/pages/native/components/composer/NativeQuestion';
 import NativeDialog from '@/renderer/pages/native/components/NativeDialog';
 import { dialogChoices, permissionCard } from '@/renderer/pages/native/utils/dialogCard';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
@@ -27,7 +28,7 @@ void i18n.init({
 const t = i18n.t.bind(i18n) as (key: string, options?: Record<string, unknown>) => string;
 const has = (key: string) => i18n.exists(key);
 
-const ANSWERS = ['Allow once', 'Allow for this conversation (ls)', 'Don’t allow'];
+const ANSWERS = ['Allow once', 'Allow for this conversation (ls)', "Don't allow"];
 const permission: ViewPermission = {
   kind: 'shell',
   summary: 'ls -la',
@@ -40,7 +41,7 @@ const permission: ViewPermission = {
 const asking = (extra: Partial<ViewDialog> = {}): ViewDialog => ({
   id: 'd1',
   method: 'select',
-  title: 'mu wants to run a command\nls -la\nJev is not sure this is what you want.',
+  title: 'mu wants to run a command\nls -la\nThe judge is not sure this is what you want.',
   options: ANSWERS,
   inRun: true,
   permission,
@@ -77,7 +78,7 @@ describe('the permission card of a native dialog', () => {
     const { answered } = show(asking());
     expect(screen.getByTestId('native-dialog')).toHaveAttribute('data-method', 'select');
     expect(screen.getByText('mu wants to run a command')).toBeInTheDocument();
-    expect(screen.getByText('Jev is not sure this step is what you want.')).toBeInTheDocument();
+    expect(screen.getByText("The judge isn't sure this step is what you want.")).toBeInTheDocument();
     expect(screen.getByText('ls -la')).toBeInTheDocument();
     expect(options().map((option) => option.textContent)).toEqual(ANSWERS);
     await act(async () => {
@@ -95,7 +96,7 @@ describe('the permission card of a native dialog', () => {
       fireEvent.click(options()[0]);
     });
     expect(screen.getByTestId('message-acp-permission-error')).toHaveTextContent(
-      'Could not send the response. Please try again.'
+      "Couldn't send the response. Try again."
     );
     expect(options()).toHaveLength(3);
   });
@@ -186,17 +187,143 @@ describe('other native dialogs', () => {
     const dialog: ViewDialog = { id: 'd6', method: 'confirm', title: 'Quick?', timeout: 3000, inRun: true };
     const { expired } = show(dialog, undefined, 2);
     expect(screen.getByTestId('native-dialog-countdown')).toHaveTextContent(
-      'Closes in 3 s; mu then goes on without your answer.'
+      'Closes in 3s, then mu continues without your answer.'
     );
-    expect(screen.getByText('Waiting after this one: 2')).toBeInTheDocument();
+    expect(screen.getByText('2 more waiting')).toBeInTheDocument();
     act(() => {
       vi.advanceTimersByTime(1000);
     });
-    expect(screen.getByTestId('native-dialog-countdown')).toHaveTextContent('Closes in 2 s');
+    expect(screen.getByTestId('native-dialog-countdown')).toHaveTextContent('Closes in 2s');
     expect(expired).toEqual([]);
     act(() => {
       vi.advanceTimersByTime(2000);
     });
     expect(expired).toEqual(['d6']);
+  });
+});
+
+/** The control inside an option of the question card: what a click on the option reaches. */
+const radioOf = (element: HTMLElement) => element.querySelector('input') as HTMLInputElement;
+
+describe('a question of mu’s ask_user', () => {
+  const CHOICES = ['SQLite (Recommended) — One file, nothing to run', 'Postgres', 'Something else (type it)'];
+  const question: ViewQuestion = {
+    id: 'question-1',
+    toolCallId: 'call_ask',
+    index: 0,
+    count: 2,
+    question: 'Which database should the app use?',
+    header: 'Database',
+    options: [{ label: 'SQLite (Recommended)', description: 'One file, nothing to run' }, { label: 'Postgres' }],
+    multiSelect: false,
+    choices: CHOICES,
+  };
+  const pickOne: ViewDialog = {
+    id: 'q1',
+    method: 'select',
+    title: 'Database: Which database should the app use? (1/2)',
+    options: CHOICES,
+    timeout: 120000,
+    inRun: true,
+    question,
+  };
+  const items = () => screen.getAllByTestId('native-question-option');
+
+  it('shows each option with what it means, and answers the select with the option’s text', async () => {
+    const { answered } = show(pickOne);
+    expect(screen.getByTestId('native-question')).toHaveAttribute('data-step', 'pick');
+    expect(screen.getByTestId('native-question-header')).toHaveTextContent('Database');
+    expect(screen.getByText('Question 1 of 2')).toBeInTheDocument();
+    expect(screen.getByText('Which database should the app use?')).toBeInTheDocument();
+    expect(items().map((item) => item.textContent)).toEqual([
+      'SQLite (Recommended)One file, nothing to run',
+      'Postgres',
+    ]);
+    expect(screen.getByTestId('native-question-send')).toBeDisabled();
+    await act(async () => {
+      fireEvent.click(radioOf(items()[1]));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-question-send'));
+    });
+    expect(answered).toEqual([{ dialogId: 'q1', answer: { value: 'Postgres' } }]);
+  });
+
+  it('answers "Something else" with mu’s last choice, then asks for the person’s own words', async () => {
+    const first = show(pickOne);
+    await act(async () => {
+      fireEvent.click(radioOf(screen.getByTestId('native-question-other')));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-question-send'));
+    });
+    expect(first.answered.map((each) => each.answer)).toEqual([{ value: 'Something else (type it)' }]);
+    cleanup();
+    const second = show({ ...pickOne, id: 'q2', method: 'input', options: undefined });
+    expect(screen.getByTestId('native-question')).toHaveAttribute('data-step', 'words');
+    expect(screen.queryAllByTestId('native-question-option')).toEqual([]);
+    const words = screen.getByTestId('native-question-words');
+    fireEvent.change(words, { target: { value: 'Whatever the host gives me' } });
+    await act(async () => {
+      fireEvent.keyDown(words, { key: 'Enter', code: 'Enter', keyCode: 13 });
+    });
+    expect(second.answered).toEqual([{ dialogId: 'q2', answer: { value: 'Whatever the host gives me' } }]);
+  });
+
+  it('answers a pick-any question with the numbers ticked, or with the person’s own words', async () => {
+    const pickAny: ViewDialog = {
+      id: 'q3',
+      method: 'input',
+      title: 'Which parts? (2/2) (pick any)\n1. Auth\n2. Billing\n3. Admin panel',
+      inRun: true,
+      question: {
+        ...question,
+        index: 1,
+        header: undefined,
+        question: 'Which parts?',
+        options: [{ label: 'Auth' }, { label: 'Billing' }, { label: 'Admin panel' }],
+        multiSelect: true,
+        choices: undefined,
+      },
+    };
+    const { answered } = show(pickAny);
+    expect(screen.getByTestId('native-question')).toHaveAttribute('data-step', 'pick-any');
+    expect(screen.getByText('Pick any')).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(radioOf(items()[2]));
+    });
+    await act(async () => {
+      fireEvent.click(radioOf(items()[0]));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-question-send'));
+    });
+    expect(answered.at(-1)?.answer).toEqual({ value: '1,3' });
+    expect(pickAnyAnswer([2, 0], '  SSO only ')).toBe('SSO only');
+  });
+
+  it('skips the question with no answer', async () => {
+    const { answered } = show(pickOne);
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-question-skip'));
+    });
+    expect(answered).toEqual([{ dialogId: 'q1', answer: { cancelled: true } }]);
+  });
+
+  it('says mu waits on questions nobody answered in time, and its button asks them again once', async () => {
+    const asked: number[] = [];
+    render(
+      <I18nextProvider i18n={i18n}>
+        <QuestionsOpenLine onAnswer={() => asked.push(1)} />
+      </I18nextProvider>
+    );
+    expect(screen.getByTestId('native-questions-open')).toHaveTextContent('mu has a question waiting for you.');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-questions-answer'));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-questions-answer'));
+    });
+    expect(asked).toEqual([1]);
   });
 });

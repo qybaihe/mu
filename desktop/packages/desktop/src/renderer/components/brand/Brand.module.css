@@ -30,76 +30,6 @@
   pointer-events: none;
 }
 
-/* ---- Home backdrop: the glyph, large and faint, behind the greeting ---- */
-
-.backdrop {
-  --mu-backdrop-tint: #f0a3cf;
-  --mu-backdrop-fill: 0.14;
-  --mu-backdrop-edge: 0.5;
-  display: block;
-  line-height: 0;
-  pointer-events: none;
-  user-select: none;
-  animation: mu-backdrop-in 720ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  transition: opacity 260ms ease;
-}
-
-:global([data-theme='dark']) .backdrop {
-  --mu-backdrop-tint: #f7c6e0;
-  --mu-backdrop-fill: 0.075;
-  --mu-backdrop-edge: 0.26;
-}
-
-.backdrop svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.backdropFillTop {
-  stop-color: var(--mu-backdrop-tint);
-  stop-opacity: var(--mu-backdrop-fill);
-}
-
-.backdropFillBottom {
-  stop-color: var(--mu-backdrop-tint);
-  stop-opacity: calc(var(--mu-backdrop-fill) * 0.35);
-}
-
-.backdropEdgeTop {
-  stop-color: var(--mu-backdrop-tint);
-  stop-opacity: var(--mu-backdrop-edge);
-}
-
-.backdropEdgeBottom {
-  stop-color: var(--mu-backdrop-tint);
-  stop-opacity: calc(var(--mu-backdrop-edge) * 0.3);
-}
-
-/* On the way into a conversation, which has no backdrop. */
-.backdropLeaving {
-  opacity: 0;
-}
-
-@keyframes mu-backdrop-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .backdrop {
-    animation: none;
-    transition: none;
-  }
-}
-
 /* ---- Judge pulse ---- */
 
 .pulse {
@@ -144,85 +74,10 @@
   }
 }
 
-/* ---- Starting points of an empty conversation ---- */
-
-.starters {
-  width: 100%;
-  margin-top: 20px;
-  animation: mu-rise 320ms var(--mu-ease, ease) both;
-}
-
-.startersHint {
-  margin: 0 4px 10px;
-  color: var(--bg-6, #86909c);
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.startersGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-@media (max-width: 720px) {
-  .startersGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.starter:global(.arco-btn) {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
-  height: auto;
-  padding: 12px 14px;
-  border: 1px solid var(--border-base, #e5e6eb);
-  border-radius: 8px;
-  background: var(--bg-base, #fff);
-  color: var(--text-primary);
-  text-align: start;
-  white-space: normal;
-  transition: background-color var(--mu-duration, 160ms) var(--mu-ease, ease);
-}
-
-.starter:global(.arco-btn):hover {
-  background: var(--bg-2, #f7f8fa);
-}
-
-.starterIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  color: var(--text-secondary);
-}
-
-.starterText {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.starterTitle {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 20px;
-}
-
-.starterDesc {
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 18px;
-}
-
 /* ---- Startup gate ---- */
 
 .gate {
+  position: relative;
   display: flex;
   height: 100%;
   min-height: 320px;
@@ -235,20 +90,21 @@
   color: var(--text-primary);
 }
 
+.gateTitlebar {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  display: flex;
+  justify-content: flex-end;
+  height: 42px;
+  -webkit-app-region: drag;
+}
+
 .gateTitle {
   margin: 10px 0 0;
   font-size: 15px;
   font-weight: 600;
   line-height: 22px;
-}
-
-.gateHint {
-  max-width: 420px;
-  margin: -12px 0 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 18px;
-  text-align: center;
 }
 
 .gateBar {
@@ -307,20 +163,8 @@
   }
 }
 
-@keyframes mu-rise {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .pulse[data-state='judging'] .pulseDot,
-  .starters,
   .gateBar::after {
     animation: none;
   }
@@ -329,7 +173,6 @@
     width: 100%;
   }
 
-  .starter:global(.arco-btn),
   .pulseDot {
     transition: none;
   }

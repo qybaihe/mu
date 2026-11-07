@@ -1,13 +1,7 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * Dark dialogs sit on the card surface (#1a1a1a, a shade above the #111 page) inside a hairline. The hairline goes
+ * Dark dialogs sit on the card surface (--dialog-fill-0, a shade above the page's --bg-1) inside a hairline. The hairline goes
  * round the whole dialog: the body of a plain Arco modal is only the part between its title and its buttons, so a
- * line round the body would box the text in. An AionModal's body is the whole dialog, and it draws its own.
+ * line round the body would box the text in. An MuModal's body is the whole dialog, and it draws its own.
  */
 
 import { readFileSync } from 'node:fs';
@@ -35,9 +29,14 @@ function body(css: string, selector: string): string {
 describe('dark dialogs', () => {
   it('fill with the card surface, a shade above the page', () => {
     const dark = body(scheme, "[data-color-scheme='mu'][data-theme='dark']");
-    expect(dark).toContain('--dialog-fill-0: #1a1a1a');
-    expect(dark).toContain('--bg-1: #111111');
-    expect(dark).toContain('--border-base: #333333');
+    /** The sum of a token's three channels: a lighter colour has the larger sum. */
+    const hex = (name: string): number => {
+      const value = new RegExp(`${name}: #([0-9a-f]{6});`).exec(dark)?.[1] ?? '';
+      expect(value, name).not.toBe('');
+      return [0, 2, 4].reduce((sum, at) => sum + parseInt(value.slice(at, at + 2), 16), 0);
+    };
+    expect(hex('--dialog-fill-0')).toBeGreaterThan(hex('--bg-1'));
+    expect(hex('--border-base')).toBeGreaterThan(hex('--dialog-fill-0'));
     expect(body(arco, "body[arco-theme='dark'] .arco-modal")).toContain('background-color: var(--dialog-fill-0)');
     expect(body(arco, "body[arco-theme='dark'] .arco-modal-content")).toContain(
       'background-color: var(--dialog-fill-0)'
@@ -45,19 +44,19 @@ describe('dark dialogs', () => {
   });
 
   it('draw the hairline round the whole dialog, never round a plain modal body', () => {
-    expect(body(arco, "body[arco-theme='dark'] .arco-modal:not(.aionui-modal)")).toContain(
+    expect(body(arco, "body[arco-theme='dark'] .arco-modal:not(.mu-modal)")).toContain(
       'border: 1px solid var(--border-base)'
     );
     expect(body(arco, "body[arco-theme='dark'] .arco-modal-content")).not.toContain('border');
-    expect(body(arco, '.aionui-modal .arco-modal-content')).toContain('border: 1px solid var(--border-base)');
+    expect(body(arco, '.mu-modal .arco-modal-content')).toContain('border: 1px solid var(--border-base)');
   });
 
   it('keep the accent off their surfaces', () => {
     for (const selector of [
       "body[arco-theme='dark'] .arco-modal",
       "body[arco-theme='dark'] .arco-modal-content",
-      "body[arco-theme='dark'] .arco-modal:not(.aionui-modal)",
-      '.aionui-modal .arco-modal-content',
+      "body[arco-theme='dark'] .arco-modal:not(.mu-modal)",
+      '.mu-modal .arco-modal-content',
     ]) {
       expect(body(arco, selector)).not.toMatch(/primary|accent|violet|pink/);
     }

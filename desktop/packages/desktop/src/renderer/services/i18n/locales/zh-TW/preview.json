@@ -157,7 +157,25 @@
     "tabLimitReached": "標籤頁數量已達上限（{{count}} 個），已重複使用最早開啟的標籤頁。",
     "agentFirstUseTitle": "Agent 正在使用應用內瀏覽器",
     "agentFirstUseContent": "它可以在這個面板裡開啟網頁、點擊和讀取內容。你的登入狀態會被保留。",
-    "agentFirstUseAction": "前往設定"
+    "agentFirstUseAction": "前往設定",
+    "pick": {
+      "start": "選擇頁面元素給 mu 看",
+      "stop": "停止選擇",
+      "hint": "點擊元素加入訊息 · ↑ 選上一層 · Esc 取消",
+      "added": "已將 {{name}} 加入訊息",
+      "failed": "這個頁面的元素無法選擇"
+    },
+    "screenshot": {
+      "send": "把這個頁面現在的樣子傳給 mu",
+      "chip": "{{site}} 的截圖",
+      "added": "已把 {{site}} 的截圖加入訊息",
+      "failed": "現在無法擷取這個頁面"
+    },
+    "console": {
+      "send": "把頁面主控台的錯誤和警告傳給 mu",
+      "chip": "{{site}} 的主控台",
+      "added": "已把 {{site}} 的主控台輸出加入訊息"
+    }
   },
   "saveConflict": "儲存失敗：該檔案在你開啟後已被變更。可重新載入查看其他變更——你的編輯仍在，尚未儲存。",
   "persistQuotaExceeded": "本機儲存空間已滿，無法再記住該專案開啟的標籤頁。請關閉一些標籤頁或清理網站資料。",
@@ -319,5 +337,31 @@
   "saveFailedWithDetail": "儲存失敗：{{detail}}",
   "zoomActualSize": "重設縮放",
   "zoomFit": "符合寬度",
-  "zoomFitTooltip": "縮放至面板寬度"
+  "zoomFitTooltip": "縮放至面板寬度",
+  "gallery": {
+    "label": "圖片 {{name}}",
+    "previous": "上一張",
+    "next": "下一張",
+    "position": "{{index}} / {{count}}",
+    "gone": "這個檔案已不在原處，可能已被移動或刪除。",
+    "tooLarge": "圖片太大（{{size}}），無法在這裡顯示。請用預設應用程式開啟。"
+  },
+  "reveal": {
+    "mac": "在 Finder 中顯示",
+    "windows": "在檔案總管中顯示",
+    "linux": "在資料夾中顯示"
+  },
+  "diffComment": {
+    "add": "評論這一行",
+    "placeholder": "這裡要 mu 怎麼改？",
+    "save": "新增評論",
+    "hint": "評論會隨下一則訊息一起送出",
+    "remove": "刪除評論"
+  },
+  "diffHunk": {
+    "stage": "暫存這處變更",
+    "unstage": "取消暫存這處變更",
+    "stale": "這個檔案在顯示 diff 之後又變了，所以什麼都沒改。下面是它現在的樣子。",
+    "failed": "Git 沒能完成：{{reason}}"
+  }
 }

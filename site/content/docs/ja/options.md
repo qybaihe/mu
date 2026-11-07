@@ -1,0 +1,16 @@
+---
+title: 機能とオプション
+summary: 判定カーネルのすべての機能について、既定でオンかどうか、その判定ポイント、各オプションの既定値と範囲。
+---
+
+各機能は `~/.mu/agent/mu.json` の `features.<name>` で設定します。`false` で機能をオフにし、`true` で既定値のままオンにします。オブジェクトにすると、個々のオプションを上書きできます：
+
+```json
+{
+  "features": {
+    "injection": { "tools": ["web_fetch", "mcp__*"] },
+    "board": { "defaultOn": true },
+    "ttsr": false
+  }
+}
+```

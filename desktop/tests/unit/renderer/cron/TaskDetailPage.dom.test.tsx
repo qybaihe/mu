@@ -32,7 +32,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// TaskDetailPage renders CreateTaskDialog, which now mounts through AionModal
+// TaskDetailPage renders CreateTaskDialog, which now mounts through MuModal
 // and reads ThemeContext for font scaling. Provide a minimal theme so it mounts
 // without a full ThemeProvider (which pulls in IPC-backed theme loading).
 vi.mock('@/renderer/hooks/context/ThemeContext', () => ({

@@ -1,6 +1,6 @@
 /**
  * The page of a native conversation (`/conversation/native/:id`): a conversation that runs on the native host, pi in
- * a process of its own, with no AionCore and no ACP in its path (docs/native-host-ui.md). It exists only while the
+ * a process of its own, with no backend and no ACP in its path (docs/native-host-ui.md). It exists only while the
  * main process runs the native host (the default; MU_NATIVE_HOST=0 turns it off); otherwise the route goes home.
  */
 import React from 'react';

@@ -24,7 +24,7 @@ test.describe('System Settings Persistence', () => {
 
   // TC-PERSIST-01: Language switch persists across reload
   test('TC-PERSIST-01: language selection persists after reload', async ({ page }) => {
-    const selectTrigger = page.locator('.aion-select .arco-select-view').first();
+    const selectTrigger = page.locator('.mu-select .arco-select-view').first();
     await expect(selectTrigger).toBeVisible();
     const originalLang = await selectTrigger.textContent();
 
@@ -37,7 +37,7 @@ test.describe('System Settings Persistence', () => {
 
     await reloadAndGoToSystem(page);
 
-    const reloadedSelect = page.locator('.aion-select .arco-select-view').first();
+    const reloadedSelect = page.locator('.mu-select .arco-select-view').first();
     await expect(reloadedSelect).toBeVisible();
     expect(await reloadedSelect.textContent()).toContain('English');
     expect(await page.locator('body').textContent()).toContain('Language');

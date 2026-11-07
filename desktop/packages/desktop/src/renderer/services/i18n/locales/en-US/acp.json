@@ -1,24 +1,24 @@
 {
   "auth": {
-    "failed": "{{backend}} authentication failed:\n\n{{error}}\n\nPlease check your local CLI tool authentication status",
+    "failed": "{{backend}} authentication failed:\n\n{{error}}\n\nCheck that you're signed in to the local CLI.",
     "console_error": "ACP authentication error details:",
-    "failed_confirm": "ACP {{backend}} authentication failed:\n\n{{error}}\n\nWould you like to go to settings page to configure now?"
+    "failed_confirm": "ACP {{backend}} authentication failed:\n\n{{error}}\n\nOpen Settings to set it up now?"
   },
   "send": {
-    "failed": "Failed to send message: {{error}}"
+    "failed": "Couldn't send message: {{error}}"
   },
   "sendbox": {
-    "placeholder": "Send message to {{backend}}..."
+    "placeholder": "Send a message to {{backend}}…"
   },
   "image": {
     "download": "Download",
     "download_aria": "Download image",
-    "download_success": "Download successful",
-    "download_error": "Failed to download",
+    "download_success": "Downloaded",
+    "download_error": "Couldn't download",
     "generated_alt": "Generated image"
   },
   "status": {
-    "connecting": "Connecting to {{agent}}...",
+    "connecting": "Connecting to {{agent}}…",
     "connected": "Connected to {{agent}}",
     "authenticated": "Authenticated with {{agent}}",
     "session_active": "Active session with {{agent}}",
@@ -26,7 +26,7 @@
     "unknown": "Unknown status"
   },
   "config": {
-    "reasoning_effort": "Reasoning Effort",
+    "reasoning_effort": "Reasoning effort",
     "default": "Default"
   }
 }

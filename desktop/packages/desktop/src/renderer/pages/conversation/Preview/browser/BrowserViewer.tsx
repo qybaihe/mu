@@ -6,9 +6,11 @@
 
 import React, { useCallback } from 'react';
 import WebviewHost, {
+  type PageConsoleEntry,
   type WebviewNavigation,
   type WebviewNavigationState,
 } from '@/renderer/components/media/WebviewHost';
+import { clearPageConsole, notePageConsole } from './browserStore';
 import {
   BROWSER_BLANK_URL,
   BROWSER_SESSION_PARTITION,
@@ -54,7 +56,9 @@ export interface BrowserViewerProps {
  * (sign-in survives), keyword search in the address bar, and writing
  * address/title/favicon back onto the owning tab so the browser can be restored
  * after a restart. In the work panel's browser the address bar is the browser's
- * own, above all its pages (`onNavigationChange`).
+ * own, above all its pages (`onNavigationChange`). The page's console warnings and
+ * errors since it loaded are kept for the tab (`browserStore.ts`), for the person
+ * to send to mu.
  */
 const BrowserViewer: React.FC<BrowserViewerProps> = ({
   url,
@@ -88,6 +92,9 @@ const BrowserViewer: React.FC<BrowserViewerProps> = ({
     [tabId, onFaviconChange]
   );
 
+  const handleConsoleMessage = useCallback((entry: PageConsoleEntry) => notePageConsole(tabId, entry), [tabId]);
+  const handleNewDocument = useCallback(() => clearPageConsole(tabId), [tabId]);
+
   /**
    * about:blank 不会触发 page-title-updated，所以空白页的标题在这里兜底，
    * 否则新建 tab 会一直显示上一次的标题。
@@ -115,6 +122,8 @@ const BrowserViewer: React.FC<BrowserViewerProps> = ({
       pristine={pristine}
       onNavigationChange={onNavigationChange ? handleNavigationChange : undefined}
       navigationRef={navigationRef}
+      onConsoleMessage={handleConsoleMessage}
+      onNewDocument={handleNewDocument}
     />
   );
 };

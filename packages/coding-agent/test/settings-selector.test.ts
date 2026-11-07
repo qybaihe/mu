@@ -6,6 +6,7 @@ import {
 	type SettingsConfig,
 	SettingsSelectorComponent,
 } from "../src/modes/interactive/components/settings-selector.ts";
+import { SelectSubmenu } from "../src/modes/interactive/components/settings-submenu.ts";
 import { initTheme } from "../src/modes/interactive/theme/theme.ts";
 import { stripAnsi } from "../src/utils/ansi.ts";
 import { createHarness, type Harness } from "./suite/harness.ts";
@@ -61,6 +62,28 @@ describe("SettingsSelectorComponent", () => {
 		// #9758: custom values from settings.json stay in the cycle.
 		cycle("Fullscreen wheel scrolling", 3);
 		expect(onWheelScrollLinesChange.mock.calls.flat()).toEqual([10, "auto", 1]);
+	});
+
+	it("cycles through share destinations", () => {
+		const onSessionShareDestinationChange = vi.fn();
+		const config = {
+			sessionShareDestination: "auto",
+			warnings: {},
+			defaultModel: "not set",
+			availableDefaultModels: [],
+			availableThinkingLevels: [],
+			modelThinkingLevels: {},
+			availableThemes: [],
+		} as unknown as SettingsConfig;
+		const callbacks = {
+			onSessionShareDestinationChange,
+		} as unknown as SettingsCallbacks;
+		const list = new SettingsSelectorComponent(config, callbacks).getSettingsList();
+		list.selectItem("share-destination");
+
+		for (let i = 0; i < 3; i++) list.handleInput("\r");
+
+		expect(onSessionShareDestinationChange.mock.calls.flat()).toEqual(["gist", "radius", "auto"]);
 	});
 
 	it("keeps the configured fixed theme marked while browsing", () => {
@@ -142,5 +165,24 @@ describe("SettingsSelectorComponent", () => {
 		output = stripAnsi(list.render(120).join("\n"));
 		expect(output).toContain("  ✓ medium");
 		expect(output).toContain("→   high");
+	});
+
+	it("pages a searchable submenu with selection page keys (#7629)", () => {
+		const onSelect = vi.fn();
+		const submenu = new SelectSubmenu(
+			"Theme",
+			"",
+			Array.from({ length: 20 }, (_, index) => ({ value: `theme-${index}`, label: `theme-${index}` })),
+			"theme-0",
+			onSelect,
+			() => {},
+			undefined,
+			{ searchable: true },
+		);
+
+		submenu.handleInput("\x1b[6~"); // PageDown
+		submenu.handleInput("\r");
+
+		expect(onSelect).toHaveBeenCalledWith("theme-10");
 	});
 });

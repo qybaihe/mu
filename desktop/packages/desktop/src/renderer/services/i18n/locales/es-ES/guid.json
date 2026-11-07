@@ -5,7 +5,6 @@
   "agentTabAutoSwitch": "El modelo no es compatible con Gemini, cambiado automáticamente a {{fallback}}",
   "autoSwitchToAgent": "Gemini no está configurado, cambiando automáticamente a {{agent}}",
   "autoSwitchedAgent": "{{from}} no está disponible, cambiado a {{to}}",
-  "promptExamplesHint": "Prueba estos ejemplos:",
   "selectAssistantHint": "Selecciona un asistente para comenzar una tarea",
   "agentSwitcherLabel": "Agente",
   "switchedToAgent": "Cambiado a {{agent}}",
@@ -26,10 +25,5 @@
     "statusTesting": "Probando latencia...",
     "statusUnreachable": "Inaccesible",
     "statusAvailable": "Disponible"
-  },
-  "defaultPrompts": {
-    "understand": "Familiarízate con este proyecto y explícame con palabras sencillas qué hace y por dónde empezar",
-    "cleanup": "Encuentra archivos duplicados e inútiles en esta carpeta y lístalos para que los confirme",
-    "create": "Créame una página personal bonita y ábrela cuando esté lista"
   }
 }

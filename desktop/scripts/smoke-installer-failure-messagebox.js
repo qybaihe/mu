@@ -19,7 +19,7 @@ const repoRoot = path.resolve(__dirname, '..');
 const INSTALLER_ERROR_SCENARIOS = [
   {
     id: 'uninstaller-copy-or-rebuild-failed',
-    defineName: 'AIONUI_E_UNINSTALLER_COPY_OR_REBUILD_FAILED',
+    defineName: 'MU_E_UNINSTALLER_COPY_OR_REBUILD_FAILED',
     code: 'E1001',
     message: 'mu could not repair the installed uninstaller.',
     action: 'Close mu, restart Windows if needed, then run this installer again.',
@@ -28,7 +28,7 @@ const INSTALLER_ERROR_SCENARIOS = [
   },
   {
     id: 'old-uninstall-failed',
-    defineName: 'AIONUI_E_OLD_UNINSTALL_FAILED',
+    defineName: 'MU_E_OLD_UNINSTALL_FAILED',
     code: 'E1002',
     message: 'The previous mu uninstaller returned an error.',
     action:
@@ -37,7 +37,7 @@ const INSTALLER_ERROR_SCENARIOS = [
   },
   {
     id: 'install-dir-remove-or-locked',
-    defineName: 'AIONUI_E_INSTALL_DIR_REMOVE_OR_LOCKED',
+    defineName: 'MU_E_INSTALL_DIR_REMOVE_OR_LOCKED',
     code: 'E1003',
     message: 'mu could not remove or replace the previous installation directory.',
     action: 'Close mu and any program using the install folder, then run this installer again.',
@@ -45,7 +45,7 @@ const INSTALLER_ERROR_SCENARIOS = [
   },
   {
     id: 'extract-failed',
-    defineName: 'AIONUI_E_EXTRACT_FAILED',
+    defineName: 'MU_E_EXTRACT_FAILED',
     code: 'E1010',
     message: 'mu could not extract the application files correctly.',
     action: 'Download a fresh installer and run it again.',
@@ -53,23 +53,23 @@ const INSTALLER_ERROR_SCENARIOS = [
   },
   {
     id: 'disk-insufficient',
-    defineName: 'AIONUI_E_DISK_INSUFFICIENT',
+    defineName: 'MU_E_DISK_INSUFFICIENT',
     code: 'E1020',
     message: 'mu cannot continue because the target disk does not have enough free space.',
     action: 'Free disk space on the target drive, then run this installer again.',
     diagnostics: 'scenario=disk-insufficient phase=preflight requiredMb=1024 availableMb=0',
   },
   {
-    id: 'bundled-aioncore-incomplete',
-    defineName: 'AIONUI_E_BUNDLED_AIONCORE_INCOMPLETE',
+    id: 'bundled-backend-incomplete',
+    defineName: 'MU_E_BUNDLED_BACKEND_INCOMPLETE',
     code: 'E1030',
     message: 'mu installed, but the bundled local service resources are incomplete.',
     action: 'Download a fresh installer and run it again.',
-    diagnostics: 'scenario=bundled-aioncore-incomplete phase=verify-bundled-aioncore runtime=win32-x64 result=1',
+    diagnostics: 'scenario=bundled-backend-incomplete phase=verify-bundled-backend runtime=win32-x64 result=1',
   },
   {
     id: 'core-app-files-incomplete',
-    defineName: 'AIONUI_E_CORE_APP_FILES_INCOMPLETE',
+    defineName: 'MU_E_CORE_APP_FILES_INCOMPLETE',
     code: 'E1031',
     message: 'mu installation is incomplete because a required application file is missing.',
     action: 'Reinstall mu or download a newer installer.',
@@ -77,7 +77,7 @@ const INSTALLER_ERROR_SCENARIOS = [
   },
   {
     id: 'arch-mismatch',
-    defineName: 'AIONUI_E_ARCH_MISMATCH',
+    defineName: 'MU_E_ARCH_MISMATCH',
     code: 'E1040',
     message: 'Installation package architecture mismatch.',
     action: 'Download the mu installer that matches this Windows architecture, then run it again.',
@@ -85,7 +85,7 @@ const INSTALLER_ERROR_SCENARIOS = [
   },
   {
     id: 'active-installer-conflict',
-    defineName: 'AIONUI_E_ACTIVE_INSTALLER_CONFLICT',
+    defineName: 'MU_E_ACTIVE_INSTALLER_CONFLICT',
     code: 'E1050',
     message: 'Another mu installer appears to still be active.',
     action: 'Close the other installer window or wait for it to finish, then run this installer again.',
@@ -93,7 +93,7 @@ const INSTALLER_ERROR_SCENARIOS = [
   },
   {
     id: 'registry-state-invalid',
-    defineName: 'AIONUI_E_REGISTRY_STATE_INVALID',
+    defineName: 'MU_E_REGISTRY_STATE_INVALID',
     code: 'E1060',
     message: 'mu found an invalid previous-install registry state.',
     action: 'Uninstall the old mu from Windows Settings, then run this installer again.',
@@ -101,7 +101,7 @@ const INSTALLER_ERROR_SCENARIOS = [
   },
   {
     id: 'active-marker-write-failed',
-    defineName: 'AIONUI_E_ACTIVE_MARKER_WRITE_FAILED',
+    defineName: 'MU_E_ACTIVE_MARKER_WRITE_FAILED',
     code: 'E1070',
     message: 'mu could not write the active-installer marker.',
     action: 'Restart Windows, then run this installer again.',
@@ -109,7 +109,7 @@ const INSTALLER_ERROR_SCENARIOS = [
   },
   {
     id: 'invalid-install-path',
-    defineName: 'AIONUI_E_INVALID_INSTALL_PATH',
+    defineName: 'MU_E_INVALID_INSTALL_PATH',
     code: 'E1090',
     message: 'The selected install path is invalid.',
     action: 'Choose a local install path that is writable, then run this installer again.',
@@ -180,12 +180,12 @@ function getArg(name, fallback) {
 
 function readInstallerErrorDefinitions() {
   const source = readFileSync(path.join(repoRoot, 'resources', 'windows', 'installer-errors.nsh'), 'utf8');
-  const definitions = Array.from(source.matchAll(/!define\s+(AIONUI_E_[A-Z0-9_]+)\s+"(E\d{4})"/g), (match) => ({
+  const definitions = Array.from(source.matchAll(/!define\s+(MU_E_[A-Z0-9_]+)\s+"(E\d{4})"/g), (match) => ({
     defineName: match[1],
     code: match[2],
   }));
   if (definitions.length === 0) {
-    throw new Error('No AIONUI_E_* installer error codes found.');
+    throw new Error('No MU_E_* installer error codes found.');
   }
   return definitions;
 }
@@ -371,22 +371,22 @@ RequestExecutionLevel user
 SilentInstall normal
 !define PROJECT_DIR "${nsisQuote(projectRoot)}"
 !define VERSION "0.0.0-smoke"
-!define AIONUI_TARGET_ARCH "x64"
-!define AIONUI_RUNTIME_KEY "win32-x64"
+!define MU_TARGET_ARCH "x64"
+!define MU_RUNTIME_KEY "win32-x64"
 !include LogicLib.nsh
 !include nsDialogs.nsh
 !include "${nsisQuote(path.join(projectRoot, 'resources', 'windows', 'installer-observability.nsh'))}"
-!macro AIONUI_CLEAR_ACTIVE_INSTALLER_MARKER
+!macro MU_CLEAR_ACTIVE_INSTALLER_MARKER
 !macroend
 !include "${nsisQuote(path.join(projectRoot, 'resources', 'windows', 'installer-errors.nsh'))}"
 
 Section
-  StrCpy $INSTDIR "$TEMP\\AionUi-messagebox-smoke"
-  StrCpy $AionUiSessionId "smokembox-${nsisQuote(scenario.code)}"
-  StrCpy $AionUiIsUpdated "1"
-  StrCpy $AionUiSessionLogPath "${nsisQuote(logPath)}"
+  StrCpy $INSTDIR "$TEMP\\mu-messagebox-smoke"
+  StrCpy $MuSessionId "smokembox-${nsisQuote(scenario.code)}"
+  StrCpy $MuIsUpdated "1"
+  StrCpy $MuSessionLogPath "${nsisQuote(logPath)}"
   BringToFront
-  !insertmacro AIONUI_FAIL_UX \
+  !insertmacro MU_FAIL_UX \
     "${nsisQuote(scenario.code)}" \
     "${nsisQuote(detail)}" \
     "${nsisQuote(scenario.message)}" \
@@ -424,13 +424,13 @@ function verifyFailureLog(logPath, scenario) {
 
 function runHarness({ autoClose, compileOnly, makensis, scenario }) {
   const { code } = scenario;
-  const root = mkdtempSync(path.join(tmpdir(), `aionui-failure-messagebox-${code}-`));
+  const root = mkdtempSync(path.join(tmpdir(), `mu-failure-messagebox-${code}-`));
   const projectRoot = path.join(root, 'project');
-  const nsiPath = path.join(root, 'aionui-failure-messagebox-smoke.nsi');
-  const exePath = path.join(root, 'aionui-failure-messagebox-smoke.exe');
+  const nsiPath = path.join(root, 'mu-failure-messagebox-smoke.nsi');
+  const exePath = path.join(root, 'mu-failure-messagebox-smoke.exe');
   const logPath = path.join(
     process.env.TEMP || tmpdir(),
-    `aionui-installer-messagebox-smoke-${code}-${new Date().toISOString().replace(/[-:]/g, '').replace(/\..+$/, '').replace('T', '-')}-log.jsonl`
+    `mu-installer-messagebox-smoke-${code}-${new Date().toISOString().replace(/[-:]/g, '').replace(/\..+$/, '').replace('T', '-')}-log.jsonl`
   );
   const automationPath = path.join(root, 'auto-close.ps1');
 

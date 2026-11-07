@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import type { MenuItemConstructorOptions } from 'electron';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -45,6 +39,7 @@ const fakeActions = (): ApplicationMenuActions => ({
   openSettings: vi.fn(),
   checkForUpdates: vi.fn(),
   openProjectPage: vi.fn(),
+  showShortcuts: vi.fn(),
   zoom: vi.fn(),
 });
 
@@ -142,6 +137,17 @@ describe('the macOS application menu', () => {
 
     expect(actions.openProjectPage).toHaveBeenCalledTimes(1);
     expect(help.some((item) => item.label === 'common.menu.checkForUpdates')).toBe(false);
+  });
+
+  it('shows the keyboard shortcuts from Help, with no accelerator that would take Cmd+/ from an editor in the page', () => {
+    const actions = fakeActions();
+    const help = submenuOf(mac(false, actions), 'common.menu.help');
+    const item = help.find((entry) => entry.label === 'common.menu.keyboardShortcuts');
+
+    click(item);
+
+    expect(actions.showShortcuts).toHaveBeenCalledTimes(1);
+    expect(item?.accelerator).toBeUndefined();
   });
 });
 

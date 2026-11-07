@@ -5,6 +5,7 @@ import { Type } from "typebox";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHarness, getUserTexts, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
+import { HIVE_REQUEST_ENTRY } from "../src/extension/features/hive.ts";
 import type { SwarmRunner } from "../src/extension/features/swarm.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { hiveRequest, parseHiveArgs } from "../src/hive/request.ts";
@@ -64,7 +65,7 @@ describe("/hive in a session", () => {
 		options: {
 			hold?: Promise<void>;
 			tools?: AgentTool[];
-			permissions?: "full" | "jev";
+			permissions?: "full" | "judge";
 			responder?: MockResponder;
 		} = {},
 	) {
@@ -107,6 +108,14 @@ describe("/hive in a session", () => {
 		return notes;
 	}
 
+	/** The hive requests in the session that the chat does not show. */
+	const hiddenRequests = (harness: Harness) =>
+		harness.session.messages.flatMap((message) =>
+			message.role === "custom" && message.customType === HIVE_REQUEST_ENTRY && message.display === false
+				? [message.content]
+				: [],
+		);
+
 	const toolResult = (harness: Harness) =>
 		JSON.stringify(harness.session.messages.find((message) => message.role === "toolResult"));
 
@@ -125,7 +134,9 @@ describe("/hive in a session", () => {
 		await harness.session.prompt(`/hive ${QUESTION}`);
 
 		expect(harness.getPendingResponseCount()).toBe(0);
-		expect(getUserTexts(harness)).toEqual([hiveRequest(QUESTION)]);
+		// The chat shows what was typed; the request rides along as a message only the model reads.
+		expect(getUserTexts(harness)).toEqual([`/hive ${QUESTION}`]);
+		expect(hiddenRequests(harness)).toEqual([hiveRequest(QUESTION)]);
 		expect(asked).toContain("Question for a hive: Why does login fail only in CI?");
 		expect(bees).toEqual(["where", "config", "run"]);
 		expect(toolResult(harness)).toContain("where: found it");
@@ -149,12 +160,13 @@ describe("/hive in a session", () => {
 		release();
 		await vi.waitFor(() => expect(harness.getPendingResponseCount()).toBe(0));
 		await harness.session.waitForIdle();
-		expect(getUserTexts(harness)).toEqual([hiveRequest(QUESTION)]);
+		expect(getUserTexts(harness)).toEqual([`/hive ${QUESTION}`]);
+		expect(hiddenRequests(harness)).toEqual([hiveRequest(QUESTION)]);
 		expect(JSON.stringify(harness.session.messages.at(-1))).toContain("The answer.");
 		expect(notes).toEqual([]);
 	});
 
-	it("in Jev-approves mode: the hive is judged against /hive as the user's own words, not the turn before", async () => {
+	it("in judge mode: the hive is judged against /hive as the user's own words, not the turn before", async () => {
 		const approvals: Record<string, unknown>[] = [];
 		const responder: MockResponder = (request): Record<string, Answer> => {
 			if (!("verdict" in request.questions)) return {};
@@ -164,7 +176,7 @@ describe("/hive in a session", () => {
 			const choice = asked ? "needed" : "unrelated";
 			return { verdict: { type: "choice", choice, probabilities: { [choice]: 0.95 } } };
 		};
-		const { harness, bees } = await start({ permissions: "jev", responder });
+		const { harness, bees } = await start({ permissions: "judge", responder });
 		const notes = await asRpc(harness);
 		harness.setResponses([
 			fauxAssistantMessage("Hello."),
@@ -180,7 +192,7 @@ describe("/hive in a session", () => {
 		expect(approvals.map((state) => state.user_message)).toEqual([`/hive ${QUESTION}`]);
 		expect(String(approvals[0]?.tool_call)).toContain("hive");
 		expect(bees).toEqual(["where", "config", "run"]);
-		// Nobody was asked: Jev approved it.
+		// Nobody was asked: the judge approved it.
 		expect(notes).toEqual([]);
 		expect(JSON.stringify(harness.session.messages.at(-1))).toContain("The answer, from the hive.");
 	});
@@ -194,14 +206,14 @@ describe("/hive in a session", () => {
 		const notes = await asRpc(harness);
 
 		await harness.session.prompt("/hive");
-		expect(notes.at(-1)).toContain("No sub-agents are running.");
-		expect(notes.at(-1)).toContain("/hive <question> puts several investigators on a question of yours.");
+		expect(notes.at(-1)).toContain("No subagents are running.");
+		expect(notes.at(-1)).toContain("/hive <question> puts several investigators to work on your question.");
 
 		harness.setResponses([callHive(), fauxAssistantMessage("Two of three reported.")]);
 		await harness.session.prompt(`/hive ${QUESTION}`);
 		await vi.waitFor(() => expect(bees).toHaveLength(3));
 		await harness.session.prompt("/hive kill config", { streamingBehavior: "steer" });
-		expect(notes.at(-1)).toBe("Ended 1 sub-agent. What they had found is kept.");
+		expect(notes.at(-1)).toBe("Stopped 1 subagent. Their findings so far are kept.");
 		release();
 		await vi.waitFor(() => expect(harness.getPendingResponseCount()).toBe(0));
 		await harness.session.waitForIdle();
@@ -244,7 +256,7 @@ describe("/hive in a session", () => {
 		await inTool;
 		// What the terminal does with anything typed while the agent works.
 		await harness.session.prompt(`/hive ${QUESTION}`, { streamingBehavior: "steer" });
-		expect(notes).toEqual(["The hive starts when the current turn is over."]);
+		expect(notes).toEqual(["The hive will start when the current turn ends."]);
 		expect(bees).toEqual([]);
 		release();
 		await first;
@@ -265,7 +277,7 @@ describe("/hive in a session", () => {
 		await harness.session.prompt(`/hive ${QUESTION}`);
 
 		expect(notes).toEqual([
-			"The hive tool is not active in this session (--tools leaves it out), so /hive cannot start one.",
+			"The hive tool isn't active in this session (--tools leaves it out), so /hive can't start one.",
 		]);
 		expect(getUserTexts(harness)).toEqual([]);
 		expect(harness.getPendingResponseCount()).toBe(1);
@@ -277,7 +289,7 @@ describe("/hive in a session", () => {
 		await printing.session.bindExtensions({ onError: (error) => errors.push(error) });
 		await printing.session.prompt(`/hive ${QUESTION}`);
 		expect(errors.map((error) => error.error)).toEqual([
-			"The hive tool is not active in this session (--tools leaves it out), so /hive cannot start one.",
+			"The hive tool isn't active in this session (--tools leaves it out), so /hive can't start one.",
 		]);
 		expect(getUserTexts(printing)).toEqual([]);
 	});

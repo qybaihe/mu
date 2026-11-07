@@ -16,6 +16,7 @@ import { Judge } from "../src/judge.ts";
 import type { LedgerRecord } from "../src/ledger.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 const GOAL = "Add cursor pagination to the users API";
 const CORRECTION = "保留原方案，但取消数据库变更";
@@ -74,7 +75,7 @@ describe("task frame feature", () => {
 					provider,
 					mode: extra.mode ?? "active",
 					only: extra.only ?? ["preflight", "frame"],
-					config: parseConfig({ features: extra.features ?? {} }),
+					config: parseConfig({ features: attended(extra.features) }),
 					onPresentation: (event) => events.push(event),
 				}),
 			],

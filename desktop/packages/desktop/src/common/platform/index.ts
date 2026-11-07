@@ -2,6 +2,7 @@ import path from 'path';
 import type { IPlatformServices } from './IPlatformServices';
 import { NodePlatformServices } from './NodePlatformServices';
 import { MU_DISPLAY_NAME } from '@/common/kyrn/displayName';
+import { DEV_PROFILE_NAMES } from './legacyNames';
 
 let _services: IPlatformServices | null = null;
 
@@ -10,8 +11,8 @@ let _services: IPlatformServices | null = null;
  * Centralised so that every call-site stays in sync.
  */
 export function getDevAppName(): string {
-  const isMultiInstance = process.env.AIONUI_MULTI_INSTANCE === '1';
-  return isMultiInstance ? 'AionUi-Dev-2' : 'AionUi-Dev';
+  const isMultiInstance = process.env.MU_MULTI_INSTANCE === '1';
+  return isMultiInstance ? DEV_PROFILE_NAMES.second : DEV_PROFILE_NAMES.first;
 }
 
 export function registerPlatformServices(services: IPlatformServices): void {

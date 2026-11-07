@@ -282,6 +282,14 @@ describe("parseArgs", () => {
 		});
 	});
 
+	describe("--no-mcp flag", () => {
+		test("parses --no-mcp flag", () => {
+			const result = parseArgs(["--no-mcp"]);
+			expect(result.noMcp).toBe(true);
+			expect(result.unknownFlags.size).toBe(0);
+		});
+	});
+
 	describe("--skill flag", () => {
 		test("parses single --skill", () => {
 			const result = parseArgs(["--skill", "./skill-dir"]);
@@ -457,6 +465,31 @@ describe("parseArgs", () => {
 			expect(result.tools).toEqual(["read", "bash"]);
 		});
 
+		test("parses +name and -name tool modifiers", () => {
+			const result = parseArgs(["-t", "+codemode,-write"]);
+			expect(result.tools).toEqual(["+codemode", "-write"]);
+			expect(result.diagnostics).toEqual([]);
+		});
+
+		test("rejects tool names mixed with modifiers", () => {
+			const result = parseArgs(["--tools", "read,+codemode"]);
+			expect(result.tools).toBeUndefined();
+			expect(result.diagnostics).toEqual([
+				{ type: "error", message: "--tools: tool names cannot be mixed with +name or -name entries" },
+			]);
+		});
+
+		test("rejects patterns in tool modifiers", () => {
+			const result = parseArgs(["-t", "+mcp__radius__*"]);
+			expect(result.tools).toBeUndefined();
+			expect(result.diagnostics).toEqual([
+				{
+					type: "error",
+					message: "-t: +name and -name entries take exact tool names, not patterns: +mcp__radius__*",
+				},
+			]);
+		});
+
 		test("parses --exclude-tools flag", () => {
 			const result = parseArgs(["--exclude-tools", "read,bash"]);
 			expect(result.excludeTools).toEqual(["read", "bash"]);
@@ -495,6 +528,18 @@ describe("parseArgs", () => {
 			const result = parseArgs(["@file.txt", "explain this", "@image.png"]);
 			expect(result.fileArgs).toEqual(["file.txt", "image.png"]);
 			expect(result.messages).toEqual(["explain this"]);
+		});
+
+		test("takes a message that starts with a list item as a message, not an option", () => {
+			const task = "- Fix the parser in src/args.ts.\n- Then run the tests.";
+			const result = parseArgs(["--print", task]);
+			expect(result.diagnostics).toEqual([]);
+			expect(result.messages).toEqual([task]);
+			expect(parseArgs(["-- also a message", "--\tand this"]).messages).toEqual([
+				"-- also a message",
+				"--\tand this",
+			]);
+			expect(parseArgs(["-x"]).diagnostics).toEqual([{ type: "error", message: "Unknown option: -x" }]);
 		});
 
 		test("captures unknown long flags with string values", () => {

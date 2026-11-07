@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { resolveGuidAssistantDefaults } from '@/renderer/pages/guid/utils/assistantDefaults';
 import type { AssistantDetail } from '@/common/types/agent/assistantTypes';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const buildDetail = (
   overrides: Partial<AssistantDetail['defaults']> = {},
@@ -27,7 +28,7 @@ const buildDetail = (
       sort_order: 1,
     },
     engine: {
-      agent_backend: 'aionrs',
+      agent_backend: BUILTIN_AGENT,
     },
     rules: {
       content: '',

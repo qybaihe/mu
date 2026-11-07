@@ -23,6 +23,13 @@ export interface BoardNote {
 	readonly params?: NoteParams;
 	/** Something went wrong: a failed check, a command that errored, a denied permission, trouble. */
 	readonly failed?: boolean;
+	/** The subagent the line is about, by its name; absent for the main agent. */
+	readonly who?: string;
+	/**
+	 * What the board calls that subagent: a short name in the board's language, from the writer. Only with `who`, and
+	 * only once the writer gave one; `who` and the params keep the exact name.
+	 */
+	readonly label?: string;
 }
 
 type Sentence = (params: NoteParams) => string;
@@ -33,48 +40,71 @@ const one = (params: NoteParams, key: string) => Number(params[key] ?? 0) === 1;
 const SENTENCES: Readonly<Record<string, { readonly zh: Sentence; readonly en: Sentence }>> = {
 	looked: {
 		zh: (p) => `看了 ${p.count} 个文件或地方`,
-		en: (p) => `Looked at ${p.count} ${one(p, "count") ? "file or place" : "files or places"}`,
+		en: (p) => `Looked at ${p.count} ${one(p, "count") ? "file or location" : "files or locations"}`,
 	},
-	changed_file: { zh: (p) => `改了 ${p.file}`, en: (p) => `Changed ${p.file}` },
+	changed_file: { zh: (p) => `改了 ${p.file}`, en: (p) => `Edited ${p.file}` },
 	wrote_file: { zh: (p) => `写了 ${p.file}`, en: (p) => `Wrote ${p.file}` },
 	ran_command: { zh: (p) => `运行了 ${p.command}`, en: (p) => `Ran ${p.command}` },
 	command_failed: { zh: (p) => `运行 ${p.command} 出错了`, en: (p) => `${p.command} failed` },
-	check_passed: { zh: (p) => `检查通过了：${p.command}`, en: (p) => `A check passed: ${p.command}` },
-	check_failed: { zh: (p) => `检查没通过：${p.command}`, en: (p) => `A check failed: ${p.command}` },
+	check_passed: { zh: (p) => `检查通过了：${p.command}`, en: (p) => `Check passed: ${p.command}` },
+	check_failed: { zh: (p) => `检查没通过：${p.command}`, en: (p) => `Check failed: ${p.command}` },
 	item_done: { zh: (p) => `做完了一条：${p.item}`, en: (p) => `Done: ${p.item}` },
 	item_added: { zh: (p) => `清单上加了一条：${p.item}`, en: (p) => `Added to the checklist: ${p.item}` },
 	helpers_sent: {
 		zh: (p) => `派出 ${p.count} 个助手：${p.titles}`,
-		en: (p) => `Sent out ${p.count} ${one(p, "count") ? "helper" : "helpers"}: ${p.titles}`,
+		en: (p) => `Started ${p.count} ${one(p, "count") ? "subagent" : "subagents"}: ${p.titles}`,
 	},
 	helpers_back: {
-		zh: (p) => `${p.count} 个助手回来了`,
-		en: (p) => `${p.count} ${one(p, "count") ? "helper" : "helpers"} came back`,
+		zh: (p) => (Number(p.failed ?? 0) > 0 ? `回来了 ${p.count} 个，${p.failed} 个出错` : `${p.count} 个助手回来了`),
+		en: (p) =>
+			`${p.count} ${one(p, "count") ? "subagent" : "subagents"} finished${Number(p.failed ?? 0) > 0 ? `, ${p.failed} with errors` : ""}`,
+	},
+	helper_done: {
+		zh: (p) => `${p.name} 回来了${p.summary ? `：${p.summary}` : ""}`,
+		en: (p) => `${p.name} is back${p.summary ? `: ${p.summary}` : ""}`,
+	},
+	helper_failed: {
+		zh: (p) => `${p.name} ${p.reason === "timed_out" ? "超时了" : p.reason === "stopped" ? "被停了" : "出错了"}`,
+		en: (p) =>
+			`${p.name} ${p.reason === "timed_out" ? "timed out" : p.reason === "stopped" ? "was stopped" : "failed"}`,
+	},
+	still_running: {
+		zh: (p) => (p.who ? `${p.who} 跑 ${p.what} ${p.minutes} 分钟没动静` : `还在跑 ${p.what}，${p.minutes} 分钟了`),
+		en: (p) =>
+			p.who
+				? `${p.who}: ${p.what} has run ${p.minutes} min with no output`
+				: `Still running ${p.what}, ${p.minutes} min in`,
 	},
 	permission_allowed: { zh: (p) => `你允许了：${p.summary}`, en: (p) => `You allowed: ${p.summary}` },
-	permission_denied: { zh: (p) => `你没允许：${p.summary}`, en: (p) => `You did not allow: ${p.summary}` },
+	permission_denied: { zh: (p) => `你没允许：${p.summary}`, en: (p) => `You didn't allow: ${p.summary}` },
 	goal_round: {
 		zh: (p) => `目标还没达成，mu 让它接着干（第 ${p.round} 轮）${p.reason ?? ""}`,
-		en: (p) => `The goal is not met yet; mu sent it back to work (round ${p.round})${p.reason ?? ""}`,
+		en: (p) => `The goal isn't met yet, so mu kept the agent working (round ${p.round})${p.reason ?? ""}`,
 	},
-	goal_met: { zh: (p) => `目标达成了：${p.text}`, en: (p) => `The goal holds: ${p.text}` },
-	goal_paused: { zh: (p) => `目标暂停了${p.reason ?? ""}`, en: (p) => `The goal is paused${p.reason ?? ""}` },
+	goal_met: { zh: (p) => `目标达成了：${p.text}`, en: (p) => `Goal met: ${p.text}` },
+	goal_paused: { zh: (p) => `目标暂停了${p.reason ?? ""}`, en: (p) => `Goal paused${p.reason ?? ""}` },
 	trouble_loop: {
 		zh: (p) => `mu 发现它在重复同一步：${p.detail}`,
-		en: (p) => `mu noticed it repeating the same step: ${p.detail}`,
+		en: (p) => `mu noticed the agent repeating a step: ${p.detail}`,
 	},
 	trouble: { zh: (p) => `mu 发现：${p.detail}`, en: (p) => `mu noticed: ${p.detail}` },
 	did: { zh: (p) => `用 ${p.tool} 做了：${p.what}`, en: (p) => `Used ${p.tool}: ${p.what}` },
 	said_quote: { zh: (p) => `它说：${p.text}`, en: (p) => `It said: ${p.text}` },
 	ended: { zh: () => "停下来了。", en: () => "Stopped." },
-	waiting_reply: { zh: () => "停下来了，在等你回复。", en: () => "Stopped, waiting for your reply." },
+	waiting_reply: { zh: () => "停下来了，在等你回复。", en: () => "Stopped and waiting for your reply." },
 };
 
 export type NoteCode = keyof typeof SENTENCES;
 
-/** A fixed sentence in the person's language. */
-export function noteText(code: NoteCode, params: NoteParams, language: BoardLanguage): string {
-	return SENTENCES[code][language](params);
+/**
+ * A fixed sentence in the person's language. `label` is what the board calls the subagent the sentence names: it
+ * stands in for the exact name (`name` or `who`) in the words, never in the params.
+ */
+export function noteText(code: NoteCode, params: NoteParams, language: BoardLanguage, label?: string): string {
+	const named = label
+		? { ...params, ...("name" in params ? { name: label } : {}), ...("who" in params ? { who: label } : {}) }
+		: params;
+	return SENTENCES[code][language](named);
 }
 
 /** The reason a goal continued or paused, as the sentence's tail: "：…" in Chinese, ": …" in English, or nothing. */
@@ -110,6 +140,10 @@ export function parseBoardNote(data: unknown): BoardNote | undefined {
 		...(typeof value.code === "string" ? { code: value.code } : {}),
 		...(params && Object.keys(params).length > 0 ? { params: params as NoteParams } : {}),
 		...(value.failed === true ? { failed: true } : {}),
+		...(typeof value.who === "string" && value.who ? { who: value.who } : {}),
+		...(typeof value.who === "string" && value.who && typeof value.label === "string" && value.label
+			? { label: value.label }
+			: {}),
 	};
 }
 

@@ -29,9 +29,6 @@ const platformMocks = vi.hoisted(() => ({
 const shortcutMocks = vi.hoisted(() => ({
   params: undefined as undefined | { toggleSider: () => void },
 }));
-const featureMocks = vi.hoisted(() => ({
-  teamModeEnabled: false,
-}));
 const runtimeMocks = vi.hoisted(() => ({
   deferredFailure: undefined as undefined | ((event: IRuntimeStatusEvent) => void),
 }));
@@ -57,7 +54,7 @@ vi.mock('@/common', () => ({
       openDevTools: { invoke: () => openDevTools() },
       logStream: { on: () => () => {} },
       menuCommand: {
-        on: (callback: (event: { command: 'newChat' | 'openSettings' }) => void) => {
+        on: (callback: (event: { command: 'newChat' | 'openSettings' | 'shortcuts' }) => void) => {
           menuMocks.command = callback;
           return () => {
             menuMocks.command = undefined;
@@ -91,14 +88,11 @@ vi.mock('@/common', () => ({
 }));
 
 // Trim Layout's collaborators to keep this a focused brand-behaviour test.
-vi.mock('@/common/config/constants', () => ({
-  get TEAM_MODE_ENABLED() {
-    return featureMocks.teamModeEnabled;
-  },
-}));
 vi.mock('@/renderer/components/layout/Titlebar', () => ({ default: () => null }));
 vi.mock('@renderer/hooks/system/useDeepLink', () => ({ useDeepLink: () => {} }));
 vi.mock('@renderer/hooks/system/notification/useNotificationClick', () => ({ useNotificationClick: () => {} }));
+vi.mock('@renderer/hooks/system/notification/useAppBadge', () => ({ useAppBadge: () => {} }));
+vi.mock('@renderer/hooks/system/useKeepAwakeWhileRunning', () => ({ useKeepAwakeWhileRunning: () => {} }));
 vi.mock('@renderer/hooks/file/useDirectorySelection', () => ({
   useDirectorySelection: () => ({ contextHolder: null }),
 }));
@@ -120,6 +114,7 @@ vi.mock('@renderer/components/layout/WorkPanel', () => ({
 }));
 
 import Layout from '@renderer/components/layout/Layout';
+import { emitter } from '@/renderer/utils/emitter';
 
 const renderLayout = () => render(<Layout sider={<div>sider</div>} />);
 
@@ -161,7 +156,6 @@ describe('Layout sider brand Home button', () => {
     openDevTools.mockClear();
     platformMocks.isElectronDesktopMock.mockReturnValue(false);
     shortcutMocks.params = undefined;
-    featureMocks.teamModeEnabled = false;
     sessionStorage.clear();
     localStorage.clear();
     resetCurrentProjectForTest();
@@ -175,7 +169,7 @@ describe('Layout sider brand Home button', () => {
 
   it('navigates to the recorded last non-settings path when clicked in a settings route', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
+    sessionStorage.setItem('mu:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
     fireEvent.click(screen.getByLabelText(BACK_KEY));
@@ -192,7 +186,7 @@ describe('Layout sider brand Home button', () => {
 
   it('falls back to /guid when the recorded path is itself a settings path', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/settings/system');
+    sessionStorage.setItem('mu:last-non-settings-path', '/settings/system');
     renderLayout();
 
     fireEvent.click(screen.getByLabelText(BACK_KEY));
@@ -201,7 +195,7 @@ describe('Layout sider brand Home button', () => {
 
   it('activates via keyboard (Enter and Space) in a settings route', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
+    sessionStorage.setItem('mu:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
     const brand = screen.getByLabelText(BACK_KEY);
@@ -213,7 +207,7 @@ describe('Layout sider brand Home button', () => {
 
   it('ignores non-activation keys in a settings route', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
+    sessionStorage.setItem('mu:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
     const brand = screen.getByLabelText(BACK_KEY);
@@ -285,18 +279,9 @@ describe('Layout sider brand Home button', () => {
     expect(screen.getByText('sider')).toBeInTheDocument();
   });
 
-  it('keeps the common shortcut owner mounted on team routes', () => {
-    currentPathname = '/team/team-1';
-    featureMocks.teamModeEnabled = true;
-
-    renderLayout();
-
-    expect(shortcutMocks.params?.toggleSider).toEqual(expect.any(Function));
-  });
-
   it('clicking the logo icon counts toward the devtools easter-egg and never navigates', () => {
     currentPathname = '/settings/about';
-    sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
+    sessionStorage.setItem('mu:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
     // The icon is the div wrapping the mu mark, separate from the wordmark.
@@ -352,6 +337,19 @@ describe('Layout sider brand Home button', () => {
 
     act(() => menuMocks.command?.({ command: 'openSettings' }));
     expect(navigate).toHaveBeenLastCalledWith('/settings/providers');
+  });
+
+  it('shows the keyboard shortcuts when Help asks', () => {
+    platformMocks.isElectronDesktopMock.mockReturnValue(true);
+    renderLayout();
+    const shown = vi.fn();
+    emitter.on('shortcuts.toggle', shown);
+
+    act(() => menuMocks.command?.({ command: 'shortcuts' }));
+
+    expect(shown).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+    emitter.off('shortcuts.toggle', shown);
   });
 
   it('stays on the settings page shown when the menu asks for the settings there', () => {

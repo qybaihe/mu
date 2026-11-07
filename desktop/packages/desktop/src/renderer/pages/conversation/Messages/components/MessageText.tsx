@@ -13,8 +13,8 @@ import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { formatDateTime, formatTime } from '@/renderer/services/i18n/format';
 import { iconColors } from '@/renderer/styles/colors';
-import { Alert, Message, Tooltip } from '@arco-design/web-react';
-import { Copy } from '@icon-park/react';
+import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
+import { Copy, Undo } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,7 @@ import CollapsibleContent from '@renderer/components/chat/CollapsibleContent';
 import FilePreview from '@renderer/components/media/FilePreview';
 import HorizontalFileList from '@renderer/components/media/HorizontalFileList';
 import MarkdownView from '@renderer/components/Markdown';
+import { ReplyFileRefs } from '@renderer/components/media/FileRefs/ReplyFileRefs';
 import MessageImages from './MessageImages';
 import { closeOpenFence } from './streamMarkdown';
 import { stripThinkTags, hasThinkTags } from '@renderer/utils/chat/thinkTagFilter';
@@ -169,7 +170,7 @@ const MessageText: React.FC<{
   const markdown = useMemo(() => (typeof data === 'string' ? closeOpenFence(data) : data), [data]);
   const shouldRenderPlainText = isUserMessage || Boolean(contextResetNotice);
   const conversationContext = useConversationContextSafe();
-  // A native conversation has no AionCore conversation around it: its project folder comes with its list.
+  // A native conversation has no backend conversation around it: its project folder comes with its list.
   const run = useMessageListRun();
   const workspace = conversationContext?.workspace ?? run?.workspace;
   const forkConversation = useForkConversation(conversationContext?.conversation_id);
@@ -244,6 +245,22 @@ const MessageText: React.FC<{
       >
         <ForkBranchIcon size={16} fill={iconColors.secondary} />
       </div>
+    </Tooltip>
+  ) : null;
+
+  // Going back to before the person's message, where its host took a checkpoint then (a native conversation's mu).
+  const hostRewind = isUserMessage ? run?.rewind?.(message) : undefined;
+  const rewindButton = hostRewind ? (
+    <Tooltip content={t('messages.rewind.action')}>
+      <Button
+        type='text'
+        size='mini'
+        className='!px-4px opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto'
+        icon={<Undo theme='outline' size='16' fill={iconColors.secondary} />}
+        aria-label={t('messages.rewind.action')}
+        onClick={hostRewind}
+        data-testid='message-rewind-button'
+      />
     </Tooltip>
   ) : null;
 
@@ -331,18 +348,13 @@ const MessageText: React.FC<{
         {!images || renderedText.trim() ? (
           <div
             className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
-              'bg-aou-2 px-14px py-8px': isUserMessage || cronMeta,
-              'bg-3 px-12px py-8px': isTeammateMessage,
+              'message-user-bubble bg-aou-2 px-10px py-6px md:px-12px md:py-8px': isUserMessage || cronMeta,
+              'bg-3 p-6px md:p-8px': isTeammateMessage,
               'w-full': !(isUserMessage || cronMeta || isTeammateMessage),
             })}
             style={{
               ...(isUserMessage || cronMeta
-                ? {
-                    borderRadius: '14px',
-                    border: '1px solid var(--color-border-2)',
-                    color: 'var(--text-primary)',
-                    maxWidth: '88%',
-                  }
+                ? { borderRadius: '12px 12px 4px 12px', color: 'var(--text-primary)' }
                 : isTeammateMessage
                   ? {
                       borderRadius: '4px 12px 12px 12px',
@@ -367,9 +379,12 @@ const MessageText: React.FC<{
               </CollapsibleContent>
             ) : (
               <div data-testid='message-text-content'>
-                <MarkdownView codeStyle={CODE_STYLE} onLocalFileLink={handleLocalFileLink}>
-                  {markdown}
-                </MarkdownView>
+                {/* The files the reply names become links: images to the preview, other files to their app. */}
+                <ReplyFileRefs markdown={typeof markdown === 'string' ? markdown : ''} cwd={workspace}>
+                  <MarkdownView codeStyle={CODE_STYLE} onLocalFileLink={handleLocalFileLink}>
+                    {markdown}
+                  </MarkdownView>
+                </ReplyFileRefs>
               </div>
             )}
           </div>
@@ -391,6 +406,7 @@ const MessageText: React.FC<{
           >
             {copyButton}
             {forkButton}
+            {rewindButton}
             {message.created_at && (
               <span className='text-12px text-t-secondary opacity-0 group-hover:opacity-100 transition-opacity select-none'>
                 {formatMessageTime(message.created_at, i18n?.language)}

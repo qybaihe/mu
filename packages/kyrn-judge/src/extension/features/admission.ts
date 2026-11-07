@@ -1,8 +1,8 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { isTestLog, planTestLog, renderTestLog, type TestLogStrategy } from "../../admission/test-log.ts";
 import { type AdmissionOutcome, toolAdmission, toolAdmissionBatch } from "../../decisions/tool-admission.ts";
+import { archiveDir as archiveDirOf, sweepArchives, writeArchive } from "../archive.ts";
+import { canRecall, recallCall, recordFullOutput } from "../full-output.ts";
 import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 
 /** What one batched request may carry in chunks: the judge takes 64 KiB, and the call and the questions need room too. */
@@ -27,6 +27,65 @@ export function chunkLines(text: string, size: number): string[] {
 	return chunks;
 }
 
+/**
+ * Programs that print a file, or part of one, as it is. What they print is what the agent asked to read, as with the
+ * `read` tool. In Terminal-Bench 2.1 such prints and fetched pages were half of what the judge was asked, it found
+ * nothing worth dropping in any of them, and the one chunk it did drop from a `cat` (a makefile, as "passing") was
+ * wrong.
+ */
+export const PRINT_COMMANDS: readonly string[] = [
+	"cat",
+	"sed -n",
+	"head",
+	"tail",
+	"nl",
+	"less",
+	"bat",
+	"grep",
+	"rg",
+	"od",
+	"xxd",
+	"git show",
+	"git diff",
+	"readelf",
+	"objdump",
+];
+
+/** Tools whose `command` is a shell command line. */
+const SHELLS: readonly string[] = ["bash", "powershell"];
+
+/** Commands that may stand between the prints without printing anything long of their own: `cd dir`, `echo ===`. */
+const BETWEEN = /^(?:cd|echo|printf)(?:\s|$)/;
+
+/**
+ * Whether a shell command only prints files: every command in it, split at `;`, `&&`, `||`, `|` and line breaks,
+ * starts with one of `programs` (`sed -n` counts, `sed -i` does not), apart from a `cd` or an `echo` between them.
+ * A command that can do more than print is not one: a redirect or a here document, `$(…)`, a job sent to the
+ * background, `tail -f`. So `cat > main.c <<EOF … EOF && make` still has its build output judged.
+ */
+export function printsFile(command: string, programs: readonly string[] = PRINT_COMMANDS): boolean {
+	if (programs.length === 0 || /`|\$\(/.test(command)) return false;
+	const names = programs.map((name) =>
+		name
+			.trim()
+			.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+			.replace(/\s+/g, "\\s+"),
+	);
+	const start = new RegExp(`^(?:${names.join("|")})(?=\\s|$)`);
+	const bare = command
+		// What is quoted is an argument, whatever characters it holds: `grep -E "a|b"`.
+		.replace(/'[^']*'|"(?:[^"\\]|\\.)*"/g, "''")
+		// Error output thrown away or merged changes nothing about what is printed.
+		.replace(/(^|\s)2>(?:\s*\/dev\/null|&1)(?=\s|[;&|]|$)/g, "$1");
+	const parts = bare
+		.split(/&&|\|\||[;|\n]/)
+		.map((part) => part.trim())
+		.filter(Boolean);
+	if (parts.some((part) => /[<>&]/.test(part) || !(BETWEEN.test(part) || start.test(part)))) return false;
+	if (parts.some((part) => /^tail\b.*\s(?:-[a-zA-Z]*[fF]|--follow)\b/.test(part))) return false;
+	return parts.some((part) => !BETWEEN.test(part));
+}
+
 /** A compact description of a tool call for the judge: the command, pattern or path that produced the output. */
 export function describeCall(toolName: string, input: Record<string, unknown>): string {
 	const value = input.command ?? input.pattern ?? input.path ?? input.query;
@@ -38,7 +97,9 @@ export function describeCall(toolName: string, input: Record<string, unknown>): 
  * context, and confident noise (progress, repeated warnings, passing checks)
  * is archived instead. Rules come first: errors, short output, images and
  * source reads always pass, and the first and last chunk always stay because
- * that is where commands put their summary and exit status.
+ * that is where commands put their summary and exit status. A shell command
+ * that only prints a file (`printsFile`) passes like a `read` does, and so does
+ * a fetched page: what the agent asked to read is not judged.
  *
  * `testLog` (off by default) gives test-runner output its own path, see
  * admission/test-log.ts. It also takes failing runs, which the chunk path skips:
@@ -53,47 +114,60 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		judgeMinChars: 6000,
 		chunkChars: 1200,
 		maxChunks: 48,
-		/** Chunks put to a hosted judge in one request. The local sidecar is asked one chunk at a time whatever this says. */
+		/** Chunks put to the judge in one request. */
 		batchChunks: 16,
-		/** Requests in flight at once: batches for a hosted judge, chunks for the local sidecar. */
+		/** Requests in flight at once. */
 		concurrency: 4,
-		/** A verdict later than this is not worth holding the result for: the output goes in whole, the verdict is only recorded. */
-		waitMs: 4000,
-		/** Tools whose output is never judged: file contents the model asked for, and sub-agent reports the bees already shaped. */
-		passThrough: ["read", "edit", "write", "delegate", "hive"],
+		/**
+		 * A verdict later than this is not worth holding the result for: the output goes in whole, the verdict is only
+		 * recorded. In the owner's sessions 35 of 42 verdicts came within 2 s, the one that dropped anything in 0.4 s,
+		 * and the 3 that came between 2 and 4 s dropped nothing, while 19 of 57 results waited the whole 4 s for a
+		 * verdict that came later or never.
+		 */
+		waitMs: 2000,
+		/**
+		 * Tools whose output is never judged: file contents and pages the model asked for, output it read back, and
+		 * sub-agent reports the bees already shaped.
+		 */
+		passThrough: ["read", "edit", "write", "delegate", "hive", "web_fetch", "recall"],
+		/** Shell commands made of these programs only print files, and are not judged either (`printsFile`). Empty: all are. */
+		printCommands: [...PRINT_COMMANDS],
 		/** "rules" omits exact repeats in test-runner output; "jev" also asks the judge about what is left. */
 		testLog: "off" as TestLogStrategy | "off",
 		/** Tell test runners an agent is reading: Vitest then prints failures and the summary only. */
 		agentEnv: true,
 	});
 	if (!options.enabled) return;
+	const archiveDir = archiveDirOf(runtime.sessionId);
 	const { pi } = runtime;
-	// An explicit reporter flag still wins, so the agent can list every passing test when it needs them.
-	if (options.agentEnv) process.env.AI_AGENT ??= "1";
 
+	// Archives were never removed. Once per process, in the background: the session never waits for it.
+	let swept = false;
 	pi.on(
-		"message_end",
-		failOpen((event, ctx) => {
-			runtime.touch(ctx);
-			const message = event.message as { role?: unknown; content?: unknown };
-			if (message.role !== "assistant") return undefined;
-			const text = textOf(message.content);
-			if (text.trim()) runtime.lastAssistantText = text;
+		"session_start",
+		failOpen(() => {
+			if (swept) return undefined;
+			swept = true;
+			void sweepArchives(archiveDir).catch(() => {});
 			return undefined;
 		}),
 	);
 
+	// An explicit reporter flag still wins, so the agent can list every passing test when it needs them.
+	if (options.agentEnv) process.env.AI_AGENT ??= "1";
+
 	/**
-	 * One verdict per chunk, in order. A hosted judge takes many chunks in one request, the state billed once
+	 * One verdict per chunk, in order. The judge takes many chunks in one request, the state billed once
 	 * (measured 2026-09-23 on jev: 16 chunks in 0.44 s and 7.6k tokens, against 1.4 s and 11.6k tokens as 16
-	 * requests, with the same verdicts). The local sidecar's window holds one chunk, so it is asked one at a time.
+	 * requests, with the same verdicts). A logprob judge sends each question with its state, so where one answers
+	 * `screen` questions the chunks are asked one at a time.
 	 */
 	const judgeChunks = async (
 		call: string,
 		middle: readonly string[],
 		signal: AbortSignal | undefined,
 	): Promise<readonly AdmissionOutcome[]> => {
-		if (!runtime.judgeParallel) {
+		if (!runtime.answersInBatches(toolAdmission.id, "screen")) {
 			const decisions = await runtime.engine.decideMany(
 				toolAdmission,
 				middle.map((chunk) => ({ call, chunk })),
@@ -119,6 +193,10 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			runtime.touch(ctx);
 			const toolName = "toolName" in event ? String(event.toolName) : "";
 			if (options.passThrough.includes(toolName)) return undefined;
+			const command = event.input.command;
+			if (SHELLS.includes(toolName) && typeof command === "string" && printsFile(command, options.printCommands)) {
+				return undefined;
+			}
 			if (event.content.some((block) => block.type !== "text")) return undefined;
 			const text = textOf(event.content);
 			if (text.length < options.minChars) return undefined;
@@ -128,8 +206,11 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 				toolName,
 				typeof details?.command === "string" ? { command: details.command } : event.input,
 			);
-			const archiveDir = join(tmpdir(), `kyrn-${runtime.sessionId}`);
 			const archivePath = join(archiveDir, `${event.toolCallId.replace(/[^\w.-]/g, "_")}.txt`);
+			// The notes point to recall when the model has it, which then finds the archive by the entry recorded for it.
+			const recall = canRecall(runtime);
+			const archive = () =>
+				recordFullOutput(runtime, { toolCallId: event.toolCallId, path: archivePath, kind: "archive" });
 
 			if (options.testLog !== "off" && isTestLog(call, text)) {
 				const frame = runtime.taskFrame();
@@ -140,11 +221,11 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 				const plan = await planTestLog({ call, goal, intent, output: text }, strategy, runtime.engine, {
 					signal: ctx.signal,
 				});
-				const rendered = renderTestLog(plan, archivePath);
+				const rendered = renderTestLog(plan, recall ? recallCall(event.toolCallId) : archivePath);
 				if (!rendered.applied) return undefined;
 				// The markers count lines of this text, so this text is what gets archived, not pi's own full-output file.
-				mkdirSync(archiveDir, { recursive: true });
-				writeFileSync(archivePath, text);
+				writeArchive(archivePath, text);
+				archive();
 				runtime.savings.admissionOmittedChars += rendered.omittedChars;
 				return { content: [{ type: "text" as const, text: rendered.text }] };
 			}
@@ -167,27 +248,39 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			const dropped = outcomes.map((outcome) => outcome.drop);
 			if (!dropped.some(Boolean)) return undefined;
 
-			mkdirSync(archiveDir, { recursive: true });
-			writeFileSync(archivePath, text);
+			writeArchive(archivePath, text);
+			archive();
 
+			// Where each chunk starts in the archived text, so a note can send recall to the part it stands for.
+			const starts: number[] = [];
+			let cursor = 0;
+			for (const chunk of chunks) {
+				cursor = text.indexOf(chunk, cursor);
+				starts.push(cursor);
+				cursor += chunk.length;
+			}
 			const kept: string[] = [chunks[0]];
 			let omittedChars = 0;
-			let run: string[] = [];
+			/** Indexes in `chunks` of the dropped chunks in a row, not yet replaced by their note. */
+			let run: number[] = [];
 			const kinds = new Set<string>();
 			const flush = () => {
 				if (run.length === 0) return;
-				const chars = run.reduce((sum, chunk) => sum + chunk.length, 0);
-				const lines = run.reduce((sum, chunk) => sum + chunk.split("\n").length, 0);
+				const chars = run.reduce((sum, index) => sum + chunks[index].length, 0);
+				const lines = run.reduce((sum, index) => sum + chunks[index].split("\n").length, 0);
+				const from = starts[run[0]];
+				const last = run[run.length - 1];
+				const where = recall
+					? `${recallCall(event.toolCallId, from, starts[last] + chunks[last].length - from)} reads them back`
+					: `full output: ${archivePath}`;
 				omittedChars += chars;
-				kept.push(
-					`[mu: ${lines} lines (${chars} chars) of ${[...kinds].join("/")} output omitted; full output: ${archivePath}]`,
-				);
+				kept.push(`[mu: ${lines} lines (${chars} chars) of ${[...kinds].join("/")} output omitted; ${where}]`);
 				kinds.clear();
 				run = [];
 			};
 			middle.forEach((chunk, index) => {
 				if (dropped[index]) {
-					run.push(chunk);
+					run.push(index + 1);
 					kinds.add(outcomes[index].kind);
 				} else {
 					flush();

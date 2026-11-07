@@ -68,14 +68,14 @@ describe('the scheduled tasks page with nothing to list', () => {
     expect(empty).toHaveTextContent('No scheduled tasks yet.');
     // The hint names the button as the button itself reads.
     expect(screen.getByTestId('new-task')).toHaveTextContent('New task');
-    expect(empty).toHaveTextContent('Use “New task” above to make one.');
+    expect(empty).toHaveTextContent('Use "New task" above to make one.');
     expect(container.querySelector('.arco-empty')).toBeNull();
   });
 
   it('says so in one quiet line when a search finds nothing', () => {
     jobs.list = [job('Morning summary')];
     const { container } = page();
-    fireEvent.change(screen.getByPlaceholderText('Search tasks...'), { target: { value: 'nothing like it' } });
+    fireEvent.change(screen.getByPlaceholderText('Search tasks…'), { target: { value: 'nothing like it' } });
     expect(screen.getByText('No matching scheduled tasks.')).toBeInTheDocument();
     expect(screen.queryByTestId('scheduled-tasks-empty')).toBeNull();
     expect(container.querySelector('.arco-empty')).toBeNull();

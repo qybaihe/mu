@@ -1,27 +1,31 @@
 import React from 'react';
 import { Button, Popconfirm, Tag } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import type { SubscriptionProvider } from '@/common/kyrn/login';
+import { LEGACY_PROVIDERS, type SubscriptionProvider } from '@/common/kyrn/login';
 import ProviderMark from '@renderer/components/brand/ProviderMark';
 import { ProviderHead } from '../providers/parts';
 import providerStyles from '../providers/providers.module.css';
+import AccountModels from './AccountModels';
 import LoginWaiting, { ExperimentalTag, LoginProblem, providerName } from './LoginWaiting';
 import type { SubscriptionLoginFlow } from './useSubscriptionLogin';
 
 type AccountDetailProps = {
   provider: SubscriptionProvider;
   flow: SubscriptionLoginFlow;
-  /** What mu reported for this id while nobody is signed in: usable through an API key (Claude, Grok). */
+  /** What mu reported for this id while nobody is signed in: usable through an API key (OpenAI, Grok). */
   byKey?: { models: { id: string; name: string }[] };
+  /** The model new conversations start on, when it is one of this provider's (the draft's). */
+  startModel?: string;
   /** Opens the provider whose sign-in is running, when it is another one. */
   onShow: (provider: SubscriptionProvider) => void;
 };
 
 /**
  * One subscription in the right pane: signed in or not, signing in or out (at once, outside the save bar: the
- * credential is pi's, in its own store), and what the account can use.
+ * credential is pi's, in its own store), and what the account can use: signed in, which of its models the model menus
+ * offer, asked for at once after a sign-in here.
  */
-export default function AccountDetail({ provider, flow, byKey, onShow }: AccountDetailProps) {
+export default function AccountDetail({ provider, flow, byKey, startModel, onShow }: AccountDetailProps) {
   const { t } = useTranslation();
   const account = flow.account(provider);
   const { login } = flow;
@@ -29,14 +33,20 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
   // One sign-in runs at a time: another one's question or code is on its own pane.
   const other = flow.running && login?.provider && login.provider !== provider ? login.provider : undefined;
   const name = providerName(t, provider);
+  // A sign-in mu no longer offers: shown while an account is signed in with it, to be signed out.
+  const legacy = LEGACY_PROVIDERS.includes(provider);
+  // Usable through an API key while nobody is signed in: its models are chosen the same way.
+  const usable = account ? undefined : flow.usable.find((entry) => entry.provider === provider);
+  const keyed = Boolean(byKey || usable);
   const state = busy
     ? 'mu.welcome.login.inProgress'
     : account
       ? 'mu.welcome.login.signedIn'
-      : byKey
+      : keyed
         ? 'mu.accounts.byKey'
         : 'mu.accounts.signedOut';
   const models = account?.models ?? byKey?.models ?? [];
+  const chosen = account ?? usable;
 
   return (
     <div className={providerStyles.editor} data-testid={`mu-account-${provider}`}>
@@ -62,7 +72,7 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
                 {t('mu.accounts.signOut')}
               </Button>
             </Popconfirm>
-          ) : (
+          ) : legacy ? null : (
             <Button
               size='small'
               type='primary'
@@ -79,8 +89,12 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
       <div className={providerStyles.fields}>
         <div className={providerStyles.field}>
           <div className={providerStyles.value}>{t(`mu.welcome.login.providers.${provider}.plan`)}</div>
-          <div className={providerStyles.hint}>{t('mu.accounts.instant')}</div>
-          {byKey ? <div className={providerStyles.hint}>{t('mu.accounts.byKeyHelp')}</div> : null}
+          {keyed ? <div className={providerStyles.hint}>{t('mu.accounts.byKeyHelp')}</div> : null}
+          {legacy ? (
+            <div className={providerStyles.hint} data-testid='mu-account-legacy'>
+              {t(`mu.accounts.legacy.${provider}`)}
+            </div>
+          ) : null}
         </div>
         {other ? (
           <div className={providerStyles.hint} data-testid='mu-account-other'>
@@ -98,8 +112,19 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
             onCancel={flow.cancel}
           />
         ) : null}
-        <LoginProblem failure={flow.failureOf(provider)} />
-        {models.length ? (
+        <LoginProblem failure={flow.failureOf(provider)} onStart={flow.start} />
+        {chosen && chosen.models.length ? (
+          <AccountModels
+            key={provider}
+            provider={provider}
+            name={name}
+            models={chosen.models}
+            enabled={chosen.enabled}
+            startModel={startModel}
+            fresh={Boolean(account) && login?.provider === provider && login.phase === 'done'}
+            enable={flow.enable}
+          />
+        ) : models.length ? (
           <div className={providerStyles.field}>
             <div className={providerStyles.label}>{t('mu.accounts.models')}</div>
             <div className={providerStyles.suggestions}>

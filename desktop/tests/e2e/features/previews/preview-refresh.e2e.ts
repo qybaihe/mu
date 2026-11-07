@@ -42,7 +42,7 @@ async function createProjectConversation(
 ): Promise<ProjectIds> {
   const ids = await page.evaluate(async (ws) => {
     const port = (window as BackendWindow).__backendPort;
-    if (!port) throw new Error('window.__backendPort is not available — is aioncore running?');
+    if (!port) throw new Error('window.__backendPort is not available — is the backend running?');
     const base = `http://127.0.0.1:${port}`;
 
     const created = await fetch(`${base}/api/conversations`, {
@@ -119,7 +119,7 @@ test.describe('Preview — refresh button', () => {
   let ids: ProjectIds | null = null;
 
   test.beforeAll(() => {
-    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-e2e-refresh-'));
+    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'mu-e2e-refresh-'));
     fs.writeFileSync(path.join(workspace, 'editable.txt'), 'disk body v1\n');
     fs.writeFileSync(path.join(workspace, 'plain.txt'), 'nothing special\n');
   });

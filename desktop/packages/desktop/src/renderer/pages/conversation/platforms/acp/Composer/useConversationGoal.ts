@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { useEffect, useState } from 'react';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import { GOAL_EVENT, reduceGoalState, type GoalSnapshot } from './goalState';

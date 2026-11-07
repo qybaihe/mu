@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type {
+	AgentEndEvent,
 	ExtensionCommandContext,
 	ExtensionContext,
 	SessionShutdownEvent,
@@ -34,9 +35,10 @@ import { turnRewind } from "../../decisions/turn-rewind.ts";
 import type { Coded } from "../../language.ts";
 import { say } from "../../language.ts";
 import { muHome } from "../../naming.ts";
-import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
+import { askWithin, clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 import { describeCall } from "./admission.ts";
 import type { HarnessRoots } from "./inherit.ts";
+import { isUnattended } from "./unattended.ts";
 
 export const CHECKPOINT_ENTRY = "kyrn.checkpoint";
 export const REWOUND_ENTRY = "kyrn.rewound";
@@ -83,6 +85,8 @@ interface TurnTrack {
 	proposed: boolean;
 	steps: string[];
 	edits: number;
+	/** A call that can change files ran in this turn: where a checkpoint is taken, or would be in an attended run. */
+	changed: boolean;
 	lastCheckFailed?: boolean;
 }
 
@@ -111,6 +115,7 @@ const newTurn = (n: number): TurnTrack => ({
 	proposed: false,
 	steps: [],
 	edits: 0,
+	changed: false,
 });
 
 const listed = (paths: readonly string[]): string =>
@@ -125,10 +130,10 @@ export function describePlan(plan: RestorePlan): string {
 		plan.remove.length > 0 ? `remove ${plan.remove.length} created since: ${listed(plan.remove)}` : "",
 		plan.bringBack.length > 0 ? `bring back ${plan.bringBack.length} deleted since: ${listed(plan.bringBack)}` : "",
 		plan.leftAlone.length > 0
-			? `left alone ${plan.leftAlone.length}: ${listed(plan.leftAlone.map((entry) => `${entry.path} (${entry.why})`))}`
+			? `leave alone ${plan.leftAlone.length}: ${listed(plan.leftAlone.map((entry) => `${entry.path} (${entry.why})`))}`
 			: "",
 	].filter(Boolean);
-	return lines.length > 0 ? lines.join("\n") : "no file differs from the checkpoint";
+	return lines.length > 0 ? lines.join("\n") : "no files differ from the checkpoint";
 }
 
 const describeResult = (result: RestoreResult): string =>
@@ -166,14 +171,14 @@ export function offNotice(
 	code: CheckpointsOff,
 	limits: { readonly maxFiles: number; readonly maxTotalMb: number; readonly timeoutMs: number },
 ): { line: string; params: Record<string, number> } {
-	const start = { zh: "在项目文件夹里启动 mu 就有检查点", en: "Start mu in a project folder to get them" };
+	const start = { zh: "在项目文件夹里启动 mu 就有检查点", en: "Start mu in a project folder to use checkpoints" };
 	const seconds = Math.round(limits.timeoutMs / 1000);
 	switch (code) {
 		case "git_missing":
 			return {
 				line: say({
-					zh: "mu：检查点已关闭，因为这台机器上找不到 git。",
-					en: "mu: checkpoints are off, because git was not found on this machine.",
+					zh: "mu：检查点已关闭，因为这台电脑上找不到 git。装好 Git 后，新开一个会话就有检查点。",
+					en: "mu: checkpoints are off because git wasn't found on this computer. Install Git, then start a new session.",
 				}),
 				params: {},
 			};
@@ -181,7 +186,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: "mu：检查点已关闭，因为这台 Mac 还没有同意 Xcode 许可协议，git 无法运行。在终端里用 sudo xcodebuild -license 同意后，新开一个会话就有检查点。",
-					en: "mu: checkpoints are off, because git cannot run on this Mac until the Xcode license is accepted. Accept it with sudo xcodebuild -license in Terminal, then start a new session to get them.",
+					en: "mu: checkpoints are off because git can't run on this Mac until you accept the Xcode license. Run sudo xcodebuild -license in Terminal to accept it, then start a new session.",
 				}),
 				params: {},
 			};
@@ -189,7 +194,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: "mu：检查点已关闭，因为这台 Mac 没有安装 git 所需的命令行开发者工具。用 xcode-select --install 安装后，新开一个会话就有检查点。",
-					en: "mu: checkpoints are off, because this Mac has no command line developer tools, which git needs. Install them with xcode-select --install, then start a new session to get them.",
+					en: "mu: checkpoints are off because git needs the command line developer tools, which aren't installed on this Mac. Install them with xcode-select --install, then start a new session.",
 				}),
 				params: {},
 			};
@@ -197,7 +202,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: `mu：本次会话不拍检查点，因为这个文件夹是你的主目录，或者包含它。${start.zh}。`,
-					en: `mu: checkpoints are off in this session, because this folder is your home folder or holds it. ${start.en}.`,
+					en: `mu: checkpoints are off for this session because this folder is, or contains, your home folder. ${start.en}.`,
 				}),
 				params: {},
 			};
@@ -205,7 +210,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: "mu：本次会话不拍检查点，因为这个文件夹在 mu 自己的目录里。",
-					en: "mu: checkpoints are off in this session, because this folder is inside mu's own folder.",
+					en: "mu: checkpoints are off for this session because this folder is inside mu's own folder.",
 				}),
 				params: {},
 			};
@@ -213,7 +218,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: `mu：本次会话不拍检查点，因为这个文件夹要拍的文件超过 ${limits.maxFiles} 个。${start.zh}，或者调高 features.checkpoint.maxFiles。`,
-					en: `mu: checkpoints are off in this session, because this folder has more than ${limits.maxFiles} files to snapshot. ${start.en}, or raise features.checkpoint.maxFiles.`,
+					en: `mu: checkpoints are off for this session because this folder has more than ${limits.maxFiles} files to snapshot. ${start.en}, or raise features.checkpoint.maxFiles.`,
 				}),
 				params: { limit: limits.maxFiles },
 			};
@@ -221,7 +226,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: `mu：本次会话不拍检查点，因为这个文件夹要拍的文件加起来超过 ${limits.maxTotalMb} MB。${start.zh}，或者调高 features.checkpoint.maxTotalMb。`,
-					en: `mu: checkpoints are off in this session, because this folder has more than ${limits.maxTotalMb} MB of files to snapshot. ${start.en}, or raise features.checkpoint.maxTotalMb.`,
+					en: `mu: checkpoints are off for this session because this folder has more than ${limits.maxTotalMb} MB of files to snapshot. ${start.en}, or raise features.checkpoint.maxTotalMb.`,
 				}),
 				params: { limitMb: limits.maxTotalMb },
 			};
@@ -229,7 +234,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: `mu：本次会话不拍检查点，因为列出这个文件夹里要拍的文件用了超过 ${seconds} 秒。${start.zh}。`,
-					en: `mu: checkpoints are off in this session, because listing this folder's files took longer than ${seconds} s. ${start.en}.`,
+					en: `mu: checkpoints are off for this session because listing this folder's files took more than ${seconds} s. ${start.en}.`,
 				}),
 				params: { seconds },
 			};
@@ -256,6 +261,11 @@ Abandoned because: <why it did not work>`;
  * `maxFiles` / `maxTotalMb`. Copying only the files a turn touches is no way out: a checkpoint is taken
  * before the turn's first change, when nobody knows which files the turn will change (a shell command
  * names none), and a rewind would then claim to restore a state it never saw.
+ *
+ * An unattended run (`mu --print`, json mode; see `unattended.ts`) takes no checkpoint: nobody there can
+ * confirm a rewind or type `/rewind`, so no file is ever put back, and the snapshot before the first change
+ * and the scan after every one were only work for nothing. A dead end is still asked about there, and the
+ * model is told to step back, as it always was without a UI. `unattended: true` takes them again.
  */
 export function registerCheckpoint(
 	runtime: KyrnRuntime,
@@ -285,6 +295,13 @@ export function registerCheckpoint(
 		propose: true,
 		/** How long a proposal waits for an answer before the run carries on. 0 waits forever. */
 		confirmSeconds: 120,
+		/**
+		 * How long the end of a turn waits for `turn.rewind`'s verdict; a later one changes nothing. On Terminal-Bench
+		 * 2.1 every verdict came in 0.2-1.6 s.
+		 */
+		rewindWaitMs: 3000,
+		/** Take checkpoints in a `mu --print` or json run too, for a session resumed later in the terminal. */
+		unattended: false,
 	});
 	// A sub-agent works inside its parent's turn: the parent's checkpoint before `delegate` covers what it changes.
 	if (!options.enabled || process.env.KYRN_SWARM_DEPTH) return;
@@ -310,6 +327,8 @@ export function registerCheckpoint(
 	let pending: PendingRewind | undefined;
 	/** The tree right after the agent's last action. What differs from it later was changed by somebody else. */
 	let lastAgentTree: string | undefined;
+	/** The scan after the agent's latest change, queued or running: the run ends once it has. */
+	let rescan: Promise<void> | undefined;
 	const calls = new Map<string, { name: string; input: Record<string, unknown>; mutating: boolean }>();
 	let chain: Promise<unknown> = Promise.resolve();
 	let busy = 0;
@@ -446,9 +465,12 @@ export function registerCheckpoint(
 				};
 			}
 			pending = undefined;
-			const mutating = isMutatingCall(event.toolName, event.input);
+			const mutating = isMutatingCall(event.toolName, event.input, ctx.cwd);
 			calls.set(event.toolCallId, { name: event.toolName, input: event.input, mutating });
+			if (mutating) turn.changed = true;
 			if (!mutating || off || turn.checkpoint || turn.snapshotFailed) return undefined;
+			// No snapshot, and so no scan after the call either: `tool_execution_end` scans only behind a checkpoint.
+			if (!options.unattended && isUnattended(ctx)) return undefined;
 			const place = placeOff(ctx.cwd);
 			if (place) {
 				switchOff(ctx, place);
@@ -458,6 +480,7 @@ export function registerCheckpoint(
 			await exclusive(() => takeCheckpoint(ctx)).catch((error) => giveUp(ctx, error));
 			return undefined;
 		}),
+		{ final: true },
 	);
 
 	pi.on(
@@ -479,12 +502,27 @@ export function registerCheckpoint(
 					turn.triggerCode = { code: "same_command_failed", params: { times: 3, command: clip(command, 120) } };
 				}
 			}
+			// Only a rewind reads this tree, to tell the user's edits from the agent's, and it queues behind the scan
+			// on `exclusive`: the next call need not wait for it (about 0.2 s per change in a container).
 			if (call.mutating && store && turn.checkpoint) {
 				const opened = store;
-				lastAgentTree = await exclusive(() => scan(opened, limits))
-					.then((scanned) => scanned.tree)
-					.catch(() => undefined);
+				rescan = exclusive(async () => {
+					lastAgentTree = await scan(opened, limits).then(
+						(scanned) => scanned.tree,
+						() => undefined,
+					);
+				});
 			}
+			return undefined;
+		}),
+	);
+
+	pi.on(
+		"agent_end",
+		failOpen<AgentEndEvent, undefined>(async () => {
+			// The run ends with the tree after its last change known, so an edit made from then on reads as the user's.
+			// Bounded, like shutdown: a `git gc` queued ahead must not hold the prompt back.
+			if (rescan) await within(rescan, 3000);
 			return undefined;
 		}),
 	);
@@ -523,8 +561,8 @@ export function registerCheckpoint(
 	): Promise<Set<string> | undefined> => {
 		if (byHand.length === 0) return new Set();
 		const choice = await ctx.ui.select(
-			`mu: ${byHand.length} of these files changed after the agent's last action, probably by your hand: ${listed(byHand)}`,
-			["Keep those files as they are", "Rewind them too (the snapshot taken now can bring them back)", "Cancel"],
+			`mu: ${byHand.length} of these files changed after the agent's last action, probably edited by you: ${listed(byHand)}`,
+			["Keep those files as they are", "Rewind them too (a snapshot taken now can bring them back)", "Cancel"],
 		);
 		if (choice?.startsWith("Keep")) return new Set(byHand);
 		return choice?.startsWith("Rewind") ? new Set() : undefined;
@@ -659,14 +697,14 @@ export function registerCheckpoint(
 		);
 		const said = [
 			files
-				? `Files are back at checkpoint #${checkpoint.id}: ${describeResult(files.result)}. /rewind undo takes this back.`
+				? `Files are back at checkpoint #${checkpoint.id}: ${describeResult(files.result)}. /rewind undo reverses this.`
 				: "",
 			scope === "files"
 				? ""
 				: moved
-					? "The conversation is back to before that request; it is in the editor to send again."
+					? "The conversation is back to before that request, which is in the editor so you can send it again."
 					: // pi lets only a command move the leaf, and it refused or is not bound here: one step is left to the user.
-						`The conversation could not be moved from here. One step is left to you: /tree, then pick the message "${checkpoint.label}".`,
+						`mu couldn't move the conversation from here. To finish, run /tree and pick the message "${checkpoint.label}".`,
 		].filter(Boolean);
 		ctx.ui.notify(said.join("\n"), "info");
 	};
@@ -681,7 +719,7 @@ export function registerCheckpoint(
 		if (!last) return ctx.ui.notify("No rewind to undo on this branch of the conversation.", "info");
 		const opened = await exclusive(() => open(ctx));
 		if (last.undo && !(await hasCommit(opened, last.undo)))
-			return ctx.ui.notify("The snapshot taken before that rewind is gone (pruned).", "warning");
+			return ctx.ui.notify("The snapshot taken before that rewind was pruned.", "warning");
 		const fromLeaf = ctx.sessionManager.getLeafId();
 		let files: { undo: string; result: RestoreResult } | undefined;
 		if (last.undo) {
@@ -702,7 +740,7 @@ export function registerCheckpoint(
 		});
 		runtime.present("rewind.undone", { conversationMoved: moved, ...counts(files?.result) });
 		ctx.ui.notify(
-			`The rewind was undone${files ? `: ${describeResult(files.result)}` : ""}.${last.fromLeaf && !moved ? " The conversation could not be moved back: use /tree." : ""}`,
+			`The rewind was undone${files ? `: ${describeResult(files.result)}` : ""}.${last.fromLeaf && !moved ? " mu couldn't move the conversation back; use /tree." : ""}`,
 			"info",
 		);
 	};
@@ -751,24 +789,53 @@ export function registerCheckpoint(
 			const trigger = turn.trigger;
 			const triggerCode = turn.triggerCode;
 			const checkpoint = turn.checkpoint;
-			if (!trigger || !checkpoint || !options.propose || turn.proposed || turn.asked >= 2 || pending)
+			// An unattended run takes no checkpoint: a turn that changed files there is asked about all the same.
+			const uncheckpointed = !checkpoint && turn.changed && !options.unattended && isUnattended(ctx);
+			if (
+				!trigger ||
+				!(checkpoint || uncheckpointed) ||
+				!options.propose ||
+				turn.proposed ||
+				turn.asked >= 2 ||
+				pending
+			)
 				return undefined;
 			turn.trigger = undefined;
 			turn.triggerCode = undefined;
 			turn.asked++;
-			const decision = await runtime.engine.decide(
-				turnRewind,
-				{
-					goal: runtime.taskFrame()?.goal ?? checkpoint.label,
-					recentSteps: turn.steps,
-					trigger,
-					editsSinceCheckpoint: turn.edits,
-					lastCheckFailed: turn.lastCheckFailed,
-				},
-				{ signal: ctx.signal },
+			const state = {
+				goal: runtime.taskFrame()?.goal ?? checkpoint?.label ?? turnStart(ctx).label,
+				recentSteps: turn.steps,
+				trigger,
+				editsSinceCheckpoint: turn.edits,
+				lastCheckFailed: turn.lastCheckFailed,
+			};
+			// The run waits for this verdict, and a late one changes nothing (the fallback carries on): at most
+			// `rewindWaitMs`, not the judge's own timeout (10 s hosted, 30 s for an `llm:` judge).
+			const decision = await askWithin(
+				(signal) =>
+					runtime.engine.decide(turnRewind, state, {
+						signal: ctx.signal ? AbortSignal.any([signal, ctx.signal]) : signal,
+					}),
+				options.rewindWaitMs,
 			);
-			if (decision.source !== "judge" || decision.outcome !== "propose") return undefined;
+			if (decision?.source !== "judge" || decision.outcome !== "propose") return undefined;
 			turn.proposed = true;
+			// Nobody to ask, so nothing is undone: the model is told, and the choice of a new approach is its own.
+			const stepBack = () =>
+				pi.sendMessage(
+					{
+						customType: "kyrn.steer",
+						content: `This approach looks like a dead end (${trigger}). Step back: undo what this attempt changed and try a different approach.`,
+						display: true,
+					},
+					{ deliverAs: "steer" },
+				);
+			// Without a checkpoint there is no restore to plan, and nobody to show one to.
+			if (!checkpoint) {
+				stepBack();
+				return undefined;
+			}
 
 			const { opened, plan, byHand } = await exclusive(() => preview(ctx, checkpoint));
 			runtime.present("rewind.proposed", {
@@ -783,20 +850,12 @@ export function registerCheckpoint(
 				paths: [...plan.restore, ...plan.remove, ...plan.bringBack].slice(0, MAX_LISTED),
 			});
 			if (!ctx.hasUI) {
-				// Nobody to ask, so nothing is undone: the model is told, and the choice of a new approach is its own.
-				pi.sendMessage(
-					{
-						customType: "kyrn.steer",
-						content: `This approach looks like a dead end (${trigger}). Step back: undo what this attempt changed and try a different approach.`,
-						display: true,
-					},
-					{ deliverAs: "steer" },
-				);
+				stepBack();
 				return undefined;
 			}
 			const approved = await ctx.ui.confirm(
 				`mu: this looks like a dead end. Go back to checkpoint #${checkpoint.id}, before "${checkpoint.label}"?`,
-				`${trigger}\n\n${describePlan(plan)}\n\nThe agent then starts over from your request with a note about what did not work. /rewind undo takes it back.`,
+				`${trigger}\n\n${describePlan(plan)}\n\nThe agent will then start over from your request, with a note about what didn't work. /rewind undo reverses this.`,
 				options.confirmSeconds > 0 ? { timeout: options.confirmSeconds * 1000 } : undefined,
 			);
 			const keep = approved ? await askAboutHandEdits(ctx, byHand) : undefined;
@@ -837,7 +896,7 @@ export function registerCheckpoint(
 	pi.registerCommand("checkpoints", {
 		description: say({
 			zh: "这次对话的检查点：第几回合、什么时间、之后改了哪些文件",
-			en: "The checkpoints of this conversation: turn, time, files changed since",
+			en: "List the checkpoints so far: turn, time and the files changed since each",
 		}),
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
@@ -845,7 +904,7 @@ export function registerCheckpoint(
 			const refused = refusal(ctx.cwd);
 			if (entries.length === 0 || refused) {
 				return ctx.ui.notify(
-					refused ?? off?.line ?? "No checkpoints yet: one is taken before the first change to a file in a turn.",
+					refused ?? off?.line ?? "No checkpoints yet. mu takes one before the first file change in each turn.",
 					"info",
 				);
 			}
@@ -862,7 +921,7 @@ export function registerCheckpoint(
 					);
 				}
 				ctx.ui.notify(
-					`${rows.join("\n")}\n/rewind [#] goes back to one, /rewind undo takes the last rewind back.`,
+					`${rows.join("\n")}\n/rewind [#] goes back to one; /rewind undo reverses the last rewind.`,
 					"info",
 				);
 			} catch (error) {
@@ -874,7 +933,7 @@ export function registerCheckpoint(
 	pi.registerCommand("rewind", {
 		description: say({
 			zh: "回到一个检查点：/rewind [序号] [both|files|conversation]，/rewind undo 撤销回退；both 文件和对话都退，files 只退文件，conversation 只退对话",
-			en: "Go back to a checkpoint: /rewind [#] [both|files|conversation], /rewind undo",
+			en: "Go back to a checkpoint: /rewind [#] [both|files|conversation]; /rewind undo reverses the last rewind",
 		}),
 		getArgumentCompletions: (prefix) => {
 			const matches = ["undo", "files", "conversation", "both"].filter((value) => value.startsWith(prefix));
@@ -890,7 +949,7 @@ export function registerCheckpoint(
 				const refused = refusal(ctx.cwd);
 				if (refused) return ctx.ui.notify(refused, "warning");
 				if (!ctx.hasUI)
-					return ctx.ui.notify("A rewind needs somebody to confirm it, and this mode cannot ask.", "warning");
+					return ctx.ui.notify("A rewind needs confirmation, and this mode can't ask for it.", "warning");
 				if (words[0] === "undo") return await undoLast(ctx);
 				const entries = checkpointsOn(ctx);
 				const wanted = words.find((word) => /^#?\d+$/.test(word))?.replace("#", "");
@@ -905,7 +964,7 @@ export function registerCheckpoint(
 						"info",
 					);
 				if (!(await hasCommit(await exclusive(() => open(ctx)), checkpoint.commit))) {
-					return ctx.ui.notify(`The snapshot of checkpoint #${checkpoint.id} is gone (pruned).`, "warning");
+					return ctx.ui.notify(`The snapshot for checkpoint #${checkpoint.id} was pruned.`, "warning");
 				}
 				const scope = words.find(
 					(word): word is RewindScope => word === "both" || word === "files" || word === "conversation",
@@ -916,7 +975,7 @@ export function registerCheckpoint(
 				giveUp(ctx, error);
 				if (!(error instanceof GitMissing || error instanceof GitUnusable))
 					ctx.ui.notify(
-						`The rewind stopped: ${clip(error instanceof Error ? error.message : String(error), 300)}`,
+						`Couldn't rewind: ${clip(error instanceof Error ? error.message : String(error), 300)}`,
 						"error",
 					);
 			}

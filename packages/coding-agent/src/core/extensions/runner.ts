@@ -27,8 +27,10 @@ import {
 import type { VirtualModelDefinition } from "../virtual-models.ts";
 import type {
 	AgentBeforeSettleEvent,
+	BeforeAgentStartCustomEvent,
 	BeforeAgentStartEvent,
 	BeforeAgentStartEventResult,
+	BeforeAgentStartUserEvent,
 	BeforeProviderHeadersEvent,
 	BeforeProviderRequestEvent,
 	BoundaryContextPreview,
@@ -90,6 +92,7 @@ import type {
 	UserBashEvent,
 	UserBashEventResult,
 } from "./types.ts";
+import { FINAL_TOOL_CALL_HANDLERS } from "./types.ts";
 
 // Extension shortcuts compete with canonical keybinding ids from keybindings.json.
 // Only editor-global shortcuts are reserved here. Picker-specific bindings are not.
@@ -162,6 +165,11 @@ function isUserBashEventResult(value: unknown): value is UserBashEventResult {
 		(resultRecord.fullOutputPath === undefined || typeof resultRecord.fullOutputPath === "string")
 	);
 }
+
+/** The message that starts a run: the before_agent_start event without its prompt fields. */
+export type BeforeAgentStartTrigger =
+	| Pick<BeforeAgentStartUserEvent, "messageType" | "prompt" | "images">
+	| Pick<BeforeAgentStartCustomEvent, "messageType" | "message">;
 
 /** Combined result from all before_agent_start handlers. */
 interface BeforeAgentStartCombinedResult {
@@ -266,8 +274,26 @@ export async function emitSessionShutdownEvent(
 	return false;
 }
 
-function snapshotEventHandlers(extensions: Extension[], event: ExtensionEvent["type"]) {
+function snapshotEventHandlers(
+	extensions: Extension[],
+	event: ExtensionEvent["type"] | typeof FINAL_TOOL_CALL_HANDLERS,
+) {
 	return extensions.map((ext) => ({ ext, handlers: ext.handlers.get(event)?.slice() ?? [] }));
+}
+
+/**
+ * mu: a tool call's input as final `tool_call` handlers read it. A copy, so the input that runs is out of their reach,
+ * and frozen, so a handler trying to change it fails, which blocks the call, rather than changing nothing unnoticed.
+ */
+function frozenCopy<T>(input: T): T {
+	const copy = structuredClone(input);
+	const freeze = (value: unknown): void => {
+		if (typeof value !== "object" || value === null || ArrayBuffer.isView(value) || Object.isFrozen(value)) return;
+		Object.freeze(value);
+		for (const child of Object.values(value)) freeze(child);
+	};
+	freeze(copy);
+	return copy;
 }
 
 function sameMessages(left: AgentMessage[], right: AgentMessage[]): boolean {
@@ -768,6 +794,10 @@ export class ExtensionRunner {
 			if (handlers && handlers.length > 0) {
 				return true;
 			}
+			// mu: final tool_call handlers are tool_call handlers too.
+			if (eventType === "tool_call" && (ext.handlers.get(FINAL_TOOL_CALL_HANDLERS)?.length ?? 0) > 0) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -1256,6 +1286,23 @@ export class ExtensionRunner {
 			}
 		}
 
+		// mu: final handlers read the call as it will run. Every other handler has had its turn, and none can change it now.
+		const final = snapshotEventHandlers(this.extensions, FINAL_TOOL_CALL_HANDLERS);
+		if (final.every(({ handlers }) => handlers.length === 0)) return result;
+		const settled = { ...event, input: frozenCopy(event.input) } as ToolCallEvent;
+		for (const { handlers } of final) {
+			for (const handler of handlers) {
+				const handlerResult = await handler(settled, ctx);
+
+				if (handlerResult) {
+					result = handlerResult as ToolCallEventResult;
+					if (result.block) {
+						return result;
+					}
+				}
+			}
+		}
+
 		return result;
 	}
 
@@ -1418,8 +1465,7 @@ export class ExtensionRunner {
 	}
 
 	async emitBeforeAgentStart(
-		prompt: string,
-		images: ImageContent[] | undefined,
+		trigger: BeforeAgentStartTrigger,
 		systemPromptOptions: BuildSystemPromptOptions,
 	): Promise<BeforeAgentStartCombinedResult> {
 		const currentOptions = normalizeBuildSystemPromptOptions(systemPromptOptions);
@@ -1438,9 +1484,8 @@ export class ExtensionRunner {
 			for (const handler of handlers) {
 				try {
 					const event: BeforeAgentStartEvent = {
+						...trigger,
 						type: "before_agent_start",
-						prompt,
-						images,
 						get systemPrompt() {
 							return renderCurrentSystemPrompt();
 						},

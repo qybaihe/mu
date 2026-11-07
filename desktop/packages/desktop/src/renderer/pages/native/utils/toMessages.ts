@@ -1,12 +1,13 @@
 /**
  * A native conversation's view (common/utils/nativeHost/view.ts) as the rows the conversation's message list shows
- * (`TMessage`, the rows AionCore stores for a conversation), so the list and its row components are the ones every
+ * (`TMessage`, the rows the backend stores for a conversation), so the list and its row components are the ones every
  * conversation uses. Each row is shaped as the mu bridge's rows are (process/agent/kyrn/events.ts, KyrnAgent.ts):
  *
  * - the person's messages and mu's text as `text` rows (with the images the person sent as themselves), mu's thinking
  *   as `thinking` rows;
  * - a tool call as the `acp_tool_call` the bridge sends, its result or latest output as its content;
- * - Jev's verdict on a message as the `jev:` line under it, and Jev at work on the next one as a pending `jev:` line;
+ * - the judge's verdict on a message as the `jev:` line under it, and the judge at work on the next one as a pending
+ *   `jev:` line;
  * - what mu notified, a stopped reply, a reply that came after failed attempts, a place where the conversation was
  *   compacted, and what mu told the model (its `kyrn.*` messages) as `mu:notice:` lines;
  * - a failed request as the `tips` error the bridge's turn error becomes, in the bridge's fixed English, which the
@@ -44,8 +45,8 @@ export type MessageWords = {
 };
 
 /**
- * A message the person sent that is not in the conversation yet: pi takes it once Jev has classified it. `images`: the
- * images sent with it as themselves.
+ * A message the person sent that is not in the conversation yet: pi takes it once the judge has classified it.
+ * `images`: the images sent with it as themselves.
  */
 export type OutgoingMessage = { id: string; text: string; at: number; images?: ViewImage[] };
 
@@ -138,7 +139,7 @@ function textRow(
   };
 }
 
-/** The line under a message with Jev's verdict on it, as the bridge's `jev:` row after its verdict. */
+/** The line under a message with the judge's verdict on it, as the bridge's `jev:` row after its verdict. */
 function verdictRow(conversationId: string, message: ViewUserMessage, at: number): IMessageAcpToolCall | undefined {
   if (!message.verdict) return undefined;
   const turnType = typeof message.verdict.turnType === 'string' ? message.verdict.turnType : '';
@@ -155,7 +156,7 @@ function verdictRow(conversationId: string, message: ViewUserMessage, at: number
         sessionUpdate: 'tool_call',
         tool_call_id: `jev:native:${message.id}`,
         status: 'completed',
-        title: `Jev · ${turnType || 'Default'}`,
+        title: `Judge · ${turnType || 'Default'}`,
         kind: 'execute',
         rawOutput: { ...message.verdict, preflight: 'verdict' },
       },
@@ -204,6 +205,10 @@ function toolRow(
         rawInput: tool.args,
         // No bash on Windows: pi's error, meant for developers, makes way for the line that says what to do.
         ...(noBash ? { content: [], rawOutput: { notice: 'bash_missing' } } : resultUpdate(result)),
+        // The files mu's present handed over: the conversation shows them as a card (MessageDeliverables).
+        ...(tool.name === 'present' && tool.status === 'done' && result?.details
+          ? { rawOutput: result.details as Record<string, unknown> }
+          : {}),
         ...(typeof path === 'string' && path ? { locations: [{ path }] } : {}),
       },
     },
@@ -279,10 +284,15 @@ function assistantRows(message: ViewAssistantMessage, context: Context): TMessag
   return rows;
 }
 
-/** What mu notified, as the bridge shows it: its own words, or a notice of its own by code (checkpoints, the free Jev). */
+/** What mu notified, as the bridge shows it: its own words, or a notice of its own by code (checkpoints, judges). */
 function noticeOf(conversationId: string, notice: ViewNotice, at: number): IMessageAcpToolCall {
   const input: Record<string, unknown> = notice.code
-    ? { notice: notice.code, ...(notice.reason ? { code: notice.reason } : {}), params: notice.params ?? {} }
+    ? {
+        notice: notice.code,
+        ...(notice.reason ? { code: notice.reason } : {}),
+        ...(notice.judge ? { judge: notice.judge } : {}),
+        params: notice.params ?? {},
+      }
     : { level: notice.level };
   return noticeRow(conversationId, `notice:${notice.id}`, at, notice.text, input);
 }
@@ -404,7 +414,7 @@ export function createMessageMapper(): (view: NativeView, options: MessageOption
             sessionUpdate: 'tool_call',
             tool_call_id: `jev:native:turn-${classifying.turn}`,
             status: 'in_progress',
-            title: 'Jev · Classifying',
+            title: 'Judge · Classifying',
             kind: 'execute',
             rawOutput: { preflight: 'pending', ...(classifying.judge ? { judge: classifying.judge } : {}) },
           },

@@ -178,14 +178,29 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
     >
       <div className='flex items-center h-36px w-full'>
         {/* Tabs 滚动区域 / Tabs scroll area */}
-        <div ref={tabsContainerRef} className='flex items-center h-full flex-1 overflow-x-auto'>
+        <div
+          ref={tabsContainerRef}
+          className='flex items-center h-full flex-1 overflow-x-auto'
+          role={tabs.length > 0 ? 'tablist' : undefined}
+        >
           {tabs.length > 0 ? (
             tabs.map((tab) => (
               <div
                 key={tab.id}
                 className={`flex items-center gap-6px px-10px h-full cursor-pointer transition-colors flex-shrink-0 ${tab.id === activeTabId ? 'bg-bg-1 text-t-primary' : 'text-t-secondary hover:bg-bg-3'}`}
                 style={{ maxWidth: `${MAX_TAB_WIDTH_PX}px` }}
+                role='tab'
+                tabIndex={0}
+                aria-selected={tab.id === activeTabId}
                 onClick={() => onSwitchTab(tab.id)}
+                onKeyDown={(event) => {
+                  // The tab's own key, not one pressed on its close button.
+                  if (event.target !== event.currentTarget) return;
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onSwitchTab(tab.id);
+                  }
+                }}
                 onContextMenu={(e) => onContextMenu(e, tab.id)}
                 // 中键关闭 / Middle-click to close.
                 //
@@ -234,9 +249,19 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
                     the same as the panel buttons on the right. */}
                 <span
                   className='flex items-center justify-center w-16px h-16px rd-4px flex-shrink-0 hover:bg-bg-3 transition-colors'
+                  role='button'
+                  tabIndex={0}
+                  aria-label={`${t('common.close')} ${tab.title}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onCloseTab(tab.id);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onCloseTab(tab.id);
+                    }
                   }}
                 >
                   <Close theme='outline' size='12' fill={iconColors.secondary} className='hover:fill-primary' />
@@ -256,7 +281,16 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
             {onToggleMaximize && (
               <div
                 className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors'
+                role='button'
+                tabIndex={0}
+                aria-label={isMaximized ? t('preview.restorePanel') : t('preview.maximizePanel')}
                 onClick={onToggleMaximize}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onToggleMaximize();
+                  }
+                }}
                 title={isMaximized ? t('preview.restorePanel') : t('preview.maximizePanel')}
               >
                 {isMaximized ? (
@@ -269,7 +303,16 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
             {onClosePanel && (
               <div
                 className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors'
+                role='button'
+                tabIndex={0}
+                aria-label={t('preview.collapsePanel')}
                 onClick={onClosePanel}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onClosePanel();
+                  }
+                }}
                 title={t('preview.collapsePanel')}
               >
                 <IconShrink style={{ fontSize: 14, color: iconColors.secondary }} />

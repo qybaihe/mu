@@ -26,9 +26,17 @@ import chalk from "chalk";
 import { getCustomThemesDir, getThemesDir } from "../../../config.ts";
 import type { SourceInfo } from "../../../core/source-info.ts";
 import { closeWatcher, watchWithErrorHandler } from "../../../utils/fs-watch.ts";
-import { highlight, supportsLanguage } from "../../../utils/syntax-highlight.ts";
+import { getHighlightLanguageCount, highlight, supportsLanguage } from "../../../utils/syntax-highlight.ts";
 import { stripBom } from "../../../utils/text.ts";
 import { generateSystemThemeColors, SYSTEM_THEME_NAME, terminalAppearance } from "./system-theme.ts";
+import {
+	type ResolvedThemeColorValues,
+	THEME_TOKENS,
+	type ThemeBg,
+	type ThemeColor,
+	type ThemeColorValues,
+	type ThemeToken,
+} from "./theme-tokens.ts";
 
 export { SYSTEM_THEME_NAME } from "./system-theme.ts";
 
@@ -36,10 +44,20 @@ export { SYSTEM_THEME_NAME } from "./system-theme.ts";
 // Types & Schema
 // ============================================================================
 
-/** The schema that validates this shape lives in `theme-json.ts`; importing the type is free. */
-import type { ThemeColorValue as ColorValue, ValidatedThemeJson as ThemeJson } from "./theme-json.ts";
+/** The schema that validates this shape lives in `theme-schema.ts`; importing the type is free. */
+import type { ThemeColorValue as ColorValue, ValidatedThemeJson as ThemeJson } from "./theme-schema.ts";
 
-export type { ValidatedThemeJson as ThemeJson } from "./theme-json.ts";
+export type { ValidatedThemeJson as ThemeJson } from "./theme-schema.ts";
+export type { ThemeBg, ThemeColor, ThemeToken } from "./theme-tokens.ts";
+
+/**
+ * Tokens are only accepted in their own slot, because "" (terminal default) means the default foreground
+ * or background depending on the slot. Use `theme.colors[token]` to use a token's color in the other slot.
+ */
+export interface ThemeStyle extends TextAttributes {
+	fg?: ThemeColor | Color;
+	bg?: ThemeBg | Color;
+}
 
 export type ThemeJsonValidator = (label: string, json: unknown) => ThemeJson;
 
@@ -53,80 +71,6 @@ let themeJsonValidator: ThemeJsonValidator | undefined;
 export function setThemeJsonValidator(validator: ThemeJsonValidator): void {
 	themeJsonValidator = validator;
 }
-
-export type ThemeColor =
-	| "accent"
-	| "border"
-	| "borderAccent"
-	| "borderMuted"
-	| "success"
-	| "error"
-	| "warning"
-	| "muted"
-	| "dim"
-	| "text"
-	| "thinkingText"
-	| "scrollbarTrack"
-	| "scrollbarThumb"
-	| "searchMatchText"
-	| "userMessageText"
-	| "customMessageText"
-	| "customMessageLabel"
-	| "toolTitle"
-	| "toolOutput"
-	| "mdHeading"
-	| "mdLink"
-	| "mdLinkUrl"
-	| "mdCode"
-	| "mdCodeBlock"
-	| "mdCodeBlockBorder"
-	| "mdQuote"
-	| "mdQuoteBorder"
-	| "mdHr"
-	| "mdListBullet"
-	| "toolDiffAdded"
-	| "toolDiffRemoved"
-	| "toolDiffContext"
-	| "syntaxComment"
-	| "syntaxKeyword"
-	| "syntaxFunction"
-	| "syntaxVariable"
-	| "syntaxString"
-	| "syntaxNumber"
-	| "syntaxType"
-	| "syntaxOperator"
-	| "syntaxPunctuation"
-	| "thinkingOff"
-	| "thinkingMinimal"
-	| "thinkingLow"
-	| "thinkingMedium"
-	| "thinkingHigh"
-	| "thinkingXhigh"
-	| "thinkingMax"
-	| "bashMode";
-
-export type ThemeBg =
-	| "selectedBg"
-	| "searchMatchBg"
-	| "userMessageBg"
-	| "customMessageBg"
-	| "toolPendingBg"
-	| "toolSuccessBg"
-	| "toolErrorBg";
-
-export type ThemeToken = ThemeColor | ThemeBg;
-
-/**
- * Tokens are only accepted in their own slot, because "" (terminal default) means the default foreground
- * or background depending on the slot. Use `theme.colors[token]` to use a token's color in the other slot.
- */
-export interface ThemeStyle extends TextAttributes {
-	fg?: ThemeColor | Color;
-	bg?: ThemeBg | Color;
-}
-
-type OptionalThemeColor = "scrollbarTrack" | "scrollbarThumb" | "thinkingMax" | "searchMatchText";
-type OptionalThemeBg = "searchMatchBg";
 
 // ============================================================================
 // Color Utilities
@@ -161,21 +105,20 @@ function resolveThemeColors<T extends Record<string, ColorValue>>(
 	return resolved as Record<keyof T, string | number>;
 }
 
-function withThemeColorFallbacks(colors: ThemeJson["colors"]): ThemeJson["colors"] & {
-	scrollbarTrack: ColorValue;
-	scrollbarThumb: ColorValue;
-	thinkingMax: ColorValue;
-	searchMatchBg: ColorValue;
-	searchMatchText: ColorValue;
-} {
-	return {
-		...colors,
-		scrollbarTrack: colors.scrollbarTrack ?? colors.muted,
-		scrollbarThumb: colors.scrollbarThumb ?? colors.text,
-		thinkingMax: colors.thinkingMax ?? colors.thinkingXhigh,
-		searchMatchBg: colors.searchMatchBg ?? colors.selectedBg,
-		searchMatchText: colors.searchMatchText ?? colors.text,
-	};
+function withThemeTokenFallbacks<Value>(values: ThemeColorValues<Value>): ResolvedThemeColorValues<Value> {
+	const resolved = { ...values } as Partial<ResolvedThemeColorValues<Value>>;
+	for (const [rawName, descriptor] of Object.entries(THEME_TOKENS)) {
+		if (!("fallback" in descriptor)) continue;
+		const name = rawName as ThemeToken;
+		if (resolved[name] !== undefined) continue;
+		const fallback = descriptor.fallback as ThemeToken;
+		const fallbackValue = resolved[fallback];
+		if (fallbackValue === undefined) {
+			throw new Error(`Theme token ${rawName} has unresolved fallback ${descriptor.fallback}`);
+		}
+		resolved[name] = fallbackValue;
+	}
+	return resolved as ResolvedThemeColorValues<Value>;
 }
 
 // ============================================================================
@@ -257,10 +200,8 @@ export class Theme {
 	private resolvedColors: { terminal: TerminalColors; colors: Readonly<Record<ThemeToken, Color>> } | undefined;
 
 	constructor(
-		fgColors: Record<Exclude<ThemeColor, OptionalThemeColor>, string | number> &
-			Partial<Record<OptionalThemeColor, string | number>>,
-		bgColors: Record<Exclude<ThemeBg, OptionalThemeBg>, string | number> &
-			Partial<Record<OptionalThemeBg, string | number>>,
+		fgColors: Pick<ThemeColorValues<string | number>, ThemeColor>,
+		bgColors: Pick<ThemeColorValues<string | number>, ThemeBg>,
 		mode: TerminalColorMode,
 		options: {
 			name?: string;
@@ -276,14 +217,9 @@ export class Theme {
 		this.sourceInfo = options.sourceInfo;
 		this.mode = mode;
 		this.dimTokens = new Set(options.dim);
-		const foregrounds = {
-			...fgColors,
-			scrollbarTrack: fgColors.scrollbarTrack ?? fgColors.muted,
-			scrollbarThumb: fgColors.scrollbarThumb ?? fgColors.text,
-			thinkingMax: fgColors.thinkingMax ?? fgColors.thinkingXhigh,
-			searchMatchText: fgColors.searchMatchText ?? fgColors.text,
-		};
-		const backgrounds = { ...bgColors, searchMatchBg: bgColors.searchMatchBg ?? bgColors.selectedBg };
+		const { fgColors: foregrounds, bgColors: backgrounds } = splitThemeColors(
+			withThemeTokenFallbacks({ ...fgColors, ...bgColors }),
+		);
 		const concreteForegrounds: Color[] = [];
 		const concreteBackgrounds: Color[] = [];
 		// Returns the escape sequence for the token's own slot.
@@ -570,24 +506,14 @@ function loadThemeJson(name: string): ThemeJson {
 	return parseThemeJsonContent(name, content);
 }
 
-const BACKGROUND_TOKENS: ReadonlySet<string> = new Set<ThemeBg>([
-	"selectedBg",
-	"searchMatchBg",
-	"userMessageBg",
-	"customMessageBg",
-	"toolPendingBg",
-	"toolSuccessBg",
-	"toolErrorBg",
-]);
-
-function splitThemeColors(colors: Record<string, string | number>): {
+function splitThemeColors(colors: ResolvedThemeColorValues<string | number>): {
 	fgColors: Record<ThemeColor, string | number>;
 	bgColors: Record<ThemeBg, string | number>;
 } {
 	const fgColors = {} as Record<ThemeColor, string | number>;
 	const bgColors = {} as Record<ThemeBg, string | number>;
 	for (const [key, value] of Object.entries(colors)) {
-		if (BACKGROUND_TOKENS.has(key)) {
+		if (THEME_TOKENS[key as ThemeToken].slot === "background") {
 			bgColors[key as ThemeBg] = value;
 		} else {
 			fgColors[key as ThemeColor] = value;
@@ -598,7 +524,7 @@ function splitThemeColors(colors: Record<string, string | number>): {
 
 function createTheme(themeJson: ThemeJson, mode?: TerminalColorMode, sourcePath?: string): Theme {
 	const colorMode = mode ?? getTerminalColorMode();
-	const resolvedColors = resolveThemeColors(withThemeColorFallbacks(themeJson.colors), themeJson.vars);
+	const resolvedColors = withThemeTokenFallbacks(resolveThemeColors(themeJson.colors, themeJson.vars));
 	const { fgColors, bgColors } = splitThemeColors(resolvedColors);
 	return new Theme(fgColors, bgColors, colorMode, {
 		name: themeJson.name,
@@ -614,7 +540,7 @@ function createSystemTheme(mode?: TerminalColorMode): Theme {
 		saturation: terminalColorsPending ? 0 : 1,
 		appearanceHint: getTerminalTheme(),
 	});
-	const { fgColors, bgColors } = splitThemeColors(generated.colors);
+	const { fgColors, bgColors } = splitThemeColors(withThemeTokenFallbacks(generated.colors));
 	return new Theme(fgColors, bgColors, mode ?? getTerminalColorMode(), {
 		name: SYSTEM_THEME_NAME,
 		appearance: generated.appearance,
@@ -731,6 +657,11 @@ export const theme: Theme = new Proxy({} as Theme, {
 		return (t as unknown as Record<string | symbol, unknown>)[prop];
 	},
 });
+
+/** The theme instance behind the `theme` proxy, whose own identity never changes. */
+function getGlobalTheme(): Theme | undefined {
+	return (globalThis as Record<symbol, Theme | undefined>)[THEME_KEY];
+}
 
 function setGlobalTheme(t: Theme): void {
 	(globalThis as Record<symbol, Theme>)[THEME_KEY] = t;
@@ -966,6 +897,7 @@ function buildCliHighlightTheme(t: Theme): CliHighlightTheme {
 		number: (s: string) => t.fg("syntaxNumber", s),
 		regexp: (s: string) => t.fg("syntaxString", s),
 		string: (s: string) => t.fg("syntaxString", s),
+		subst: (s: string) => t.fg("text", s),
 		comment: (s: string) => t.fg("syntaxComment", s),
 		doctag: (s: string) => t.fg("syntaxComment", s),
 		meta: (s: string) => t.fg("muted", s),
@@ -1017,7 +949,41 @@ export function highlightCode(code: string, lang?: string): string[] {
 	try {
 		return highlight(code, opts).split("\n");
 	} catch {
-		return code.split("\n");
+		return code.split("\n").map((line) => theme.fg("mdCodeBlock", line));
+	}
+}
+
+/**
+ * Highlights code for one owner, such as a tool row, and reuses the last result while the code, the language, the
+ * theme and the registered grammars stay the same. Each owner keeps its own highlighter, so cached results live as long
+ * as the code they show instead of in a process-wide cache.
+ */
+export class CodeHighlighter {
+	private last?: {
+		code: string;
+		lang: string | undefined;
+		theme: Theme | undefined;
+		languageCount: number;
+		lines: readonly string[];
+	};
+
+	/** Like {@link highlightCode}. The result is shared with later calls, so callers must not modify it. */
+	highlight(code: string, lang: string | undefined): readonly string[] {
+		// Renderers cannot tell a theme change from any other redraw, so the highlighter checks what its result depends on.
+		const currentTheme = getGlobalTheme();
+		const languageCount = getHighlightLanguageCount();
+		const last = this.last;
+		if (
+			last?.code === code &&
+			last.lang === lang &&
+			last.theme === currentTheme &&
+			last.languageCount === languageCount
+		) {
+			return last.lines;
+		}
+		const lines = highlightCode(code, lang);
+		this.last = { code, lang, theme: currentTheme, languageCount, lines };
+		return lines;
 	}
 }
 
@@ -1108,26 +1074,7 @@ export function getMarkdownTheme(): MarkdownTheme {
 		italic: (text: string) => theme.italic(text),
 		underline: (text: string) => theme.underline(text),
 		strikethrough: (text: string) => theme.strikethrough(text),
-		highlightCode: (code: string, lang?: string): string[] => {
-			// Validate language before highlighting to avoid stderr spam from cli-highlight
-			const validLang = lang && supportsLanguage(lang) ? lang : undefined;
-			// Skip highlighting when no valid language is specified. cli-highlight's
-			// auto-detection is unreliable and can misidentify prose as AppleScript,
-			// LiveCodeServer, etc., coloring random English words as keywords.
-			if (!validLang) {
-				return code.split("\n").map((line) => theme.fg("mdCodeBlock", line));
-			}
-			const opts = {
-				language: validLang,
-				ignoreIllegals: true,
-				theme: getCliHighlightTheme(theme),
-			};
-			try {
-				return highlight(code, opts).split("\n");
-			} catch {
-				return code.split("\n").map((line) => theme.fg("mdCodeBlock", line));
-			}
-		},
+		highlightCode,
 	};
 }
 

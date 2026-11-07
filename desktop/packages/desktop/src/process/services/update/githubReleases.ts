@@ -10,8 +10,8 @@ import * as path from 'path';
 import semver from 'semver';
 
 /**
- * mu's builds are the releases of its own repository. mu is a fork of AionUi and never asks AionUi's update server
- * (static.aionui.com) or AionUi's GitHub: either would offer AionUi's installer as an update of mu.
+ * mu's builds are the releases of its own repository, and it asks no other update server: the server or repository of
+ * the app it was forked from would offer that app's installer as an update of mu.
  */
 export const MU_REPO = 'qybaihe/mu';
 export const MU_RELEASES_URL = `https://github.com/${MU_REPO}/releases`;

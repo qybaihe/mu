@@ -6,7 +6,7 @@ import { cleanupSiderTooltips, getSiderTooltipProps } from '@renderer/utils/ui/s
 import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
-import NativeSiderGroup from '@renderer/pages/native/components/NativeSiderGroup';
+import NativeSiderGroup from '@renderer/pages/native/sider/NativeSiderGroup';
 import { useNativeEnabled } from '@renderer/pages/native/hooks/useNativeConversations';
 import { SETTINGS_HOME } from '@renderer/pages/settings/settingsNav';
 import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry } from './SiderNav';
@@ -150,14 +150,16 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
             />
             {/* 2 — search, in the sidebar on every size: it is one of the three ways in. It opens the palette. */}
             <SiderSearchEntry isMobile={isMobile} collapsed={collapsed} siderTooltipProps={siderTooltipProps} />
-            {/* 3 — scheduled tasks */}
-            <SiderScheduledEntry
-              isMobile={isMobile}
-              isActive={pathname === '/scheduled'}
-              collapsed={collapsed}
-              siderTooltipProps={siderTooltipProps}
-              onClick={handleScheduledClick}
-            />
+            {/* 3 — scheduled tasks, with the native host off: they run the backend's assistants, never mu on the host. */}
+            {nativeOn ? null : (
+              <SiderScheduledEntry
+                isMobile={isMobile}
+                isActive={pathname === '/scheduled'}
+                collapsed={collapsed}
+                siderTooltipProps={siderTooltipProps}
+                onClick={handleScheduledClick}
+              />
+            )}
             {rail ? null : (
               <>
                 {/* The one hairline in the sidebar: above it the ways in, below it the conversations. */}

@@ -7,7 +7,9 @@
 import { ipcBridge } from '@/common';
 import type { IGpuStatus, IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { configService } from '@/common/config/configService';
-import AionScrollArea from '@/renderer/components/base/AionScrollArea';
+import MuScrollArea from '@/renderer/components/base/MuScrollArea';
+import { COMPLETION_SOUND_SETTING, playAttentionSound } from '@/renderer/hooks/system/notification/attentionSound';
+import { useKeepAwakeSetting } from '@/renderer/hooks/system/useKeepAwakeWhileRunning';
 import { notifyManualRestartRequired } from '@/renderer/utils/appRestart';
 import { isElectronDesktop, isMacOS } from '@/renderer/utils/platform';
 import { Alert, Form, Message, Modal, Switch } from '@arco-design/web-react';
@@ -45,6 +47,8 @@ const SystemModalContent: React.FC = () => {
   const [gpuStatus, setGpuStatus] = useState<IGpuStatus | null>(null);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [cronNotificationEnabled, setCronNotificationEnabled] = useState(false);
+  const keepAwakeWhileRunning = useKeepAwakeSetting();
+  const [completionSound, setCompletionSound] = useState(false);
 
   useEffect(() => {
     if (!isDesktop) {
@@ -83,6 +87,7 @@ const SystemModalContent: React.FC = () => {
     }
     setNotificationEnabled(configService.get('system.notificationEnabled') ?? true);
     setCronNotificationEnabled(configService.get('system.cronNotificationEnabled') ?? false);
+    setCompletionSound(configService.get(COMPLETION_SOUND_SETTING) === true);
   }, [isDesktop]);
 
   const handleCloseToTrayChange = useCallback(
@@ -186,6 +191,22 @@ const SystemModalContent: React.FC = () => {
     });
   }, []);
 
+  const handleKeepAwakeWhileRunningChange = useCallback((checked: boolean) => {
+    configService.set('system.keepAwakeWhileRunning', checked).catch(() => {
+      configService.setLocal('system.keepAwakeWhileRunning', !checked);
+    });
+  }, []);
+
+  // Turned on, it plays once, so the person hears what they chose.
+  const handleCompletionSoundChange = useCallback((checked: boolean) => {
+    setCompletionSound(checked);
+    if (checked) playAttentionSound('done');
+    configService.set(COMPLETION_SOUND_SETTING, checked).catch(() => {
+      setCompletionSound(!checked);
+      configService.setLocal(COMPLETION_SOUND_SETTING, !checked);
+    });
+  }, []);
+
   const handleCronNotificationEnabledChange = useCallback((checked: boolean) => {
     setCronNotificationEnabled(checked);
     configService.set('system.cronNotificationEnabled', checked).catch(() => {
@@ -212,7 +233,7 @@ const SystemModalContent: React.FC = () => {
     {
       key: 'startOnBoot',
       label: t('settings.startOnBoot'),
-      description: startOnBoot.supported ? t('settings.startOnBootDesc') : t('settings.startOnBootUnsupported'),
+      description: startOnBoot.supported ? undefined : t('settings.startOnBootUnsupported'),
       component: (
         <Switch
           size='small'
@@ -228,6 +249,18 @@ const SystemModalContent: React.FC = () => {
       label: isDesktop && isMacOS() ? t('settings.closeToMenuBar') : t('settings.closeToTray'),
       component: <Switch size='small' checked={closeToTray} onChange={handleCloseToTrayChange} />,
     },
+    ...(isDesktop
+      ? [
+          {
+            key: 'keepAwakeWhileRunning',
+            label: t('settings.keepAwakeWhileRunning'),
+            description: t('settings.keepAwakeWhileRunningDesc'),
+            component: (
+              <Switch size='small' checked={keepAwakeWhileRunning} onChange={handleKeepAwakeWhileRunningChange} />
+            ),
+          },
+        ]
+      : []),
     ...(isDesktop && gpuStatus
       ? [
           {
@@ -294,7 +327,7 @@ const SystemModalContent: React.FC = () => {
     <div className='flex flex-col h-full w-full'>
       {modalContextHolder}
 
-      <AionScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
+      <MuScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
         <div className='flex flex-col gap-16px'>
           <div className='settings-list'>
             {preferenceItems.map((item) => (
@@ -317,6 +350,16 @@ const SystemModalContent: React.FC = () => {
                 </PreferenceRow>
               </div>
             ) : null}
+            {isDesktop ? (
+              <PreferenceRow label={t('settings.completionSound')} description={t('settings.completionSoundDesc')}>
+                <Switch
+                  size='small'
+                  checked={completionSound}
+                  onChange={handleCompletionSoundChange}
+                  data-testid='completion-sound-switch'
+                />
+              </PreferenceRow>
+            ) : null}
           </div>
 
           <Form form={form} layout='vertical' className='settings-list' onValuesChange={handleValuesChange}>
@@ -335,7 +378,7 @@ const SystemModalContent: React.FC = () => {
             />
           )}
         </div>
-      </AionScrollArea>
+      </MuScrollArea>
     </div>
   );
 };

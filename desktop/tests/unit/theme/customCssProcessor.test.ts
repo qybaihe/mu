@@ -81,6 +81,18 @@ describe('addImportantToAll', () => {
     expect(out).toContain('url(http://x/y.png) !important');
   });
 
+  it('gives a component class named by its old name its mu name, and leaves other classes alone', () => {
+    const out = addImportantToAll(
+      '.aionui-modal .arco-modal-content, .aionui-modal-standard { color: red } .aionui-markdown p { margin: 0 } .aion-select .arco-select-view { color: red } .aionui-other, .aion-other { color: blue }'
+    );
+    expect(selectorsOf(out)).toEqual([
+      '.mu-modal .arco-modal-content, .mu-modal-standard',
+      '.mu-markdown p',
+      '.mu-select .arco-select-view',
+      '.aionui-other, .aion-other',
+    ]);
+  });
+
   it('returns input unchanged when CSS is unparseable (no throw)', () => {
     const broken = '.a { color: red; '; // unterminated block + string-free but invalid
     // Must not throw; result is a string (either processed or the original fallback).

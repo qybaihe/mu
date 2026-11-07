@@ -53,6 +53,33 @@ describe("DecisionEngine", () => {
 		expect(ledger.records[0]).toMatchObject({ outcome: "keep", judged: "drop", mode: "shadow" });
 	});
 
+	it("in shadow mode, records a verdict the caller acts on anyway as the judge's, not as the fallback", async () => {
+		// The browser's next click, a sub-agent's role: there is no rule to keep, so the verdict is used in shadow too.
+		const acting = { ...keepChunk, actsInShadow: true };
+		const ledger = new MemoryLedger();
+		const { engine } = engineWith(0.03, "shadow", ledger);
+
+		const decision = await engine.decide(acting, input);
+		expect(decision).toMatchObject({ outcome: "drop", source: "judge", judged: "drop", mode: "shadow" });
+		expect(decision.reason).toBeUndefined();
+		expect(ledger.records[0]).toMatchObject({ outcome: "drop", source: "judge", judged: "drop", mode: "shadow" });
+		expect(ledger.records[0].reason).toBeUndefined();
+
+		const many = await engine.decideMany(acting, [input, input]);
+		expect(many.map((one) => [one.outcome, one.source])).toEqual([
+			["drop", "judge"],
+			["drop", "judge"],
+		]);
+		expect(ledger.records[1]).toMatchObject({ outcome: ["drop", "drop"], source: "judge", mode: "shadow" });
+		expect(ledger.records[1].reason).toBeUndefined();
+
+		// With no verdict there is nothing to act on: the fallback, and why.
+		const unsure = await engineWith(0.5, "shadow").engine.decide(acting, input);
+		expect(unsure).toMatchObject({ outcome: "keep", source: "fallback", reason: "abstain" });
+		const off = await engineWith(0.03, "off").engine.decide(acting, input);
+		expect(off).toMatchObject({ outcome: "keep", source: "fallback", reason: "off" });
+	});
+
 	it("does not call the judge when the decision is off", async () => {
 		const { engine, provider } = engineWith(0.03, "off");
 
@@ -115,7 +142,124 @@ describe("DecisionEngine", () => {
 		expect(quiet.records[0].stateDigest).toMatch(/^[0-9a-f]{64}$/);
 		expect(quiet.records[0].state).toBeUndefined();
 		expect(verbose.records[0].state).toEqual({ intent: input.intent, chunk: input.chunk });
+		expect(verbose.records[0].questions).toEqual(keepChunk.questions);
+		expect(quiet.records[0].questions).toBeUndefined();
 		expect(verbose.records[0].stateDigest).toBe(quiet.records[0].stateDigest);
+	});
+
+	it("keeps the recorded request as the judge saw it, with known secrets redacted", async () => {
+		const ledger = new MemoryLedger();
+		const secret = "sk-test-0123456789abcdef";
+		await new DecisionEngine({
+			judge: new Judge({ provider: new MockJudgeProvider() }),
+			ledger,
+			recordState: true,
+			knownSecrets: () => [secret],
+		}).decide(keepChunk, { intent: "deploy", chunk: `export KEY=${secret}` });
+
+		expect(JSON.stringify(ledger.records[0].state)).not.toContain(secret);
+		expect(ledger.records[0].questions).toEqual(keepChunk.questions);
+	});
+
+	it("keeps the recorded request when the judge fails, since it can still be replayed", async () => {
+		const ledger = new MemoryLedger();
+		const failing = new MockJudgeProvider(() => {
+			throw new JudgeError("server", "the judge is down");
+		});
+		await new DecisionEngine({ judge: new Judge({ provider: failing }), ledger, recordState: true }).decide(
+			keepChunk,
+			input,
+		);
+
+		expect(ledger.records[0].reason).toBe("error:server");
+		expect(ledger.records[0].state).toEqual({ intent: input.intent, chunk: input.chunk });
+		expect(ledger.records[0].questions).toEqual(keepChunk.questions);
+	});
+
+	it("stores built questions with the state as well as fixed ones, and nothing without recordState", async () => {
+		const pickTools = defineDecision({
+			id: "test.pick_tools",
+			version: 1,
+			cacheImpact: "none",
+			latency: "inline",
+			questions: {},
+			questionsFor: (input: { task: string; tools: string[] }) =>
+				Object.fromEntries(
+					input.tools.map((tool, index) => [
+						`t${index}`,
+						{ type: "boolean" as const, instructions: `Does \`task\` need ${tool}?` },
+					]),
+				),
+			buildState: (input: { task: string; tools: string[] }) => ({ task: input.task }),
+			policy: (answers) => Object.keys(answers).length,
+			fallback: () => 0,
+		});
+		const built = { task: "deploy the site", tools: ["the shell", "a browser"] };
+		const recorded = async (spec: typeof pickTools | typeof keepChunk, recordState: boolean) => {
+			const ledger = new MemoryLedger();
+			const engine = new DecisionEngine({
+				judge: new Judge({ provider: new MockJudgeProvider() }),
+				ledger,
+				recordState,
+			});
+			await (spec === keepChunk ? engine.decide(keepChunk, input) : engine.decide(pickTools, built));
+			return ledger.records[0].questions;
+		};
+		expect(await recorded(pickTools, true)).toEqual({
+			t0: { type: "boolean", instructions: "Does `task` need the shell?" },
+			t1: { type: "boolean", instructions: "Does `task` need a browser?" },
+		});
+		expect(await recorded(pickTools, false)).toBeUndefined();
+		expect(await recorded(keepChunk, true)).toEqual(keepChunk.questions);
+	});
+
+	it("records a batch's own tokens, builds each state once, and keeps each call's request on request", async () => {
+		let builds = 0;
+		const counted = defineDecision({
+			...keepChunk,
+			buildState: (value: typeof input) => {
+				builds++;
+				return keepChunk.buildState(value);
+			},
+		});
+		const provider: JudgeProvider = {
+			id: "counting",
+			evaluate: async () => ({
+				answers: { relevant: { type: "boolean", probability: 0.97 } },
+				usage: { inputTokens: 30, outputTokens: 4 },
+				modelId: "counting",
+			}),
+		};
+		const secret = "sk-test-0123456789abcdef";
+		const ledger = new MemoryLedger();
+		const engine = new DecisionEngine({
+			judge: new Judge({ provider }),
+			ledger,
+			recordState: true,
+			knownSecrets: () => [secret],
+		});
+		const inputs = [input, { intent: "deploy", chunk: `export KEY=${secret}` }];
+
+		await engine.decideMany(counted, inputs);
+
+		expect(builds).toBe(inputs.length);
+		const [record] = ledger.records;
+		expect(record.usage).toEqual({ inputTokens: 60, outputTokens: 8 });
+		// As the judge saw each call: known secrets redacted.
+		expect(record.state).toEqual([{ intent: input.intent, chunk: input.chunk }, expect.any(Object)]);
+		expect(JSON.stringify(record.state)).not.toContain(secret);
+		expect(record.questions).toEqual([keepChunk.questions, keepChunk.questions]);
+	});
+
+	it("records no batch requests without recordState, and decides every input whatever concurrency it is given", async () => {
+		const ledger = new MemoryLedger();
+		const { engine, provider } = engineWith(0.97, "active", ledger);
+		for (const concurrency of [Number.NaN, 0, -1, 2.5, 1]) {
+			const decisions = await engine.decideMany(keepChunk, [input, input, input], { concurrency });
+			expect(decisions.map((decision) => decision.outcome)).toEqual(["keep", "keep", "keep"]);
+		}
+		expect(provider.calls).toHaveLength(15);
+		expect(ledger.records.every((record) => record.state === undefined && record.questions === undefined)).toBe(true);
 	});
 
 	it("records where the caller was when it asked, not where it is when a slow judge answers", async () => {
@@ -162,6 +306,38 @@ describe("DecisionEngine", () => {
 
 		await expect(engine.decide(keepChunk, input)).resolves.toMatchObject({ outcome: "drop", source: "judge" });
 		expect(ledger.records[0].origin).toBeUndefined();
+	});
+});
+
+describe("DecisionEngine modes", () => {
+	it("with the default off, a point in shadow only by default asks no judge; one set otherwise still does", async () => {
+		const provider = new MockJudgeProvider(() => ({ relevant: { type: "boolean", probability: 0.03 } }));
+		const engine = new DecisionEngine({
+			judge: new Judge({ provider }),
+			defaultMode: "off",
+			modes: { "test.keep_chunk": "shadow", "test.other": "active" },
+			builtInModes: { "test.keep_chunk": "shadow" },
+		});
+		expect(engine.getMode("test.keep_chunk")).toBe("off");
+		expect(engine.getMode("test.other")).toBe("active");
+		expect(engine.asksJudge()).toBe(true);
+		// /status lists what differs from the default as it takes effect: not the shadow that gave way.
+		expect([...engine.overrides()]).toEqual([["test.other", "active"]]);
+		const decision = await engine.decide(keepChunk, input);
+		expect(decision).toMatchObject({ outcome: "keep", source: "fallback" });
+		expect(provider.calls).toHaveLength(0);
+
+		engine.setMode("test.other", "off");
+		expect(engine.asksJudge()).toBe(false);
+		expect(engine.overrides().size).toBe(0);
+		// Turned on again, the built-in shadow comes back.
+		engine.setDefaultMode("active");
+		expect(engine.getMode("test.keep_chunk")).toBe("shadow");
+		expect(engine.asksJudge()).toBe(true);
+		expect([...engine.overrides()]).toEqual([
+			["test.keep_chunk", "shadow"],
+			["test.other", "off"],
+		]);
 	});
 });
 

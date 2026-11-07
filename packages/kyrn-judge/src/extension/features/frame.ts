@@ -462,6 +462,22 @@ export function registerFrame(runtime: KyrnRuntime): void {
 		}),
 	);
 
+	// Plan mode puts an approved plan's steps here, as the user's: they approved them (features/plan.ts).
+	runtime.addChecklist = (texts) => {
+		const current = state();
+		let frame = current.frame;
+		if (!frame) return 0;
+		let added = 0;
+		for (const text of texts) {
+			const changed = addItem(frame, text, "user");
+			if ("error" in changed) continue;
+			frame = changed.frame;
+			added++;
+		}
+		if (added > 0) commit({ frame, unmerged: current.unmerged }, "progress");
+		return added;
+	};
+
 	// The to-do list is the frame's acceptance criteria: one list, so "done" means what the user asked for.
 	const checklist = (frame: Frame | undefined): string =>
 		frame && frame.acceptance.length > 0
@@ -521,7 +537,7 @@ export function registerFrame(runtime: KyrnRuntime): void {
 	pi.registerCommand("frame", {
 		description: say({
 			zh: "任务帧：目标、你的硬约束（原话加出处）、当前子目标、验收条件",
-			en: "The task frame: goal, your hard constraints and where you said them, subgoal, acceptance items",
+			en: "Show the task frame: the goal, your constraints with their source, the current subgoal and the acceptance criteria",
 		}),
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);

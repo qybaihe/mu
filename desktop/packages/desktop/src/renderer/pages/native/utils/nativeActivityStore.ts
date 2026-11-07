@@ -1,13 +1,18 @@
 /**
- * The Jev panel's record of the native conversation on screen. The native page publishes what its view holds here
+ * The work panel's record of the native conversation on screen. The native page publishes what its view holds here
  * (`toActivity`), and the work panel reads it for that conversation instead of asking the main process for the mu
  * bridge's telemetry, which a native conversation does not have. One conversation at a time: the one on screen. With
- * it, the folder the conversation works in (`cwd`), once known: the panel's lessons and files are read by it.
+ * it, the folder the conversation works in (`cwd`), once known: the panel's lessons and files are read by it; and a way
+ * to send that conversation's mu a command (`command`), as the person would type it, for what the panel's tabs ask of
+ * mu itself (the judge tab's "mark as wrong").
  */
 import { useSyncExternalStore } from 'react';
 import type { KyrnActivity } from '@/renderer/pages/conversation/KyrnPanel';
 
-type Published = { conversationId: string; activity: KyrnActivity; cwd?: string };
+/** Sends the conversation's mu a command (`/ledger wrong <id>`) as a prompt; true once pi took it. */
+export type NativeCommand = (text: string) => Promise<boolean>;
+
+type Published = { conversationId: string; activity: KyrnActivity; cwd?: string; command?: NativeCommand };
 
 let published: Published | undefined;
 const listeners = new Set<() => void>();
@@ -17,7 +22,8 @@ export function publishNativeActivity(next: Published | undefined): void {
   if (
     next?.conversationId === published?.conversationId &&
     next?.activity === published?.activity &&
-    next?.cwd === published?.cwd
+    next?.cwd === published?.cwd &&
+    next?.command === published?.command
   )
     return;
   published = next;
@@ -47,4 +53,10 @@ export function useNativeActivity(conversationId: string | null): KyrnActivity |
 export function useNativeFolder(conversationId: string | null): string | undefined {
   const current = useSyncExternalStore(subscribe, read, read);
   return conversationId && current?.conversationId === conversationId ? current.cwd : undefined;
+}
+
+/** How to send the native conversation on screen a command, or undefined for any other conversation. */
+export function useNativeCommand(conversationId: string | null): NativeCommand | undefined {
+  const current = useSyncExternalStore(subscribe, read, read);
+  return conversationId && current?.conversationId === conversationId ? current.command : undefined;
 }

@@ -1,16 +1,16 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { Input } from '@arco-design/web-react';
 import { Search } from '@icon-park/react';
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useIndexedItemRefs } from '@/renderer/hooks/ui/useIndexedItemRefs';
-import { formatPrimaryShortcut, MESSAGE_SEARCH_SHORTCUT } from '@/renderer/utils/ui/keyboardShortcuts';
+import {
+  formatPrimaryShortcut,
+  MESSAGE_SEARCH_SHORTCUT,
+  NEXT_WAITING_SHORTCUT,
+  QUICK_OPEN_SHORTCUT,
+} from '@/renderer/utils/ui/keyboardShortcuts';
 import { splitByHits, type PaletteItem } from './paletteGroups';
+import { SHORTCUT_SHEET_SHORTCUT } from './ShortcutSheet';
 import { usePaletteGroups } from './usePaletteGroups';
 import { usePaletteNavigation } from './usePaletteNavigation';
 import styles from './CommandPalette.module.css';
@@ -119,6 +119,15 @@ const CommandPalettePanel: React.FC<{ onRun: (item: PaletteItem) => void }> = ({
                   ) : null}
                   {item.kind === 'conversation' ? <span className={styles.meta}>{item.time}</span> : null}
                   {item.kind === 'messages' ? <span className={styles.meta}>{messageSearchShortcut}</span> : null}
+                  {item.kind === 'action' && item.action === 'quickOpen' ? (
+                    <span className={styles.meta}>{formatPrimaryShortcut(QUICK_OPEN_SHORTCUT)}</span>
+                  ) : null}
+                  {item.kind === 'action' && item.action === 'nextWaiting' ? (
+                    <span className={styles.meta}>{formatPrimaryShortcut(NEXT_WAITING_SHORTCUT)}</span>
+                  ) : null}
+                  {item.kind === 'action' && item.action === 'shortcuts' ? (
+                    <span className={styles.meta}>{formatPrimaryShortcut(SHORTCUT_SHEET_SHORTCUT)}</span>
+                  ) : null}
                 </div>
               );
             })}

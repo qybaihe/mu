@@ -55,7 +55,6 @@
     "newTask": "Nouvelle tâche",
     "createViaChat": "Créer via le chat",
     "createManually": "Créer manuellement",
-    "description": "Exécuter des tâches selon un calendrier. Vous pouvez aussi demander à mu dans n'importe quelle conversation d'en créer une.",
     "awakeBanner": "Les tâches planifiées s'exécutent uniquement quand votre ordinateur est allumé.",
     "keepAwake": "Maintenir en veille",
     "keepAwakeTooltip": "Quand activé, mu empêche votre ordinateur de se mettre en veille",
@@ -109,8 +108,8 @@
       "selectFolder": "Sélectionner un dossier",
       "clearFolder": "Effacer",
       "model": "Modèle",
-      "aionrsModelRequired": "Veuillez sélectionner un modèle pour l'agent intégré",
-      "aionrsNoProvider": "Aucun modèle disponible",
+      "builtinAgentModelRequired": "Veuillez sélectionner un modèle pour l'agent intégré",
+      "builtinAgentNoProvider": "Aucun modèle disponible",
       "assistantLockedExistingConversation": "Les tâches de conversation en cours doivent conserver leur assistant d'origine. Créez une nouvelle tâche pour utiliser un autre assistant.",
       "teamTaskExecutionModeLockedReason": "Les tâches planifiées par l'équipe doivent continuer à s'exécuter dans la conversation de l'équipe propriétaire, le mode d'exécution ne peut donc pas être modifié."
     },

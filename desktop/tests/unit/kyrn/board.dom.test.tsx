@@ -11,6 +11,7 @@ import Board from '@/renderer/pages/conversation/KyrnPanel/Board';
 import {
   ACCOUNT_LIMIT,
   boardAccount,
+  boardLabels,
   boardState,
   boardStateKey,
   boardView,
@@ -162,7 +163,7 @@ describe('the board panel', () => {
     const sent = vi.fn();
     emitter.on('sendbox.command', sent);
     showBoard([]);
-    expect(screen.getByTestId('mu-board-unknown')).toHaveTextContent('under Features');
+    expect(screen.getByTestId('mu-board-unknown')).toHaveTextContent('Core features');
     expect(screen.queryByTestId('mu-board-off')).not.toBeInTheDocument();
     expect(screen.getByTestId('mu-board-switch')).toBeDisabled();
     fireEvent.click(screen.getByTestId('mu-board-switch'));
@@ -482,8 +483,8 @@ describe('the account under the board', () => {
     ]);
     expect(texts()).toEqual([
       'Stopped.',
-      'The goal is not met yet; mu sent it back to work (round 2): the login test fails',
-      'Sent out 2 helpers: tests, docs',
+      "The goal isn't met yet; mu sent the agent back to work (round 2): the login test fails",
+      'Started 2 subagents: tests, docs',
       'Looked at 1 file or place',
       'Changed src/login.ts',
     ]);
@@ -594,6 +595,337 @@ describe('the account under the board', () => {
     const summary = note({ by: 'model', text: 'It fixed the login.' });
     rerender(<Board events={[...events, board, passed, last, summary]} conversationId='conv' />);
     expect(readOut()).toEqual(['Wrapping up', 'Wrapping up', 'All done.', 'It fixed the login.']);
+  });
+});
+
+/** A v2 board: a headline, what is blocked, what comes next, and three helpers. */
+const T0 = new Date(2026, 9, 24, 10, 0, 0).getTime();
+const spoken = (payload: Record<string, unknown> = {}) =>
+  update({
+    phase: 'blocked',
+    headline: 'fixer has run one test for 6 min with no output',
+    blocked: 'fixer: npx vitest test/retry.test.ts has run 6 min with no output.',
+    next: 'It said it will stop fixer’s run, then rerun the test 20 times.',
+    now: 'scout is back: the retry delay reads the clock twice.',
+    progress: 'Cause found; the fix is not verified yet.',
+    agents: [
+      { who: 'scout', role: 'scout', state: 'done', doing: 'found the double clock read', sinceMs: 240_000 },
+      { who: 'fixer', role: 'worker', state: 'stuck', doing: 'retry test run, no output', sinceMs: 360_000 },
+      { who: 'docs', state: 'working', doing: 'updating the README', sinceMs: 70_000 },
+    ],
+    updatedAt: T0 - 12_000,
+    ...payload,
+  });
+
+describe('reading a v2 board', () => {
+  it('reads the headline, blocked, next, who is doing what and when it was made', () => {
+    const read = toBoardUpdate(
+      spoken({
+        headlineCode: 'still_running',
+        headlineParams: { what: 'npm test', minutes: 3, nested: { no: 1 } },
+        blockedCode: 'Not A Code',
+        agents: [
+          { who: '  scout  ', state: 'done', doing: 'found it', sinceMs: 1000 },
+          { who: '', state: 'working', doing: 'nameless' },
+          { who: 'fixer', state: 'dancing', doing: 'x'.repeat(2000), sinceMs: -5 },
+          'not a row',
+        ],
+      })
+    );
+    expect(read).toMatchObject({
+      phase: 'blocked',
+      headline: 'fixer has run one test for 6 min with no output',
+      headlineCode: { code: 'still_running', params: { what: 'npm test', minutes: 3 } },
+      blocked: 'fixer: npx vitest test/retry.test.ts has run 6 min with no output.',
+      next: 'It said it will stop fixer’s run, then rerun the test 20 times.',
+      updatedAt: T0 - 12_000,
+    });
+    // A code that is not one is dropped: the line is shown as the harness wrote it.
+    expect(read?.blockedCode).toBeUndefined();
+    expect(read?.agents).toEqual([
+      { who: 'scout', state: 'done', doing: 'found it', sinceMs: 1000 },
+      // An unknown state keeps the row, without a state; a negative time is no time.
+      { who: 'fixer', doing: `${'x'.repeat(600)}…` },
+    ]);
+    // A board with a headline alone is a board.
+    expect(toBoardUpdate(update({ now: '', progress: '', headline: 'Done: the login works' }))?.headline).toBe(
+      'Done: the login works'
+    );
+    expect(toBoardUpdate(spoken({ updatedAt: 'now', agents: [] }))).not.toHaveProperty('updatedAt');
+  });
+
+  it('reads an old board exactly as before: none of the new parts', () => {
+    const read = toBoardUpdate(update());
+    for (const key of ['headline', 'headlineCode', 'blocked', 'blockedCode', 'next', 'agents', 'updatedAt'])
+      expect(read).not.toHaveProperty(key);
+    expect(toBoardNote(note())).not.toHaveProperty('who');
+    expect(toBoardNote(note({ who: '  fixer ' }))?.who).toBe('fixer');
+  });
+});
+
+describe('a v2 board in the panel', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ now: T0, toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('leads with the headline, then blocked, next, now and how far, then who is doing what', () => {
+    showBoard([switched(true), spoken()]);
+    const order = [
+      'mu-board-state',
+      'mu-board-headline',
+      'mu-board-blocked',
+      'mu-board-next',
+      'mu-board-now',
+      'mu-board-progress',
+      'mu-board-agents',
+    ].map((id) => screen.getByTestId(id));
+    for (let index = 1; index < order.length; index += 1)
+      expect(order[index - 1].compareDocumentPosition(order[index])).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getByTestId('mu-board-headline').tagName).toBe('P');
+    expect(screen.getByTestId('mu-board-headline')).toHaveTextContent('fixer has run one test for 6 min');
+    expect(screen.getByTestId('mu-board-state')).toHaveTextContent('Waiting on something else');
+    expect(screen.getByTestId('mu-board-state').querySelector('[data-mark]')).toHaveAttribute('data-mark', 'hollow');
+    const blocked = screen.getByTestId('mu-board-blocked');
+    expect(blocked).toHaveTextContent('Blocked');
+    expect(blocked).toHaveTextContent('has run 6 min with no output.');
+    expect(blocked.querySelector('[data-mark="hollow"]')).not.toBeNull();
+    expect(screen.getByTestId('mu-board-next')).toHaveTextContent('NextIt said it will stop fixer’s run');
+  });
+
+  it('says how long ago the board was made, counting up on its own', () => {
+    showBoard([switched(true), spoken()]);
+    expect(screen.getByTestId('mu-board-updated')).toHaveTextContent('Updated 10 sec ago');
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.getByTestId('mu-board-updated')).toHaveTextContent('Updated 1 min ago');
+    cleanup();
+    showBoard([switched(true), spoken({ updatedAt: Date.now() - 2_000 })]);
+    expect(screen.getByTestId('mu-board-updated')).toHaveTextContent('Updated just now');
+  });
+
+  it('lists who is doing what: a mark, the name, the state when it matters, what it does, and for how long', () => {
+    showBoard([switched(true), spoken()]);
+    const rows = screen.getAllByTestId('mu-board-agent');
+    expect(rows.map((row) => row.getAttribute('data-state'))).toEqual(['done', 'stuck', 'working']);
+    expect(rows.map((row) => row.querySelector('[data-mark]')?.getAttribute('data-mark'))).toEqual([
+      'tick',
+      'hollow',
+      'dot',
+    ]);
+    expect(rows[0]).toHaveTextContent('scoutDone found the double clock read');
+    expect(rows[1]).toHaveTextContent('fixerStuck retry test run, no output');
+    // A stuck helper's state is a tag to read; a working one's is told by its mark (and to a screen reader).
+    expect(within(rows[1]).getByTestId('mu-board-agent-state')).not.toHaveClass('sr-only');
+    expect(within(rows[2]).getByTestId('mu-board-agent-state')).toHaveClass('sr-only');
+    // Only the ones still at it have a time, which goes on from when the board was made.
+    expect(within(rows[0]).queryByTestId('mu-board-agent-time')).toBeNull();
+    expect(within(rows[1]).getByTestId('mu-board-agent-time')).toHaveTextContent('6 min');
+    expect(within(rows[2]).getByTestId('mu-board-agent-time')).toHaveTextContent('1 min');
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(within(rows[1]).getByTestId('mu-board-agent-time')).toHaveTextContent('7 min');
+  });
+
+  it('stops the helpers’ clocks for a board that ended', () => {
+    showBoard([switched(true), spoken({ ended: true })]);
+    const since = within(screen.getAllByTestId('mu-board-agent')[1]).getByTestId('mu-board-agent-time');
+    expect(since).toHaveTextContent('6 min');
+    act(() => vi.advanceTimersByTime(120_000));
+    expect(since).toHaveTextContent('6 min');
+  });
+
+  it('leaves out "now" when it only says the headline again, and shows a board without the new parts as before', () => {
+    showBoard([
+      switched(true),
+      spoken({ now: 'fixer has run one test for 6 min with no output', blocked: '', next: '' }),
+    ]);
+    expect(screen.queryByTestId('mu-board-now')).toBeNull();
+    expect(screen.queryByTestId('mu-board-blocked')).toBeNull();
+    expect(screen.queryByTestId('mu-board-next')).toBeNull();
+    cleanup();
+    showBoard([switched(true), update()]);
+    for (const id of ['mu-board-headline', 'mu-board-blocked', 'mu-board-next', 'mu-board-agents', 'mu-board-updated'])
+      expect(screen.queryByTestId(id)).toBeNull();
+    expect(screen.getByTestId('mu-board-now')).toHaveTextContent('Writing the tests for the login page');
+  });
+
+  it('reads out a new board’s headline alone', () => {
+    const events = [switched(true)];
+    const { rerender } = showBoard(events);
+    rerender(<Board events={[...events, spoken()]} conversationId='conv' />);
+    expect(readOut()).toEqual(['fixer has run one test for 6 min with no output']);
+  });
+
+  it('puts the helper’s name on its lines of the account, unless the sentence already starts from it', () => {
+    showBoard([
+      switched(true),
+      spoken(),
+      note({ who: 'docs', by: 'model', text: 'The README still says retries wait 1 s.' }),
+      note({
+        who: 'scout',
+        code: 'helper_done',
+        params: { name: 'scout', summary: 'found it' },
+        text: 'scout is back',
+      }),
+      note({ text: 'Looked at 4 files or places' }),
+    ]);
+    const rows = lines();
+    expect(rows.map((row) => row.querySelector('[data-testid="mu-board-note-who"]')?.textContent ?? null)).toEqual([
+      null,
+      null,
+      'docs',
+    ]);
+    expect(texts()).toEqual([
+      'Looked at 4 files or places',
+      'scout is back: found it',
+      'docsThe README still says retries wait 1 s.',
+    ]);
+  });
+});
+
+/** Board v2.1: helpers with labels, in the board's language, beside their exact names. */
+const AUDIT = 'audit timing in src/retry.ts';
+const REWRITE = 'rewrite retry.test.ts with fake timers';
+const labelled = (payload: Record<string, unknown> = {}) =>
+  spoken({
+    agents: [
+      { who: AUDIT, label: 'timing audit', role: 'scout', state: 'done', doing: 'found it', sinceMs: 240_000 },
+      { who: REWRITE, label: 'test rewrite', role: 'worker', state: 'stuck', doing: 'no output', sinceMs: 360_000 },
+      { who: 'docs', state: 'working', doing: 'updating the README', sinceMs: 70_000 },
+    ],
+    ...payload,
+  });
+
+describe('reading the labels of a v2.1 board', () => {
+  it('keeps a helper’s label beside its name, and a line’s only beside its helper', () => {
+    const read = toBoardUpdate(
+      labelled({
+        agents: [
+          { who: AUDIT, label: '  timing audit ', state: 'done', doing: 'found it' },
+          { who: REWRITE, label: 'x'.repeat(100), state: 'working', doing: 'running' },
+          { who: 'docs', label: '', state: 'working', doing: 'writing' },
+          { who: 'lint', label: 3, state: 'working', doing: 'linting' },
+        ],
+      })
+    );
+    expect(read?.agents).toEqual([
+      { who: AUDIT, label: 'timing audit', state: 'done', doing: 'found it' },
+      // A label is a few words: a long one is cut.
+      { who: REWRITE, label: `${'x'.repeat(40)}…`, state: 'working', doing: 'running' },
+      { who: 'docs', state: 'working', doing: 'writing' },
+      { who: 'lint', state: 'working', doing: 'linting' },
+    ]);
+    expect(toBoardNote(note({ who: AUDIT, label: ' timing audit ' }))).toMatchObject({
+      who: AUDIT,
+      label: 'timing audit',
+    });
+    expect(toBoardNote(note({ label: 'timing audit' }))).not.toHaveProperty('label');
+    // An old board and an old line: no labels at all.
+    expect(toBoardUpdate(spoken())?.agents?.some((agent) => 'label' in agent)).toBe(false);
+    expect(toBoardNote(note({ who: 'fixer' }))).not.toHaveProperty('label');
+  });
+
+  it('knows each helper’s label from the lines of the account and the latest board, the board winning', () => {
+    const account = boardAccount([
+      note({ who: AUDIT, label: 'old name' }),
+      note({ who: 'docs', label: 'readme' }),
+      note({ who: 'lint' }),
+    ]);
+    const labels = boardLabels(toBoardUpdate(labelled()), account);
+    expect([...labels]).toEqual([
+      [AUDIT, 'timing audit'],
+      ['docs', 'readme'],
+      [REWRITE, 'test rewrite'],
+    ]);
+    expect(boardLabels(undefined, [])).toEqual(new Map());
+  });
+});
+
+describe('a v2.1 board in the panel', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ now: T0, toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('lists each helper by its label, with its exact name in the tooltip, and one without a label by its name', async () => {
+    showBoard([switched(true), labelled()]);
+    const names = screen.getAllByTestId('mu-board-agent-who');
+    expect(names.map((name) => name.textContent)).toEqual(['timing audit', 'test rewrite', 'docs']);
+    expect(names[0]).toHaveAttribute('data-who', AUDIT);
+    expect(names[0]).not.toHaveAttribute('title');
+    // Without a label: the name, its title as before.
+    expect(names[2]).toHaveAttribute('title', 'docs');
+    fireEvent.mouseEnter(names[1]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(screen.getByRole('tooltip')).toHaveTextContent(`${REWRITE} (worker)`);
+  });
+
+  it('calls a helper by its label on the lines about it, the chip too, and words its fixed sentences with it', () => {
+    showBoard([
+      switched(true),
+      labelled(),
+      // The harness's own label on the line.
+      note({
+        who: AUDIT,
+        label: 'timing audit',
+        code: 'helper_done',
+        params: { name: AUDIT, summary: 'found it' },
+        text: 'timing audit is back: found it',
+      }),
+      // A line from before the label: the board's label for its helper.
+      note({ who: REWRITE, code: 'still_running', params: { who: REWRITE, what: 'npx vitest', minutes: 3 } }),
+      note({ who: REWRITE, label: 'test rewrite', by: 'model', text: 'Rewrote the test with fake timers.' }),
+      note({ who: 'docs', by: 'model', text: 'The README still says retries wait 1 s.' }),
+      note({ who: 'docs', by: 'model', text: 'docs: one more line.' }),
+    ]);
+    expect(texts()).toEqual([
+      // An old line without a label stays as it was, chip and all.
+      'docsdocs: one more line.',
+      'docsThe README still says retries wait 1 s.',
+      'test rewriteRewrote the test with fake timers.',
+      'test rewrite: npx vitest has run 3 min with no output',
+      'timing audit is back: found it',
+    ]);
+    const chips = screen.getAllByTestId('mu-board-note-who');
+    expect(chips.map((chip) => [chip.textContent, chip.getAttribute('data-who')])).toEqual([
+      ['docs', 'docs'],
+      ['docs', 'docs'],
+      ['test rewrite', REWRITE],
+    ]);
+  });
+
+  it('hides the chip where the line as shown starts from the label', () => {
+    showBoard([
+      switched(true),
+      labelled(),
+      note({ who: REWRITE, label: 'test rewrite', by: 'model', text: 'test rewrite switched to fake timers.' }),
+    ]);
+    expect(screen.queryByTestId('mu-board-note-who')).toBeNull();
+  });
+
+  it('words a rules headline about a stuck helper with its label', () => {
+    showBoard([
+      switched(true),
+      labelled({
+        headline: `${REWRITE}: npx vitest has run 6 min with no output`,
+        headlineCode: 'still_running',
+        headlineParams: { who: REWRITE, what: 'npx vitest', minutes: 6 },
+        blocked: `${REWRITE}: npx vitest has run 6 min with no output`,
+        blockedCode: 'still_running',
+        blockedParams: { who: REWRITE, what: 'npx vitest', minutes: 6 },
+      }),
+    ]);
+    expect(screen.getByTestId('mu-board-headline')).toHaveTextContent(
+      'test rewrite: npx vitest has run 6 min with no output'
+    );
+    expect(screen.getByTestId('mu-board-blocked')).toHaveTextContent(
+      'Blockedtest rewrite: npx vitest has run 6 min with no output'
+    );
   });
 });
 

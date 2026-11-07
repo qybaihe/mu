@@ -68,7 +68,6 @@
     "resources/",
     "docs/",
     "config/webpack/",
-    "scripts/",
-    "mobile/"
+    "scripts/"
   ]
 }

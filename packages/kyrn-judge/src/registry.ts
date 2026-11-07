@@ -1,20 +1,33 @@
 import { CascadeJudge, type CascadeTier } from "./cascade.ts";
-import { BUILT_IN_JUDGES, type JudgeConfig, type KyrnConfig } from "./config.ts";
+import { BUILT_IN_JUDGES, type JudgeConfig, type KyrnConfig, LAYA } from "./config.ts";
 import { JudgeError } from "./errors.ts";
 import { Judge, type JudgeLike } from "./judge.ts";
-import { muEnv } from "./naming.ts";
 import { type ClassifierCall, ClassifierJudgeProvider } from "./providers/classifier.ts";
 import { FreeJevFallback, type FreeJevOutcome } from "./providers/free-jev.ts";
 import { type ApiKeyResolver, GatewayJudgeProvider } from "./providers/gateway.ts";
+import { HttpJudgeProvider } from "./providers/http-judge.ts";
 import { type LlmCompletion, LlmJudgeProvider } from "./providers/llm.ts";
-import { LocalJudgeProvider } from "./providers/local.ts";
+import { LogprobJudgeProvider } from "./providers/logprob.ts";
 import { MockJudgeProvider } from "./providers/mock.ts";
+import {
+	isOpenAIAddress,
+	OPENAI_JUDGE_KEY,
+	OpenAIDecisionsJudgeProvider,
+	type OpenAIKeyProblem,
+} from "./providers/openai-decisions.ts";
 import { CLM_DEFAULT_MODEL, clmEndpoint, TypeSafeJudgeProvider } from "./providers/typesafe.ts";
 import type { JudgeProvider } from "./types.ts";
 
 /** What only the host application can supply: credentials and generative models. */
 export interface JudgeHost {
 	gatewayApiKey?: ApiKeyResolver;
+	/**
+	 * The key of the host's `openai` model provider (pi's auth storage, OPENAI_API_KEY), for an `openai` judge at
+	 * OpenAI's own address that has no key of its own. Without it, OPENAI_API_KEY from `env`.
+	 */
+	openaiApiKey?: ApiKeyResolver;
+	/** Told when an `openai` judge has no key any more, or OpenAI turns its key down. */
+	openaiKeyProblem?: (problem: OpenAIKeyProblem) => void;
 	/** The `fetch` judge providers call with, e.g. one that keeps its connections open between calls. */
 	fetch?: typeof fetch;
 	/** A completion function bound to "provider/model-id", or undefined when the host has no such model. */
@@ -32,23 +45,42 @@ const DEFAULT_TIMEOUT_MS: Readonly<Record<JudgeConfig["type"], number>> = {
 	typesafe: 10_000,
 	// A CLM server embeds every question together with the state: a batch of long ones takes seconds on a small GPU.
 	clm: 8000,
+	// A small judge on this machine answers in a fraction of a second; long states on a laptop take a few.
+	systemone: 8000,
 	gateway: 4000,
-	local: 4000,
 	http: 8000,
 	llm: 30_000,
 	// Jev and its kin on a service of the host's catalog: the same latency as Jev's own routes.
 	classifier: 10_000,
+	// One short request per question, all at once; a hosted model's queue can still take seconds.
+	logprob: 10_000,
+	// A hosted judge too, over a long route when the connection is cold.
+	openai: 10_000,
 	mock: 1000,
 };
 
+/** OpenAI's keys: the `openai` judge's own, and the one of mu's `openai` model provider. */
+const OPENAI_KEYS: readonly string[] = [OPENAI_JUDGE_KEY, "OPENAI_API_KEY"];
+
 /**
- * Keys for a service other than TypeSafe (Jev on OpenRouter, an address of the user's own, a CLM server). Any other
- * variable may hold a TypeSafe key under a name of its own, and goes to TypeSafe when no address is set.
+ * Keys for a service other than TypeSafe (Jev on OpenRouter, an address of the user's own, a CLM server, mude, OpenAI).
+ * Any other variable may hold a TypeSafe key under a name of its own, and goes to TypeSafe when no address is set.
  */
 const KEYS_FOR_ELSEWHERE: ReadonlySet<string> = new Set([
 	"MU_JUDGE_OPENROUTER_API_KEY",
 	"MU_JUDGE_CUSTOM_API_KEY",
 	"MU_JUDGE_CLM_API_KEY",
+	"MU_JUDGE_MUDE_KEY",
+	...OPENAI_KEYS,
+]);
+
+/** Keys of the other judge services, which an `openai` judge never sends to OpenAI or anywhere else. */
+const KEYS_NOT_FOR_OPENAI: ReadonlySet<string> = new Set([
+	"TYPESAFE_API_KEY",
+	"AI_GATEWAY_API_KEY",
+	"OPENCODE_API_KEY",
+	"CLOUDFLARE_API_KEY",
+	...[...KEYS_FOR_ELSEWHERE].filter((key) => !OPENAI_KEYS.includes(key)),
 ]);
 
 /** `llm:provider/model` and `classifier:provider/model` name a judge inline, without a `judges` entry. */
@@ -62,14 +94,10 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 	switch (judge.type) {
 		case "mock":
 			return new MockJudgeProvider();
-		case "local":
-			return new LocalJudgeProvider({
-				baseUrl: judge.baseUrl ?? muEnv("LOCAL_JUDGE_URL", host.env ?? {}),
-				fetch: host.fetch,
-			});
 		case "http": {
+			if (!judge.baseUrl) throw new TypeError(`Judge "${name}" needs a baseUrl (the address of its server)`);
 			const apiKeyEnv = judge.apiKeyEnv;
-			return new LocalJudgeProvider({
+			return new HttpJudgeProvider({
 				id: `http:${name}`,
 				baseUrl: judge.baseUrl,
 				path: judge.path,
@@ -91,6 +119,18 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 			const call = host.classify?.(judge.model);
 			if (!call) throw new TypeError(`Judge "${name}": classifier models need a mu session`);
 			return new ClassifierJudgeProvider({ model: judge.model, call });
+		}
+		case "logprob": {
+			if (!judge.baseUrl || !judge.model) throw new TypeError(`Judge "${name}" needs a baseUrl and a model`);
+			const keyName = judge.apiKeyEnv ?? "MU_JUDGE_CUSTOM_API_KEY";
+			return new LogprobJudgeProvider({
+				baseUrl: judge.baseUrl,
+				model: judge.model,
+				apiKey: () => host.env?.[keyName],
+				keyName,
+				body: judge.body,
+				fetch: host.fetch,
+			});
 		}
 		case "typesafe": {
 			const keyName = judge.apiKeyEnv ?? "TYPESAFE_API_KEY";
@@ -117,6 +157,45 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 				model: judge.model || CLM_DEFAULT_MODEL,
 				baseUrl: clmEndpoint(judge.baseUrl),
 				fetch: host.fetch,
+			});
+		}
+		case "systemone": {
+			// Like clm, for any other System One server: a key only when MU_JUDGE_SYSTEMONE_API_KEY (or apiKeyEnv) is set.
+			if (!judge.baseUrl) throw new TypeError(`Judge "${name}" needs a baseUrl`);
+			const keyName = judge.apiKeyEnv ?? "MU_JUDGE_SYSTEMONE_API_KEY";
+			return new TypeSafeJudgeProvider({
+				apiKey: () => host.env?.[keyName],
+				keyName,
+				keyOptional: true,
+				judgeName: name,
+				model: judge.model,
+				baseUrl: clmEndpoint(judge.baseUrl),
+				fetch: host.fetch,
+			});
+		}
+		case "openai": {
+			// The judge's own key (MU_JUDGE_OPENAI_KEY) goes to the judge's address. The key of mu's `openai` model
+			// provider goes to OpenAI's own address only, never to a relay or proxy.
+			const keyName = judge.apiKeyEnv ?? OPENAI_JUDGE_KEY;
+			const atOpenAI = isOpenAIAddress(judge.baseUrl);
+			if (KEYS_NOT_FOR_OPENAI.has(keyName)) {
+				throw new TypeError(
+					`Judge "${name}": its key ${keyName} belongs to another service and is not sent to OpenAI`,
+				);
+			}
+			if (keyName === "OPENAI_API_KEY" && !atOpenAI) {
+				throw new TypeError(`Judge "${name}": OPENAI_API_KEY is only sent to api.openai.com, not to its baseUrl`);
+			}
+			const providerKey = atOpenAI && keyName === OPENAI_JUDGE_KEY;
+			return new OpenAIDecisionsJudgeProvider({
+				apiKey: async () =>
+					host.env?.[keyName] ||
+					(providerKey ? await (host.openaiApiKey ?? (() => host.env?.OPENAI_API_KEY))() : undefined),
+				keyName: providerKey ? `${OPENAI_JUDGE_KEY}, or OpenAI's key from mu setup or OPENAI_API_KEY` : keyName,
+				model: judge.model,
+				baseUrl: judge.baseUrl,
+				fetch: host.fetch,
+				onKeyProblem: host.openaiKeyProblem,
 			});
 		}
 		case "jev": {
@@ -172,7 +251,11 @@ export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge
 	for (const name of config.tiers) {
 		const judgeConfig = resolveJudgeConfig(name, config);
 		if (!judgeConfig) {
-			problems.push(`unknown judge "${name}"`);
+			problems.push(
+				name === LAYA
+					? `"laya" is no longer built into mu: add a decision model from Hugging Face with mu judge model add <link>`
+					: `unknown judge "${name}"`,
+			);
 			continue;
 		}
 		try {

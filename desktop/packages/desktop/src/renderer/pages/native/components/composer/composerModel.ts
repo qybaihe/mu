@@ -6,8 +6,9 @@
  */
 import type { IMessageText } from '@/common/chat/chatLib';
 import type { SlashCommandItem } from '@/common/chat/slash/types';
+import { isImportTool } from '@/common/kyrn/importChats';
 import { supportedThinkingLevels, UNOFFERED_PROVIDER_IDS, type ModelThinkingLevels } from '@/common/kyrn/models';
-import { AIONUI_FILES_MARKER } from '@/common/config/constants';
+import { FILES_MARKER } from '@/common/config/constants';
 import {
   asList,
   asObject,
@@ -26,23 +27,47 @@ import type { FileSelectionItem } from '@/renderer/utils/file/fileSelection';
 export type ModelInForce = {
   model?: string;
   level?: string;
-  /** host: pi said it (a host runs); file: the session file says it; reply: the model of the last reply. */
-  source: 'host' | 'file' | 'reply' | 'none';
+  /**
+   * host: pi said it (a host runs); file: the session file says it; reply: the model of the last reply; setup: the
+   * home page's first message is setting it while mu starts.
+   */
+  source: 'host' | 'file' | 'reply' | 'setup' | 'none';
 };
 
 /**
- * The model and thinking level in force. A running host's own report comes first (it may say there is no model);
- * without one, what the session file said when the conversation was opened; without that, the model of the last
- * reply (pi resumes a session with it).
+ * The model and thinking level in force. What the home page's first message is setting while mu starts comes first
+ * (`settingUp`: pi's report as it starts names the model the set-up is about to change); then a running host's own
+ * report (it may say there is no model); without one, what the session file said when the conversation was opened;
+ * without that, the model of the last reply (pi resumes a session with it). Without any (an imported conversation not
+ * yet answered in mu), mu's default.
  */
-export function modelInForce(view: NativeView, settings?: SessionSettings): ModelInForce {
+export function modelInForce(
+  view: NativeView,
+  settings?: SessionSettings,
+  settingUp?: Pick<SessionSettings, 'model' | 'thinkingLevel'>
+): ModelInForce {
+  const found = reportedModel(view, settings);
+  if (!settingUp?.model && !settingUp?.thinkingLevel) return found;
+  const model = settingUp.model ?? found.model;
+  const level = settingUp.thinkingLevel ?? found.level;
+  return {
+    ...(model ? { model } : {}),
+    ...(level ? { level } : {}),
+    source: settingUp.model ? 'setup' : found.source,
+  };
+}
+
+/** The model and level pi, the session file or the last reply say. */
+function reportedModel(view: NativeView, settings?: SessionSettings): ModelInForce {
   const session = view.host.session;
   if (session) return { model: session.model, level: session.thinkingLevel, source: 'host' };
   if (settings?.model || settings?.thinkingLevel)
     return { model: settings.model, level: settings.thinkingLevel, source: 'file' };
   for (let index = view.messages.length - 1; index >= 0; index--) {
     const message = view.messages[index];
-    if (message.role === 'assistant' && message.model) return { model: message.model, source: 'reply' };
+    // A reply imported from another tool names the tool as its provider: not a model pi goes on with.
+    if (message.role === 'assistant' && message.model && !isImportTool(splitModel(message.model)?.provider))
+      return { model: message.model, source: 'reply' };
   }
   return { source: 'none' };
 }
@@ -51,7 +76,7 @@ export function modelInForce(view: NativeView, settings?: SessionSettings): Mode
 export type PermissionModeOption = { id: string; label: string; description: string };
 
 /** mu's permission modes, in its order: what a conversation offers before mu has said anything. */
-export const PERMISSION_MODES = ['full', 'jev', 'ask'] as const;
+export const PERMISSION_MODES = ['full', 'judge', 'ask'] as const;
 
 /** The mode a conversation is in and the modes it offers, from mu's latest `permissions.mode` frame. */
 export type PermissionState = { mode?: string; modes: PermissionModeOption[] };
@@ -88,9 +113,14 @@ export type OfferedModels = {
 
 /**
  * pi's models as the menu lists them: `provider/id`, named by their name, each with the thinking levels it takes by
- * pi's own rule. Providers the app does not offer are left out, unless the conversation runs on one of their models.
+ * pi's own rule. Providers the app does not offer are left out, and so are the models nobody enabled (`enabled`, from
+ * pi's `enabledModels`; every one when undefined), unless the conversation runs on one of them.
  */
-export function offeredModels(models: readonly unknown[], current?: string): OfferedModels {
+export function offeredModels(
+  models: readonly unknown[],
+  current?: string,
+  enabled?: ReadonlySet<string>
+): OfferedModels {
   const options: OfferedModels['options'] = [];
   const levels: ModelThinkingLevels = {};
   for (const model of models.map(asObject)) {
@@ -98,7 +128,7 @@ export function offeredModels(models: readonly unknown[], current?: string): Off
     const id = asText(model.id);
     if (!provider || !id) continue;
     const value = `${provider}/${id}`;
-    if (UNOFFERED_PROVIDER_IDS.has(provider) && value !== current) continue;
+    if ((UNOFFERED_PROVIDER_IDS.has(provider) || (enabled && !enabled.has(value))) && value !== current) continue;
     if (levels[value]) continue;
     options.push({ value, label: asText(model.name) || id, description: provider });
     levels[value] = supportedThinkingLevels(model.reasoning === true, asObject(model.thinkingLevelMap));
@@ -167,7 +197,7 @@ export function runsCommand(text: string, names: ReadonlySet<string>): boolean {
 export function withFiles(text: string, paths: readonly string[]): string {
   const files = [...new Set(paths.filter(Boolean))];
   if (!files.length) return text;
-  return `${text.trimEnd()}\n\n${AIONUI_FILES_MARKER}\n${files.join('\n')}`;
+  return `${text.trimEnd()}\n\n${FILES_MARKER}\n${files.join('\n')}`;
 }
 
 /**

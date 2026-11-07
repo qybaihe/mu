@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { Activity } from '@/common/kyrn/types';
 import { formatNumber } from '@/renderer/services/i18n/format';
-import { fallbackKind, isTurnType, judgeName } from '@/renderer/pages/conversation/Messages/acp/jevLine';
+import { fallbackKind, isTurnType, judgeName } from '@/renderer/pages/conversation/Messages/acp/judgeLine';
 import { record, str } from '../activity';
 import { judgeCards, LESSON_FIELDS, runtimeEvents, type JudgeCard } from './activity';
 import { eventLines } from './eventLine';
@@ -151,23 +151,24 @@ export const itemCode = (item: LogItem): string => (item.type === 'judgment' ? i
  */
 function verdictSentence(t: TFunction, card: JudgeCard): string {
   const judge = judgeName(card.model);
-  if (card.state === 'pending') return t('common.kyrn.jevLine.classifying', { judge });
+  if (card.state === 'pending') return t('common.kyrn.judgeLine.classifying', { judge });
   if (card.state === 'fallback') {
     // A wait that ran out (`timeout`) is the judge not answering in time.
     const kind = fallbackKind(card.reason);
-    if (kind === 'noJudge') return t('common.kyrn.jevLine.noJudge');
-    if (kind === 'quiet') return t(card.reason === 'off' ? 'common.kyrn.jevLine.off' : 'common.kyrn.jevLine.skipped');
-    return t(kind === 'unanswered' ? 'common.kyrn.jevLine.unanswered' : 'common.kyrn.jevLine.fallback', { judge });
+    if (kind === 'noJudge') return t('common.kyrn.judgeLine.noJudge');
+    if (kind === 'quiet')
+      return t(card.reason === 'off' ? 'common.kyrn.judgeLine.off' : 'common.kyrn.judgeLine.skipped');
+    return t(kind === 'unanswered' ? 'common.kyrn.judgeLine.unanswered' : 'common.kyrn.judgeLine.fallback', { judge });
   }
   if (card.state === 'ended') return t('common.kyrn.event.preflight.wait_end');
   const turnType = str(record(card.outcome).turnType);
   const type = t(`common.kyrn.judgeView.values.${isTurnType(turnType) ? turnType : 'other'}`);
   const said =
     card.state === 'rule'
-      ? t('common.kyrn.jevLine.byRule', { type })
-      : t('common.kyrn.jevLine.classified', { type, judge });
-  if (card.state === 'shadow') return t('common.kyrn.jevLine.shadow', { line: said });
-  if (card.state === 'late') return t('common.kyrn.jevLine.late', { line: said });
+      ? t('common.kyrn.judgeLine.byRule', { type })
+      : t('common.kyrn.judgeLine.classified', { type, judge });
+  if (card.state === 'shadow') return t('common.kyrn.judgeLine.shadow', { line: said });
+  if (card.state === 'late') return t('common.kyrn.judgeLine.late', { line: said });
   return said;
 }
 

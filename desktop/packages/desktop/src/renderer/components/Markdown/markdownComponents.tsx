@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import type { LocalFileLinkReference } from './markdownUtils';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
@@ -40,6 +41,23 @@ export const MARKDOWN_REMARK_PLUGINS = [remarkGfm, remarkCjkFriendly, remarkMath
  * math keeps working — this is the behaviour that must not regress.
  */
 export const SANITIZED_HTML_REHYPE_PLUGINS = [rehypeRaw, rehypeSanitize, rehypeKatex];
+
+/**
+ * How a surface draws inline code and local file links when it draws them its own way: a reply turns the ones that
+ * name a file into links (renderer/components/media/FileRefs/). `InlineCode` gets the span's text and the plain
+ * `<code>` element; `LocalFileLink` gets the link's reference and the app's own file link (`fallback`) to fall back on.
+ * Without a provider, both are drawn as before.
+ */
+export type MarkdownFileSlots = {
+  InlineCode: React.ComponentType<{ code: string; children: React.ReactElement }>;
+  LocalFileLink: React.ComponentType<{
+    reference: LocalFileLinkReference;
+    fallback: React.ReactElement;
+    children?: React.ReactNode;
+  }>;
+};
+
+export const MarkdownFileSlotsContext = React.createContext<MarkdownFileSlots | null>(null);
 
 /** Table override shared by the chat and preview renderers: horizontal scroll + collapsed borders. */
 export const MarkdownTable = ({ node: _node, ...rest }: Record<string, unknown>) => (

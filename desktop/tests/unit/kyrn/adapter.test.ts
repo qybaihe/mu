@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import type {
   RequestPermissionRequest,
   RequestPermissionResponse,
@@ -23,7 +23,7 @@ const noop = (): void => {};
 
 const MODES = [
   { id: 'full', label: 'Full access', description: 'Everything runs without asking.' },
-  { id: 'jev', label: 'Jev approves', description: 'Jev approves what the task needs.' },
+  { id: 'judge', label: 'Judge mode', description: 'The judge approves what the task needs.' },
   { id: 'ask', label: 'Minimal permissions', description: 'Reading only; the rest asks.' },
 ];
 /** A presentation event the way mu sends it: JSON on its status channel. */
@@ -55,6 +55,8 @@ type FixtureOptions = {
   commands?: JsonRecord[];
   /** What pi's `get_available_models` answers; unset: a fixture model and the judge's gateway model. */
   models?: JsonRecord[];
+  /** The `enabledModels` pi answers beside them (the settings' choice); unset: every model is enabled. */
+  enabledModels?: string[];
   /** The model mu runs on until `set_model`; unset: the fixture model. pi says `unknown/unknown` while it has none. */
   model?: JsonRecord;
   /** pi refuses the next messages with these errors, one each, before it takes one. */
@@ -145,6 +147,7 @@ function fixture(options: FixtureOptions = {}) {
                   { provider: 'fixture', id: 'model', name: 'Fixture Model' },
                   { provider: 'vercel-ai-gateway', id: 'openai/gpt-5', name: 'GPT-5' },
                 ],
+                ...(options.enabledModels ? { enabledModels: options.enabledModels } : {}),
               };
             case 'get_session_stats':
               return { tokens: { input: 100, cacheRead: 800, cacheWrite: 100, output: 200 } };
@@ -476,6 +479,28 @@ describe('KYRN ACP bridge', () => {
       f.cleanup();
     }
   });
+  it('offers only the models the settings enable, and the one the conversation runs on', async () => {
+    const f = fixture({
+      models: [
+        { provider: 'fixture', id: 'model', name: 'Fixture Model' },
+        { provider: 'fixture', id: 'plain', name: 'Plain' },
+        { provider: 'google-antigravity', id: 'gemini-3.1-pro-high', name: 'Gemini 3.1 Pro High' },
+        { provider: 'google-antigravity', id: 'gpt-oss-120b-medium', name: 'GPT-OSS 120B' },
+      ],
+      enabledModels: ['fixture/plain', 'google-antigravity/gemini-3.1-pro-high'],
+    });
+    try {
+      const { configOptions } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
+      const picker = configOptions?.find((option) => option.id === 'model');
+      expect(picker && 'options' in picker ? picker.options.map((option) => option.value) : []).toEqual([
+        'fixture/model',
+        'fixture/plain',
+        'google-antigravity/gemini-3.1-pro-high',
+      ]);
+    } finally {
+      f.cleanup();
+    }
+  });
   it('offers no permission picker while mu reports no modes', async () => {
     const f = fixture();
     try {
@@ -489,7 +514,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('puts mu’s permission modes in the send box and switches them with mu’s own command', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId, configOptions } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       expect(configOptions?.find((option) => option.id === 'mode')).toEqual({
@@ -497,7 +522,7 @@ describe('KYRN ACP bridge', () => {
         category: 'mode',
         name: 'Permissions',
         type: 'select',
-        currentValue: 'jev',
+        currentValue: 'judge',
         options: MODES.map(({ id, label, description }) => ({ value: id, name: label, description })),
       });
       const changed = await f.agent.setSessionConfigOption({ sessionId, configId: 'mode', value: 'ask' });
@@ -522,7 +547,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('switches this conversation only when mu can, so the default for new ones stays the settings’', async () => {
-    const f = fixture({ mode: 'jev', here: true });
+    const f = fixture({ mode: 'judge', here: true });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const changed = await f.agent.setSessionConfigOption({ sessionId, configId: 'mode', value: 'full' });
@@ -537,7 +562,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('switches permissions during a turn, and follows a switch typed in the conversation', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const running = f.agent.prompt({ sessionId, prompt: [{ type: 'text', text: 'Test' }] });
@@ -563,7 +588,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('reopens a conversation in the mode it was last in, so the app setting it again switches nothing', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       await f.agent.setSessionConfigOption({ sessionId, configId: 'mode', value: 'ask' });
@@ -576,7 +601,7 @@ describe('KYRN ACP bridge', () => {
       const { configOptions } = await f.agent.loadSession({ sessionId, cwd: tmpdir(), mcpServers: [] });
       expect(f.launched).toEqual([undefined, 'ask']);
       expect(configOptions?.find((option) => option.id === 'mode')).toMatchObject({ currentValue: 'ask' });
-      // AionCore sets the mode it last saw when it reopens a conversation: the same one, so no command.
+      // The backend sets the mode it last saw when it reopens a conversation: the same one, so no command.
       await f.agent.setSessionConfigOption({ sessionId, configId: 'mode', value: 'ask' });
       expect(f.commands.filter((command) => command.type === 'prompt')).toHaveLength(1);
     } finally {
@@ -584,7 +609,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('shows mu’s permission question as a card whose buttons say what each answer does', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const answers = ['Allow once', 'Allow for this conversation（npm test）', 'Don’t allow'];
@@ -592,7 +617,7 @@ describe('KYRN ACP bridge', () => {
       f.emit(
         shown('permissions.request', {
           id: 'permission-1',
-          mode: 'jev',
+          mode: 'judge',
           tool: 'bash',
           kind: 'shell',
           summary: 'npm test\n  -- --watch=false',
@@ -605,7 +630,8 @@ describe('KYRN ACP bridge', () => {
         type: 'extension_ui_request',
         id: 'ui-1',
         method: 'select',
-        title: 'mu wants to run a command\nnpm test\n  -- --watch=false\nJev is not sure this step is what you want.',
+        title:
+          "mu wants to run a command\nnpm test\n  -- --watch=false\nThe judge isn't sure this step is what you want.",
         options: answers,
       });
       await tick();
@@ -615,7 +641,7 @@ describe('KYRN ACP bridge', () => {
         kind: 'execute',
         rawInput: {
           command: 'npm test\n  -- --watch=false',
-          description: 'Jev is not sure this step is what you want.',
+          description: "The judge isn't sure this step is what you want.",
         },
       });
       expect(f.permissions[0].options.map((option) => option.kind)).toEqual([
@@ -640,7 +666,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('gives the card mu’s codes and its answers by id, so the desktop words them in any language', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const answers = ['允许这一次', '这次对话都允许（git push）', '不允许'];
@@ -649,7 +675,7 @@ describe('KYRN ACP bridge', () => {
         f.emit(
           shown('permissions.request', {
             id: `permission-${id}`,
-            mode: 'jev',
+            mode: 'judge',
             tool: 'bash',
             kind: 'shell',
             summary: 'git push --force',
@@ -961,7 +987,7 @@ describe('KYRN ACP bridge', () => {
   });
 
   it('answers mu exactly once, and says so in the conversation when the app could not ask or no choice came back', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const answers = ['允许这一次', '不允许'];
@@ -969,7 +995,7 @@ describe('KYRN ACP bridge', () => {
         f.emit(
           shown('permissions.request', {
             id: `permission-${id}`,
-            mode: 'jev',
+            mode: 'judge',
             tool: 'bash',
             kind: 'shell',
             summary: 'rm -rf build',
@@ -1023,7 +1049,7 @@ describe('KYRN ACP bridge', () => {
   });
 
   it('lets an answer to a mu that stopped meanwhile go nowhere, with nothing else to say', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       let release: (value: RequestPermissionResponse) => void = noop;
@@ -1313,6 +1339,43 @@ describe('what mu notifies', () => {
       f.cleanup();
     }
   });
+
+  it('says once, by code, that OpenAI’s decision model has no usable key, and not again in mu’s words', async () => {
+    const f = fixture();
+    try {
+      await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
+      const missing = 'mu: OpenAI’s decision model has no API key now, so the next judge answers until one is set.';
+      f.emit(shown('judge.notice', { code: 'openai_key', reason: 'missing', message: missing }));
+      notify(f, missing, 'warning');
+      // Once per conversation: a key OpenAI turns down later in it is not said again.
+      f.emit(shown('judge.notice', { code: 'openai_key', reason: 'rejected', message: 'again' }));
+      await vi.waitFor(() => expect(noticesOf(f.updates)).toHaveLength(1));
+      await new Promise((done) => setTimeout(done, 200));
+      expect(noticesOf(f.updates).map((update) => [update.title, update.rawInput])).toEqual([
+        [missing, { notice: 'openai_key', code: 'missing' }],
+      ]);
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  it('says once, by code, that Laya is gone and which judge is in its place, and not again in mu’s words', async () => {
+    const f = fixture();
+    try {
+      await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
+      const line = 'mu: Laya is no longer built in, so your judge is now mude 1.0.';
+      f.emit(shown('judge.notice', { code: 'laya_removed', judge: 'mude', message: line }));
+      notify(f, line, 'info');
+      f.emit(shown('judge.notice', { code: 'laya_removed', judge: 'mude', message: line }));
+      await vi.waitFor(() => expect(noticesOf(f.updates)).toHaveLength(1));
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      expect(noticesOf(f.updates).map((update) => [update.title, update.rawInput])).toEqual([
+        [line, { notice: 'laya_removed', judge: 'mude' }],
+      ]);
+    } finally {
+      f.cleanup();
+    }
+  });
 });
 
 const asRecordOf = (value: unknown): Record<string, unknown> =>
@@ -1325,7 +1388,7 @@ const ask = (f: ReturnType<typeof fixture>, toolCallId: string, reason: string) 
     shown('permissions.request', {
       id: `permission-${toolCallId}`,
       toolCallId,
-      mode: 'jev',
+      mode: 'judge',
       tool: 'bash',
       kind: 'shell',
       summary: 'rm -rf build',
@@ -1361,7 +1424,7 @@ const ended = (f: ReturnType<typeof fixture>, toolCallId: string) =>
 
 describe('answers to mu’s permission questions', () => {
   it('gives the card the call it asks about, and a reason the judge left open', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       ask(f, 'call-1', 'nojudge');
@@ -1378,7 +1441,7 @@ describe('answers to mu’s permission questions', () => {
   });
 
   it('marks the row of a call the person did not allow, and only that one', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const running = f.agent.prompt({ sessionId, prompt: [{ type: 'text', text: 'Test' }] });
@@ -1409,7 +1472,7 @@ describe('the judge’s line', () => {
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const running = f.agent.prompt({ sessionId, prompt: [{ type: 'text', text: 'Test' }] });
-      f.emit(shown('preflight.pending', { judge: 'laya>jev-latest', mode: 'active' }));
+      f.emit(shown('preflight.pending', { judge: 'mude>jev-latest', mode: 'active' }));
       f.emit(shown('preflight.wait_end', { reason: 'timeout' }));
       f.finish();
       await running;
@@ -1417,11 +1480,40 @@ describe('the judge’s line', () => {
         .map((each) => each.update)
         .filter((update) => 'toolCallId' in update && update.toolCallId === 'jev:r:0');
       expect(rows.map((update) => ('rawOutput' in update ? update.rawOutput : undefined))).toEqual([
-        { preflight: 'pending', judge: 'laya>jev-latest' },
-        { preflight: 'fallback', judge: 'laya>jev-latest' },
+        { preflight: 'pending', judge: 'mude>jev-latest' },
+        { preflight: 'fallback', judge: 'mude>jev-latest' },
       ]);
     } finally {
       f.cleanup();
     }
+  });
+});
+
+/** The adapter's source files, from its entry, by their relative imports. */
+function adapterSources(file: string, seen = new Map<string, string>()): Map<string, string> {
+  if (seen.has(file)) return seen;
+  const source = readFileSync(file, 'utf8');
+  seen.set(file, source);
+  for (const [, specifier] of source.matchAll(/(?:^|\n)\s*(?:import|export)\b[^'"]*?from\s+'([^']+)'/g)) {
+    if (!specifier.startsWith('.')) continue;
+    const base = resolve(dirname(file), specifier);
+    const found = [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find(
+      (path) => existsSync(path) && statSync(path).isFile()
+    );
+    if (found && /\.tsx?$/.test(found)) adapterSources(found, seen);
+  }
+  return seen;
+}
+
+describe('the adapter the backend starts', () => {
+  it('imports nothing by a path alias: scripts/kyrn/acp runs it with tsx, outside the app, where no alias resolves', () => {
+    const entry = join(__dirname, '../../../packages/desktop/src/process/agent/kyrn/index.ts');
+    const aliased = [...adapterSources(entry)].flatMap(([file, source]) =>
+      [...source.matchAll(/from\s+'(@(?:process|renderer|worker)?\/[^']+)'/g)].map(
+        ([, specifier]) => `${file}: ${specifier}`
+      )
+    );
+    expect(aliased).toEqual([]);
+    expect(adapterSources(entry).size).toBeGreaterThan(5);
   });
 });

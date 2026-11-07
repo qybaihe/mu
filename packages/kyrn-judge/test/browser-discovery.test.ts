@@ -285,7 +285,7 @@ describe("telling the platforms apart, and their paths", () => {
 		expect(windowsToWslPath("C:\\x", { mountRoot: "/" })).toBe("/c/x");
 	});
 
-	it("stops a sub-agent with a signal, and on Windows with its whole tree", () => {
+	it("stops a subagent with a signal, and on Windows with its whole tree", () => {
 		expect(stopPlan("darwin", 4242, false)).toEqual({ kind: "signal", signal: "SIGTERM" });
 		expect(stopPlan("linux", 4242, true)).toEqual({ kind: "signal", signal: "SIGKILL" });
 		expect(stopPlan("win32", 4242, false)).toEqual({

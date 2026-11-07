@@ -364,7 +364,7 @@ export const ExplorerContainer: React.FC<ExplorerContainerProps> = ({ projectId,
     const payload: FileOrFolderItem[] = [item];
     emitter.emit('acp.selected.file.append', payload, activeConversationId);
     emitter.emit('codex.selected.file.append', payload, activeConversationId);
-    emitter.emit('aionrs.selected.file.append', payload, activeConversationId);
+    emitter.emit('builtinAgent.selected.file.append', payload, activeConversationId);
     // Optimistic success: the emitter is fire-and-forget with no landing ack, so
     // this reports "dispatched", not "rendered a chip". It is accurate whenever a
     // send box for this conversation is mounted (the type-matching box consumes

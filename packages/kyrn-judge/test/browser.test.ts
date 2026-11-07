@@ -20,6 +20,7 @@ import { codeOf } from "../src/language.ts";
 import { MemoryLedger } from "../src/ledger.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer, JudgeRequest } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 const ACTIONS: PageAction[] = [
 	{ id: "e1", kind: "fill", node: 1, role: "textbox", label: "Search products", value: "" },
@@ -137,7 +138,7 @@ describe("browser.step", () => {
 	});
 
 	it("abstains when no tier is trusted to relate a goal to a page", async () => {
-		const small = new MockJudgeProvider(() => ({ operation: choose("CLICK"), click_target: choose("3") }), "laya");
+		const small = new MockJudgeProvider(() => ({ operation: choose("CLICK"), click_target: choose("3") }), "small");
 		const cascade = new CascadeJudge([
 			{ judge: new Judge({ provider: small }), profile: { capabilities: { relate: false } } },
 		]);
@@ -148,6 +149,62 @@ describe("browser.step", () => {
 		expect(small.calls).toHaveLength(0);
 		expect(decision.judged).toBeUndefined();
 		expect(decision.outcome.operation).toBe("BLOCKED");
+	});
+
+	it("records a step taken in shadow mode as the judge's: the judge is the actor whatever the mode", async () => {
+		const provider = new MockJudgeProvider(() => ({ operation: choose("CLICK"), click_target: choose("3") }));
+		const ledger = new MemoryLedger();
+		const engine = new DecisionEngine({ judge: new Judge({ provider }), defaultMode: "shadow", ledger });
+
+		const decision = await engine.decide(browserStep, stepInput());
+
+		expect(decision).toMatchObject({ source: "judge", outcome: { operation: "CLICK", target: "3" } });
+		expect(ledger.records[0]).toMatchObject({ mode: "shadow", source: "judge", outcome: { operation: "CLICK" } });
+	});
+
+	it("browse tool: refuses a goal up front when the judge for browser.step cannot relate a goal to a page", async () => {
+		const provider = new MockJudgeProvider(() => ({}));
+		const harness = await createHarness({
+			extensionFactories: [
+				createKyrnJudgeExtension({
+					provider,
+					mode: "active",
+					config: parseConfig({
+						// A small classifier behind a server of one's own, rightly not trusted to relate a goal to a page.
+						judges: {
+							small: {
+								type: "http",
+								baseUrl: "http://127.0.0.1:9",
+								profile: { capabilities: { relate: false } },
+							},
+						},
+						routes: { "browser.step": ["small"] },
+						features: attended({ memory: false, permissions: { mode: "full" }, browser: { enabled: true } }),
+					}),
+				}),
+			],
+		});
+		let seen = "";
+		harness.setResponses([
+			fauxAssistantMessage(
+				[fauxToolCall("browse", { url: "https://developer.mozilla.org", goal: "Search for WeakMap" })],
+				{ stopReason: "toolUse" },
+			),
+			(context) => {
+				seen = JSON.stringify(context.messages);
+				return fauxAssistantMessage("The browser needs another judge.");
+			},
+		]);
+		try {
+			await harness.session.prompt("Look up WeakMap on MDN.");
+		} finally {
+			harness.cleanup();
+		}
+
+		// Before any step, and before a browser is started: not "blocked at step 1" after a wasted look.
+		expect(seen).toContain("the judge for browser.step (http:small) is not trusted to relate a goal to a page");
+		expect(seen).toContain("/mu route browser.step");
+		expect(provider.calls.filter((call) => "operation" in call.questions)).toHaveLength(0);
 	});
 });
 
@@ -380,7 +437,11 @@ describe.skipIf(!findChrome())("runBrowserTask (real Chrome, local fixture)", ()
 					mode: "active",
 					// The same throwaway profile, so the tool attaches to the browser this suite already started.
 					config: parseConfig({
-						features: { memory: false, permissions: { mode: "full" }, browser: { enabled: true, profileDir } },
+						features: attended({
+							memory: false,
+							permissions: { mode: "full" },
+							browser: { enabled: true, profileDir },
+						}),
 					}),
 				}),
 			],
@@ -418,7 +479,11 @@ describe.skipIf(!findChrome())("runBrowserTask (real Chrome, local fixture)", ()
 					provider: new MockJudgeProvider(),
 					mode: "active",
 					config: parseConfig({
-						features: { memory: false, permissions: { mode: "full" }, browser: { enabled: true, profileDir } },
+						features: attended({
+							memory: false,
+							permissions: { mode: "full" },
+							browser: { enabled: true, profileDir },
+						}),
 					}),
 					onPresentation: (event) => events.push(event),
 				}),

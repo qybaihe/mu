@@ -2,7 +2,7 @@ import { truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import type { Decision } from "../../decision.ts";
 import { type Gear, inputPreflight, type PreflightOutcome } from "../../decisions/input-preflight.ts";
 import type { Answer } from "../../types.ts";
-import type { Paint } from "./welcome.ts";
+import { judgeDisplayName, type Paint } from "./welcome.ts";
 
 /** Custom entry type of the verdict line. Shown in the chat, never sent to the model. */
 export const VERDICT_ENTRY = "kyrn.verdict";
@@ -25,10 +25,20 @@ const TURN_LABELS: Readonly<Record<string, string>> = {
 
 const GEAR_LABELS: Readonly<Record<Gear, string>> = {
 	chat: "answer directly",
-	light: "light touch",
-	standard: "standard gear",
-	heavy: "heavy gear",
+	light: "light effort",
+	standard: "standard effort",
+	heavy: "full effort",
 };
+
+/** A turn type in the words the verdict line uses: "multi_step_task" is "multi-step task". */
+export function turnLabel(turnType: string): string {
+	return TURN_LABELS[turnType] ?? turnType;
+}
+
+/** A gear in the words the verdict line uses: "heavy" is "full effort". */
+export function gearLabel(gear: Gear): string {
+	return GEAR_LABELS[gear];
+}
 
 /** What the judge is asked, in the words shown to the user, in the order it is shown. */
 const QUESTION_LABELS: readonly [string, string][] = [
@@ -36,7 +46,7 @@ const QUESTION_LABELS: readonly [string, string][] = [
 	["is_side_question", "side question"],
 	["needs_clarification", "too vague"],
 	["needs_files_changed", "code change"],
-	["needs_memory", "past notes help"],
+	["needs_memory", "lessons help"],
 	["swarm_worthy", "independent parts"],
 	["plan_first", "large or risky"],
 	["task_complexity", "scope"],
@@ -156,12 +166,13 @@ function seconds(ms: number): string {
 /** "◆ jev-latest  chat · answer directly · thinking medium → low · 640 ms" */
 export function verdictHeadline(data: VerdictData, paint: Paint): string {
 	const dot = paint.fg("dim", " · ");
-	const mark = data.state === "applied" ? paint.fg("accent", "◆") : paint.fg("muted", "◇");
-	const by = paint.fg("muted", data.by);
+	// The judge's mark, in the color mu gives its own lines (pink in mu's themes, as in the app).
+	const mark = data.state === "applied" ? paint.fg("customMessageLabel", "◆") : paint.fg("muted", "◇");
+	const by = paint.fg("muted", judgeDisplayName(data.by));
 	if (data.state === "none") {
 		const why = data.reason ? `no verdict (${data.reason})` : "no verdict";
 		const waited = data.latencyMs === undefined ? "" : `${dot}${paint.fg("dim", seconds(data.latencyMs))}`;
-		return `${mark} ${by}  ${paint.fg("warning", why)}${dot}${paint.fg("dim", "stock behaviour for this turn")}${waited}`;
+		return `${mark} ${by}  ${paint.fg("warning", why)}${dot}${paint.fg("dim", "using the fallback this turn")}${waited}`;
 	}
 	const parts = [
 		paint.bold(paint.fg(data.state === "applied" ? "accent" : "text", TURN_LABELS[data.turnType] ?? data.turnType)),

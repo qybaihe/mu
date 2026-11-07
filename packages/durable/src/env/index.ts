@@ -117,14 +117,17 @@ export interface WatchTarget {
 }
 
 /**
- * What changed:
+ * What changed, tagged by `kind`:
  * - `paths`: something at or below each path may have changed (a directory path covers its whole subtree). Calls may be
  *   spurious; a change is never missed while the watcher is healthy.
  * - `overflow`: coverage was uncertain for a while (lost events, reconnect); rescan everything that is watched.
- * - `error`: the watcher stopped, for example because the watched tree grew past the environment's limit; no calls
- *   follow.
+ * - `failed`: the watcher stopped with `error`, for example because the watched tree grew past the environment's limit;
+ *   no calls follow.
  */
-export type WatchChange = { paths: string[] } | { overflow: true } | { error: FileError };
+export type FileChange =
+	| { readonly kind: "paths"; readonly paths: string[] }
+	| { readonly kind: "overflow" }
+	| { readonly kind: "failed"; readonly error: FileError };
 
 export interface FileWatcher {
 	/**
@@ -134,7 +137,7 @@ export interface FileWatcher {
 	 */
 	readonly mode: "native" | "polling";
 	/** Stop watching; no `onChange` call starts after this resolves. Idempotent. */
-	close(context: Context): Promise<void>;
+	stop(context: Context): Promise<void>;
 }
 
 /** Where lines of a file are, as `BinaryReader.scanLines` found them. */
@@ -165,6 +168,44 @@ export interface DirReader {
 	 */
 	next(maxEntries: number, context: Context): Promise<Result<{ entries: FileInfo[]; done: boolean }, FileError>>;
 	close(context: Context): Promise<void>;
+}
+
+/** What `FileSystem.listFiles` lists. */
+export interface ListFilesOptions {
+	/**
+	 * Include names starting with `.` (on Windows also files with the hidden attribute); default true. Entries named
+	 * `.git` are never listed.
+	 */
+	hidden?: boolean;
+	/**
+	 * Inside a git work tree, skip what git ignores: the `.gitignore` files of the directory, its subdirectories and its
+	 * parents, `.git/info/exclude`, and the global excludes file; default true. Unlike `git ls-files`, a tracked file that
+	 * matches an ignore rule is skipped too. Outside work trees, `.gitignore` files have no effect.
+	 */
+	gitignore?: boolean;
+	/** Names of entries to skip with everything below them, such as `node_modules`. */
+	exclude?: readonly string[];
+	/** Most entries to list; default 50 000. */
+	maxEntries?: number;
+	/** Most bytes of the listing: each entry's UTF-8 path plus two; default 4 MiB, at most 15.9 MiB. */
+	maxBytes?: number;
+	/** Time after which the listing stops; default 10 000 ms. */
+	timeoutMs?: number;
+}
+
+/** One entry of a `FileListing`. */
+export interface FileListEntry {
+	/** Relative to the listed directory, with `/` separators on every system. */
+	path: string;
+	/** A symbolic link is listed as such and not followed. */
+	kind: FileKind;
+}
+
+export interface FileListing {
+	/** Depth first, parents before their entries, siblings in byte order of their names. */
+	entries: FileListEntry[];
+	/** A bound in `ListFilesOptions` ended the listing early. */
+	truncated: boolean;
 }
 
 /** Portable filesystem capability. Operations return failures rather than throwing. */
@@ -204,15 +245,26 @@ export interface FileSystem {
 	renameFile(sourcePath: string, destinationPath: string, context: Context): Promise<Result<void, FileError>>;
 	fileInfo(path: string, context: Context): Promise<Result<FileInfo, FileError>>;
 	listDir(path: string, context: Context): Promise<Result<FileInfo[], FileError>>;
+	/**
+	 * Optional: the files, directories and symbolic links below a directory, at any depth, for indexes such as file
+	 * completion. Symbolic links are not followed; other kinds of files are not listed; entries that cannot be read are
+	 * skipped. See `ListFilesOptions` for hidden and ignored files and for the bounds. Fails with `not_supported` when
+	 * the environment cannot list right now (an older remote daemon), so callers fall back to their own walk.
+	 */
+	listFiles?(
+		path: string,
+		options: ListFilesOptions | undefined,
+		context: Context,
+	): Promise<Result<FileListing, FileError>>;
 	openDirReader(path: string, context: Context): Promise<Result<DirReader, FileError>>;
 	/**
 	 * Report changes to files and directories, for hosts that load resources from the environment. When the returned
 	 * watcher exists, coverage is established: a host that watches before it loads cannot miss a change made during the
-	 * load. See `WatchChange` for what is reported and `FileWatcher.mode` for how reliably.
+	 * load. See `FileChange` for what is reported and `FileWatcher.mode` for how reliably.
 	 */
 	watch(
 		targets: readonly WatchTarget[],
-		onChange: (change: WatchChange) => void,
+		onChange: (change: FileChange) => void,
 		context: Context,
 	): Promise<Result<FileWatcher, FileError>>;
 	canonicalPath(path: string, context: Context): Promise<Result<string, FileError>>;
@@ -285,6 +337,7 @@ export interface ShellOutputWindow {
  * Output an environment omitted, measured on the decoded text `onOutput` would have received: every U+FFFD counts as
  * three bytes, and no sanitizing is applied.
  */
+/** The shape of `OutputSkip` from `@earendil-works/chord/output`, which `OutputBuffer.push()` accepts. */
 export interface ShellOutputSkip {
 	/** UTF-8 byte length of the omitted text. */
 	bytes: number;

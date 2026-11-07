@@ -7,14 +7,32 @@ import { SWRConfig } from 'swr';
 import common from '@/renderer/services/i18n/locales/zh-CN/common.json';
 import mu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 import JudgePulse from '@/renderer/components/brand/JudgePulse';
-import MuBackdrop from '@/renderer/components/brand/MuBackdrop';
 import { MU_GLYPH_PATH } from '@/renderer/components/brand/glyph';
 import MuMark from '@/renderer/components/brand/MuMark';
 
-import MuStarters, { MU_STARTERS } from '@/renderer/components/brand/MuStarters';
 import StartupGate from '@/renderer/pages/settings/KyrnSettings/StartupGate';
 
-const { catalog } = vi.hoisted(() => ({ catalog: vi.fn() }));
+const { catalog, closeWindow, minimize, maximize, isDesktop, isMac } = vi.hoisted(() => ({
+  catalog: vi.fn(),
+  closeWindow: vi.fn(),
+  minimize: vi.fn(),
+  maximize: vi.fn(),
+  isDesktop: vi.fn(() => true),
+  isMac: vi.fn(() => false),
+}));
+vi.mock('@/common', () => ({
+  ipcBridge: {
+    windowControls: {
+      close: { invoke: closeWindow },
+      minimize: { invoke: minimize },
+      maximize: { invoke: maximize },
+      unmaximize: { invoke: vi.fn() },
+      isMaximized: { invoke: vi.fn().mockResolvedValue(false) },
+      maximizedChanged: { on: vi.fn(() => () => {}) },
+    },
+  },
+}));
+vi.mock('@renderer/utils/platform', () => ({ isElectronDesktop: isDesktop, isMacOS: isMac }));
 vi.mock('@/common/kyrn/bridge', () => ({
   kyrnBridge: { catalog: { invoke: catalog } },
   // As the real one: a failure keeps the code the main process gave it.
@@ -68,28 +86,6 @@ describe('MuMark', () => {
   });
 });
 
-describe('MuBackdrop', () => {
-  it('draws the icon’s glyph as decoration, each with its own gradients, and fades on the way out', () => {
-    const { container, rerender } = render(
-      <>
-        <MuBackdrop />
-        <MuBackdrop />
-      </>
-    );
-    for (const backdrop of screen.getAllByTestId('mu-backdrop')) {
-      expect(backdrop).toHaveAttribute('aria-hidden', 'true');
-      expect(backdrop).toHaveAttribute('data-state', 'shown');
-    }
-    // The fill and the rim are the same glyph as the icon.
-    const paths = [...container.querySelectorAll('path')].map((node) => node.getAttribute('d'));
-    expect(new Set(paths)).toEqual(new Set([MU_GLYPH_PATH]));
-    const ids = [...container.querySelectorAll('linearGradient, mask')].map((node) => node.id);
-    expect(new Set(ids).size).toBe(ids.length);
-    rerender(<MuBackdrop leaving />);
-    expect(screen.getByTestId('mu-backdrop')).toHaveAttribute('data-state', 'leaving');
-  });
-});
-
 describe('JudgePulse', () => {
   it('says exactly the state it is given, idle by default', () => {
     const { rerender } = view(<JudgePulse />);
@@ -111,23 +107,42 @@ describe('JudgePulse', () => {
   });
 });
 
-describe('MuStarters', () => {
-  it('offers three starting points in Chinese and only hands the prompt over', () => {
-    const onPick = vi.fn();
-    view(<MuStarters onPick={onPick} />);
-    expect(MU_STARTERS).toHaveLength(3);
-    for (const { key } of MU_STARTERS) {
-      expect(screen.getByText(copy.brand.starters[key].title)).toBeInTheDocument();
-      expect(screen.getByText(copy.brand.starters[key].desc)).toBeInTheDocument();
-    }
-    fireEvent.click(screen.getByTestId('mu-starter-fix'));
-    expect(onPick).toHaveBeenCalledTimes(1);
-    expect(onPick).toHaveBeenCalledWith(copy.brand.starters.fix.prompt);
-  });
-});
-
 describe('StartupGate', () => {
-  beforeEach(() => catalog.mockReset());
+  beforeEach(() => {
+    catalog.mockReset();
+    isDesktop.mockReturnValue(true);
+    isMac.mockReturnValue(false);
+  });
+
+  // https://github.com/qybaihe/mu/issues/14: the frameless window must remain usable before Layout mounts.
+  it.each(['loading', 'error'])('keeps working window controls during %s', async (state) => {
+    if (state === 'loading') catalog.mockReturnValue(new Promise(() => {}));
+    else catalog.mockResolvedValue({ ok: false, code: 'otherRegistration', error: 'old installation' });
+    view(
+      <StartupGate>
+        <div>app</div>
+      </StartupGate>
+    );
+    if (state === 'error') await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: common.window.minimize }));
+    fireEvent.click(screen.getByRole('button', { name: common.window.maximize }));
+    fireEvent.click(screen.getByRole('button', { name: common.close }));
+    expect(minimize).toHaveBeenCalledTimes(1);
+    expect(maximize).toHaveBeenCalledTimes(1);
+    expect(closeWindow).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['browser', 'mac'])('does not duplicate window controls in the %s', (runtime) => {
+    isDesktop.mockReturnValue(runtime !== 'browser');
+    isMac.mockReturnValue(runtime === 'mac');
+    catalog.mockReturnValue(new Promise(() => {}));
+    view(
+      <StartupGate>
+        <div>app</div>
+      </StartupGate>
+    );
+    expect(screen.queryByRole('button', { name: common.close })).not.toBeInTheDocument();
+  });
 
   it('shows the mark while mu starts, then the app', async () => {
     const start = Promise.withResolvers<unknown>();
@@ -163,6 +178,30 @@ describe('StartupGate', () => {
     catalog.mockResolvedValueOnce({ ok: true, data: { assistants: [] } });
     fireEvent.click(screen.getByRole('button', { name: copy.reload }));
     await waitFor(() => expect(screen.getByText('app')).toBeInTheDocument());
+  });
+
+  // https://github.com/qybaihe/mu/issues/14: a retry must show progress and keep the window closable.
+  it('shows retry progress, handles another failure and remains retryable', async () => {
+    catalog.mockResolvedValueOnce({ ok: false, error: 'first failure' });
+    view(
+      <StartupGate>
+        <div>app</div>
+      </StartupGate>
+    );
+    await screen.findByRole('alert');
+    const pending = Promise.withResolvers<unknown>();
+    catalog.mockReturnValueOnce(pending.promise);
+    const reload = screen.getByRole('button', { name: copy.reload });
+    fireEvent.click(reload);
+    await waitFor(() => expect(reload).toHaveClass('arco-btn-loading'));
+    fireEvent.click(screen.getByRole('button', { name: common.close }));
+    expect(closeWindow).toHaveBeenCalledTimes(1);
+    pending.resolve({ ok: false, error: 'second failure' });
+    await waitFor(() => expect(screen.getByTestId('mu-error-detail')).toHaveTextContent('second failure'));
+    expect(reload).not.toHaveClass('arco-btn-loading');
+    catalog.mockResolvedValueOnce({ ok: true, data: { assistants: [] } });
+    fireEvent.click(reload);
+    expect(await screen.findByText('app')).toBeInTheDocument();
   });
 
   it('says why mu did not start in the reader’s language, with no English left in it', async () => {

@@ -60,6 +60,12 @@ export class NativeHostError extends Error {
 export type HostLaunch = {
   /** pi's module: its bundle in the npm package, its sources in a checkout. */
   module: string;
+  /**
+   * The script the command line runs pi with. The host gives pi this command line (entry.ts), so that the sub-agents
+   * pi starts by running it again (swarm, hive, delegate) start as they do on the command line. Missing from a launcher
+   * from before 2026-10-22.
+   */
+  cli?: string;
   /** pi's arguments: the judgment layer, then `--mode rpc` and the rest. */
   args: string[];
   /**
@@ -238,7 +244,13 @@ export class NativeHost {
     }
     child.on('message', (message) => this.receive(message));
     child.on('exit', (code) => void this.exited(code));
-    this.post({ type: 'init', module: this.launch.module, args: this.launch.args, execArgv: this.launch.execArgv });
+    this.post({
+      type: 'init',
+      module: this.launch.module,
+      ...(this.launch.cli ? { cli: this.launch.cli } : {}),
+      args: this.launch.args,
+      execArgv: this.launch.execArgv,
+    });
     // What pi runs with. The answer sets the state (learnModel); a host that never answers fails or times out anyway.
     this.request({ type: 'get_state' }).catch((): void => {});
   }

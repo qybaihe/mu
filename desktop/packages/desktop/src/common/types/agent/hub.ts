@@ -36,9 +36,7 @@ export interface IHubExtension {
     integrity: string; // SHA-512 SRI Hash
     unpackedSize: number;
   };
-  engines: {
-    aionui: string; // Minimum APP version requirement
-  };
+  engines: Record<string, string>; // Minimum app version, by the app's name in the hub index
   hubs: string[]; // Hub categories e.g. ["acpAdapters"]
   contributes?: HubContributes;
   tags?: string[];

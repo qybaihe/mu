@@ -34,11 +34,11 @@ export type PermissionRequest = {
    */
   answerIds?: string[];
   /**
-   * Why mu asks: `ask`, `unsure`, `beyond`, `unrelated`, `flagged`, `protected`, `nojudge` (no judge could be asked)
-   * or `judgedown` (the judge did not answer).
+   * Why mu asks: `ask`, `unsure`, `beyond`, `unrelated`, `flagged`, `protected`, `nojudge` (no judge could be asked),
+   * `judgedown` (the judge did not answer) or `long` (too long for the judge to read in full).
    */
   reason?: string;
-  /** For a flagged command, what makes it risky, as a code (`force_push`, `runs_as_root`, …). */
+  /** For a flagged call, what makes it risky, as a code (`force_push`, `runs_as_root`, `sends_credential`, …). */
   flagCode?: string;
   /** What "for this conversation" would cover: a command's first words, `edit`, a path or a tool. Data, not words. */
   grantLabel?: string;
@@ -66,7 +66,7 @@ export function presentation(event: JsonRecord): { kind: string; payload: JsonRe
   return frame ? { kind: frame.kind, payload: frame.payload } : undefined;
 }
 
-/** Mode ids are words (`full`, `jev`, `ask`): anything else is not sent on as a command. */
+/** Mode ids are words (`full`, `judge`, `ask`): anything else is not sent on as a command. */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 export const isModeId = (value: string): boolean => MODE_ID.test(value);
 

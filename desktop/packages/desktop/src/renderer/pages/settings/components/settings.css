@@ -62,6 +62,66 @@
 }
 
 /*
+ * The home page's atmosphere, quieter: a violet glow from the top and a dot grid, both gone before the first rows. It
+ * belongs to the scroll body, so it scrolls away with the title. Decoration only, behind everything.
+ */
+.settings-page-wrapper {
+  position: relative;
+  isolation: isolate;
+}
+
+.settings-page-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: 260px;
+  pointer-events: none;
+  background:
+    radial-gradient(56% 100% at 50% -30%, var(--mu-glow-violet, transparent), transparent 72%),
+    radial-gradient(circle at 1px 1px, var(--mu-grid-dot, transparent) 1px, transparent 1.4px) 0 0 / 22px 22px;
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.4) 46%, transparent 100%);
+}
+
+/* The page's header: the group in mono, the title, its one line. A header that stays on top while the page scrolls
+   frosts what passes under it instead of hiding the glow behind a flat fill. */
+.settings-page-header--sticky {
+  background: color-mix(in srgb, var(--bg-1) 84%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.settings-page-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 16px;
+  margin-bottom: 6px;
+  color: var(--bg-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.settings-page-eyebrow::before {
+  content: '';
+  width: 14px;
+  height: 1px;
+  background: var(--mu-violet-6, var(--text-secondary));
+}
+
+.settings-page-eyebrow::after {
+  content: attr(data-label);
+}
+
+.settings-page-title {
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+/*
  * A list of settings rows: a hairline above the first and between the rows, none under the last. Two lists one after
  * the other then read as two sections, one line and the page's gap apart, instead of a pair of lines.
  */

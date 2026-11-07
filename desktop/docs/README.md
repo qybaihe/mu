@@ -1,31 +1,17 @@
-# AionUi Docs
+# mu desktop docs
 
-Documentation is organized by reader intent, not by document type.
+Notes for working on the desktop app. How to run it and where the code is: [../readme.md](../readme.md). How mu fits together: [../../docs/architecture.md](../../docs/architecture.md).
 
-| Directory                       | For whom                 | What lives here                                                                                                               |
-| ------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| [`guides/`](guides)             | Users & operators        | How to deploy, test, and run the product. Server deployment, Hub testing, CDP debugging.                                      |
-| [`contributing/`](contributing) | Contributors             | Dev environment setup, file-structure conventions, PR automation workflow.                                                    |
-| [`architecture/`](architecture) | Engineers & architects   | System architecture overview, subsystem deep-dives (ACP, queue, team mode), and supporting research notes.                    |
-| [`specs/`](specs)               | Engineering-driven specs | Feature design docs, requirements, implementation plans (ACP rewrite, extension market, remote agent, wake prompt, PR notes). |
-| [`prds/`](prds)                 | Product team             | Formal Product Requirement Documents maintained by the product team. **Do not reorganize without their consent.**             |
-| [`readme/`](readme)             | Global users             | Translated copies of the root `readme.md` (Chinese, Japanese, Korean, Spanish, etc.).                                         |
+| Page                                                             | What                                                                                              |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| [native-host.md](native-host.md)                                 | How the app runs pi and the judgment kernel in a utility process, and the bridge to the interface |
+| [native-host-ui.md](native-host-ui.md)                           | How a native conversation is drawn from pi's events                                               |
+| [ui-polish-plan.md](ui-polish-plan.md)                           | The October 2026 polish plan for settings, the conversation and the first-run guide (Chinese)     |
+| [theming/tokens.md](theming/tokens.md)                           | The colour, type and spacing tokens                                                               |
+| [contributing/development.md](contributing/development.md)       | Setting up, running, checking                                                                     |
+| [contributing/file-structure.md](contributing/file-structure.md) | Where new files go                                                                                |
+| [contributing/upstream-names.md](contributing/upstream-names.md) | The older names kept for compatibility, and why                                                   |
+| [guides/cdp.md](guides/cdp.md)                                   | Driving the app over the Chrome DevTools Protocol                                                 |
+| [guides/custom-theme.md](guides/custom-theme.md)                 | Custom CSS themes                                                                                 |
 
-## Quick pointers
-
-- New to the project? Start with [`architecture/overview.md`](architecture/overview.md).
-- Setting up a dev environment? See [`contributing/development.md`](contributing/development.md).
-- Writing code? The entry point for code-style, linting, formatting, and commit rules is [`AGENTS.md`](../AGENTS.md) at the repo root.
-- Deploying a server? [`guides/deploy-server.md`](guides/deploy-server.md).
-
-## Where to put new docs
-
-| Content type                                               | Destination                 |
-| ---------------------------------------------------------- | --------------------------- |
-| User/ops-facing how-to                                     | `guides/`                   |
-| Contributor convention, workflow, or tooling rule          | `contributing/`             |
-| System or subsystem design, technical analysis             | `architecture/`             |
-| Exploratory research, analysis reports                     | `architecture/research/`    |
-| Feature requirements / design drafts driven by engineering | `specs/<feature-name>/`     |
-| Formal PRD owned by product team                           | `prds/` (coordinate first)  |
-| README translation                                         | `readme/readme_<locale>.md` |
+Two pages in `guides/`, `hub-testing.md` and `acp-image-output.zh-CN.md`, were written before the fork and haven't been checked against mu.

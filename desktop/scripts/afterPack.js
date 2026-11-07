@@ -8,7 +8,7 @@ const {
   verifyModuleBinary,
   getModulesToRebuild,
 } = require('./rebuildNativeModules');
-const { verifyBundledAioncoreResources } = require('../packages/shared-scripts/src/verify-bundled-aioncore-resources');
+const { verifyBundledBackendResources } = require('../packages/shared-scripts/src/verify-bundled-backend-resources');
 const { verifyBundledHarness } = require('../packages/shared-scripts/src/verify-bundled-harness');
 
 /**
@@ -24,7 +24,7 @@ function resolveResourcesDir(electronPlatformName, appOutDir, packager) {
 }
 
 function verifyBundledResources(resourcesDir, electronPlatformName, targetArch) {
-  const result = verifyBundledAioncoreResources({
+  const result = verifyBundledBackendResources({
     resourcesDir,
     electronPlatformName,
     targetArch,

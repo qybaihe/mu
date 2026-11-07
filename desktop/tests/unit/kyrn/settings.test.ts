@@ -1,9 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { JudgeType } from '../../../packages/desktop/src/common/kyrn/types';
 import { SettingsStore } from '../../../packages/desktop/src/process/agent/kyrn/settings';
 import {
+  AGENT_DESCRIPTION,
   findRegistration,
   initializeKyrn,
   recheckKyrn,
@@ -101,16 +103,20 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
-  it('accepts a private-network HTTP address for a TypeSafe judge and still refuses a public one', () => {
+  it('accepts a plain HTTP address for a TypeSafe judge, by IP or by name, and refuses a link-local one', () => {
     const f = fixture();
     try {
       const value = f.store.read();
       value.judges['jev-direct'].baseUrl = 'http://192.168.31.124:8000/v1/systemone';
       expect(f.store.save(value).judges['jev-direct'].baseUrl).toBe('http://192.168.31.124:8000/v1/systemone');
+      // A name may be a server the hosts file points at: the app cannot tell, so it takes it.
+      const named = f.store.read();
+      named.judges['jev-direct'].baseUrl = 'http://judge.lan:8000/v1/systemone';
+      expect(f.store.save(named).judges['jev-direct'].baseUrl).toBe('http://judge.lan:8000/v1/systemone');
       const again = f.store.read();
-      again.judges['jev-direct'].baseUrl = 'http://example.com/v1';
-      expect(() => f.store.save(again)).toThrow('private-network address');
-      expect(f.store.read().judges['jev-direct'].baseUrl).toBe('http://192.168.31.124:8000/v1/systemone');
+      again.judges['jev-direct'].baseUrl = 'http://169.254.169.254/v1';
+      expect(() => f.store.save(again)).toThrow('not link-local');
+      expect(f.store.read().judges['jev-direct'].baseUrl).toBe('http://judge.lan:8000/v1/systemone');
     } finally {
       f.cleanup();
     }
@@ -137,6 +143,30 @@ describe('native mu settings', () => {
       const raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
       expect(raw.tiers).toEqual(['jev-openrouter']);
       expect(raw.judges['jev-openrouter']).toBeUndefined();
+    } finally {
+      f.cleanup();
+    }
+  });
+  it('knows mude, which `mu judge mude enable` puts first, and saves around it without writing it', () => {
+    const f = fixture();
+    try {
+      // What the command leaves: mude first, the judges it replaced behind it.
+      const file = join(f.dir, 'kyrn.json');
+      writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), tiers: ['mude', 'jev'] }));
+      const read = f.store.read();
+      expect(read.tiers).toEqual(['mude', 'jev']);
+      expect(read.judges.mude).toEqual({
+        type: 'typesafe',
+        model: 'mude',
+        baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+        apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+        timeoutMs: 4000,
+      });
+      // A save of something else is not refused for the order, and leaves mude to mu.
+      f.store.save({ ...read, mode: 'active' });
+      const raw = JSON.parse(readFileSync(file, 'utf8'));
+      expect(raw.tiers).toEqual(['mude', 'jev']);
+      expect(raw.judges.mude).toBeUndefined();
     } finally {
       f.cleanup();
     }
@@ -227,6 +257,39 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
+  it("knows mu's Nemotron judges and the System One and logprob types, so a config naming them still saves", () => {
+    const f = fixture();
+    try {
+      // What `mu setup --judge nemotron` and docs/nebius.md write, and a logprob judge of one's own.
+      writeFileSync(
+        join(f.dir, 'kyrn.json'),
+        JSON.stringify({
+          tiers: ['nemotron-local', 'nemotron'],
+          routes: { 'tool.approval': ['nemotron-think'] },
+          judges: { lightning: { type: 'logprob', model: 'nebius/nvidia/Nemotron-3_5-Lightning' } },
+        })
+      );
+      const read = f.store.read();
+      expect(read.judges.nemotron).toEqual({
+        type: 'llm',
+        model: 'nebius/nvidia/Nemotron-3-Ultra-550b-a55b',
+        baseUrl: '',
+        apiKeyEnv: '',
+        timeoutMs: 10000,
+      });
+      expect(read.judges['nemotron-think'].timeoutMs).toBe(60000);
+      expect(read.judges['nemotron-local'].type).toBe('systemone');
+      expect(f.store.save({ ...read, mode: 'shadow' }).mode).toBe('shadow');
+      const raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+      expect(raw.tiers).toEqual(['nemotron-local', 'nemotron']);
+      // Asked as they are, the built-ins stay out of the file: mu keeps their thinking settings.
+      expect(raw.judges.nemotron).toBeUndefined();
+      expect(raw.judges.lightning).toEqual({ type: 'logprob', model: 'nebius/nvidia/Nemotron-3_5-Lightning' });
+    } finally {
+      f.cleanup();
+    }
+  });
+
   it('leaves a judge the order already had as it is to whoever wrote it, and saves other changes', () => {
     const f = fixture();
     try {
@@ -282,12 +345,10 @@ describe('native mu settings', () => {
       expect(saved.keys.MU_JUDGE_CLM_API_KEY).toBe(true);
       raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
       expect(raw.judges.clm).toMatchObject({ type: 'clm', baseUrl: address, apiKeyEnv: 'MU_JUDGE_CLM_API_KEY' });
-      // The questions hold what the person wrote: plain HTTP to the internet is refused.
+      // The questions hold what the person wrote: never to a link-local address (cloud metadata lives there).
       const later = f.store.read();
-      const exposed = { ...later.judges.clm, baseUrl: 'http://example.com:8700' };
-      expect(() => f.store.save({ ...later, judges: { ...later.judges, clm: exposed } })).toThrow(
-        'private-network address'
-      );
+      const exposed = { ...later.judges.clm, baseUrl: 'http://169.254.169.254:8700' };
+      expect(() => f.store.save({ ...later, judges: { ...later.judges, clm: exposed } })).toThrow('not link-local');
       // And the CLM key never reaches TypeSafe through a System One judge without an address.
       const stray = {
         type: 'typesafe' as const,
@@ -299,6 +360,173 @@ describe('native mu settings', () => {
       expect(() => f.store.save({ ...later, tiers: ['stray'], judges: { ...later.judges, stray } })).toThrow(
         'no base URL'
       );
+    } finally {
+      f.cleanup();
+    }
+  });
+  it('offers OpenAI’s decision model as a built-in with a key of its own, which never goes to TypeSafe', () => {
+    const f = fixture();
+    try {
+      const read = f.store.read();
+      expect(read.judges.openai).toEqual({
+        type: 'openai',
+        model: 'gpt-6-luna',
+        baseUrl: '',
+        apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+        timeoutMs: 10000,
+      });
+      expect(read.keys.MU_JUDGE_OPENAI_KEY).toBe(false);
+      // Chosen with its key: only the order is written, and the key goes to the .env, never back to the screen.
+      const saved = f.store.save({
+        ...read,
+        tiers: ['openai'],
+        credentials: [{ name: 'MU_JUDGE_OPENAI_KEY', value: 'sk-proj-fixture' }],
+      });
+      expect(saved.keys.MU_JUDGE_OPENAI_KEY).toBe(true);
+      expect(JSON.stringify(saved)).not.toContain('sk-proj-fixture');
+      const raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+      expect(raw.tiers).toEqual(['openai']);
+      expect(raw.judges.openai).toBeUndefined();
+      expect(readFileSync(join(f.root, '.env'), 'utf8')).toContain('MU_JUDGE_OPENAI_KEY=sk-proj-fixture');
+      // A key of another judge service is never sent to OpenAI…
+      const now = f.store.read();
+      const stray = { ...now.judges.openai, apiKeyEnv: 'TYPESAFE_API_KEY' };
+      expect(() => f.store.save({ ...now, tiers: ['stray'], judges: { ...now.judges, stray } })).toThrow(
+        'not sent to OpenAI'
+      );
+      // …and OpenAI's key never to TypeSafe through a System One judge without an address.
+      const loose = {
+        type: 'typesafe' as const,
+        model: '',
+        baseUrl: '',
+        apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+        timeoutMs: 10000,
+      };
+      expect(() => f.store.save({ ...now, tiers: ['loose'], judges: { ...now.judges, loose } })).toThrow('no base URL');
+    } finally {
+      f.cleanup();
+    }
+  });
+  it('removes a judge’s key from the .env on save, refuses any other name, and never says a value', () => {
+    const f = fixture();
+    try {
+      const envPath = join(f.root, '.env');
+      writeFileSync(
+        envPath,
+        'OPENAI_API_KEY=sk-provider-fixture\nMU_JUDGE_OPENAI_KEY=sk-judge-fixture\nTYPESAFE_API_KEY=ts-fixture\n'
+      );
+      const read = f.store.read();
+      expect(read.keys.MU_JUDGE_OPENAI_KEY).toBe(true);
+      const saved = f.store.save({ ...read, tiers: ['openai'], removeCredentials: ['MU_JUDGE_OPENAI_KEY'] });
+      // The judge's line goes; the rest of the .env stays as it was, the provider's OpenAI key too.
+      expect(readFileSync(envPath, 'utf8')).toBe('OPENAI_API_KEY=sk-provider-fixture\nTYPESAFE_API_KEY=ts-fixture\n');
+      expect(saved.keys.MU_JUDGE_OPENAI_KEY).toBe(false);
+      expect(saved.tiers).toEqual(['openai']);
+      expect(JSON.stringify(saved)).not.toContain('fixture');
+      // Only a variable this page saves: never a provider's key, the environment's OpenAI key or anything else.
+      const now = f.store.read();
+      const refused = (removeCredentials: unknown) => {
+        try {
+          f.store.save({ ...now, removeCredentials: removeCredentials as string[] });
+        } catch (error) {
+          expect((error as Error).message).toBe('Invalid credential');
+          return true;
+        }
+        return false;
+      };
+      for (const name of ['OPENAI_API_KEY', 'MU_PROVIDER_RELAY_API_KEY', 'PATH', 'MU_JUDGE_OPENAI_KEY=x', '', 42])
+        expect(refused([name]), String(name)).toBe(true);
+      expect(refused('MU_JUDGE_OPENAI_KEY')).toBe(true);
+      expect(refused(Array.from({ length: 17 }, (_, index) => `MU_JUDGE_K${index}`))).toBe(true);
+      // Never set and removed by one save.
+      expect(() =>
+        f.store.save({
+          ...now,
+          credentials: [{ name: 'TYPESAFE_API_KEY', value: 'ts-new' }],
+          removeCredentials: ['TYPESAFE_API_KEY'],
+        })
+      ).toThrow('Invalid credential');
+      expect(readFileSync(envPath, 'utf8')).toBe('OPENAI_API_KEY=sk-provider-fixture\nTYPESAFE_API_KEY=ts-fixture\n');
+      // Removing a key that is not there changes nothing.
+      f.store.save({ ...now, removeCredentials: ['MU_JUDGE_OPENAI_KEY'] });
+      expect(readFileSync(envPath, 'utf8')).toBe('OPENAI_API_KEY=sk-provider-fixture\nTYPESAFE_API_KEY=ts-fixture\n');
+    } finally {
+      f.cleanup();
+    }
+  });
+});
+
+describe('a mu.json that still names Laya, the local judge mu no longer has', () => {
+  const write = (f: ReturnType<typeof fixture>, config: unknown) =>
+    writeFileSync(join(f.dir, 'kyrn.json'), JSON.stringify(config));
+  const written = (f: ReturnType<typeof fixture>) => JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+  /** mude 1.0 set up, as `mu judge mude enable` leaves it: its key in the .env. */
+  const mudeKey = (f: ReturnType<typeof fixture>) => writeFileSync(join(f.root, '.env'), 'MU_JUDGE_MUDE_KEY=k\n');
+  // Only the .env says whether mude's key is set here.
+  beforeEach(() => {
+    vi.stubEnv('MU_JUDGE_MUDE_KEY', '');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('reads the order as mu leaves it: mude in Laya’s place where it is set up, else the judges behind it, else Jev', () => {
+    const f = fixture();
+    try {
+      write(f, { tiers: ['laya'] });
+      expect(f.store.laya()).toBe('first');
+      expect(f.store.read().tiers).toEqual(['jev']);
+      // Installed but without its key, as the harness has it: not set up, so not in Laya's place.
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['jev']);
+      mudeKey(f);
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['mude']);
+      expect(f.store.read().judges.laya).toBeUndefined();
+      write(f, { tiers: ['laya', 'clm'] });
+      expect(f.store.read().tiers).toEqual(['clm']);
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['mude', 'clm']);
+      // A judge of Laya's `local` type under a name of its own is Laya too; mude already in the order is asked once.
+      write(f, {
+        tiers: ['jev', 'my-laya', 'mude'],
+        judges: { 'my-laya': { type: 'local', baseUrl: 'http://127.0.0.1:47823' } },
+      });
+      expect(f.store.laya()).toBe('later');
+      expect(f.store.read().tiers).toEqual(['jev', 'mude']);
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['jev', 'mude']);
+      expect(Object.keys(f.store.read().judges)).not.toContain('my-laya');
+      write(f, { tiers: ['jev'] });
+      expect(f.store.laya()).toBeUndefined();
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  it('writes nothing for Laya: a save keeps its entry, and the order unless it was changed', () => {
+    const f = fixture();
+    try {
+      const laya = { type: 'local', baseUrl: 'http://127.0.0.1:47823', profile: { capabilities: { rate: false } } };
+      write(f, { tiers: ['laya'], judges: { laya } });
+      mudeKey(f);
+      const read = f.store.read({ mudeInstalled: true });
+      expect(read.tiers).toEqual(['mude']);
+      // Another change: the order and Laya's entry stay for mu to move on.
+      expect(f.store.save({ ...read, mode: 'shadow' }, { mudeInstalled: true }).tiers).toEqual(['mude']);
+      expect(written(f)).toMatchObject({ tiers: ['laya'], judges: { laya }, modes: { default: 'shadow' } });
+      // A judge picked: the order is written, without Laya.
+      const saved = f.store.save({ ...f.store.read(), tiers: ['clm'] });
+      expect(saved.tiers).toEqual(['clm']);
+      expect(written(f)).toMatchObject({ tiers: ['clm'], judges: { laya } });
+      expect(f.store.laya()).toBeUndefined();
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  it('refuses a judge of the local type: mu no longer runs one', () => {
+    const f = fixture();
+    try {
+      const read = f.store.read();
+      const old = { ...read.judges.jev, type: 'local' as unknown as JudgeType, baseUrl: 'http://127.0.0.1:47823' };
+      expect(() => f.store.save({ ...read, tiers: ['old'], judges: { ...read.judges, old } })).toThrow('Invalid judge');
     } finally {
       f.cleanup();
     }
@@ -326,8 +554,8 @@ describe('the rename from KYRN to mu', () => {
   it('reads mu.json first when both files are there, and writes mu.json on a fresh machine', () => {
     const f = fixture();
     try {
-      writeFileSync(join(f.dir, 'mu.json'), JSON.stringify({ tiers: ['laya'] }));
-      expect(f.store.read().tiers).toEqual(['laya']);
+      writeFileSync(join(f.dir, 'mu.json'), JSON.stringify({ tiers: ['clm'] }));
+      expect(f.store.read().tiers).toEqual(['clm']);
       const fresh = join(f.root, 'fresh');
       mkdirSync(fresh);
       expect(configPath(fresh)).toBe(join(fresh, 'mu.json'));
@@ -373,7 +601,7 @@ const switches = (calls: Call[], id: string) =>
 
 describe('mu-only backend catalog', () => {
   type Options = { fail?: (call: Call) => boolean; wholeRecords?: boolean };
-  /** Answers the way the bundled AionCore v0.2.2 was seen to, checked against a real one. */
+  /** Answers the way the bundled backend (v0.2.2) was seen to, checked against a real one. */
   function backend(records: Record<string, unknown>[], options: Options = {}) {
     const calls: Call[] = [];
     const request: BackendRequest = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
@@ -399,6 +627,92 @@ describe('mu-only backend catalog', () => {
     };
     return { calls, request };
   }
+
+  // https://github.com/qybaihe/mu/issues/14: uninstalling leaves the backend registration behind.
+  describe('reinstalling into a different folder', () => {
+    const old = 'C:\\old\\resources\\mu\\acp.cmd';
+    const current = 'D:\\mu\\resources\\mu\\acp.cmd';
+    const row = {
+      id: 'k',
+      name: 'mu',
+      command: old,
+      enabled: true,
+      description: AGENT_DESCRIPTION,
+      icon: 'icon.svg',
+      args: ['--flag'],
+      env: [{ name: 'A', value: 'b' }],
+      native_skills_dirs: ['/skills'],
+      behavior_policy: { supports_side_question: true },
+      yolo_id: 'judge',
+    };
+    const installed = () =>
+      ownLauncher(current, {
+        platform: 'win32',
+        env: {},
+        realPath: (file) => (file === current ? current : undefined),
+        missing: (file) => file === old,
+      });
+
+    it('repairs the command in place while retaining settings and assistant associations', async () => {
+      const { calls, request } = backend([row]);
+      const result = await initializeKyrn(request, await installed());
+      expect(result.agentId).toBe('k');
+      expect(result.assistants).toEqual([{ id: 'ak', agent_id: 'k', enabled: true }]);
+      expect(puts(calls)).toEqual([
+        {
+          method: 'PUT',
+          path: '/api/agents/custom/k',
+          body: {
+            name: 'mu',
+            command: current,
+            icon: row.icon,
+            args: row.args,
+            env: row.env,
+            advanced: {
+              description: row.description,
+              native_skills_dirs: row.native_skills_dirs,
+              behavior_policy: row.behavior_policy,
+              yolo_id: 'judge',
+            },
+          },
+        },
+      ]);
+      expect(calls.some((call) => call.path === '/api/agents/custom')).toBe(false);
+    });
+
+    it.each([
+      ['a custom description', [{ ...row, description: 'my own agent' }]],
+      ['no ownership marker', [{ ...row, description: undefined }]],
+      ['multiple namesakes', [row, { ...row, id: 'another' }]],
+    ])('refuses to overwrite %s', async (_what, rows) => {
+      const { calls, request } = backend(rows);
+      await expect(initializeKyrn(request, await installed())).rejects.toMatchObject({ code: 'otherRegistration' });
+      expect(calls).toHaveLength(1);
+    });
+
+    it('does not replace an existing installation', async () => {
+      const { calls, request } = backend([row]);
+      const own = await installed();
+      await expect(initializeKyrn(request, { ...own, canRestore: () => false })).rejects.toMatchObject({
+        code: 'otherRegistration',
+      });
+      expect(calls).toHaveLength(1);
+    });
+
+    it.each([
+      ['reading the full record', { wholeRecords: false }],
+      ['saving the repair', { fail: (call: Call) => call.method === 'PUT' }],
+    ])('stops before changing other agents when %s fails, then allows retry', async (_what, options) => {
+      const own = await installed();
+      const failed = backend([row, { id: 'other', enabled: true }], options);
+      await expect(initializeKyrn(failed.request, own)).rejects.toThrow();
+      expect(failed.calls.some((call) => call.path === '/api/agents/other/enabled')).toBe(false);
+      expect(failed.calls.some((call) => call.path.endsWith('/health-check'))).toBe(false);
+      expect(failed.calls.some((call) => call.path === '/api/agents/custom')).toBe(false);
+      const retry = backend([row]);
+      expect((await initializeKyrn(retry.request, own)).agentId).toBe('k');
+    });
+  });
 
   it('disables other runtimes and assistants before exposing the sole product engine', async () => {
     const { calls, request } = backend([
@@ -447,11 +761,11 @@ describe('mu-only backend catalog', () => {
           args: ['--flag'],
           env: [{ name: 'A', value: 'b' }],
           advanced: {
-            // AionUi's own word for full auto, which mu does not know, becomes mu's full access.
+            // The backend's own word for full auto, which mu does not know, becomes mu's full access.
             yolo_id: 'full',
             native_skills_dirs: ['/skills'],
             behavior_policy: { supports_side_question: true },
-            description: 'mu harness · local Codex login · Jev judgment',
+            description: 'mu harness · local Codex login · judge model',
           },
         },
       },
@@ -473,7 +787,7 @@ describe('mu-only backend catalog', () => {
     const put = puts(calls)[0]?.body as { advanced: { description: string } };
     expect(put.advanced.description).toBe('my own words');
   });
-  it('knows its own description in any capitalization, and writes it as the judge is spelled now', async () => {
+  it('knows its own description in any capitalization or wording, and writes the present one', async () => {
     const { calls, request } = backend([
       {
         id: 'k',
@@ -485,7 +799,7 @@ describe('mu-only backend catalog', () => {
     ]);
     await initializeKyrn(request, '/kyrn/acp');
     const put = puts(calls)[0]?.body as { advanced: { description: string } };
-    expect(put.advanced.description).toBe('mu harness · local Codex login · Jev judgment');
+    expect(put.advanced.description).toBe('mu harness · local Codex login · judge model');
   });
   it('keeps the old name rather than update a record it could not read whole', async () => {
     const { calls, request } = backend(
@@ -529,7 +843,7 @@ describe('mu-only backend catalog', () => {
       { id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, env: [{ name: 'A', value: 'b' }] },
     ]);
     await initializeKyrn(request, '/kyrn/acp');
-    // A scheduled task asks AionCore for full auto: without it, the run would wait on a question nobody answers.
+    // A scheduled task asks the backend for full auto: without it, the run would wait on a question nobody answers.
     expect(puts(calls)).toEqual([
       {
         method: 'PUT',
@@ -541,7 +855,7 @@ describe('mu-only backend catalog', () => {
         }),
       },
     ]);
-    const chosen = backend([{ id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, yolo_id: 'jev' }]);
+    const chosen = backend([{ id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, yolo_id: 'judge' }]);
     await initializeKyrn(chosen.request, '/kyrn/acp');
     expect(puts(chosen.calls)).toEqual([]);
   });
@@ -568,7 +882,7 @@ describe('mu-only backend catalog', () => {
     expect(calls.map((call) => call.path)).toEqual(['/api/agents/management']);
   });
 
-  // #4: an app installed in C:\Program Files\mu registers its launcher's 8.3 short path, which AionCore can start. A
+  // #4: an app installed in C:\Program Files\mu registers its launcher's 8.3 short path, which the backend can start. A
   // registration an earlier start left may hold another spelling of the same launcher.
   describe('on Windows, where one launcher has several spellings', () => {
     const long = 'C:\\Program Files\\mu\\resources\\mu\\acp.cmd';

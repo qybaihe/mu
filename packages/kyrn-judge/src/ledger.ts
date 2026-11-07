@@ -4,9 +4,10 @@ import type { JudgeTierReport } from "./judge.ts";
 import type { Answer, JsonValue, JudgeUsage, JudgeWarning } from "./types.ts";
 
 /**
- * One decision, as recorded. Later signals (a pruned item being recalled, a
- * routed model needing escalation) are joined on `id` to label it, which is
- * how thresholds get calibrated per user and per project.
+ * One decision, as recorded. Later signals are joined on `id` to label it,
+ * which is how thresholds get calibrated per user and per project: so far the
+ * user's answer to a permission question the verdict sent them (a
+ * `kyrn.outcome` entry, `PermissionOutcome`).
  */
 export interface LedgerRecord {
 	readonly id: string;
@@ -39,10 +40,18 @@ export interface LedgerRecord {
 		readonly failures: number;
 		/** Per-item answers, kept only for small batches. */
 		readonly answers?: readonly (Readonly<Record<string, Answer>> | null)[];
+		/** SHA-256 of each item's state, beside its answers: what a replay matches an item's request by. */
+		readonly digests?: readonly string[];
 	};
 	/** SHA-256 of the submitted state. The state itself is stored only when the engine is told to. */
 	readonly stateDigest: string;
+	/**
+	 * With `recordState`: the state and the questions as the judge received them (secrets redacted), fixed questions
+	 * and those a decision builds from its input (`questionsFor`) alike. Together they are the judge request, so a
+	 * ledger row can be replayed, or used to train a judge.
+	 */
 	readonly state?: JsonValue;
+	readonly questions?: JsonValue;
 }
 
 export interface LedgerSink {

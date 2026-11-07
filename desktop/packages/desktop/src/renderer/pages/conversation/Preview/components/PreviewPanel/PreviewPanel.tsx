@@ -30,11 +30,13 @@ import { previewTabDisplayTitle } from '../../context/tabTitle';
 import { useResizableSplit } from '@/renderer/hooks/ui/useResizableSplit';
 import { Link, Message } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import DiffPreview from '../viewers/DiffViewer';
+import DiffPreview from '../viewers/diff/DiffViewer';
 import ExcelPreview from '../viewers/ExcelViewer';
 import HTMLEditor from '../editors/HTMLEditor';
 import HTMLRenderer from '../renderers/HTMLRenderer';
 import ImagePreview from '../viewers/ImageViewer';
+import ImageGallery from '../ImageGallery/ImageGallery';
+import { galleryOf } from '../ImageGallery/galleryTab';
 import MarkdownEditor from '../editors/MarkdownEditor';
 import MarkdownPreview from '../viewers/MarkdownViewer';
 import PDFPreview from '../viewers/PDFViewer';
@@ -101,6 +103,7 @@ const PreviewPanel: React.FC = () => {
     clearTabUpdate,
     addDomSnippet,
     persistQuotaExceededAt,
+    updateTab,
   } = usePreviewContext();
   const layout = useLayoutContext();
 
@@ -1065,6 +1068,9 @@ const PreviewPanel: React.FC = () => {
           hideToolbar
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          onReplace={
+            activeTabId ? (next, patch) => updateTab(activeTabId, { content: next, metadata: patch }) : undefined
+          }
         />
       );
     } else if (content_type === 'code' || content_type === 'csv') {
@@ -1122,6 +1128,10 @@ const PreviewPanel: React.FC = () => {
         />
       );
     } else if (content_type === 'image') {
+      // An image a reply named: the viewer that zooms and steps through the reply's images.
+      const gallery = galleryOf(metadata);
+      if (gallery && metadata?.file_path)
+        return <ImageGallery tabId={activeTab.id} path={metadata.file_path} gallery={gallery} />;
       return (
         <ImagePreview
           fileRef={metadata?.fileRef}

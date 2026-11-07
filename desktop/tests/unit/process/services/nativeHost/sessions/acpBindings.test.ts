@@ -11,7 +11,7 @@ import { canSymlink } from '../symlinks.ts';
 const linking = canSymlink();
 
 /**
- * The session files AionCore's mu conversations use, from the ACP adapter's records (`<mu home>/acp-sessions`) and
+ * The session files the backend's mu conversations use, from the ACP adapter's records (`<mu home>/acp-sessions`) and
  * the import records beside them: what binds a file, what does not, and that a record is read again only when it
  * changed.
  */

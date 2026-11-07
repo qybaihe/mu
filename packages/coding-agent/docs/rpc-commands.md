@@ -264,10 +264,13 @@ Response contains an array of full [Model](#model-object) objects:
   "command": "get_available_models",
   "success": true,
   "data": {
-    "models": [...]
+    "models": [...],
+    "enabledModels": ["openai/gpt-6-sol", "google-antigravity/gemini-3.1-pro-high"]
   }
 }
 ```
+
+`enabledModels` lists, as `provider/id`, the models the `enabledModels` setting enables, the ones `/model` shows. The setting is read again for each request, so a change saved by another process shows at once. It is absent while the setting enables every model.
 
 ## Thinking
 

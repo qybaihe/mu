@@ -49,7 +49,7 @@ describe('Sub-agent sentences by code', () => {
   it('words the routing step before the first snapshot, else shows the output as it is', () => {
     const progress = { code: 'choosing_roles', params: { count: 1 } };
     expect(swarmProgressText(en, progress, 'english')).toBe(
-      'choosing a role, a model and a thinking level for 1 sub-agent…'
+      'choosing a role, a model and a thinking level for 1 subagent…'
     );
     expect(swarmProgressText(zh, { ...progress, params: { count: 3 } }, 'english')).toBe(
       '正在为 3 个子代理选择角色、模型和思考强度…'
@@ -101,7 +101,7 @@ describe('Sub-agent sentences by code', () => {
         }),
         'en-US'
       )
-    ).toBe('no sign of life from the model for 5 min');
+    ).toBe('no response from the model for 5 min');
     expect(
       beeErrorText(
         zh,
@@ -225,7 +225,7 @@ describe('Sub-agent sentences by code', () => {
           errorParams: { signal: 'unknown' },
         })
       )
-    ).toBe('sub-agent was ended by a signal before it finished');
+    ).toBe('subagent was stopped by a signal before it finished');
     expect(
       beeErrorText(zh, failed({ error: 'spawn ENOENT', errorCode: 'error', errorParams: { message: 'spawn ENOENT' } }))
     ).toBe('spawn ENOENT');

@@ -459,7 +459,6 @@ const ArchivedSettings: React.FC = () => {
     <>
       <SettingsPageHeader
         title={t('settings.archived.navLabel')}
-        description={t('settings.archived.description')}
         actions={
           total > 0 ? (
             <div className='flex min-w-0 items-center justify-end gap-10px'>

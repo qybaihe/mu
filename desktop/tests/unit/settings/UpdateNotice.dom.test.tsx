@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 /** The small notice above the sidebar's footer: only while an update asks for something, and gone after 稍后. */
 
 import React from 'react';

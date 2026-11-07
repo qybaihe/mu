@@ -55,7 +55,7 @@ export type ViewUserMessage = {
   text: string;
   images: ViewImage[];
   timestamp: number;
-  /** Jev's verdict line on this message (`kyrn.verdict`), when the preflight ran for it. */
+  /** The judge's verdict line on this message (`kyrn.verdict`), when the preflight ran for it. */
   verdict?: JsonObject;
 };
 
@@ -105,11 +105,29 @@ export type ViewCompaction = { id: string; role: 'compaction'; tokensBefore: num
 export type ViewMessage = ViewUserMessage | ViewAssistantMessage | ViewCustomMessage | ViewCompaction;
 
 /**
- * One of Jev's judgments: a decision ledger record, without the state the judge was shown, filed under the turn that
- * asked (the ledger's `origin.turn`, which a late verdict keeps). `turn` is missing only for records of a mu from
- * before `origin`.
+ * What the person answered to the permission question a judgment sent them to (a `kyrn.outcome` entry of kind
+ * `permission`): allowed once, for the session, not allowed, the question closed, or nobody there to ask (`none`, and
+ * the call was refused).
  */
-export type ViewJudgment = { id: string; turn?: number; record: JsonObject };
+export type ViewUserAnswer = 'once' | 'session' | 'deny' | 'dismissed' | 'none';
+
+export const USER_ANSWERS: readonly ViewUserAnswer[] = ['once', 'session', 'deny', 'dismissed', 'none'];
+
+/**
+ * One of the judge's judgments: a decision ledger record, without the state the judge was shown, filed under the turn
+ * that asked (the ledger's `origin.turn`, which a late verdict keeps). `turn` is missing only for records of a mu from
+ * before `origin`.
+ *
+ * What the person did about it, from the `kyrn.outcome` entries that name its record (`ledgerId`): their answer to the
+ * permission question it sent them to (`answer`), and a mark that it judged wrong (`markedWrong`, with what they said).
+ */
+export type ViewJudgment = {
+  id: string;
+  turn?: number;
+  record: JsonObject;
+  answer?: ViewUserAnswer;
+  markedWrong?: { note?: string };
+};
 
 /**
  * What mu said about the permission question a select dialog asks (its `permissions.request` frame), for a card in
@@ -124,7 +142,7 @@ export type ViewPermission = {
   /** The answers as mu words them, which the dialog offers as its options. */
   answers: string[];
   answerIds?: string[];
-  /** ask, unsure, beyond, unrelated, flagged, protected, nojudge, judgedown. */
+  /** ask, unsure, beyond, unrelated, flagged, protected, nojudge, judgedown, long. */
   reason?: string;
   /** What makes a flagged command risky (`force_push`, …). */
   flagCode?: string;
@@ -132,6 +150,30 @@ export type ViewPermission = {
   grantLabel?: string;
   /** The tool call mu asks about. */
   toolCallId?: string;
+};
+
+/**
+ * A question the model asked with mu's ask_user (its `question.asked` frame), for a card in place of the dialog that
+ * asks it: the question in full, its options with what each one means, and what that dialog offers.
+ *
+ * A pick-one question is a `select` of `choices`, the last of which opens an `input` for the person's own words; a
+ * pick-any question is an `input` that takes the numbers of the options picked (`1,3`) or the person's own words.
+ */
+export type ViewQuestion = {
+  /** `question-<n>`: one per question mu asks, from `question.asked` to `question.resolved`. */
+  id: string;
+  /** The ask_user call. */
+  toolCallId?: string;
+  /** Which question of the call, from 0, and how many the call asks. */
+  index: number;
+  count: number;
+  question: string;
+  /** A short label for it. */
+  header?: string;
+  options: { label: string; description?: string }[];
+  multiSelect: boolean;
+  /** A pick-one question: the select's options, in order. The last one opens a line for the person's own words. */
+  choices?: string[];
 };
 
 /** A dialog pi waits on: an extension UI request of method select, confirm, input or editor. */
@@ -156,26 +198,34 @@ export type ViewDialog = {
   inRun: boolean;
   /** A select that is mu's permission question: what mu said about it. */
   permission?: ViewPermission;
+  /**
+   * A dialog that asks a question of mu's ask_user: what mu said about it. An `input` of a pick-one question is the line
+   * for the person's own words, after they chose that in its select.
+   */
+  question?: ViewQuestion;
 };
 
 /** What only a live run has, gone once it settles: a reloaded view has none of it. */
 export type ViewLive = {
-  /** Jev classifies the message of this turn (`preflight.pending`), until its verdict or the end of the wait. */
+  /** The judge classifies the message of this turn (`preflight.pending`), until its verdict or the end of the wait. */
   classifying?: { turn: number; judge: string };
   /**
-   * What the judgment layer says it is working out (`progress`), until the run settles: its English line, and its code
-   * and params for a screen to word it (`permission_review` names the command in `summary`).
+   * What the judgment layer says it is working out (`progress`), until the model writes again, a tool starts, mu asks
+   * the person or the run settles: its English line, and its code and params for a screen to word it (`permission_review` names the command in
+   * `summary`).
    */
   progress?: { turn?: number; step: string; code?: string; params?: JsonObject };
   /** pi retries a failed request: which attempt of how many, after what error. */
   retry?: { attempt: number; maxAttempts: number; delayMs: number; error: string };
   /** The permission question mu announced (`permissions.request`), until its select dialog opens or it is resolved. */
   permission?: ViewPermission;
+  /** The question of ask_user mu announced (`question.asked`), until mu says how it ended (`question.resolved`). */
+  question?: ViewQuestion;
   compacting: boolean;
 };
 
 /**
- * One line of what the judgment layer and the run did, as the Jev panel reads it (the panel's `Activity`, by the same
+ * One line of what the judgment layer and the run did, as the work panel reads it (the panel's `Activity`, by the same
  * names): one of the judgment layer's presentation frames (`permissions.request`, `board.update`, `memory.recalled`,
  * `goal.state`, `preflight.verdict`, …), or one of pi's events (`agent_start`, `agent_settled`, `compaction_start`,
  * `compaction_end`). A `decision` frame keeps only its record's id: the record is in `judgments`.
@@ -197,16 +247,19 @@ export type ViewActivity = {
  * What an extension said with `notify` (the answer to a command, a warning), as a line of the conversation after the
  * message it followed. A warning or an error is said once. `checkpoint_off` is mu's own notice that the session goes
  * without checkpoints, with its reason code and the numbers it names, for the app to word; `free_jev` and
- * `free_jev_unavailable` say that the judge answers with the free Jev on OpenCode Zen, or that it stopped (mu's
- * `judge.notice`).
+ * `free_jev_unavailable` say that the judge answers with the free Jev on OpenCode Zen, or that it stopped,
+ * `laya_removed` that Laya is gone and `judge` answers in its place, and `openai_key` that OpenAI's decision model has
+ * no usable key (`missing` or `rejected`), so the next judge or mu's fallbacks answer (mu's `judge.notice`).
  */
 export type ViewNotice = {
   /** `n1`, `n2`, … */
   id: string;
   level: 'info' | 'warning' | 'error';
   text: string;
-  code?: 'checkpoint_off' | 'free_jev' | 'free_jev_unavailable';
+  code?: 'checkpoint_off' | 'free_jev' | 'free_jev_unavailable' | 'laya_removed' | 'openai_key';
   reason?: string;
+  /** `laya_removed`: the judge in Laya's place, by its name in the order (`mude`, `jev`, …). */
+  judge?: string;
   params?: Record<string, number>;
   /** The message that was last when it came; none when it came before any. */
   after?: string;
@@ -239,7 +292,50 @@ export type ViewHost = {
   notices: ViewNotice[];
   queue: ViewQueue;
   session?: ViewSession;
+  /**
+   * Text pi's side put into the person's editor (an extension's `setEditorText`: a checkpoint rewind gives the request
+   * back to send again). `id` tells one from the next with the same words.
+   */
+  editorText?: { id: string; text: string };
+  /** The commands mu runs in the background for the agent, oldest first; absent before the first. */
+  jobs?: ViewJob[];
+  /**
+   * mu waits on questions of ask_user that nobody answered in time (its `mu.ask.pending` status): `/answer` asks them
+   * again. Gone once they are answered, or the person writes to the agent.
+   */
+  questionsOpen?: true;
 };
+
+/**
+ * A command mu runs in the background for the agent (`bg_start`: a dev server, a watcher, a long build), as mu's
+ * `background.*` frames tell it: running until it exits; `stopping` once the person or the model asked it to stop.
+ */
+export type ViewJob = {
+  id: string;
+  name: string;
+  command: string;
+  cwd?: string;
+  /** Where mu writes its output. */
+  logPath?: string;
+  state: 'running' | 'stopping' | 'exited';
+  /** When it started, as mu's frame says (ms). */
+  startedAt: number;
+  exitCode?: number;
+  durationMs?: number;
+  /** Who stopped it (`user`, `model`), when it did not end by itself. */
+  stoppedBy?: string;
+  /** It exited, and processes it started still run (stopping it ends them). */
+  lingering?: boolean;
+};
+
+/** A background job that still runs something: it runs, is being stopped, or ended leaving processes behind. */
+export const isJobLive = (job: ViewJob): boolean => job.state !== 'exited' || job.lingering === true;
+
+/**
+ * A checkpoint mu took (its `kyrn.checkpoint` entry, on the branch): before the first file change of the turn that
+ * the person's message `entryId` started. `/rewind <id>` goes back to it.
+ */
+export type ViewCheckpoint = { id: number; entryId: string; label: string; turn: number; at: number };
 
 /**
  * The goal mu works towards (`/goal <condition>`: the agent keeps going until the condition holds), as mu last said
@@ -260,6 +356,8 @@ export type NativeView = {
   host: ViewHost;
   /** The goal mu works towards, once one was set in the session. */
   goal?: ViewGoal;
+  /** The checkpoints on the branch, oldest first; absent before the first. */
+  checkpoints?: ViewCheckpoint[];
 };
 
 export const emptyHost = (): ViewHost => ({ activity: [], notices: [], queue: { steering: [], followUp: [] } });

@@ -24,7 +24,7 @@ test.describe('System Preferences', () => {
   test('TC-PREF-01: should switch language to English and back to Chinese', async ({ page }) => {
     await takeScreenshot(page, 'system-preferences/tc-pref-01/01-initial.png');
 
-    const selectTrigger = page.locator('.aion-select .arco-select-view').first();
+    const selectTrigger = page.locator('.mu-select .arco-select-view').first();
     await expect(selectTrigger).toBeVisible();
 
     await takeScreenshot(page, 'system-preferences/tc-pref-01/02-before-switch.png');

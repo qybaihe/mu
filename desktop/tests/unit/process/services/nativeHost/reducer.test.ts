@@ -6,7 +6,9 @@ import {
   durable,
   emptyView,
   fromEntries,
+  OUTCOME_ENTRY,
   PRESENTATION_STATUS_KEY,
+  QUESTIONS_OPEN_STATUS,
   readPresentation,
   reduce,
   reduceAll,
@@ -209,12 +211,10 @@ describe('a conversation recorded from a real host', () => {
     ]);
     expect(open.live.permission).toBeUndefined();
     expect(viewAt(asked - 1).live.permission).toMatchObject({ summary: 'sleep 0.2; echo asked-ok' });
-    expect(open.live.progress).toEqual({
-      turn: 4,
-      step: 'Jev is reviewing: sleep 0.2; echo asked-ok',
-      code: 'permission_review',
-      params: { summary: 'sleep 0.2; echo asked-ok' },
-    });
+    // The judge answered (it is not sure), so its review is over: the line above the send box no longer says it reviews.
+    const review = records.findLastIndex((record, index) => index < asked && frameKind(record) === 'progress');
+    expect(viewAt(review).live.progress).toMatchObject({ code: 'permission_review' });
+    expect(open.live.progress).toBeUndefined();
     const answered = find((record) => record.type === 'extension_ui_response', asked);
     expect(records[answered]).toMatchObject({ id: records[asked].id, value: 'Allow once' });
     expect(viewAt(answered).dialogs).toEqual([]);
@@ -257,7 +257,7 @@ describe('a conversation recorded from a real host', () => {
     });
   });
 
-  it('files each of Jev’s judgments once, under the turn that asked, without the state it was shown', () => {
+  it('files each of the judge’s judgments once, under the turn that asked, without the state it was shown', () => {
     const view = reduceAll(records);
     const ledger = session.filter((entry) => entry.type === 'custom' && entry.customType === DECISION_ENTRY);
     expect(ledger.length).toBeGreaterThan(0);
@@ -282,7 +282,7 @@ describe('a conversation recorded from a real host', () => {
     expect(session.filter((entry) => entry.customType === VERDICT_ENTRY)).toHaveLength(6);
   });
 
-  it('shows that Jev classifies a message only until its verdict', () => {
+  it('shows that the judge classifies a message only until its verdict', () => {
     const pending = find((record) => frameKind(record) === 'preflight.pending');
     expect(viewAt(pending).live.classifying).toEqual({ turn: 1, judge: 'mock' });
     const verdict = find((record) => frameKind(record) === 'preflight.verdict', pending);
@@ -379,6 +379,49 @@ describe('reduce', () => {
     ]);
   });
 
+  it('drops what the judge was reviewing once the command runs, and a step once the model writes again', () => {
+    const review = frame('progress', {
+      step: 'The judge is reviewing: npm test',
+      code: 'permission_review',
+      params: { summary: 'npm test' },
+    });
+    const call = {
+      type: 'message_end',
+      message: assistant([{ type: 'toolCall', id: 'call_1', name: 'bash', arguments: { command: 'npm test' } }], {
+        stopReason: 'toolUse',
+      }),
+    };
+    const reviewing = reduceAll([{ type: 'agent_start' }, call, review]);
+    expect(reviewing.live.progress).toMatchObject({ code: 'permission_review' });
+    // Approved: the command runs, and the line above the send box no longer says the judge is reviewing it.
+    const running = reduceAll([{ type: 'tool_execution_start', toolCallId: 'call_1' }], reviewing);
+    expect(running.live.progress).toBeUndefined();
+    // The judge did not answer (rate limited) and mu asks the person instead: the review is over too.
+    const asked = reduceAll(
+      [
+        frame('permissions.request', {
+          kind: 'shell',
+          summary: 'npm test',
+          answers: ['Allow once', 'Don’t allow'],
+          toolCallId: 'call_1',
+        }),
+      ],
+      reviewing
+    );
+    expect(asked.live.progress).toBeUndefined();
+    expect(asked.live.permission).toMatchObject({ summary: 'npm test' });
+    const dialog = { type: 'extension_ui_request', id: 'd1', method: 'confirm', title: 'Run npm test?', message: '' };
+    expect(reduceAll([dialog], reviewing).live.progress).toBeUndefined();
+    // A step before the model's next words ends with them; a message of the person's does not end it.
+    const choosing = reduceAll([frame('progress', { step: 'Choosing skills', code: 'skills' })], running);
+    expect(reduceAll([{ type: 'message_start', message: user('more') }], choosing).live.progress).toMatchObject({
+      code: 'skills',
+    });
+    expect(
+      reduceAll([{ type: 'message_start', message: assistant([], { stopReason: 'pending' }) }], choosing).live.progress
+    ).toBeUndefined();
+  });
+
   it('leaves the thinking status when a message ends inside its thinking block', () => {
     const run: PiRecord[] = [
       { type: 'agent_start' },
@@ -404,7 +447,7 @@ describe('reduce', () => {
     expect(next).not.toHaveProperty('error');
   });
 
-  it('shows what the person said, without the rules AionUi puts in front of a conversation’s first message', () => {
+  it('shows what the person said, without the rules the backend puts in front of a conversation’s first message', () => {
     const rules = '[Assistant Rules]\n## Available Skills\n\n- **cron**: Scheduled tasks\n[/Assistant Rules]\n\n';
     const said = (content: string) =>
       reduceAll([{ type: 'message_end', message: user(content) }]).messages.map((message) =>
@@ -458,6 +501,52 @@ describe('reduce', () => {
     ]);
   });
 
+  it('joins what the person did about a judgment to it by its record, live as from the file', () => {
+    const approval = { id: 'ask-1', specId: 'tool.approval', origin: { turn: 1 } };
+    const outcomes: Json[] = [
+      { kind: 'permission', toolCallId: 'c1', ledgerId: 'ask-1', specId: 'tool.approval', answer: 'session' },
+      // A mark that it judged wrong joins the same judgment and leaves the answer as it is.
+      {
+        kind: 'mark',
+        ledgerId: 'ask-1',
+        specId: 'tool.approval',
+        specVersion: 3,
+        mark: 'wrong',
+        note: ' it was the test ',
+      },
+      // No judge was asked, and a record this view does not have: neither makes a judgment.
+      { kind: 'permission', toolCallId: 'c2', answer: 'deny' },
+      { kind: 'permission', toolCallId: 'c3', ledgerId: 'elsewhere', answer: 'once' },
+      // Not an answer mu gives.
+      { kind: 'permission', toolCallId: 'c4', ledgerId: 'ask-1', answer: 'maybe' },
+    ];
+    const live = reduceAll([
+      ledgerEntry(approval),
+      frame('decision', approval, 1, 2),
+      ...outcomes.map(
+        (data, index): PiRecord => ({
+          type: 'entry_appended',
+          entry: { type: 'custom', customType: OUTCOME_ENTRY, id: `outcome-${index}`, parentId: null, data },
+        })
+      ),
+    ]);
+    expect(live.judgments).toEqual([
+      { id: 'ask-1', turn: 1, record: approval, answer: 'session', markedWrong: { note: 'it was the test' } },
+    ]);
+    const file = fromEntries([
+      { type: 'session', id: 's', timestamp: '2026-11-04T00:00:00.000Z', cwd: '/p' },
+      { type: 'custom', customType: DECISION_ENTRY, id: 'd1', parentId: null, data: approval },
+      ...outcomes.map((data, index) => ({
+        type: 'custom',
+        customType: OUTCOME_ENTRY,
+        id: `o${index}`,
+        parentId: index === 0 ? 'd1' : `o${index - 1}`,
+        data,
+      })),
+    ]);
+    expect(file.judgments).toEqual(live.judgments);
+  });
+
   it('takes the turn of a record that names none from its frame', () => {
     const entryFirst = reduceAll([ledgerEntry(decision('old')), frame('decision', decision('old'), 3, 4)]);
     expect(entryFirst.judgments).toEqual([{ id: 'old', turn: 3, record: { id: 'old', specId: 'input.preflight' } }]);
@@ -500,8 +589,12 @@ describe('reduce', () => {
 
   it('opens no dialog for pi’s fire-and-forget requests', () => {
     const view = emptyView();
-    for (const method of ['setStatus', 'setWidget', 'setTitle', 'set_editor_text'])
+    for (const method of ['setStatus', 'setWidget', 'setTitle'])
       expect(reduce(view, { type: 'extension_ui_request', id: 'x', method, message: 'hi' })).toBe(view);
+    // The editor's text is for the send box, not a question.
+    const edited = reduce(view, { type: 'extension_ui_request', id: 'x', method: 'set_editor_text', text: 'hi' });
+    expect(edited.dialogs).toEqual([]);
+    expect(edited.host.editorText).toEqual({ id: 'x', text: 'hi' });
     expect(reduce(view, { type: 'extension_ui_request', id: 'x', method: 'notify', message: 'hi' }).dialogs).toEqual(
       []
     );
@@ -619,5 +712,118 @@ describe('readPresentation', () => {
     expect(readPresentation({ ...frame('progress', {}), statusText: '{not json' })).toBeUndefined();
     expect(readPresentation({ ...frame('progress', {}), statusText: JSON.stringify({ version: 1 }) })).toBeUndefined();
     expect(readPresentation({ type: 'message_end' })).toBeUndefined();
+  });
+});
+
+// ── a question of ask_user ──────────────────────────────────────────────────
+
+const QUESTION_CHOICES = ['SQLite (Recommended) — One file', 'Postgres', 'Something else (type it)'];
+const questionSelect = (id: string, options: string[] = QUESTION_CHOICES): PiRecord => ({
+  type: 'extension_ui_request',
+  id,
+  method: 'select',
+  title: 'Database: Which database? (1/2)',
+  options,
+  timeout: 120000,
+});
+const questionInput = (id: string, title = 'Database: Which database? (1/2)'): PiRecord => ({
+  type: 'extension_ui_request',
+  id,
+  method: 'input',
+  title,
+});
+
+describe('a question of mu’s ask_user', () => {
+  const asked = (extra: Json = {}): PiRecord =>
+    frame('question.asked', {
+      id: 'question-1',
+      toolCallId: 'call_ask',
+      index: 0,
+      count: 2,
+      question: 'Which database?',
+      header: 'Database',
+      options: [{ label: 'SQLite (Recommended)', description: 'One file' }, { label: 'Postgres' }],
+      multiSelect: false,
+      dialog: 'select',
+      choices: QUESTION_CHOICES,
+      ...extra,
+    });
+  const resolved = (outcome: string): PiRecord =>
+    frame('question.resolved', { id: 'question-1', toolCallId: 'call_ask', index: 0, outcome }, 1, 2);
+
+  it('asks the select mu announced as the question, and the line for the person’s own words after it', () => {
+    const announced = reduceAll([{ type: 'agent_start' }, asked()]);
+    expect(announced.live.question).toEqual({
+      id: 'question-1',
+      toolCallId: 'call_ask',
+      index: 0,
+      count: 2,
+      question: 'Which database?',
+      header: 'Database',
+      options: [{ label: 'SQLite (Recommended)', description: 'One file' }, { label: 'Postgres' }],
+      multiSelect: false,
+      choices: QUESTION_CHOICES,
+    });
+    const picking = reduceAll([questionSelect('d1')], announced);
+    expect(picking.dialogs).toEqual([
+      expect.objectContaining({
+        id: 'd1',
+        method: 'select',
+        options: QUESTION_CHOICES,
+        question: announced.live.question,
+      }),
+    ]);
+    // "Something else": pi's next dialog is the line for the person's words, the same question.
+    const typing = reduceAll(
+      [{ type: 'extension_ui_response', id: 'd1', value: QUESTION_CHOICES[2] }, questionInput('d2')],
+      picking
+    );
+    expect(typing.dialogs).toEqual([
+      expect.objectContaining({ id: 'd2', method: 'input', question: announced.live.question }),
+    ]);
+    const done = reduceAll([{ type: 'extension_ui_response', id: 'd2', value: 'MySQL' }, resolved('answered')], typing);
+    expect(done.dialogs).toEqual([]);
+    expect(done.live.question).toBeUndefined();
+  });
+
+  it('closes the card when mu stops waiting, though pi says nothing of the dialog', () => {
+    const open = reduceAll([{ type: 'agent_start' }, asked(), questionSelect('d1')]);
+    expect(open.dialogs).toHaveLength(1);
+    expect(reduceAll([resolved('timeout')], open).dialogs).toEqual([]);
+  });
+
+  it('leaves a dialog that is not the one announced as it is', () => {
+    const other = reduceAll([{ type: 'agent_start' }, asked(), questionSelect('d1', ['Yes', 'No'])]);
+    expect(other.dialogs[0].question).toBeUndefined();
+    const elsewhere = reduceAll([questionInput('d2', 'Name of the branch')], other);
+    expect(elsewhere.dialogs[1].question).toBeUndefined();
+    // A pick-one question whose choices are not its options and one more is not taken.
+    expect(reduceAll([asked({ choices: ['SQLite (Recommended) — One file'] })]).live.question).toBeUndefined();
+    expect(reduceAll([asked({ index: 4 })]).live.question).toBeUndefined();
+  });
+
+  it('asks a pick-any question with its line', () => {
+    const view = reduceAll([
+      { type: 'agent_start' },
+      asked({ multiSelect: true, dialog: 'input', choices: undefined, header: undefined, question: 'Which parts?' }),
+      questionInput('d1', 'Which parts? (2/2) (pick any)\n1. Auth\n2. Billing'),
+    ]);
+    expect(view.dialogs[0].question).toMatchObject({ question: 'Which parts?', multiSelect: true });
+    expect(view.dialogs[0].question?.choices).toBeUndefined();
+  });
+
+  it('says mu waits on questions nobody answered in time, until mu clears its status', () => {
+    const status = (words?: string): PiRecord => ({
+      type: 'extension_ui_request',
+      id: 'st',
+      method: 'setStatus',
+      statusKey: QUESTIONS_OPEN_STATUS,
+      ...(words ? { statusText: words } : {}),
+    });
+    const waiting = reduceAll([status('mu has a question for you: type /answer')]);
+    expect(waiting.host.questionsOpen).toBe(true);
+    expect(reduceAll([status()], waiting).host.questionsOpen).toBeUndefined();
+    // Not in the session file: a reloaded conversation has no live host.
+    expect(durable(waiting).host.questionsOpen).toBeUndefined();
   });
 });

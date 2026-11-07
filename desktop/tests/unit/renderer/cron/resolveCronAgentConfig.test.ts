@@ -7,27 +7,28 @@
 import { describe, expect, it } from 'vitest';
 import type { Assistant, AssistantAgent } from '@/common/types/agent/assistantTypes';
 import { resolveCronAgentConfig } from '@/renderer/pages/cron/ScheduledTasksPage/resolveCronAgentConfig';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 describe('resolveCronAgentConfig', () => {
-  it('stores provider id for preset aionrs assistants instead of literal aionrs backend', () => {
+  it('stores provider id for preset built-in agent assistants instead of the built-in agent id itself', () => {
     const result = resolveCronAgentConfig({
       agentValue: 'assistant-1',
       presetAssistants: [
         assistant({
           id: 'assistant-1',
           name: '文件规划助手',
-          agent_id: 'agent-aionrs',
-          agent: agent('agent-aionrs', 'aionrs'),
+          agent_id: `agent-${BUILTIN_AGENT}`,
+          agent: agent(`agent-${BUILTIN_AGENT}`, BUILTIN_AGENT),
         }),
       ],
-      selectedAionrsProvider: {
+      selectedBuiltinAgentProvider: {
         id: 'provider-gemini',
         name: 'Gemini',
       },
       model_id: 'gemini-3.1-pro-preview',
       workspace: '/tmp/project',
       getMode: () => 'yolo',
-      aionrsModelRequiredMessage: 'provider required',
+      builtinAgentModelRequiredMessage: 'provider required',
     });
 
     expect(result).toEqual({
@@ -60,7 +61,7 @@ describe('resolveCronAgentConfig', () => {
       ],
       config_options: { reasoning_effort: 'high' },
       getMode: (selectedAssistant) => (selectedAssistant.agent_id === 'agent-codex' ? 'full-access' : 'yolo'),
-      aionrsModelRequiredMessage: 'provider required',
+      builtinAgentModelRequiredMessage: 'provider required',
     });
 
     expect(result).toEqual({
@@ -89,13 +90,13 @@ describe('resolveCronAgentConfig', () => {
       ],
       localeKey: 'zh-CN',
       getMode: () => 'full-access',
-      aionrsModelRequiredMessage: 'provider required',
+      builtinAgentModelRequiredMessage: 'provider required',
     });
 
     expect(result.agent_config?.name).toBe('代码助手');
   });
 
-  it('omits backend for non-aionrs assistants and lets the backend derive runtime identity', () => {
+  it('omits backend for non-built-in-agent assistants and lets the backend derive runtime identity', () => {
     const result = resolveCronAgentConfig({
       agentValue: 'assistant-4',
       presetAssistants: [
@@ -107,7 +108,7 @@ describe('resolveCronAgentConfig', () => {
         }),
       ],
       getMode: () => 'default',
-      aionrsModelRequiredMessage: 'provider required',
+      builtinAgentModelRequiredMessage: 'provider required',
     });
 
     expect(result).toEqual({
@@ -135,7 +136,7 @@ describe('resolveCronAgentConfig', () => {
         }),
       ],
       getMode: () => 'default',
-      aionrsModelRequiredMessage: 'provider required',
+      builtinAgentModelRequiredMessage: 'provider required',
     });
 
     expect(result.agent_config).toBeDefined();
@@ -150,7 +151,7 @@ describe('resolveCronAgentConfig', () => {
         agentValue: 'missing-assistant',
         presetAssistants: [],
         getMode: () => 'default',
-        aionrsModelRequiredMessage: 'provider required',
+        builtinAgentModelRequiredMessage: 'provider required',
       })
     ).toThrowError('assistant_id is required');
   });
@@ -180,7 +181,7 @@ function assistant(overrides: Partial<Assistant> & Pick<Assistant, 'id' | 'name'
 function agent(_id: string, type: string, backend?: string): AssistantAgent {
   return {
     type,
-    source: type === 'aionrs' ? 'internal' : 'builtin',
+    source: type === BUILTIN_AGENT ? 'internal' : 'builtin',
     acp_backend: backend,
   };
 }

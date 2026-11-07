@@ -13,6 +13,8 @@ import {
 	wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import type { SessionTreeNode } from "../../../core/session-manager.ts";
+import { formatReadLineRange } from "../../../core/tools/render-utils.ts";
+import { shortenHomePath } from "../../../utils/paths.ts";
 import { theme } from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
 import { formatKeyText, keyHint } from "./keybinding-hints.ts";
@@ -944,24 +946,12 @@ class TreeList implements Component {
 	}
 
 	private formatToolCall(name: string, args: Record<string, unknown>): string {
-		const shortenPath = (p: string): string => {
-			const home = process.env.HOME || process.env.USERPROFILE || "";
-			if (home && p.startsWith(home)) return `~${p.slice(home.length)}`;
-			return p;
-		};
+		const shortenPath = (p: string): string => shortenHomePath(p, process.env.HOME || process.env.USERPROFILE || "");
 
 		switch (name) {
 			case "read": {
 				const path = shortenPath(String(args.path || args.file_path || ""));
-				const offset = args.offset as number | undefined;
-				const limit = args.limit as number | undefined;
-				let display = path;
-				if (offset !== undefined || limit !== undefined) {
-					const start = offset ?? 1;
-					const end = limit !== undefined ? start + limit - 1 : "";
-					display += `:${start}${end ? `-${end}` : ""}`;
-				}
-				return `[read: ${display}]`;
+				return `[read: ${path}${formatReadLineRange(args.offset, args.limit)}]`;
 			}
 			case "write": {
 				const path = shortenPath(String(args.path || args.file_path || ""));
@@ -1419,6 +1409,10 @@ export class TreeSelectorComponent extends Container implements Focusable {
 		this.labelInputContainer.clear();
 		this.treeContainer.clear();
 		this.treeContainer.addChild(this.treeList);
+	}
+
+	get capturesViewportInput(): boolean {
+		return this.labelInput === null;
 	}
 
 	handleInput(keyData: string): void {

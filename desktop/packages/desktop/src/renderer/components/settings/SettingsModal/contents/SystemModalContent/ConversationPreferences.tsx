@@ -186,7 +186,6 @@ const ConversationPreferences: React.FC = () => {
     {
       key: 'agentIdleTimeout',
       label: t('settings.agentIdleTimeout'),
-      description: t('settings.agentIdleTimeoutDesc'),
       component: (
         <InputNumber
           value={agentIdleTimeout}
@@ -202,7 +201,6 @@ const ConversationPreferences: React.FC = () => {
     {
       key: 'previewTextSizeLimit',
       label: t('settings.previewTextSizeLimit'),
-      description: t('settings.previewTextSizeLimitDesc'),
       component: (
         <InputNumber
           key={`preview-limit-${previewLimitMb}`}

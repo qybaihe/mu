@@ -1,8 +1,9 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
+import type { ExtensionUIContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
@@ -21,6 +22,7 @@ import { parseConfig } from "../src/config.ts";
 import type { DecisionMode } from "../src/decision.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
+import { groupWindowsPids, killAllPlan } from "../src/process-tree.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
 
@@ -101,6 +103,58 @@ describe("shell and kill plans per platform", () => {
 		expect(pwsh.args[1]).toMatch(/OutputEncoding.*\nnpm run dev$/s);
 	});
 
+	it("has Git Bash on Windows write down its process group, where MSYS's ps can read it", () => {
+		const gitBash = { shell: "C:\\Program Files\\Git\\bin\\bash.exe", args: ["-c"] };
+		const ps = "C:\\Program Files\\Git\\usr\\bin\\ps.exe";
+		const groupFile = "C:\\Users\\me\\.mu\\jobs\\s1\\bg-1.group";
+		const exists = (path: string) => path === ps;
+		expect(planSpawn("npm run dev", gitBash, { platform: "win32", groupFile, exists })).toEqual({
+			file: gitBash.shell,
+			args: ["-c", `printf '%s' "$$" > 'C:/Users/me/.mu/jobs/s1/bg-1.group' 2>/dev/null\nnpm run dev`],
+			detached: false,
+			group: { ps, file: groupFile },
+		});
+		// MSYS2's own bash has its ps beside it.
+		const msys = { shell: "C:\\msys64\\usr\\bin\\bash.exe", args: ["-c"] };
+		expect(
+			planSpawn("make", msys, {
+				platform: "win32",
+				groupFile,
+				exists: (path) => path === "C:\\msys64\\usr\\bin\\ps.exe",
+			}).group,
+		).toEqual({ ps: "C:\\msys64\\usr\\bin\\ps.exe", file: groupFile });
+		// Without a ps, in PowerShell, through the WSL launcher and on POSIX: the command as it was.
+		expect(planSpawn("npm run dev", gitBash, { platform: "win32", groupFile, exists: () => false })).toEqual({
+			file: gitBash.shell,
+			args: ["-c", "npm run dev"],
+			detached: false,
+		});
+		expect(
+			planSpawn("npm run dev", gitBash, { platform: "win32", groupFile, exists, kind: "powershell" }).group,
+		).toBe(undefined);
+		const wsl = { shell: "C:\\Windows\\System32\\bash.exe", args: ["-s"], commandTransport: "stdin" as const };
+		expect(planSpawn("npm run dev", wsl, { platform: "win32", groupFile, exists: () => true }).group).toBe(undefined);
+		expect(planSpawn("npm run dev", BASH, { platform: "linux", groupFile, exists: () => true })).toEqual({
+			file: "/bin/bash",
+			args: ["-c", "npm run dev"],
+			detached: true,
+		});
+	});
+
+	it("reads the Windows pids of an MSYS process group from ps -l, a native program's among them", () => {
+		// As Git Bash's ps printed it on windows-2022 for a job running `npm run wait`, with ps itself waiting.
+		const ps = [
+			"      PID    PPID    PGID     WINPID   TTY         UID    STIME COMMAND",
+			"     1730       1    1730       7016  ?         197108 14:43:10 /usr/bin/bash",
+			"     1738    1730    1730       1080  ?         197108 14:43:10 /c/hostedtoolcache/windows/node/24.22.2/x64/node",
+			"I    1739       1    1739       6384  ?         197108 14:43:11 /usr/bin/ps",
+		].join("\r\n");
+		expect(groupWindowsPids(ps, 1730)).toEqual([7016, 1080]);
+		expect(groupWindowsPids(ps, 1739)).toEqual([6384]);
+		expect(groupWindowsPids(ps, 42)).toEqual([]);
+		expect(groupWindowsPids("", 1730)).toEqual([]);
+	});
+
 	it("signals the process group on POSIX and walks the tree with taskkill on Windows, asking before forcing", () => {
 		expect(killPlan(4242, false, "linux")).toEqual({ kind: "signal", pid: -4242, signal: "SIGTERM" });
 		expect(killPlan(4242, true, "darwin")).toEqual({ kind: "signal", pid: -4242, signal: "SIGKILL" });
@@ -110,6 +164,11 @@ describe("shell and kill plans per platform", () => {
 			args: ["/T", "/PID", "4242"],
 		});
 		expect(killPlan(4242, true, "win32", "D:\\Win")).toMatchObject({ args: ["/T", "/F", "/PID", "4242"] });
+		expect(killAllPlan([4242, 7016, 1080], "D:\\Win")).toEqual({
+			kind: "exec",
+			file: "D:\\Win\\System32\\taskkill.exe",
+			args: ["/T", "/F", "/PID", "4242", "/PID", "7016", "/PID", "1080"],
+		});
 	});
 
 	it("puts the agent's bin directory first on PATH, whatever the variable is called", () => {
@@ -266,6 +325,66 @@ describe.skipIf(!posix)("background jobs", () => {
 		expect(stopped.state).toBe("exited");
 	});
 
+	/**
+	 * Windows with Git Bash, played here: a plan with MSYS's ps and the file the shell writes its group to (on Windows
+	 * the shell writes it; here the test does), and the group's Windows pids as a stand-in for ps.
+	 */
+	function msysWindows(group: (pgid: number) => number[]) {
+		const steps: string[] = [];
+		const made = create({
+			platform: "win32",
+			killGraceMs: 5000,
+			plan: (command, groupFile) => ({
+				...planSpawn(command, BASH, { platform: process.platform }),
+				group: { ps: "C:\\Git\\usr\\bin\\ps.exe", file: groupFile },
+			}),
+			msysGroup: (ps, pgid) => {
+				expect(ps).toBe("C:\\Git\\usr\\bin\\ps.exe");
+				return group(pgid);
+			},
+			kill: (step) => {
+				if (step.kind !== "exec") throw new Error(`a ${step.kind} on Windows`);
+				steps.push(step.args.join(" "));
+				// No taskkill here: a real signal ends the shell, the first pid named, if it still runs.
+				if (step.args.includes("/F") && alive(Number(step.args[3]))) process.kill(Number(step.args[3]), "SIGKILL");
+			},
+		});
+		return { ...made, steps, groupFile: (id: string) => join(made.dir, "logs", `${id}.group`) };
+	}
+
+	it("on Windows with Git Bash ends the shell and every process of its MSYS group at once, npm's too", async () => {
+		const { manager, steps, groupFile } = msysWindows((pgid) => (pgid === 1730 ? [7016, 1080] : []));
+		const job = manager.start({ command: `exec ${node} -e 'setInterval(() => {}, 1000)'`, cwd: tmpdir() });
+		writeFileSync(groupFile(job.id), "1730");
+		const startedAt = Date.now();
+		expect(await manager.stop(job.id, "user")).toMatchObject({
+			state: "exited",
+			stoppedBy: "user",
+			lingering: false,
+		});
+		// No grace period: asking ends no console program on Windows.
+		expect(Date.now() - startedAt).toBeLessThan(2500);
+		expect(steps).toEqual([`/T /F /PID ${job.pid} /PID 7016 /PID 1080`]);
+	});
+
+	it("on Windows with Git Bash reports what a job left running after its shell ended, and ends it on shutdown", async () => {
+		let left = [5150];
+		const { manager, steps, groupFile } = msysWindows((pgid) => (pgid === 1717 ? left : []));
+		const job = manager.start({ command: "sleep 0.3; echo started", cwd: tmpdir() });
+		writeFileSync(groupFile(job.id), "1717");
+		expect(await manager.wait(job.id, { timeoutMs: 8000 })).toEqual({ reason: "exit" });
+		expect(manager.get(job.id)).toMatchObject({ state: "exited", exitCode: 0, lingering: true });
+		expect(manager.runningCount()).toBe(1);
+		expect(await manager.shutdown(100)).toBe(1);
+		expect(steps).toEqual([`/T /F /PID ${job.pid} /PID 5150`]);
+		left = [];
+		// A job whose group is empty when its shell ends is not lingering.
+		const plain = manager.start({ command: "true", cwd: tmpdir() });
+		writeFileSync(groupFile(plain.id), "1717");
+		await manager.wait(plain.id, { timeoutMs: 8000 });
+		expect(manager.get(plain.id)).toMatchObject({ lingering: false });
+	});
+
 	it("reports a command that backgrounded its own child as lingering, and still stops it", async () => {
 		const { manager } = create();
 		manager.start({
@@ -333,6 +452,25 @@ describe.skipIf(!posix)("background jobs", () => {
 		]);
 	});
 
+	it("marks a watched line as observed while a wait on the job runs", async () => {
+		const { manager, events } = create();
+		manager.start({
+			command: `sleep 0.2; echo "ERROR one"; sleep 1; echo "ERROR two"; sleep 5`,
+			cwd: tmpdir(),
+			watch: "^error",
+		});
+		const matches = () => events.filter((event) => event.type === "match");
+		// Nobody waits on the job: the line is news to whoever hears of it.
+		await vi.waitFor(() => expect(matches()).toHaveLength(1), { timeout: 5000 });
+		manager.read("bg-1", { maxChars: 1000 });
+		// A wait is running when the next one comes: its caller reads the line in its own output.
+		await manager.wait("bg-1", { timeoutMs: 8000, pattern: "ERROR two" });
+		expect(matches().map((event) => (event.type === "match" ? [event.line, event.observed] : []))).toEqual([
+			["ERROR one", false],
+			["ERROR two", true],
+		]);
+	});
+
 	it("stops every job on shutdown and as a last resort", async () => {
 		const { manager } = create();
 		const pids = [
@@ -347,6 +485,35 @@ describe.skipIf(!posix)("background jobs", () => {
 		const pid = last.manager.start({ command: "sleep 30", cwd: tmpdir() }).pid as number;
 		last.manager.killAllNow();
 		await vi.waitFor(() => expect(alive(pid)).toBe(false), { timeout: 3000 });
+	});
+
+	it("can have a job write straight to its log, read it from there, and leave it running on release", async () => {
+		const { manager } = create({ outputToFile: true });
+		manager.start({ command: "echo one; sleep 0.2; echo two >&2; exit 4", cwd: tmpdir() });
+		expect(await manager.wait("bg-1", { pattern: "two", timeoutMs: 5000, since: 0 })).toEqual({
+			reason: "match",
+			line: "two",
+		});
+		await manager.wait("bg-1", { timeoutMs: 5000 });
+		const done = manager.read("bg-1", { since: 0, maxChars: 1000 });
+		expect(done.text).toBe("one\ntwo\n");
+		expect(done.job).toMatchObject({ state: "exited", exitCode: 4 });
+		expect(readFileSync(done.job.logPath, "utf8")).toBe("one\ntwo\n");
+
+		const server = manager.start({
+			command: `${node} -e 'setInterval(() => console.log("tick"), 50)'`,
+			cwd: tmpdir(),
+		});
+		await manager.wait("bg-2", { pattern: "tick", timeoutMs: 5000 });
+		const kept = await manager.release();
+		expect(kept.map((job) => job.id)).toEqual(["bg-2"]);
+		const size = statSync(server.logPath).size;
+		try {
+			await vi.waitFor(() => expect(statSync(server.logPath).size).toBeGreaterThan(size), { timeout: 3000 });
+			expect(alive(server.pid as number)).toBe(true);
+		} finally {
+			process.kill(-(server.pid as number), "SIGKILL");
+		}
 	});
 
 	it("clears out the logs of sessions that ended long ago", () => {
@@ -390,7 +557,14 @@ describe.skipIf(!posix)("background feature", () => {
 
 	async function start(
 		responder: MockResponder,
-		extra: { mode?: DecisionMode; features?: Record<string, unknown>; tools?: AgentTool[] } = {},
+		extra: {
+			mode?: DecisionMode;
+			/** notify.routing's own mode; unset, it keeps its built-in default (shadow). */
+			routing?: DecisionMode;
+			features?: Record<string, unknown>;
+			background?: Record<string, unknown>;
+			tools?: AgentTool[];
+		} = {},
 	) {
 		const dir = mkdtempSync(join(tmpdir(), "mu-bg-feature-"));
 		dirs.push(dir);
@@ -402,9 +576,17 @@ describe.skipIf(!posix)("background feature", () => {
 					provider: new MockJudgeProvider(responder),
 					mode: extra.mode ?? "active",
 					config: parseConfig({
+						modes: extra.routing ? { "notify.routing": extra.routing } : {},
 						features: {
 							memory: false,
-							background: { logDir: join(dir, "logs"), inheritShell: false, killGraceMs: 200 },
+							// The harness runs like `mu --print`, where routing is not asked unless told to.
+							notify: { unattended: true },
+							background: {
+								logDir: join(dir, "logs"),
+								inheritShell: false,
+								killGraceMs: 200,
+								...extra.background,
+							},
 							...extra.features,
 						},
 					}),
@@ -470,6 +652,56 @@ describe.skipIf(!posix)("background feature", () => {
 		);
 	});
 
+	it.skipIf(process.platform === "win32")("runs a job without the credentials in mu's environment", async () => {
+		vi.stubEnv("OPENAI_API_KEY", "sk-test-0123456789abcdef");
+		const { harness } = await start(() => ({}));
+		harness.setResponses([
+			call("bg_start", { command: 'printf "key=[%s]\\n" "$OPENAI_API_KEY"' }),
+			call("bg_output", { id: "bg-1", timeout: 10 }),
+			fauxAssistantMessage("Done."),
+		]);
+		await harness.session.prompt("Print the key in the background.");
+
+		const output = results(harness)[1];
+		expect(output).toContain("key=[]");
+		expect(output).not.toContain("sk-test-0123456789abcdef");
+	});
+
+	it("runs the user's own command from /jobs start, and tells the model of its end as the user's", async () => {
+		const { harness, presented } = await start(() => ({}));
+		const notes: string[] = [];
+		const ui = new Proxy({ notify: (message: string) => notes.push(message) } as Record<string, unknown>, {
+			get: (target, key) => (key in target ? target[key as string] : () => undefined),
+		}) as unknown as ExtensionUIContext;
+		await harness.session.bindExtensions({ uiContext: ui, mode: "rpc" });
+
+		await harness.session.prompt("/jobs start");
+		expect(notes.at(-1)).toContain("Give a command to run");
+
+		await harness.session.prompt("/jobs start --name greet printf 'hi\\n'; exit 3");
+		expect(notes.at(-1)).toMatch(/^Started bg-1 "greet" · printf 'hi\\n'; exit 3 · running/);
+		await vi.waitFor(() => expect(presented.map((event) => event.kind)).toContain("background.exit"), {
+			timeout: 5000,
+		});
+		expect(presented.find((event) => event.kind === "background.start")?.payload).toMatchObject({
+			id: "bg-1",
+			name: "greet",
+			cwd: harness.tempDir,
+		});
+		// A command, not a message: nothing went to the model when it started.
+		expect(harness.session.messages.filter((message) => message.role === "user")).toEqual([]);
+
+		let seen = "";
+		harness.setResponses([
+			(context) => {
+				seen = JSON.stringify(context.messages);
+				return fauxAssistantMessage("It printed hi and exited with 3.");
+			},
+		]);
+		await harness.session.prompt("Why did it fail?");
+		expect(seen).toMatch(/The user's background job bg-1 \(`printf 'hi\\\\n'; exit 3`\) exited with code 3/);
+	});
+
 	it("puts bg_start through the risk guard like a foreground command", async () => {
 		const { harness, dir } = await start(
 			(request): Record<string, Answer> =>
@@ -493,7 +725,7 @@ describe.skipIf(!posix)("background feature", () => {
 	});
 
 	it("routes the end of a job the model is not waiting on: now steers the running turn", async () => {
-		const { harness } = await start(urgency("now"));
+		const { harness } = await start(urgency("now"), { routing: "active" });
 		let seen = "";
 		harness.setResponses([
 			call("bg_start", { command: "echo done; exit 1" }),
@@ -513,7 +745,7 @@ describe.skipIf(!posix)("background feature", () => {
 	});
 
 	it("routes it to the next turn, or nowhere", async () => {
-		const later = await start(urgency("next_turn"));
+		const later = await start(urgency("next_turn"), { routing: "active" });
 		let seen = "";
 		later.harness.setResponses([
 			call("bg_start", { command: "echo done" }),
@@ -529,7 +761,7 @@ describe.skipIf(!posix)("background feature", () => {
 		await later.harness.session.prompt("And the check?");
 		expect(seen).toContain("exited with code 0");
 
-		const never = await start(urgency("drop"));
+		const never = await start(urgency("drop"), { routing: "active" });
 		never.harness.setResponses([
 			call("bg_start", { command: "echo done" }),
 			call("pause", { ms: 900 }),
@@ -541,8 +773,31 @@ describe.skipIf(!posix)("background feature", () => {
 		expect(notices(never.harness)).toEqual([]);
 	});
 
-	it("tells the model at its next turn when no judge vouches for anything else", async () => {
-		const { harness } = await start(urgency("now"), { mode: "shadow" });
+	it("without a verdict (routing is in shadow by default) tells the model at once, within a single prompt", async () => {
+		const asked: string[] = [];
+		const { harness } = await start((request) => {
+			if ("urgency" in request.questions) asked.push(JSON.stringify(request.state));
+			// What the judge would say is recorded, not acted on.
+			return urgency("drop")(request);
+		});
+		let seen = "";
+		harness.setResponses([
+			call("bg_start", { command: "echo done; exit 3" }),
+			call("pause", { ms: 900 }),
+			(context) => {
+				seen = JSON.stringify(context.messages);
+				return fauxAssistantMessage("The check failed with code 3.");
+			},
+		]);
+		// One prompt and no other: a notice for the next turn would never be read.
+		await harness.session.prompt("Run the long check while you refactor.");
+		expect(notices(harness)).toHaveLength(1);
+		expect(seen).toContain("exited with code 3");
+		expect(asked).toHaveLength(1);
+	});
+
+	it("can still leave the notice for the next turn, as before", async () => {
+		const { harness } = await start(urgency("now"), { background: { unjudged: "next_turn" } });
 		harness.setResponses([
 			call("bg_start", { command: "echo done" }),
 			call("pause", { ms: 900 }),
@@ -553,6 +808,18 @@ describe.skipIf(!posix)("background feature", () => {
 		expect(notices(harness)).toEqual([]);
 		await harness.session.prompt("And the check?");
 		expect(notices(harness)).toHaveLength(1);
+	});
+
+	it("says nothing of a watched line or an end the model is already waiting for", async () => {
+		const { harness } = await start(urgency("now"), { routing: "active" });
+		harness.setResponses([
+			call("bg_start", { command: "sleep 0.3; echo ready; sleep 0.3", watch: "ready" }),
+			call("bg_output", { id: "bg-1", timeout: 10 }),
+			fauxAssistantMessage("It came up and finished."),
+		]);
+		await harness.session.prompt("Start it and wait until it is done.");
+		expect(results(harness)[1]).toContain("ready");
+		expect(notices(harness)).toEqual([]);
 	});
 
 	it("gives a long background test log the same admission treatment as a foreground one", async () => {
@@ -595,7 +862,8 @@ describe.skipIf(!posix)("background feature", () => {
 	});
 
 	it("stops its jobs when the session shuts down", async () => {
-		const { harness } = await start(() => ({}));
+		// The harness runs like `mu --print`, where jobs are left running by default (next test).
+		const { harness } = await start(() => ({}), { background: { keepOnExit: "never" } });
 		harness.setResponses([
 			call("bg_start", { command: `${node} -e 'console.log("pid", process.pid); setInterval(() => {}, 1000)'` }),
 			call("bg_output", { id: "bg-1", wait_for: "pid \\d+", timeout: 10 }),
@@ -608,5 +876,24 @@ describe.skipIf(!posix)("background feature", () => {
 		await harness.session.extensionRunner.emit({ type: "session_shutdown", reason: "reload" });
 
 		await vi.waitFor(() => expect(alive(pid)).toBe(false), { timeout: 3000 });
+	});
+
+	it("leaves its jobs running after an unattended run, and says so when it starts one", async () => {
+		const { harness } = await start(() => ({}));
+		harness.setResponses([
+			call("bg_start", { command: `${node} -e 'console.log("pid", process.pid); setInterval(() => {}, 1000)'` }),
+			call("bg_output", { id: "bg-1", wait_for: "pid \\d+", timeout: 10 }),
+			fauxAssistantMessage("Serving."),
+		]);
+		await harness.session.prompt("Serve it.");
+		expect(results(harness)[0]).toContain("keeps running after the run ends");
+		const pid = Number(/pid (\d+)/.exec(results(harness)[1])?.[1]);
+		try {
+			await harness.session.extensionRunner.emit({ type: "session_shutdown", reason: "quit" });
+			await new Promise((resolve) => setTimeout(resolve, 500));
+			expect(alive(pid)).toBe(true);
+		} finally {
+			process.kill(pid, "SIGKILL");
+		}
 	});
 });

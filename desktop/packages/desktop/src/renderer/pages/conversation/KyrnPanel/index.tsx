@@ -92,7 +92,8 @@ export type KernelTab = 'board' | 'judge' | 'hive' | 'lessons';
  * and cache) above all of that. `visible`: the tab is the one the open panel shows (the lessons tab reads its file
  * only then). `lessons`: whether the main process can read the conversation's lessons file (a native conversation's
  * it can once its folder is known, `cwd`, by which they are read; until then the tab says so and the judge tab names
- * lessons by id). Give it `key={conversationId}`.
+ * lessons by id). `command` sends the conversation's mu a command, where the app can: a native conversation's page
+ * publishes one (the judge tab's "mark as wrong" uses it). Give it `key={conversationId}`.
  */
 export function KernelBody({
   tab,
@@ -102,6 +103,7 @@ export function KernelBody({
   visible = true,
   lessons = true,
   cwd,
+  command,
 }: {
   tab: KernelTab;
   conversationId: string;
@@ -110,6 +112,7 @@ export function KernelBody({
   visible?: boolean;
   lessons?: boolean;
   cwd?: string;
+  command?: (text: string) => Promise<boolean>;
 }) {
   const { t } = useTranslation();
   const ready = activity.settled || activity.error !== undefined;
@@ -149,6 +152,7 @@ export function KernelBody({
               conversationId={lessons ? conversationId : undefined}
               visible={visible}
               cwd={cwd}
+              command={command}
             />
           ) : lessons ? (
             <LessonsTab conversationId={conversationId} events={activity.events} visible={visible} cwd={cwd} />

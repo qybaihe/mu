@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fromEntries, type PiCommand } from '@/common/utils/nativeHost';
 import NativeComposer from '@/renderer/pages/native/components/NativeComposer';
+import { showsContextRing } from '@/renderer/pages/native/utils/composerLines';
 import { useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext } from '@/renderer/pages/native/utils/nativeClient';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
@@ -204,7 +205,7 @@ const state = (tokens: number | null, contextWindow: number) => ({
 });
 
 describe('the context ring of a native conversation', () => {
-  it('shows nothing until pi says how full the context is, then the fill against the window', async () => {
+  it('shows nothing until pi says how full the context is, and beside the kernel bar only once the window runs short', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     await mount(host);
@@ -218,8 +219,13 @@ describe('the context ring of a native conversation', () => {
         state(1240, 128000),
       ]);
     });
+    // Plenty of room: the kernel bar along the bottom reads the context, the composer stays quiet.
+    expect(screen.queryByTestId('native-context-usage')).toBeNull();
+    act(() => {
+      host.push('c1', state(100000, 128000));
+    });
     const ring = screen.getByTestId('native-context-usage');
-    expect(ring).toHaveAttribute('data-tokens', '1240');
+    expect(ring).toHaveAttribute('data-tokens', '100000');
     expect(ring).toHaveAttribute('data-window', '128000');
     // Right after a compaction pi does not know the count yet: nothing rather than an old number.
     act(() => {
@@ -246,11 +252,11 @@ describe('the context ring of a native conversation', () => {
         type: 'response',
         command: 'get_session_stats',
         success: true,
-        data: { tokens: { input: 10, output: 5 }, cost: 0.0421, contextUsage: { tokens: 15, contextWindow: 1000 } },
+        data: { tokens: { input: 10, output: 5 }, cost: 0.0421, contextUsage: { tokens: 900, contextWindow: 1000 } },
       });
     });
     expect(host.viewOf('c1').host.session?.cost).toBe(0.0421);
-    expect(screen.getByTestId('native-context-usage')).toHaveAttribute('data-tokens', '15');
+    expect(screen.getByTestId('native-context-usage')).toHaveAttribute('data-tokens', '900');
     // Nothing new: nothing asked again.
     act(() => {
       host.push('c1', frame('progress', { step: 'reading' }));
@@ -314,5 +320,21 @@ describe('a command an extension answers', () => {
       host.push('c1', ended(user('Review src carefully')));
     });
     expect(screen.getByTestId('native-status')).toHaveAttribute('data-sending', 'false');
+  });
+});
+
+describe('when the composer shows the context ring', () => {
+  const usage = (tokens: number, contextLimit: number) => ({ tokenUsage: { total_tokens: tokens }, contextLimit });
+
+  it('beside the kernel bar, only above 70% of the window, where the ring turns amber', () => {
+    expect(showsContextRing(usage(70_000, 100_000), true)).toBe(false);
+    expect(showsContextRing(usage(70_001, 100_000), true)).toBe(true);
+    // A window pi has not named: the bar has the reading, the ring would have no share to show.
+    expect(showsContextRing(usage(70_001, 0), true)).toBe(false);
+  });
+
+  it('without the kernel bar (a narrow window), at any fill', () => {
+    expect(showsContextRing(usage(10, 100_000), false)).toBe(true);
+    expect(showsContextRing(usage(10, 0), false)).toBe(true);
   });
 });

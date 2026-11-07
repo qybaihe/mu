@@ -1,3 +1,4 @@
+import { isReadOnlyChain, shellStart } from "../../checkpoint/mutating.ts";
 import { toolConstraint } from "../../decisions/tool-constraint.ts";
 import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
@@ -28,12 +29,31 @@ export function describeCall(toolName: string, input: unknown): string {
 }
 
 /**
+ * A shell command that only looks (`ls -la; git status`, see `isReadOnlyChain`): no more against "do not modify" than
+ * the `read` and `grep` tools. PowerShell, and a background command on Windows, are read as PowerShell.
+ */
+function readOnlyShell(toolName: string, input: Readonly<Record<string, unknown>>, cwd: string): boolean {
+	if (!isShellTool(toolName) && toolName !== "bg_start") return false;
+	const powershell = toolName === "powershell" || (toolName === "bg_start" && process.platform === "win32");
+	return (
+		typeof input.command === "string" &&
+		isReadOnlyChain(input.command, powershell, cwd, shellStart(toolName, input, cwd))
+	);
+}
+
+/**
  * Keeps the user's hard constraints, not just shows them: a call that changes
  * something is checked against every constraint in the task frame before it
  * runs. The block reason is the user's own sentence.
  */
 export function registerConstraints(runtime: KyrnRuntime): void {
-	const options = runtime.options("constraints", { enabled: true, maxConstraints: 6, waitMs: 5000 });
+	const options = runtime.options("constraints", {
+		enabled: true,
+		maxConstraints: 6,
+		waitMs: 5000,
+		/** Read-only shell commands are not checked, as reading tools are not. */
+		skipReadOnly: true,
+	});
 	if (!options.enabled) return;
 
 	runtime.pi.on(
@@ -41,6 +61,7 @@ export function registerConstraints(runtime: KyrnRuntime): void {
 		failOpen(async (event, ctx) => {
 			runtime.touch(ctx);
 			if (!MUTATING.has(event.toolName)) return undefined;
+			if (options.skipReadOnly && readOnlyShell(event.toolName, event.input, ctx.cwd)) return undefined;
 			// The newest constraints are the ones a user is most likely to see broken.
 			const constraints = (runtime.frame?.constraints ?? [])
 				.slice(-options.maxConstraints)
@@ -68,5 +89,6 @@ export function registerConstraints(runtime: KyrnRuntime): void {
 				reason: `mu: this call goes against what the user said: ${broken.map((text) => `"${clip(text, 200)}"`).join("; ")}. Do it another way, or ask the user whether the instruction still holds.`,
 			};
 		}),
+		{ final: true },
 	);
 }

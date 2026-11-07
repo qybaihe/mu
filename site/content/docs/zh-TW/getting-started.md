@@ -1,0 +1,79 @@
+---
+title: 快速開始
+summary: 安裝桌面版或命令列，接上一個模型，跑第一個任務。
+---
+
+## 桌面版 {#desktop-app}
+
+1. 從 [Releases](https://github.com/qybaihe/mu/releases/latest) 下載適合你系統的安裝檔，或者到[首頁](@home#install)，它會替你選好系統。
+
+   | 系統 | 檔案 |
+   | --- | --- |
+   | macOS，Apple 晶片 | `mu-<version>-mac-arm64.dmg` |
+   | macOS，Intel | `mu-<version>-mac-x64.dmg` |
+   | Windows x64 / Arm | `mu-<version>-win-x64.exe` / `mu-<version>-win-arm64.exe` |
+   | Linux x64 / Arm（Debian、Ubuntu） | `mu-<version>-linux-amd64.deb` / `mu-<version>-linux-arm64.deb` |
+
+   Windows 版還沒有程式碼簽署，所以第一次執行時 SmartScreen 會警告：選**其他資訊**，再選**仍要執行**。
+2. 開啟它。新手引導分四步：模型、權限模式、判定器、開始。
+   - **模型。** 貼上一組 API 金鑰，mu 會從格式認出是哪家服務（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI 等），並用一次請求檢查它。也可以用 ChatGPT 登入。
+   - **權限。** 預設選取「判定模式」；請見[權限與安全](@docs/permissions)。
+   - **判定器。** 在能執行 [mude 1.0](@docs/judges#mude)（mu 自己的決策模型）的 Mac 上，一開始就選中它，點一下就能裝好。否則，沒有金鑰時，由免費的 Jev 回答（TypeSafe 託管的判定模型，透過 OpenCode Zen 提供）。不想傳送任何內容給判定器，就選**不用判定器**。
+   - **開始。** 如果 mu 找到 Claude Code、Codex 或 ZCode 的對話，會提議幫你匯入。
+3. 選一個資料夾，開始對話。
+
+## 命令列 {#command-line}
+
+```bash
+npm i -g mu-agent      # Node.js 22.19 或更新版本
+mu setup               # 接上一個模型，選擇判定器
+mu                     # 在目前目錄開啟一個工作階段
+```
+
+想用 ChatGPT 帳號取代金鑰，就在 `mu setup` 裡選 ChatGPT 登入：mu 啟動後直接打開 `/login`，在瀏覽器裡完成登入。寫指令碼時，`mu setup --help` 列出非互動式的用法；金鑰從標準輸入讀取，從不寫在命令列上。
+
+可以試試這些：
+
+| 指令 | 做什麼 |
+| --- | --- |
+| `mu "fix the failing test in src/pager.test.ts"` | 帶著一則提示開始 |
+| `mu -p "summarize this repository"` | 回答一次就結束 |
+| `mu -c` / `mu -r` | 接著上一個工作階段 / 選一個工作階段來恢復 |
+| `mu import --list` | 找出可以匯入的 Claude Code、Codex 和 ZCode 對話 |
+| `mu doctor` | 檢查安裝、判定器和各項連線 |
+| `mu ledger 3` | 最近三個工作階段裡判定器做了哪些決定 |
+
+## 你的第一個任務 {#first-task}
+
+開啟一個專案資料夾，用你自己的話說要做什麼。接下來會這樣：
+
+1. **判定器先讀你的訊息**，顯示一行判定，例如「多步任務 · 全力投入」。耗時遠不到一秒；按 <kbd>Esc</kbd> 跳過。
+2. **模型開始做事。** 長工具輸出先過濾再交給模型；在「判定模式」下，專案之外的指令要等核准。
+3. **它說做完時**，mu 會檢查有沒有東西驗證過這份工作，沒有就提醒一次。
+
+想讓它一直做到某個條件成立，用[目標模式](@docs/goal)：`/goal all tests in packages/api pass`。
+
+## 判定器 {#judge}
+
+你不需要特別設定判定器：沒有 Jev 金鑰時，由 OpenCode Zen 上免費的 Jev 回答，mu 每天提示一次。在 Apple 晶片的 Mac 上，`mu setup` 和桌面版推薦 [mude 1.0](@docs/judges#mude)：mu 自己的決策模型，在你的 Mac 上執行。要用自己的金鑰、本機判定器或別的模型，請見[判定器](@docs/judges)。
+
+{points} 個判定點裡有 {points_active} 個從一開始就依判定結果行事，每次判定都會記錄下來：`/status`、`mu ledger`，或桌面版的「判定」頁。想先觀察判定器、再決定信不信任它，就把判定點設成影子模式：照常提問並記錄，但不改變任何東西。
+
+```json
+{ "modes": { "default": "shadow" } }
+```
+
+這一行寫在 `~/.mu/agent/mu.json` 裡；`/mu mode default shadow` 效果相同，但只對目前的工作階段有效。
+
+## 檔案放在哪裡 {#files}
+
+| 路徑 | 內容 |
+| --- | --- |
+| `~/.mu/agent/mu.json` | mu 的設定：判定器、模式、功能 |
+| `~/.mu/agent/auth.json`、`models.json`、`settings.json` | pi 的登入、供應商和偏好設定 |
+| `~/.mu/agent/sessions/` | 工作階段，桌面版和命令列共用 |
+| `~/.mu/agent/mu/lessons.jsonl` | 經驗庫 |
+| `~/.mu/agent/mu/permissions.json` | 你上次選的權限模式 |
+| `~/.mu/backups/` | `mu setup` 改動檔案之前做的備份 |
+
+在 Windows 上，`~` 是你的使用者資料夾（`%USERPROFILE%`）。

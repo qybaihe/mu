@@ -156,6 +156,22 @@
   color: var(--text-secondary);
 }
 
+/* Following the agent: a toggle, pressed while on. */
+.follow:global(.arco-btn) {
+  flex: none;
+  align-self: center;
+  color: var(--text-secondary);
+}
+
+.follow:global(.arco-btn)[aria-pressed='true'] {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.follow:global(.arco-btn:not(:disabled):hover) {
+  color: var(--text-primary);
+}
+
 /* The way back to the transcript while the panel fills the row: first in the strip, named, never cut. */
 .back:global(.arco-btn) {
   flex: none;

@@ -3,8 +3,12 @@ import { createInterface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 import {
   isSubscriptionProvider,
+  PROVIDER_ARG,
+  type LoginEnable,
+  LOGIN_ERROR_CODES,
   type LoginModel,
   type LoginPrompt,
+  type LoginStartOptions,
   type LoginState,
   type LoginStatus,
   type SubscriptionProvider,
@@ -62,6 +66,34 @@ const CANCELLED = 'Login cancelled';
  * provider's own cancel) would otherwise keep its callback port until the app quits.
  */
 const LOGIN_LIMIT_MS = 15 * 60_000;
+/** How long a sign-in runner told to stop gets before it is ended. A well one closes its port in a tenth of a second. */
+const KILL_AFTER_MS = 1500;
+/**
+ * The longest a new sign-in waits for the runner before it to end. That runner may still listen on the callback port
+ * (ChatGPT's is always 1455), where the new one would find it taken. Past this, the new one starts anyway: it takes
+ * the port over from a sign-in of mu's by itself.
+ */
+const STOP_LIMIT_MS = 3000;
+
+/** A sign-in's runner, and its end: `close`, or `error` when it never started. */
+type Run = { process: RunnerProcess; closed: Promise<void> };
+
+/** What the app can act on in a runner's error line: its code, and for `port_in_use` the port and who keeps it. */
+function errorDetails(message: Json): Pick<LoginState, 'code' | 'port' | 'holder'> {
+  const code = LOGIN_ERROR_CODES.find((known) => known === message.code);
+  if (code !== 'port_in_use') return code ? { code } : {};
+  const found = record(message.holder);
+  const holder = {
+    ...(typeof found.pid === 'number' && Number.isInteger(found.pid) && found.pid > 0 ? { pid: found.pid } : {}),
+    ...(str(found.command) ? { command: str(found.command) } : {}),
+    ...(found.pi === true ? { pi: true } : {}),
+  };
+  return {
+    code,
+    ...(typeof message.port === 'number' ? { port: message.port } : {}),
+    ...(Object.keys(holder).length ? { holder } : {}),
+  };
+}
 
 const toModels = (value: unknown): LoginModel[] =>
   (Array.isArray(value) ? value : [])
@@ -69,13 +101,25 @@ const toModels = (value: unknown): LoginModel[] =>
     .filter((model) => str(model.id))
     .map((model) => ({ id: str(model.id), name: str(model.name) || str(model.id) }));
 
+/** The ids of an account's enabled models; undefined when the runner did not say (an older harness offers them all). */
+const toEnabled = (value: unknown): string[] | undefined =>
+  Array.isArray(value) ? value.map(str).filter(Boolean) : undefined;
+
+/** A model id as `mu auth enable` takes it: one argument, never a flag. */
+const MODEL_ID = /^[^\s-][^\s]{0,199}$/;
+
 /**
  * One sign-in at a time. The flow runs in a child process, `mu auth` (pi's code, pi's credential store); this keeps the
  * state a screen polls, opens the provider's page in the browser, and passes the person's answer to a prompt back in.
  */
 export class LoginManager {
   private current: LoginState = { id: 0, phase: 'idle' };
-  private child: RunnerProcess | undefined;
+  private child: Run | undefined;
+  /**
+   * Sign-in runners told to stop that have not ended yet, each with its end (at most STOP_LIMIT_MS away). The next
+   * sign-in or sign-out starts once they have ended.
+   */
+  private readonly stopping = new Map<RunnerProcess, Promise<void>>();
   /** The runs of `status` and `logout` still going, which end with the app (see dispose). */
   private readonly runs = new Set<RunnerProcess>();
   /**
@@ -88,6 +132,9 @@ export class LoginManager {
   private running: Promise<unknown> | undefined;
   /** The app quits: no runner starts any more. */
   private disposed = false;
+  /** Settles when the app quits: nothing waits for a runner to end then, they are all ended at once. */
+  private readonly quitting: Promise<void>;
+  private quit: () => void = () => {};
   private limit: ReturnType<typeof setTimeout> | undefined;
   private readonly spawnRunner: SpawnRunner;
   private readonly openUrl: (url: string) => void;
@@ -95,22 +142,60 @@ export class LoginManager {
   constructor(spawnRunner: SpawnRunner, openUrl: (url: string) => void) {
     this.spawnRunner = spawnRunner;
     this.openUrl = openUrl;
+    this.quitting = new Promise((resolve) => {
+      this.quit = resolve;
+    });
   }
 
   state(): LoginState {
     return this.current;
   }
 
-  start(provider: SubscriptionProvider): LoginState {
+  /**
+   * Starts a sign-in, ending the one before it. The new runner starts once the old one has ended: the old one may still
+   * listen on the callback port, and the new one would find the port taken.
+   */
+  start(provider: SubscriptionProvider, options: LoginStartOptions = {}): LoginState {
     if (!isSubscriptionProvider(provider)) throw new Error('Unknown provider');
-    this.stopChild();
+    const ended = this.stopChild();
     const id = this.current.id + 1;
-    this.current = { id, provider, phase: 'running' };
+    const paste = options.paste === true;
+    this.current = { id, provider, phase: 'running', ...(paste ? { paste } : {}) };
+    this.limit = setTimeout(() => {
+      if (this.current.id !== id || this.current.phase !== 'running' || this.current.stored) return;
+      this.current = {
+        ...this.current,
+        phase: 'failed',
+        prompt: undefined,
+        error: 'The sign-in waited too long and was stopped',
+      };
+      void this.stopChild();
+    }, LOGIN_LIMIT_MS);
+    this.limit.unref?.();
+    if (this.stopping.size === 0) this.run(id, provider, paste);
+    else void ended.then(() => this.run(id, provider, paste));
+    return this.current;
+  }
+
+  /** Runs sign-in `id`, unless it was cancelled or replaced while the runner before it was ending, or the app quits. */
+  private run(id: number, provider: SubscriptionProvider, paste: boolean): void {
+    if (this.disposed || this.current.id !== id || this.current.phase !== 'running') return;
     const update = (patch: Partial<LoginState>) => {
       if (this.current.id === id) this.current = { ...this.current, ...patch };
     };
-    const child = this.spawnRunner(['login', provider]);
-    this.child = child;
+    let child: RunnerProcess;
+    try {
+      child = this.spawnRunner(['login', provider, ...(paste ? ['--paste'] : [])]);
+    } catch (error) {
+      update({ phase: 'failed', prompt: undefined, error: error instanceof Error ? error.message : String(error) });
+      return;
+    }
+    const closed = new Promise<void>((resolve) => {
+      child.on('close', () => resolve());
+      child.on('error', () => resolve());
+    });
+    const run: Run = { process: child, closed };
+    this.child = run;
     createInterface({ input: child.stdout }).on('line', (line) => {
       let message: Json;
       try {
@@ -133,23 +218,28 @@ export class LoginManager {
       } else if (message.type === 'prompt') update({ prompt: toPrompt(message.prompt) });
       else if (message.type === 'prompt_done') update({ prompt: undefined });
       else if (message.type === 'signed_in') update({ stored: true, prompt: undefined });
-      else if (message.type === 'done') update({ phase: 'done', prompt: undefined, models: toModels(message.models) });
+      else if (message.type === 'done')
+        update({
+          phase: 'done',
+          prompt: undefined,
+          models: toModels(message.models),
+          enabled: toEnabled(message.enabled),
+        });
       else if (message.type === 'error' && this.current.phase === 'running')
         update(
           // The person said no inside the flow (the risk question of a Google sign-in): not a failure.
           str(message.message) === CANCELLED
             ? { phase: 'cancelled', prompt: undefined }
-            : { phase: 'failed', prompt: undefined, error: str(message.message) || 'The sign-in failed' }
+            : {
+                phase: 'failed',
+                prompt: undefined,
+                error: str(message.message) || 'The sign-in failed',
+                ...errorDetails(message),
+              }
         );
     });
-    this.limit = setTimeout(() => {
-      if (this.current.id !== id || this.current.phase !== 'running' || this.current.stored) return;
-      update({ phase: 'failed', prompt: undefined, error: 'The sign-in waited too long and was stopped' });
-      this.stopChild();
-    }, LOGIN_LIMIT_MS);
-    this.limit.unref?.();
     child.on('close', (code) => {
-      if (this.child === child) {
+      if (this.child === run) {
         this.child = undefined;
         clearTimeout(this.limit);
         this.limit = undefined;
@@ -162,20 +252,19 @@ export class LoginManager {
         });
     });
     child.on('error', (error) => update({ phase: 'failed', prompt: undefined, error: error.message }));
-    return this.current;
   }
 
   /** The person's answer to the prompt of sign-in `id`. An answer to an older sign-in is dropped. */
   answer(id: number, value: string): LoginState {
     if (this.current.id !== id || !this.child || !this.current.prompt) return this.current;
-    this.child.stdin.write(`${JSON.stringify({ type: 'answer', value })}\n`);
+    this.child.process.stdin.write(`${JSON.stringify({ type: 'answer', value })}\n`);
     this.current = { ...this.current, prompt: undefined };
     return this.current;
   }
 
   cancel(): LoginState {
     if (this.current.phase === 'running') this.current = { ...this.current, phase: 'cancelled', prompt: undefined };
-    this.stopChild();
+    void this.stopChild();
     return this.current;
   }
 
@@ -186,11 +275,12 @@ export class LoginManager {
    */
   dispose(): void {
     this.disposed = true;
+    this.quit();
     clearTimeout(this.limit);
     this.limit = undefined;
     const child = this.child;
     this.child = undefined;
-    for (const run of [...(child ? [child] : []), ...this.runs]) {
+    for (const run of [...(child ? [child.process] : []), ...this.stopping.keys(), ...this.runs]) {
       try {
         run.kill();
       } catch {
@@ -215,10 +305,33 @@ export class LoginManager {
     return look;
   }
 
-  /** Signs out of a subscription (its OAuth credential only) and says who is still signed in. */
+  /**
+   * Signs out of a subscription (its OAuth credential only) and says who is still signed in. A sign-in still under way
+   * ends first, and the sign-out starts once its runner has: that runner keeps the callback port, and writes the
+   * credential store the sign-out changes.
+   */
   logout(provider: SubscriptionProvider, timeoutMs = 20000): Promise<LoginStatus> {
     if (!isSubscriptionProvider(provider)) return Promise.reject(new Error('Unknown provider'));
-    return this.oneAtATime(() => this.statusAfter(['logout', provider], timeoutMs));
+    if (this.current.phase === 'running') this.current = { ...this.current, phase: 'cancelled', prompt: undefined };
+    const ended = this.stopChild();
+    const signOut = () => this.statusAfter(['logout', provider], timeoutMs);
+    return this.oneAtATime(this.stopping.size === 0 ? signOut : () => ended.then(signOut));
+  }
+
+  /**
+   * Which of a provider's models the model menus offer (pi's global `enabledModels`): a signed-in account's, or one an
+   * API key makes usable. Then who is signed in. One at a time with the looks and sign-outs: each writes pi's settings
+   * or reads its stores.
+   */
+  enable(choice: LoginEnable, timeoutMs = 20000): Promise<LoginStatus> {
+    const { provider, models, byDefault } = choice ?? {};
+    if (typeof provider !== 'string' || !PROVIDER_ARG.test(provider))
+      return Promise.reject(new Error('Unknown provider'));
+    const ids = byDefault === true ? [] : Array.isArray(models) ? models : undefined;
+    if (!ids || ids.some((id) => typeof id !== 'string' || !MODEL_ID.test(id)))
+      return Promise.reject(new Error('Invalid model'));
+    const args = ['enable', provider, ...(byDefault === true ? ['--default'] : ids)];
+    return this.oneAtATime(() => this.statusAfter(args, timeoutMs));
   }
 
   /** Starts `work` now when no runner is going, else once the one going has ended. */
@@ -273,12 +386,26 @@ export class LoginManager {
         const signedIn = (Array.isArray(message.signedIn) ? message.signedIn : [])
           .map(record)
           .filter((entry) => isSubscriptionProvider(entry.provider))
-          .map((entry) => ({ provider: entry.provider as SubscriptionProvider, models: toModels(entry.models) }));
-        finish(
-          Array.isArray(message.offered)
-            ? { signedIn, offered: message.offered.filter(isSubscriptionProvider) }
-            : { signedIn }
-        );
+          .map((entry) => ({
+            provider: entry.provider as SubscriptionProvider,
+            models: toModels(entry.models),
+            enabled: toEnabled(entry.enabled),
+          }));
+        const usable = Array.isArray(message.usable)
+          ? message.usable
+              .map(record)
+              .filter((entry) => typeof entry.provider === 'string' && PROVIDER_ARG.test(entry.provider))
+              .map((entry) => ({
+                provider: str(entry.provider),
+                models: toModels(entry.models),
+                enabled: toEnabled(entry.enabled),
+              }))
+          : undefined;
+        finish({
+          signedIn,
+          ...(Array.isArray(message.offered) ? { offered: message.offered.filter(isSubscriptionProvider) } : {}),
+          ...(usable ? { usable } : {}),
+        });
       });
       child.on('close', () => {
         this.runs.delete(child);
@@ -292,26 +419,46 @@ export class LoginManager {
     });
   }
 
-  private stopChild(): void {
+  /**
+   * Tells the sign-in runner to stop, and ends it if it has not after KILL_AFTER_MS. Gives the end of every runner
+   * stopping now, this one's included.
+   */
+  private stopChild(): Promise<void> {
     clearTimeout(this.limit);
     this.limit = undefined;
-    const child = this.child;
+    const run = this.child;
     this.child = undefined;
-    if (!child) return;
-    try {
-      child.stdin.write(`${JSON.stringify({ type: 'cancel' })}\n`);
-    } catch {
-      // Already gone.
+    if (run) {
+      try {
+        run.process.stdin.write(`${JSON.stringify({ type: 'cancel' })}\n`);
+      } catch {
+        // Already gone.
+      }
+      const kill = setTimeout(() => run.process.kill(), KILL_AFTER_MS);
+      kill.unref?.();
+      let cap: ReturnType<typeof setTimeout> | undefined;
+      const limit = new Promise<void>((resolve) => {
+        cap = setTimeout(resolve, STOP_LIMIT_MS);
+        cap.unref?.();
+      });
+      this.stopping.set(
+        run.process,
+        Promise.race([run.closed, limit, this.quitting]).then(() => {
+          clearTimeout(kill);
+          clearTimeout(cap);
+          this.stopping.delete(run.process);
+        })
+      );
     }
-    setTimeout(() => child.kill(), 1500).unref?.();
+    return Promise.all(this.stopping.values()).then((): void => undefined);
   }
 }
 
 /**
- * The runner as a child process: `mu auth status | login <provider> | logout <provider>`, the harness's own sign-in,
- * started through its launcher as a session is (harness.ts, launcherOf), so it is the same for a checkout, mu-agent
- * from npm and the copy inside the packaged app. It signs in to mu's agent dir, the one the settings read. Without a
- * shell, so nothing in a path is ever parsed as a command, on Windows as elsewhere.
+ * The runner as a child process: `mu auth status | login <provider> | logout <provider> | enable <provider> ...`, the
+ * harness's own sign-in, started through its launcher as a session is (harness.ts, launcherOf), so it is the same for
+ * a checkout, mu-agent from npm and the copy inside the packaged app. It signs in to mu's agent dir, the one the
+ * settings read. Without a shell, so nothing in a path is ever parsed as a command, on Windows as elsewhere.
  */
 export function spawnAuth(launcher: string, agentDir: string): SpawnRunner {
   return (args) => {

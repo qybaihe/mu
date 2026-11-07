@@ -61,7 +61,7 @@ test.describe('Preview — closing a tab with the middle mouse button', () => {
   let workspace: string;
 
   test.beforeEach(() => {
-    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-tab-close-'));
+    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'mu-tab-close-'));
   });
 
   test.afterEach(() => {
@@ -123,7 +123,7 @@ test.describe('Preview — closing a tab with the middle mouse button', () => {
     // dialog's title is just "Close Tab" / 「关闭标签页」, while "unsaved" appears on the
     // dirty-marker tooltip — so a looser pattern would have gone green off the marker
     // even with the dialog missing. Both strings checked against zh-CN and en-US.
-    await expect(page.getByText(/Save and Close|保存并关闭/).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Save and close|保存并关闭/).first()).toBeVisible({ timeout: 10_000 });
     await expect(tab).toHaveCount(1);
   });
 });

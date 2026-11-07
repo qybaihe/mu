@@ -15,7 +15,7 @@
   "smart": "Intelligent",
   "build": "Build-Modus",
   "full": "Vollzugriff",
-  "jev": "Jev gibt frei",
+  "judge": "Judge-Modus",
   "ask": "Minimale Berechtigungen",
   "permission": "Berechtigung",
   "switchMode": "Modus wechseln",
@@ -24,7 +24,7 @@
   "switchFailed": "Moduswechsel fehlgeschlagen",
   "descriptions": {
     "full": "Führt alles aus, ohne zu fragen. Was du ausdrücklich verboten hast, wird trotzdem gestoppt.",
-    "jev": "Lesen und Bearbeiten im Projekt laufen direkt; Befehle, Änderungen außerhalb des Projekts und Aktionen nach außen genehmigt Jev für dich und fragt dich nur, wenn es unsicher ist.",
+    "judge": "Lesen und Bearbeiten im Projekt laufen direkt; Befehle, Änderungen außerhalb des Projekts und Aktionen nach außen genehmigt der Judge für dich und fragt dich nur, wenn er unsicher ist.",
     "ask": "Nur Lesen läuft direkt; jede Bearbeitung, jeder Befehl und jede Aktion nach außen fragt dich zuerst."
   }
 }

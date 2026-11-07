@@ -1,10 +1,12 @@
 /**
  * The model and thinking level of a native conversation, and the person's switch of them. What is in force comes from
- * the view (a running host's report) or, with no host, from what the session file said (`modelInForce`). The models
+ * the view (a running host's report) or, with no host, from what the session file said (`modelInForce`); while the
+ * home page's first message sets them up, from what it sets. The models
  * on offer are asked of pi when the person opens the menu (`get_available_models`, and the levels of the model in
  * use, `get_available_thinking_levels`), which starts the host when none runs. Only the person sets the thinking level.
  */
 import { useCallback, useRef, useState } from 'react';
+import { enabledModels } from '@/common/kyrn/models';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
 import {
   asList,
@@ -38,9 +40,11 @@ export type NativeModels = ModelInForce & {
 export function useNativeModels(
   view: NativeView,
   settings: SessionSettings | undefined,
-  request: (command: PiCommand) => Promise<NativeResult<unknown>>
+  request: (command: PiCommand) => Promise<NativeResult<unknown>>,
+  /** What the home page's first message is setting while mu starts (`NativeConversationState.settingUp`). */
+  settingUp?: Pick<SessionSettings, 'model' | 'thinkingLevel'>
 ): NativeModels {
-  const inForce = modelInForce(view, settings);
+  const inForce = modelInForce(view, settings, settingUp);
   const [offer, setOffer] = useState<NativeModels['offer']>();
   const [loading, setLoading] = useState(false);
   const [switching, setSwitching] = useState(false);
@@ -55,7 +59,11 @@ export function useNativeModels(
         request({ type: 'get_available_thinking_levels' }),
       ]);
       if (models.ok === false) return;
-      const offered = offeredModels(asList(asObject(models.data).models), current.current.model);
+      const offered = offeredModels(
+        asList(asObject(models.data).models),
+        current.current.model,
+        enabledModels(models.data)
+      );
       const currentLevels = levels.ok ? asList(asObject(levels.data).levels).map(asText).filter(Boolean) : undefined;
       setOffer({ ...offered, ...(currentLevels?.length ? { currentLevels } : {}) });
     } finally {

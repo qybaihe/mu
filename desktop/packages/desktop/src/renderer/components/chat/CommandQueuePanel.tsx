@@ -396,7 +396,7 @@ const CommandQueuePanel: React.FC<CommandQueuePanelProps> = ({
   };
 
   const dragHandleLabel = t('conversation.commandQueue.reorder', {
-    defaultValue: 'Drag to reorder queued command',
+    defaultValue: 'Drag to reorder',
   });
   const dragModifiers = useMemo(
     () => [restrictToVerticalAxis, createRestrictToQueueContainerModifier(queueContainerRef)],

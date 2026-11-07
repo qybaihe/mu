@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import type { SlashCommandItem } from '@/common/chat/slash/types';
 import type { TChatConversation } from '@/common/config/storage';
 import type { NativeConversation } from '@/common/kyrn/nativeBridge';
@@ -29,9 +23,23 @@ export const MATCHED_SETTINGS = 8;
 /** Commands an empty query lists: the first ones the harness offers. A slash or a query lists them all. */
 export const TOP_COMMANDS = 5;
 
-/** What the app itself can do from the palette, wherever it is open: start a conversation, open the scheduled tasks. */
-export type PaletteAction = 'newConversation' | 'scheduledTasks';
-const ACTIONS: readonly PaletteAction[] = ['newConversation', 'scheduledTasks'];
+/**
+ * What the app itself can do from the palette, wherever it is open: start a conversation, with the native host off open
+ * the scheduled tasks, find a file of the open conversation by its name (quick open), with the native host on go to the
+ * next conversation that wants its person, and show the keyboard shortcuts.
+ */
+export type PaletteAction = 'newConversation' | 'scheduledTasks' | 'quickOpen' | 'nextWaiting' | 'shortcuts';
+const ACTIONS: readonly PaletteAction[] = [
+  'newConversation',
+  'scheduledTasks',
+  'quickOpen',
+  'nextWaiting',
+  'shortcuts',
+];
+/** Actions for the native host's conversations only: the marks they follow are its own. */
+const NATIVE_ACTIONS: ReadonlySet<PaletteAction> = new Set(['nextWaiting']);
+/** Actions for the backend's conversations only: scheduled tasks run the backend's assistants, never mu on the host. */
+const CLASSIC_ACTIONS: ReadonlySet<PaletteAction> = new Set(['scheduledTasks']);
 
 /**
  * One row. `hits` are the indices of `label` that the query matched; they are underlined. A conversation on the native
@@ -84,7 +92,7 @@ export type PaletteSources = {
   now: number;
 };
 
-/** A conversation the palette can list: an AionCore one, or one on the native host (with its folder and page). */
+/** A conversation the palette can list: a backend one, or one on the native host (with its folder and page). */
 type Listed = { id: string; label: string; time: number; folder?: string; path?: string };
 
 const conversationRows = (
@@ -175,8 +183,9 @@ const settingsRows = ({ t, native = false }: PaletteSources, keyword: string): P
   );
 };
 
-const actionRows = ({ t }: PaletteSources, keyword: string): PaletteItem[] =>
+const actionRows = ({ t, native }: PaletteSources, keyword: string): PaletteItem[] =>
   ACTIONS.flatMap((action) => {
+    if (native ? CLASSIC_ACTIONS.has(action) : NATIVE_ACTIONS.has(action)) return [];
     const label = t(`common.commandPalette.actions.${action}`);
     const hits = getFuzzyMatchIndices(label, keyword);
     return hits ? [{ kind: 'action' as const, key: `action:${action}`, label, hits, action }] : [];

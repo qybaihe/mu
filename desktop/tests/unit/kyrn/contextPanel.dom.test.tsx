@@ -56,12 +56,12 @@ describe('context panel wording', () => {
   it('writes counts, percentages and compaction results as whole sentences', () => {
     show(english);
     expect(screen.getByText('12,345 / 200,000')).toBeInTheDocument();
-    expect(screen.getByText('Trigger at 100,000 tokens')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Session cache hit rate: 80%' })).toBeInTheDocument();
+    expect(screen.getByText('Compacts at 100,000 tokens')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Cache hit rate for this conversation: 80%' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Compaction results (2)'));
     expect(screen.getByText('32,000 → ≈8,000 tokens')).toBeInTheDocument();
-    expect(screen.getByText('Context reduction ≈75%')).toBeInTheDocument();
+    expect(screen.getByText('Context reduced by ≈75%')).toBeInTheDocument();
     // One plural form per count: "1 result", never "1 results".
     expect(screen.getByText('1 result kept · 2 pruned · 1 call removed')).toBeInTheDocument();
     // A failed compaction is named in the app language; the runtime's message is only the detail under it.
@@ -73,7 +73,7 @@ describe('context panel wording', () => {
     show(await instance('de-DE', { en: { translation: { common } } }));
     expect(screen.getByText('12.345 / 200.000')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Compaction results (2)'));
-    expect(screen.getByText(/^Context reduction ≈75\s%$/)).toBeInTheDocument();
+    expect(screen.getByText(/^Context reduced by ≈75\s%$/)).toBeInTheDocument();
   });
 
   it('says "about" in Chinese rather than gluing an English unit on', async () => {

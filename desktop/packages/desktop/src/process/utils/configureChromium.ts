@@ -12,19 +12,20 @@ import os from 'os';
 import { getDevAppName } from '@/common/platform';
 import { MU_DISPLAY_NAME } from '@/common/kyrn/displayName';
 import { applyGpuRecoveryFlags } from './gpuRecovery';
+import { LEGACY_CDP_REGISTRY_FILE } from '@/common/platform/legacyNames';
 
 // ============ E2E test isolation ============
 // When running under E2E with an explicit sandbox dir, redirect userData there
-// BEFORE any getPath() call so the whole data tree (config, aioncore DB, logs)
+// BEFORE any getPath() call so the whole data tree (config, the backend's database, logs)
 // lives in a disposable directory. This keeps tests off the developer's real
-// database — critical because AionCore refuses to boot when a shared DB fails
-// migration. Guarded by AIONUI_E2E_TEST so it never affects dev/production.
+// database — critical because the backend refuses to boot when a shared DB fails
+// migration. Guarded by MU_E2E_TEST so it never affects dev/production.
 // 仅 E2E：把 userData 指向一次性沙箱目录，避免测试读写真实数据库。
-const e2eUserDataDir = process.env.AIONUI_E2E_TEST === '1' ? process.env.AIONUI_E2E_USER_DATA_DIR : undefined;
+const e2eUserDataDir = process.env.MU_E2E_TEST === '1' ? process.env.MU_E2E_USER_DATA_DIR : undefined;
 if (e2eUserDataDir && e2eUserDataDir.trim() !== '') {
   fs.mkdirSync(e2eUserDataDir, { recursive: true });
   app.setPath('userData', e2eUserDataDir);
-  // AionCore writes its log into the logs folder (--log-dir), which would otherwise be the real ~/Library/Logs/mu,
+  // The backend writes its log into the logs folder (--log-dir), which would otherwise be the real ~/Library/Logs/mu,
   // shared with every other mu on the machine.
   app.setPath('logs', path.join(e2eUserDataDir, 'logs'));
 }
@@ -57,7 +58,7 @@ applyGpuRecoveryFlags();
 // OS-assigned ephemeral port via listen(0) and backfills it here through setActiveCdpPort,
 // so there is exactly one port concept in the codebase: the one you can actually connect to.
 //
-// The 9230-9250 reservation and the ~/.aionui-cdp-registry.json instance registry were
+// The 9230-9250 reservation and the instance registry in the home folder (LEGACY_CDP_REGISTRY_FILE) were
 // removed with Chromium's application-wide remote-debugging-port switch. Once that switch
 // was gone nothing listened on that range, so the registry tracked a service that did not
 // exist, multi-instance avoidance was avoiding phantoms, and — worst of all — the settings
@@ -72,7 +73,7 @@ applyGpuRecoveryFlags();
 // - enabled: boolean - whether agent browser control is enabled (default: on)
 // - port: number - legacy preferred-port field, retained for config compatibility
 //
-// Override via AIONUI_CDP_PORT env variable. Set to "0" or "false" to disable.
+// Override via MU_CDP_PORT env variable. Set to "0" or "false" to disable.
 // ---------------------------------------------------------------------------
 
 const CDP_CONFIG_FILE = 'cdp.config.json';
@@ -112,11 +113,11 @@ export interface CdpStatus {
 /**
  * 顺手删掉遗留的实例注册表文件。
  *
- * 这个文件（~/.aionui-cdp-registry.json）以前记录「每个实例占了哪个 CDP 端口」。相关逻辑
+ * 这个文件（LEGACY_CDP_REGISTRY_FILE）以前记录「每个实例占了哪个 CDP 端口」。相关逻辑
  * 已随应用级 remote-debugging-port 一起删除，但升级上来的机器上文件还在，里面是一堆早已
  * 无效的 pid/端口。留着只会让人以为还有这套机制，所以清掉。best-effort，失败无所谓。
  *
- * Remove the leftover instance-registry file. ~/.aionui-cdp-registry.json used to record
+ * Remove the leftover instance-registry file. LEGACY_CDP_REGISTRY_FILE used to record
  * which CDP port each instance had taken; that logic went away with the application-wide
  * remote-debugging-port switch, but upgraded machines still have the file sitting there full
  * of long-dead pids and ports. Leaving it implies the mechanism still exists, so clean it up.
@@ -124,7 +125,7 @@ export interface CdpStatus {
  */
 function removeLegacyCdpRegistryFile(): void {
   try {
-    const legacyRegistry = path.join(os.homedir(), '.aionui-cdp-registry.json');
+    const legacyRegistry = path.join(os.homedir(), LEGACY_CDP_REGISTRY_FILE);
     if (fs.existsSync(legacyRegistry)) {
       fs.unlinkSync(legacyRegistry);
     }
@@ -180,7 +181,7 @@ export function saveCdpConfig(config: CdpConfig): void {
  * 关掉后 Agent 就无法操作浏览器（此时 MCP 启动器会拒绝启动，不会偷偷开一个
  * 用户看不见的 Chrome）。
  *
- * AIONUI_CDP_PORT 现在只当开关用（"0"/"false" 关闭，其它非空值开启）。它的数值不再
+ * MU_CDP_PORT 现在只当开关用（"0"/"false" 关闭，其它非空值开启）。它的数值不再
  * 决定端口 —— 通道走 listen(0)，端口由系统分配。名字保留是为了不破坏既有脚本和 E2E 夹具。
  *
  * Enabled by default, production included: the in-app browser cannot be driven by the agent
@@ -189,12 +190,12 @@ export function saveCdpConfig(config: CdpConfig): void {
  * after which the agent simply cannot drive the browser (the MCP launcher refuses to start
  * rather than quietly opening a Chrome the user cannot see).
  *
- * AIONUI_CDP_PORT now acts purely as a switch ("0"/"false" disables, any other non-empty
+ * MU_CDP_PORT now acts purely as a switch ("0"/"false" disables, any other non-empty
  * value enables). Its numeric value no longer selects a port — the bridge uses listen(0) and
  * the OS assigns one. The name is kept so existing scripts and E2E fixtures keep working.
  */
 function shouldEnableCdp(config: CdpConfig): boolean {
-  const envVal = process.env.AIONUI_CDP_PORT;
+  const envVal = process.env.MU_CDP_PORT;
   if (envVal === '0' || envVal === 'false') return false;
   if (envVal) return true;
 

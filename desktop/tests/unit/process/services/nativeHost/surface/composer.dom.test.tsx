@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
 import type { PiCommand } from '@/common/utils/nativeHost';
 import NativeComposer from '@/renderer/pages/native/components/NativeComposer';
-import { useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
+import { stageFirstMessage, useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext } from '@/renderer/pages/native/utils/nativeClient';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
 import enConversation from '@/renderer/services/i18n/locales/en-US/conversation.json';
@@ -18,8 +18,8 @@ import { createFakeHost, type FakeHost } from './fakeClient';
 import { delta, ended, frame, reply, text, user } from './records';
 
 /**
- * The bottom of a native conversation against an in-memory host: the send box in each state (idle, a message Jev
- * reads, a run going), the queue, the status line, the notices about mu, and a panel's command. The shared send box
+ * The bottom of a native conversation against an in-memory host: the send box in each state (idle, a message the
+ * judge reads, a run going), the queue, the status line, the notices about mu, and a panel's command. The shared send box
  * is stood in for by its contract (value, send, stop, loading, sending while loading, tools, test ids), so the ids
  * found here are the ones the native screen gives the real box.
  */
@@ -131,13 +131,13 @@ const running = (host: FakeHost) =>
   });
 
 describe('the native send box', () => {
-  it('sends a prompt, holds the box while Jev reads it, and stops it there', async () => {
+  it('sends a prompt, holds the box while the judge reads it, and stops it there', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     const gate: { release?: () => void } = {};
     host.answer((id, command) => {
       if (command.type !== 'prompt') return { ok: true, data: { isStreaming: false, isCompacting: false } };
-      host.push(id, frame('preflight.pending', { judge: 'laya' }));
+      host.push(id, frame('preflight.pending', { judge: 'mude' }));
       return new Promise<NativeResult<unknown>>((resolve) => {
         gate.release = () => resolve({ ok: true, data: undefined });
       });
@@ -153,10 +153,15 @@ describe('the native send box', () => {
     // On its way: the run it starts has not begun, so the status is still the last run's.
     expect(status()).toHaveAttribute('data-sending', 'true');
     expect(status()).toHaveAttribute('data-status', 'idle');
-    // Jev reads the message: the box holds (no second prompt), says so, and offers to stop.
+    // The judge reads the message: the box says so and offers to stop; a second message may be written and sent, and
+    // waits its turn.
     expect(box()).toHaveAttribute('data-loading', 'true');
-    expect(box()).toHaveAttribute('data-send', 'false');
-    expect(status()).toHaveTextContent('Jev is reading your message…');
+    expect(box()).toHaveAttribute('data-send', 'true');
+    expect(status()).toHaveTextContent('The judge is reading your message…');
+    // mu's own line: the judge's dot while it reads, the time since the message, and no spinner.
+    expect(within(status()).getByTestId('native-status-dot')).toHaveAttribute('data-judge', 'true');
+    expect(within(status()).getByTestId('native-status-time')).toHaveTextContent(/\d/);
+    expect(status().querySelector('.arco-spin')).toBeNull();
     await act(async () => {
       fireEvent.click(screen.getByTestId('native-abort'));
     });
@@ -168,24 +173,92 @@ describe('the native send box', () => {
     expect(status()).toHaveAttribute('data-sending', 'false');
   });
 
-  it('steers a run that goes, or leaves the message for after it', async () => {
+  it('lets messages sent while one is on its way wait their turn, sends them in order, and takes them back', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    const gates: Array<() => void> = [];
+    host.answer((_id, command) => {
+      if (command.type !== 'prompt') return { ok: true, data: { isStreaming: false, isCompacting: false } };
+      return new Promise<NativeResult<unknown>>((resolve) => {
+        gates.push(() => resolve({ ok: true, data: undefined }));
+      });
+    });
+    await mount(host);
+    const prompts = () => commands(host).flatMap((command) => (command.type === 'prompt' ? [command.message] : []));
+    type('fix the build');
+    await send();
+    type('then run the tests');
+    await send();
+    type('and write the notes');
+    await send();
+    // Only the first went: the others wait on screen, in the order sent, and the box is free.
+    expect(prompts()).toEqual(['fix the build']);
+    expect(screen.getByTestId('native-queue')).toHaveTextContent(
+      'Next stepthen run the testsNext stepand write the notes'
+    );
+    expect(input()).toHaveValue('');
+    await act(async () => gates[0]?.());
+    await waitFor(() => expect(prompts()).toEqual(['fix the build', 'then run the tests']));
+    expect(screen.getByTestId('native-queue')).not.toHaveTextContent('then run the tests');
+    // Taken back, the last one is in the box and never goes; pi had nothing queued, so nothing is asked of it.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-queue-take-back'));
+    });
+    expect(input()).toHaveValue('and write the notes');
+    expect(screen.queryByTestId('native-queue')).toBeNull();
+    expect(commands(host)).not.toContainEqual({ type: 'clear_queue' });
+    await act(async () => gates[1]?.());
+    await act(async () => {});
+    expect(prompts()).toEqual(['fix the build', 'then run the tests']);
+  });
+
+  it('sends the first message the home page left, after the model and level, and puts it back in the box when it cannot go', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    host.answer((_id, command) =>
+      command.type === 'set_thinking_level'
+        ? { ok: false, kind: 'command', message: 'Unknown thinking level bogus' }
+        : { ok: true, data: { isStreaming: false, isCompacting: false } }
+    );
+    stageFirstMessage('c1', {
+      setup: [
+        { type: 'set_model', provider: 'e2e', modelId: 'e2e-fake-thinker' },
+        { type: 'set_thinking_level', level: 'bogus' },
+      ],
+      text: 'fix the build\n\n[[AION_FILES]]\n/uploads/spec.pdf',
+      typed: 'fix the build',
+    });
+    await mount(host);
+    await waitFor(() => expect(input()).toHaveValue('fix the build'));
+    expect(commands(host)).toEqual([
+      { type: 'set_model', provider: 'e2e', modelId: 'e2e-fake-thinker' },
+      { type: 'set_thinking_level', level: 'bogus' },
+    ]);
+    expect(screen.getByTestId('native-command-failed')).toHaveTextContent('Unknown thinking level bogus');
+    expect(status()).toHaveAttribute('data-sending', 'false');
+  });
+
+  it('sends a message during a run as a steer, with no switch for when it arrives: mu decides that', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     await mount(host);
     expect(screen.queryByTestId('native-send-mode')).toBeNull();
     await running(host);
-    expect(screen.getByTestId('native-send-mode')).toBeInTheDocument();
+    // No Now / After switch beside the box: the kernel (input.interjection) moves a message to after the run.
+    expect(screen.queryByTestId('native-send-mode')).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
+    expect(screen.queryByText('Now')).toBeNull();
+    expect(screen.queryByText('After')).toBeNull();
     expect(box()).toHaveAttribute('data-loading', 'true');
     expect(box()).toHaveAttribute('data-send', 'true');
-    expect(input()).toHaveAttribute('placeholder', 'Steer mu now, or leave a message for after this run…');
+    expect(input()).toHaveAttribute('placeholder', 'Message mu. It decides when to act on it…');
     type('also check the tests');
     await send();
-    fireEvent.click(screen.getByText('After'));
     type('then write the notes');
     await send();
     expect(commands(host)).toEqual([
       { type: 'prompt', message: 'also check the tests', streamingBehavior: 'steer' },
-      { type: 'prompt', message: 'then write the notes', streamingBehavior: 'followUp' },
+      { type: 'prompt', message: 'then write the notes', streamingBehavior: 'steer' },
     ]);
   });
 
@@ -248,7 +321,7 @@ describe('the native send box', () => {
     expect(stopped).toHaveTextContent('Send a message to start mu again.');
     type('hello');
     await send();
-    expect(screen.getByTestId('native-command-failed')).toHaveTextContent('mu did not answer in time.');
+    expect(screen.getByTestId('native-command-failed')).toHaveTextContent("mu didn't respond in time.");
     // What did not reach pi is back in the box.
     expect(input()).toHaveValue('hello');
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
@@ -264,7 +337,7 @@ describe('the native send box', () => {
     await send();
     const card = screen.getByTestId('native-command-failed');
     expect(card).toHaveAttribute('data-kind', 'no-folder');
-    expect(card).toHaveTextContent('The project folder no longer exists, so mu cannot start in it.');
+    expect(card).toHaveTextContent("The project folder no longer exists, so mu can't start there.");
     expect(card).toHaveTextContent('/work/gone');
     expect(input()).toHaveValue('go on');
   });
@@ -299,11 +372,12 @@ describe('the native send box', () => {
     act(() => {
       host.push('c1', frame('progress', { step: 'Checking lessons', code: 'lessons' }));
     });
-    expect(status()).toHaveTextContent('Checking lessons from earlier sessions');
+    expect(status()).toHaveTextContent('Checking lessons from earlier conversations');
+    expect(within(status()).getByTestId('native-status-dot')).toHaveAttribute('data-judge', 'false');
     act(() => {
       host.push('c1', { type: 'auto_retry_start', attempt: 1, maxAttempts: 3, delayMs: 2000, errorMessage: '529' });
     });
-    expect(status()).toHaveTextContent('The model request failed. Trying again (1 of 3)…');
+    expect(status()).toHaveTextContent('Model request failed. Retrying (1 of 3)…');
     act(() => {
       host.play('c1', [
         { type: 'auto_retry_end', success: true },

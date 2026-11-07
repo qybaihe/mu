@@ -191,7 +191,7 @@ describe("goal mode", () => {
 
 		const last = states(harness).at(-1);
 		expect(last?.status).toBe("paused");
-		expect(last?.reason).toContain("without doing anything");
+		expect(last?.reason).toContain("ended without the agent doing anything");
 		expect(sent(harness)).toHaveLength(2);
 	});
 
@@ -238,7 +238,7 @@ describe("goal mode", () => {
 
 		const last = states(harness).at(-1);
 		expect(last).toMatchObject({ status: "paused", continuations: 1 });
-		expect(last?.reason).toContain("allowance of 1 continuations");
+		expect(last?.reason).toContain("reached the limit of 1 continuation");
 		expect(last).toMatchObject({ reasonCode: "continuations_used_up", reasonParams: { max: 1 } });
 	});
 
@@ -500,7 +500,7 @@ describe("goal mode", () => {
 			]);
 			await harness.session.prompt("/goal");
 			await settled(harness, 1);
-			expect(asked[0]).toContain("what must hold");
+			expect(asked[0]).toContain("what must be true");
 			expect(states(harness).map((state) => `${state.status}:${state.text}`)).toEqual([
 				"active:the README names the flag",
 				"met:the README names the flag",

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { IMessageAcpToolCall, TMessage } from '@/common/chat/chatLib';
 import { normalizeAcpToolCall } from '@/common/chat/normalizeToolCall';
 import { emptyView, reduce, reduceAll, type NativeView, type PiRecord } from '@/common/utils/nativeHost';
-import { jevLine } from '@/renderer/pages/conversation/Messages/acp/jevLine';
+import { judgeLine } from '@/renderer/pages/conversation/Messages/acp/judgeLine';
+import { deliverables } from '@/renderer/pages/conversation/Messages/acp/MessageDeliverables';
 import { muNotice } from '@/renderer/pages/conversation/Messages/acp/muNotice';
 import { findMuTurnError } from '@/renderer/utils/chat/muTurnErrors';
 import { createMessageMapper, toMessages, type MessageOptions } from '@/renderer/pages/native/utils/toMessages';
@@ -23,7 +24,7 @@ import {
 
 /**
  * The rows the message list shows for a native conversation, read the way the list and its rows read them: tool rows
- * through the tool summary's normalizer, Jev's lines and mu's notices through their own readers, errors through the
+ * through the tool summary's normalizer, the judge's lines and mu's notices through their own readers, errors through the
  * tips row's recogniser.
  */
 
@@ -45,8 +46,8 @@ function brief(row: TMessage): string {
     case 'tips':
       return `${row.content.type}: ${row.content.content}`;
     case 'acp_tool_call': {
-      const jev = jevLine(row);
-      if (jev) return `jev: ${jev.stage}`;
+      const verdict = judgeLine(row);
+      if (verdict) return `judge: ${verdict.stage}`;
       const notice = muNotice(row);
       if (notice) return `notice: ${notice.code ?? notice.level ?? ''}`;
       const call = normalizeAcpToolCall(row);
@@ -59,7 +60,7 @@ function brief(row: TMessage): string {
 
 const tool = (list: TMessage[], index = -1): IMessageAcpToolCall => {
   const calls = list.filter(
-    (row): row is IMessageAcpToolCall => row.type === 'acp_tool_call' && !jevLine(row) && !muNotice(row)
+    (row): row is IMessageAcpToolCall => row.type === 'acp_tool_call' && !judgeLine(row) && !muNotice(row)
   );
   const found = calls.at(index);
   if (!found) throw new Error('No tool row');
@@ -71,27 +72,27 @@ describe('the recorded conversation', () => {
     const list = rows(reduceAll(recorded));
     expect(list.map(brief)).toEqual([
       'person: E2E:PLAIN',
-      'jev: classified',
+      'judge: classified',
       `mu: ${PLAIN_TEXT}`,
       'person: E2E:WRITE notes/hello.txt',
-      'jev: fallback',
+      'judge: fallback',
       'call write completed: Successfully wrote to notes/hello.txt',
       'notice: checkpoint_off',
       'mu: WRITE-DONE: Successfully wrote to notes/hello.txt',
       'person: E2E:BASH echo native-host-bash-ok',
-      'jev: fallback',
+      'judge: fallback',
       'call bash completed: native-host-bash-ok\n',
       'mu: BASH-SAW: native-host-bash-ok\n',
       'person: E2E:BASH sleep 0.2; echo asked-ok',
-      'jev: fallback',
+      'judge: fallback',
       'call bash completed: asked-ok\n',
       'mu: BASH-SAW: asked-ok\n',
       'person: E2E:BASH sleep 0.2; echo asked-ok',
-      'jev: fallback',
+      'judge: fallback',
       'call bash error: Operation aborted',
       'notice: stopped',
       'person: E2E:SLOW',
-      'jev: fallback',
+      'judge: fallback',
       'mu: SLOW-001 SLOW-002 SLOW-003 ',
       'notice: stopped',
     ]);
@@ -209,14 +210,14 @@ describe('rows written by hand', () => {
     expect(muNotice(list[1])?.title).toBe('Retried 1×');
   });
 
-  it('shows the message on its way while Jev classifies it, then the message itself with Jev’s line', () => {
+  it('shows the message on its way while the judge classifies it, then the message itself with the judge’s line', () => {
     const outgoing = { id: 'outgoing-1', text: 'fix the test', at: 5 };
-    const classifying = reduce(emptyView(), frame('preflight.pending', { judge: 'laya', mode: 'active' }, 1));
+    const classifying = reduce(emptyView(), frame('preflight.pending', { judge: 'mude', mode: 'active' }, 1));
     const waiting = rows(classifying, { outgoing });
-    expect(waiting.map(brief)).toEqual(['person: fix the test', 'jev: classifying']);
-    expect(jevLine(waiting[1])).toEqual({ stage: 'classifying', judge: 'laya' });
+    expect(waiting.map(brief)).toEqual(['person: fix the test', 'judge: classifying']);
+    expect(judgeLine(waiting[1])).toEqual({ stage: 'classifying', judge: 'mude' });
 
-    const verdict = { version: 1, by: 'laya', state: 'applied', turnType: 'single_edit', hintIds: [] as string[] };
+    const verdict = { version: 1, by: 'mude', state: 'applied', turnType: 'single_edit', hintIds: [] as string[] };
     const taken = reduceAll(
       [
         frame('preflight.verdict', verdict, 1),
@@ -226,8 +227,8 @@ describe('rows written by hand', () => {
       ],
       classifying
     );
-    expect(rows(taken).map(brief)).toEqual(['person: fix the test', 'jev: classified']);
-    expect(jevLine(rows(taken)[1])).toMatchObject({ stage: 'classified', turnType: 'single_edit', judge: 'laya' });
+    expect(rows(taken).map(brief)).toEqual(['person: fix the test', 'judge: classified']);
+    expect(judgeLine(rows(taken)[1])).toMatchObject({ stage: 'classified', turnType: 'single_edit', judge: 'mude' });
   });
 
   it('says once that bash is missing, instead of pi’s error', () => {
@@ -247,6 +248,24 @@ describe('rows written by hand', () => {
       'call bash error: ',
     ]);
     expect(tool(list, 0).content.update.rawOutput).toEqual({ notice: 'bash_missing' });
+  });
+
+  it('passes the files mu’s present handed over to the row, which the conversation shows as their card', () => {
+    const details = {
+      files: [{ path: '/work/out/report.pdf', name: 'report.pdf', bytes: 2048 }],
+      note: 'The numbers you asked for.',
+    };
+    const view = reduceAll([
+      ended(user('write the report')),
+      ended(reply([toolCall('c1', 'present', { files: [{ path: 'out/report.pdf' }] })], { stopReason: 'toolUse' })),
+      ended(toolResult('c1', 'Presented to the user (1 file):', false, { toolName: 'present', details })),
+    ]);
+    const row = tool(rows(view), 0);
+    expect(row.content.update.rawOutput).toEqual(details);
+    expect(deliverables(row)).toEqual({
+      files: [{ path: '/work/out/report.pdf', name: 'report.pdf', bytes: 2048 }],
+      note: 'The numbers you asked for.',
+    });
   });
 
   it('shows what an extension shows the person, and nothing for an empty message', () => {
@@ -321,5 +340,16 @@ describe('rows written by hand', () => {
     expect(brief(second.at(-1) as TMessage)).toBe('mu: hello');
     // Other words (another language) give new rows.
     expect(map(after, { ...options, words: { retried: () => '', compacted: () => '' } })[0]).not.toBe(second[0]);
+  });
+});
+
+describe('Laya, gone from mu', () => {
+  it('passes the judge in Laya’s place on to the line that words it', () => {
+    const line = 'mu: Laya is no longer built in, so your judge is now mude 1.0.';
+    const view = reduceAll([frame('judge.notice', { code: 'laya_removed', judge: 'mude', message: line })]);
+    const notices = rows(view)
+      .map((row) => muNotice(row))
+      .filter(Boolean);
+    expect(notices).toEqual([{ code: 'laya_removed', title: line, judge: 'mude' }]);
   });
 });

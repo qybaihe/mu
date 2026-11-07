@@ -247,7 +247,7 @@ const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
             <div
               className='flex items-center gap-8px'
               data-mode-value={mode.value}
-              data-testid={`aionrs-mode-option-${mode.value}`}
+              data-testid={`builtin-agent-mode-option-${mode.value}`}
             >
               {/* Fixed-width marker slot, three states now: ✓ = in force, a line clock = accepted
                   but applies next turn, blank = neither. The clock is an icon, not the ⏱ character,

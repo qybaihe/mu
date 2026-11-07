@@ -9,7 +9,7 @@ import { emptyView, reduceAll, type PiCommand, type PiRecord } from '@/common/ut
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { useMessageList } from '@/renderer/pages/conversation/Messages/hooks';
 import NativeComposer from '@/renderer/pages/native/components/NativeComposer';
-import { useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
+import { stageFirstMessage, useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext } from '@/renderer/pages/native/utils/nativeClient';
 import enAgent from '@/renderer/services/i18n/locales/en-US/agent.json';
 import enAgentMode from '@/renderer/services/i18n/locales/en-US/agentMode.json';
@@ -28,7 +28,19 @@ import { ended, frame, reply, text, user } from './records';
  * files by their path). The shared send box is stood in for by its contract; Arco's menus render their lists inline.
  */
 
-const { warning, mention } = vi.hoisted(() => ({ warning: vi.fn(), mention: { items: [] as unknown[] } }));
+const { warning, mention, muDefault, folderScripts } = vi.hoisted(() => ({
+  warning: vi.fn(),
+  mention: { items: [] as unknown[] },
+  // mu's default model, as the settings say it: none unless a test sets one.
+  muDefault: { model: undefined as string | undefined, level: '' },
+  // The folder's package.json scripts, as the main process reads them: none unless a test sets some.
+  folderScripts: vi.fn(async () => ({ ok: true, data: null }) as unknown),
+}));
+
+vi.mock('@/common/kyrn/folderBridge', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/common/kyrn/folderBridge')>()),
+  kyrnFolderBridge: { scripts: { invoke: folderScripts } },
+}));
 
 vi.mock('@arco-design/web-react', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -43,13 +55,6 @@ vi.mock('@arco-design/web-react', async (importOriginal) => {
       </div>
     ),
     ItemGroup: ({ children }: Props) => <div role='group'>{children}</div>,
-    // Both levels at once: the row and what it opens.
-    SubMenu: ({ children, title, ...rest }: Props & { title?: React.ReactNode }) => (
-      <div {...dataOf(rest)}>
-        <div>{title}</div>
-        <div>{children}</div>
-      </div>
-    ),
   });
   return {
     ...actual,
@@ -76,10 +81,18 @@ vi.mock('@/renderer/components/agent/MarqueePillLabel', () => ({
 
 vi.mock('@/renderer/hooks/agent/useProviderNames', () => ({ useProviderNames: () => new Map() }));
 
+vi.mock('@/renderer/hooks/agent/useMuDefaultModel', () => ({
+  useMuDefaultModel: () => ({
+    ...(muDefault.model ? { model: muDefault.model } : {}),
+    level: muDefault.level,
+    makeDefault: vi.fn(async () => true),
+  }),
+}));
+
 type BoxProps = {
   value?: string;
   onChange?: (value: string) => void;
-  onSend: (message: string) => Promise<void | false>;
+  onSend: (message: string, extras?: { images?: Array<{ data: string; mimeType: string }> }) => Promise<void | false>;
   tools?: React.ReactNode;
   rightTools?: React.ReactNode;
   prefix?: React.ReactNode;
@@ -129,6 +142,14 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
         />
         <button
           type='button'
+          data-testid='send-with-picture'
+          onClick={() => {
+            props.onChange?.('');
+            void props.onSend(value, { images: [{ data: 'cG5n', mimeType: 'image/png' }] });
+          }}
+        />
+        <button
+          type='button'
           data-testid='mention'
           onClick={() => props.onSelectedWorkspaceItemsChange?.(mention.items as FileSelectionItem[])}
         />
@@ -142,7 +163,11 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
 afterEach(() => {
   cleanup();
   warning.mockClear();
+  folderScripts.mockReset();
+  folderScripts.mockImplementation(async () => ({ ok: true, data: null }));
   mention.items = [];
+  muDefault.model = undefined;
+  muDefault.level = '';
 });
 
 const i18n = createInstance();
@@ -210,7 +235,7 @@ const modes = (mode: string) =>
     conversationSwitch: true,
     modes: [
       { id: 'full', label: '完全访问', description: 'runs everything' },
-      { id: 'jev', label: 'Jev 审批', description: 'Jev approves' },
+      { id: 'judge', label: '判定模式', description: 'the judge approves' },
       { id: 'ask', label: '最小权限', description: 'asks first' },
     ],
   });
@@ -225,7 +250,7 @@ describe('the native send box’s model, thinking level and permission mode', ()
     expect(chip()).toHaveAttribute('data-source', 'file');
     expect(chip()).toHaveTextContent('thinker · High');
     expect(pill()).toHaveAttribute('data-mode', 'ask');
-    expect(pill()).toHaveTextContent('Permission · Minimal permissions');
+    expect(pill()).toHaveTextContent('Permission · Ask first');
     expect(commands(host)).toEqual([]);
 
     // A running host says what it runs with, and mu what mode it is in: they count from then on.
@@ -255,9 +280,101 @@ describe('the native send box’s model, thinking level and permission mode', ()
     expect(chip()).toHaveTextContent('Choose a model');
   });
 
-  it('lists pi’s models when the chip opens, and switches the model, then the level the person picked', async () => {
+  it('goes on with mu’s default model in a conversation imported from another tool, not the tool’s', async () => {
+    const host = createFakeHost();
+    const imported = { api: 'claude-code', provider: 'claude-code', model: 'claude-opus-4-5' };
+    host.add({ id: 'c1' }, reduceAll([ended(user('hi')), ended(reply([text('hello')], imported))]));
+    await mount(host);
+    expect(chip()).toHaveAttribute('data-model', '');
+    expect(chip()).toHaveAttribute('data-source', 'none');
+    expect(chip()).toHaveTextContent('Default model');
+    expect(commands(host)).toEqual([]);
+  });
+
+  it('names mu’s default model, as the home page did, while nothing in the conversation says its model', async () => {
+    muDefault.model = 'e2e/one';
+    muDefault.level = 'low';
     const host = createFakeHost();
     host.add({ id: 'c1' });
+    await mount(host);
+    expect(chip()).toHaveAttribute('data-source', 'none');
+    expect(chip()).toHaveAttribute('data-model', '');
+    expect(chip()).toHaveTextContent('one · Low');
+    expect(chip()).not.toHaveTextContent('Default model');
+    expect(commands(host)).toEqual([]);
+    // mu says what it runs with: that, from then on.
+    act(() => {
+      host.push('c1', state('e2e', 'two', 'off'));
+    });
+    expect(chip()).toHaveTextContent('two · Thinking off');
+  });
+
+  it('says the model and level the home page’s first message sets while mu starts, then what pi says', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    const pi: { setUp?: () => void } = {};
+    host.answer(async (_id, command) => {
+      // mu starts on the first command: it takes its time.
+      if (command.type === 'set_model')
+        await new Promise<void>((resolve) => {
+          pi.setUp = resolve;
+        });
+      return { ok: true, data: { isStreaming: false, isCompacting: false } };
+    });
+    stageFirstMessage('c1', {
+      setup: [
+        { type: 'set_model', provider: 'e2e', modelId: 'thinker' },
+        { type: 'set_thinking_level', level: 'high' },
+      ],
+      text: 'fix the build',
+    });
+    await mount(host);
+    await waitFor(() => expect(chip()).toHaveAttribute('data-source', 'setup'));
+    expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
+    expect(chip()).toHaveAttribute('data-level', 'high');
+    expect(chip()).toHaveTextContent('thinker · High');
+    // mu says first what it started with, which the set-up is about to change: the chip keeps what is being set.
+    act(() => {
+      host.push('c1', state('e2e', 'one', 'off'));
+    });
+    expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
+    expect(chip()).toHaveAttribute('data-level', 'high');
+    // Set up: what pi says counts from then on.
+    await act(async () => {
+      host.play('c1', [
+        { type: 'response', command: 'set_model', success: true, data: { provider: 'e2e', id: 'thinker' } },
+        { type: 'thinking_level_changed', level: 'high' },
+      ]);
+      pi.setUp?.();
+    });
+    await waitFor(() => expect(chip()).toHaveAttribute('data-source', 'host'));
+    expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
+    expect(chip()).toHaveAttribute('data-level', 'high');
+  });
+
+  it('stops saying the model the first message was setting once mu refuses it', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    host.answer((_id, command) =>
+      command.type === 'set_model'
+        ? { ok: false, kind: 'command', message: 'Unknown model e2e/gone' }
+        : { ok: true, data: undefined }
+    );
+    stageFirstMessage('c1', {
+      setup: [{ type: 'set_model', provider: 'e2e', modelId: 'gone' }],
+      text: 'fix the build',
+    });
+    await mount(host);
+    await waitFor(() => expect(screen.getByTestId('native-command-failed')).toBeInTheDocument());
+    expect(chip()).toHaveAttribute('data-source', 'none');
+    expect(chip()).toHaveAttribute('data-model', '');
+    expect(chip()).toHaveTextContent('Default model');
+  });
+
+  it('lists pi’s models when the chip opens, switches the model, and offers the levels of the model in use', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    let inUse = 'one';
     host.answer((_id, command) => {
       if (command.type === 'get_available_models')
         return {
@@ -270,7 +387,12 @@ describe('the native send box’s model, thinking level and permission mode', ()
             ],
           },
         };
-      if (command.type === 'get_available_thinking_levels') return { ok: true, data: { levels: ['off'] } };
+      if (command.type === 'set_model') inUse = String(command.modelId);
+      if (command.type === 'get_available_thinking_levels')
+        return {
+          ok: true,
+          data: { levels: inUse === 'thinker' ? ['off', 'minimal', 'low', 'medium', 'high'] : ['off'] },
+        };
       return { ok: true, data: undefined };
     });
     await mount(host);
@@ -282,26 +404,81 @@ describe('the native send box’s model, thinking level and permission mode', ()
     expect(commands(host)).toEqual([{ type: 'get_available_models' }, { type: 'get_available_thinking_levels' }]);
     const row = (value: string) =>
       screen.getAllByTestId('composer-model-option').find((each) => each.getAttribute('data-value') === value)!;
-    // A model that reasons opens to the levels pi's rule gives it; one that does not is picked as it is.
-    const levels = within(row('e2e/thinker')).getAllByTestId('composer-level-option');
-    expect(levels.map((each) => each.getAttribute('data-value'))).toEqual(['off', 'minimal', 'low', 'medium', 'high']);
-    expect(within(row('e2e/one')).queryAllByTestId('composer-level-option')).toHaveLength(0);
+    // The model in use takes one level: nothing to choose under the list.
+    expect(screen.queryByTestId('composer-thinking')).toBeNull();
+    // A row switches the model only: pi keeps a level of its own choosing.
     await act(async () => {
-      fireEvent.click(levels[4]);
+      fireEvent.click(row('e2e/thinker'));
     });
-    expect(commands(host).slice(2)).toEqual([
-      { type: 'set_model', provider: 'e2e', modelId: 'thinker' },
-      { type: 'set_thinking_level', level: 'high' },
-    ]);
-    // pi answers the switch: the chip follows the view.
+    expect(commands(host).slice(2)).toEqual([{ type: 'set_model', provider: 'e2e', modelId: 'thinker' }]);
     act(() => {
       host.play('c1', [
         { type: 'response', command: 'set_model', success: true, data: { provider: 'e2e', id: 'thinker' } },
-        { type: 'thinking_level_changed', level: 'high' },
+        { type: 'thinking_level_changed', level: 'medium' },
       ]);
     });
     expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
+
+    // Open again: the levels of the model that reasons, by pi's own answer, under the list.
+    fireEvent.click(screen.getByTestId('native-model-pill'));
+    await waitFor(() => expect(screen.getByTestId('composer-thinking')).toBeInTheDocument());
+    const levels = screen.getAllByTestId('composer-level-option');
+    expect(levels.map((each) => each.getAttribute('data-value'))).toEqual(['off', 'minimal', 'low', 'medium', 'high']);
+    await act(async () => {
+      fireEvent.click(levels[4]);
+    });
+    expect(commands(host).slice(5)).toEqual([{ type: 'set_thinking_level', level: 'high' }]);
+    act(() => {
+      host.play('c1', [{ type: 'thinking_level_changed', level: 'high' }]);
+    });
+    expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
     expect(chip()).toHaveAttribute('data-level', 'high');
+  });
+
+  it('lists the newest OpenAI models and the one in use, and every model once asked', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    host.answer((_id, command) => {
+      if (command.type === 'get_available_models')
+        return {
+          ok: true,
+          data: {
+            models: [
+              { provider: 'openai', id: 'gpt-4.1', name: 'GPT-4.1' },
+              { provider: 'openai', id: 'gpt-4o', name: 'GPT-4o' },
+              { provider: 'openai', id: 'gpt-5', name: 'GPT-5', reasoning: true },
+              { provider: 'openai', id: 'gpt-5.5', name: 'GPT-5.5', reasoning: true },
+              { provider: 'openai', id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', reasoning: true },
+              { provider: 'openai', id: 'o3', name: 'o3', reasoning: true },
+            ],
+          },
+        };
+      if (command.type === 'get_available_thinking_levels') return { ok: true, data: { levels: ['low', 'high'] } };
+      return { ok: true, data: undefined };
+    });
+    await mount(host);
+    act(() => {
+      host.push('c1', state('openai', 'gpt-5.5', 'high'));
+    });
+    fireEvent.click(screen.getByTestId('native-model-pill'));
+    const listed = () => screen.getAllByTestId('composer-model-option').map((each) => each.getAttribute('data-value'));
+    // The conversation's own older model stays listed beside the newest series.
+    await waitFor(() => expect(listed()).toEqual(['openai/gpt-5.5', 'openai/gpt-6.1-sol']));
+    expect(screen.getByTestId('composer-thinking')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('composer-model-show-all'));
+    expect(listed()).toEqual([
+      'openai/gpt-4.1',
+      'openai/gpt-4o',
+      'openai/gpt-5',
+      'openai/gpt-5.5',
+      'openai/gpt-6.1-sol',
+      'openai/o3',
+    ]);
+    fireEvent.click(screen.getByTestId('composer-model-show-all'));
+    expect(listed()).toEqual(['openai/gpt-5.5', 'openai/gpt-6.1-sol']);
+    // A search looks through every model.
+    fireEvent.change(screen.getByTestId('composer-model-search'), { target: { value: '4o' } });
+    expect(listed()).toEqual(['openai/gpt-4o']);
   });
 
   it('waits for the run to end before a model switch', async () => {
@@ -324,7 +501,7 @@ describe('the native send box’s model, thinking level and permission mode', ()
     await mount(host);
     fireEvent.click(screen.getByTestId('native-permission'));
     const options = screen.getAllByTestId('native-permission-option');
-    expect(options.map((each) => each.getAttribute('data-mode'))).toEqual(['full', 'jev', 'ask']);
+    expect(options.map((each) => each.getAttribute('data-mode'))).toEqual(['full', 'judge', 'ask']);
     await act(async () => {
       fireEvent.click(options[0]);
     });
@@ -434,7 +611,7 @@ describe('the native send box’s commands, mentions and attachments', () => {
           clipboardData: { files: [new File(['x'], 'blob.bin', { type: 'application/octet-stream' })] },
         });
       });
-      await waitFor(() => expect(warning).toHaveBeenCalledWith('blob.bin could not be attached.'));
+      await waitFor(() => expect(warning).toHaveBeenCalledWith("Couldn't attach blob.bin."));
       expect(chips()).toHaveLength(3);
       fireEvent.click(within(chips()[2]).getByTestId('native-attachment-remove'));
       expect(chips()).toHaveLength(2);
@@ -461,6 +638,151 @@ describe('the native send box’s commands, mentions and attachments', () => {
     } finally {
       electron.electronAPI = before;
     }
+  });
+});
+
+describe('the picture of an element picked in the browser', () => {
+  it('goes to pi as an image with the message that carries the element', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/project' });
+    host.answer(() => ({ ok: true, data: undefined }));
+    await mount(host);
+    type('make it blue');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('send-with-picture'));
+    });
+    expect(sent(host, 'prompt').at(-1)).toEqual({
+      type: 'prompt',
+      message: 'make it blue',
+      images: [{ type: 'image', mimeType: 'image/png', data: 'cG5n' }],
+    });
+  });
+});
+
+describe('the commands mu runs in the background', () => {
+  const started = (id: string) =>
+    frame('background.start', { id, name: id, command: `npm run ${id}`, logPath: `/logs/${id}.log` }, 1, Date.now());
+
+  it('show as a pill while one runs; its list stops one or all with mu’s /jobs, and says how one ended', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/project' });
+    host.answer(() => ({ ok: true, data: undefined }));
+    await mount(host);
+    expect(screen.queryByTestId('native-jobs')).toBeNull();
+
+    act(() => host.play('c1', [started('dev'), started('watch')]));
+    expect(screen.getByTestId('native-jobs')).toHaveAttribute('data-count', '2');
+    expect(screen.getByTestId('native-jobs-pill')).toHaveTextContent('Background · 2');
+    fireEvent.click(screen.getByTestId('native-jobs-pill'));
+    const list = await screen.findByTestId('native-jobs-list');
+    expect(
+      within(list)
+        .getAllByTestId('native-job')
+        .map((row) => row.getAttribute('data-job'))
+    ).toEqual(['dev', 'watch']);
+    expect(within(list).getByText('npm run dev')).toBeInTheDocument();
+    expect(within(list).getAllByText(/^running for /)).toHaveLength(2);
+
+    await act(async () => {
+      fireEvent.click(within(list).getAllByTestId('native-job-stop')[0]);
+    });
+    expect(sent(host, 'prompt').at(-1)).toEqual({ type: 'prompt', message: '/jobs stop dev' });
+    await act(async () => {
+      fireEvent.click(within(list).getByTestId('native-jobs-stop-all'));
+    });
+    expect(sent(host, 'prompt').at(-1)).toEqual({ type: 'prompt', message: '/jobs stop all' });
+
+    // The first ended: it stays listed under the one that runs, with how it ended.
+    act(() =>
+      host.play('c1', [frame('background.exit', { id: 'dev', exitCode: 1, durationMs: 65_000 }, 1, Date.now())])
+    );
+    expect(screen.getByTestId('native-jobs')).toHaveAttribute('data-count', '1');
+    const endedRow = within(screen.getByTestId('native-jobs-list'))
+      .getAllByTestId('native-job')
+      .find((row) => row.getAttribute('data-job') === 'dev');
+    expect(endedRow).toHaveAttribute('data-state', 'exited');
+    expect(endedRow).toHaveTextContent(/exited with code 1 after/);
+    expect(within(endedRow as HTMLElement).queryByTestId('native-job-stop')).toBeNull();
+    expect(screen.queryByTestId('native-jobs-stop-all')).toBeNull();
+
+    // Nothing runs: the pill goes.
+    act(() =>
+      host.play('c1', [
+        frame('background.exit', { id: 'watch', exitCode: 0, durationMs: 1, stoppedBy: 'user' }, 1, Date.now()),
+      ])
+    );
+    expect(screen.queryByTestId('native-jobs')).toBeNull();
+  });
+});
+
+describe('the folder’s scripts, run from the send box', () => {
+  const scripts = {
+    runner: 'pnpm',
+    scripts: [
+      { name: 'dev', command: 'vite' },
+      { name: 'test', command: 'vitest --run' },
+    ],
+    more: 2,
+  };
+  const started = (id: string, name: string) =>
+    frame('background.start', { id, name, command: `pnpm run ${name}` }, 1, Date.now());
+
+  it('show as Run with nothing running, and run as the person’s background job with mu’s /jobs start', async () => {
+    folderScripts.mockImplementation(async () => ({ ok: true, data: scripts }));
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/project' });
+    host.answer(() => ({ ok: true, data: undefined }));
+    await mount(host);
+
+    const run = await screen.findByTestId('native-jobs-pill');
+    expect(run).toHaveTextContent(/^Run$/);
+    expect(folderScripts).toHaveBeenCalledWith({ cwd: '/work/project' });
+    fireEvent.click(run);
+    const list = await screen.findByTestId('native-scripts');
+    expect(list).toHaveAttribute('data-runner', 'pnpm');
+    expect(list).toHaveTextContent('package.json · pnpm');
+    expect(
+      within(list)
+        .getAllByTestId('native-script')
+        .map((row) => row.getAttribute('data-script'))
+    ).toEqual(['dev', 'test']);
+    expect(within(list).getByText('vitest --run')).toBeInTheDocument();
+    expect(list).toHaveTextContent('2 more not shown');
+    // Opening the list read package.json again.
+    expect(folderScripts.mock.calls.length).toBeGreaterThan(1);
+
+    await act(async () => {
+      fireEvent.click(within(list).getAllByTestId('native-script-run')[1]);
+    });
+    expect(sent(host, 'prompt').at(-1)).toEqual({ type: 'prompt', message: '/jobs start --name test pnpm run test' });
+
+    // It runs: the pill counts it, its row says so, and the scripts stay below it.
+    act(() => host.play('c1', [started('bg-1', 'test')]));
+    expect(screen.getByTestId('native-jobs-pill')).toHaveTextContent('Background · 1');
+    expect(within(screen.getByTestId('native-jobs-list')).getAllByTestId('native-job')).toHaveLength(1);
+    const testRun = within(screen.getByTestId('native-scripts')).getAllByTestId('native-script-run')[1];
+    expect(testRun).toHaveTextContent('Running');
+    expect(testRun).toBeDisabled();
+
+    // Ended: Run again, the job listed with how it ended.
+    act(() =>
+      host.play('c1', [frame('background.exit', { id: 'bg-1', exitCode: 1, durationMs: 4000 }, 1, Date.now())])
+    );
+    expect(screen.getByTestId('native-jobs-pill')).toHaveTextContent(/^Run$/);
+    expect(screen.getByTestId('native-job')).toHaveTextContent(/exited with code 1 after/);
+  });
+
+  it('offer nothing when the folder has no scripts, and are read again when a run ends', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/project' });
+    await mount(host);
+    await waitFor(() => expect(folderScripts).toHaveBeenCalled());
+    expect(screen.queryByTestId('native-jobs')).toBeNull();
+
+    // The model wrote a package.json: the run that did it ended, however quickly.
+    folderScripts.mockImplementation(async () => ({ ok: true, data: scripts }));
+    act(() => host.play('c1', [{ type: 'agent_start' }, ended(reply([text('done')])), { type: 'agent_settled' }]));
+    expect(await screen.findByTestId('native-jobs-pill')).toHaveTextContent(/^Run$/);
   });
 });
 

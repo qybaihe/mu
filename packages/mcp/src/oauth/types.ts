@@ -43,6 +43,11 @@ export interface OAuthClientMetadata {
 	token_endpoint_auth_method?: string;
 	grant_types?: string[];
 	response_types?: string[];
+	/**
+	 * OpenID Connect client type, `native` or `web`. Dynamic client registration derives it from
+	 * `redirect_uris` when absent (MCP SEP-837).
+	 */
+	application_type?: string;
 	client_name?: string;
 	client_uri?: string;
 	logo_uri?: string;
@@ -118,13 +123,19 @@ function optionalStrings(value: unknown, name: string): string[] | undefined {
 	return [...value];
 }
 
+/**
+ * Accepts only `http:` and `https:` URLs. Servers supply these URLs, and the authorization endpoint is
+ * opened with the platform URL handler, so a `file:` or custom protocol URL would launch local programs.
+ */
 function safeUrl(value: unknown, name: string): string {
 	const text = requiredString(value, name);
 	// URL parsing throws a `TypeError`, which discovery reserves for network failures.
-	if (!URL.canParse(text)) throw new Error(`Invalid ${name}`);
-	const url = new URL(text);
-	if (["javascript:", "data:", "vbscript:"].includes(url.protocol)) throw new Error(`Invalid ${name}`);
+	if (!URL.canParse(text) || !isHttpUrl(new URL(text))) throw new Error(`Invalid ${name}`);
 	return text;
+}
+
+export function isHttpUrl(url: URL): boolean {
+	return url.protocol === "http:" || url.protocol === "https:";
 }
 
 function optionalUrl(value: unknown, name: string): string | undefined {

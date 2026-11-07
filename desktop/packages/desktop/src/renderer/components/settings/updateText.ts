@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import type { UpdateErrorCode, UpdateErrorInfo } from '@/common/update/updateErrors';
 import type { InstallerReason, UpdateAction, UpdateState } from '@/common/update/updateTypes';
 import { formatNumber } from '@/renderer/services/i18n/format';

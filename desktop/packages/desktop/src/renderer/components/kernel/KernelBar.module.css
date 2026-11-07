@@ -1,0 +1,96 @@
+/* The kernel bar: one mono line along the bottom of the window, on the sidebar's surface. */
+.bar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 26px;
+  padding: 0 12px 0 6px;
+  border-top: 1px solid var(--border-base);
+  background: var(--bg-2);
+  color: var(--bg-6);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 26px;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  overflow: hidden;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.value {
+  color: var(--text-secondary);
+}
+
+.dim {
+  margin-inline-start: 4px;
+  color: var(--bg-6);
+}
+
+.rule {
+  width: 1px;
+  height: 11px;
+  background: var(--border-base);
+}
+
+.judge:global(.arco-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 5px;
+  color: var(--bg-6);
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.judge:global(.arco-btn):hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.name {
+  color: var(--mu-judge);
+}
+
+.tag {
+  padding: 0 5px;
+  border: 1px solid var(--mu-judge-border);
+  border-radius: 4px;
+  color: var(--mu-judge);
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.meter {
+  position: relative;
+  width: 34px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bg-3);
+  overflow: hidden;
+}
+
+.meter > span {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border-radius: 2px;
+  background: var(--text-secondary);
+}

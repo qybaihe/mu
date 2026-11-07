@@ -1,5 +1,7 @@
 # Cache investigation and first fix
 
+Status: Record. The investigation and first fix of 2026-09-21; the text is not kept in step with the code.
+
 > 已于 2026-09-21 更名为 mu（命令 `mu`，标识 μ）。本文是更名前的记录，正文保持原样；新旧名对照见 [10-rename-to-mu.md](10-rename-to-mu.md)。
 
 Date: 2026-09-21. Scope: prompt-cache reuse in the existing KYRN/pi/ACP stack.
@@ -49,7 +51,7 @@ There were no recorded forgetting or compaction operations in this sample.
   is separate from prompt caching: changing top-level options can disable delta
   continuation without proving a cache miss on the subsequent full request.
 - Codex reasoning changes remain a hypothesis to measure, not a reason to disable
-  Jev routing globally. The short-gap miss above had no recorded effort change.
+  judge routing globally. The short-gap miss above had no recorded effort change.
 
 ## Fixed: stable forgetting epochs
 

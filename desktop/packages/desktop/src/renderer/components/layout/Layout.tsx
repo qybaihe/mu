@@ -5,7 +5,6 @@
  */
 
 import { ipcBridge } from '@/common';
-import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 import Titlebar from '@/renderer/components/layout/Titlebar';
 import MuMark from '@renderer/components/brand/MuMark';
 import { Layout as ArcoLayout, Message, Tooltip } from '@arco-design/web-react';
@@ -13,6 +12,7 @@ import classNames from 'classnames';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { emitter } from '@/renderer/utils/emitter';
 import { setGlobalNavigate } from '@/renderer/utils/navigation';
 import { usePreviewContext } from '@renderer/pages/conversation/Preview';
 import WorkPanelHost, { panelGeometry } from '@renderer/components/layout/WorkPanel';
@@ -38,11 +38,14 @@ import { useDeepLink } from '@renderer/hooks/system/useDeepLink';
 import { useNotificationClick } from '@renderer/hooks/system/notification/useNotificationClick';
 import { useDesktopTurnNotification } from '@renderer/hooks/system/notification/useDesktopTurnNotification';
 import { useNativeAttention } from '@renderer/pages/native/hooks/useNativeAttention';
+import { useAppBadge } from '@renderer/hooks/system/notification/useAppBadge';
+import { useKeepAwakeWhileRunning } from '@renderer/hooks/system/useKeepAwakeWhileRunning';
 import { cleanupSiderTooltips } from '@renderer/utils/ui/siderTooltip';
 import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShortcuts';
 import { isElectronDesktop } from '@renderer/utils/platform';
 import { deferredRuntimeNeeds } from '@renderer/services/runtime/deferredNodeRuntime';
 import { SETTINGS_HOME } from '@renderer/pages/settings/settingsNav';
+import KernelBar from '@renderer/components/kernel/KernelBar';
 import '@renderer/styles/layout.css';
 
 const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
@@ -147,10 +150,11 @@ const Layout: React.FC<{
   useNotificationClick();
   useDesktopTurnNotification();
   useNativeAttention();
+  useAppBadge();
+  useKeepAwakeWhileRunning();
   const navigate = useNavigate();
   const location = useLocation();
-  const workspaceAvailable =
-    location.pathname.startsWith('/conversation/') || (TEAM_MODE_ENABLED && location.pathname.startsWith('/team/'));
+  const workspaceAvailable = location.pathname.startsWith('/conversation/');
   // The person folding or opening the sidebar: the titlebar button, ⌘B, dragging or double-clicking its edge.
   const setSiderCollapsed = useCallback((next: boolean) => setSiderChoice(next ? 'folded' : 'open'), []);
   const toggleSider = useCallback(() => setSiderCollapsed(!collapsed), [collapsed, setSiderCollapsed]);
@@ -179,7 +183,7 @@ const Layout: React.FC<{
     // Mirror Titlebar's handleBackToChat convention: return to the last non-settings path.
     let target: string | null = null;
     try {
-      target = sessionStorage.getItem('aion:last-non-settings-path');
+      target = sessionStorage.getItem('mu:last-non-settings-path');
     } catch {
       // ignore
     }
@@ -361,14 +365,16 @@ const Layout: React.FC<{
       void navigate('/settings/about');
       void ipcBridge.update.run.invoke({ action: 'check' });
     });
-    // The application menu's 新会话 (⌘N), as the sidebar's button, and 设置… (⌘,), which stays on the settings page
-    // already open.
+    // The application menu's 新会话 (⌘N), as the sidebar's button, 设置… (⌘,), which stays on the settings page
+    // already open, and Help's keyboard shortcuts.
     const removeMenuCommandListener = ipcBridge.application.menuCommand.on(({ command }) => {
       cleanupSiderTooltips();
       if (command === 'newChat') {
         void navigate('/guid', { state: { resetAssistant: true } });
       } else if (command === 'openSettings' && !pathnameRef.current.startsWith('/settings')) {
         void navigate(SETTINGS_HOME);
+      } else if (command === 'shortcuts') {
+        emitter.emit('shortcuts.toggle');
       }
     });
 
@@ -445,15 +451,15 @@ const Layout: React.FC<{
               >
                 {/* The mark keeps upstream's hidden devtools click; its size follows the collapsed rail. */}
                 <div className='shrink-0 line-height-0' data-testid='sider-brand-mark' onClick={onClick}>
-                  <MuMark size={collapsed ? 24 : 32} />
+                  <MuMark size={collapsed ? 24 : 26} />
                 </div>
                 {isSettingsRoute ? (
-                  <Tooltip content={t('common.back', { defaultValue: 'Back to Chat' })} position='bottom'>
+                  <Tooltip content={t('common.back', { defaultValue: 'Back' })} position='bottom'>
                     <div
                       className='text-16px text-t-primary collapsed-hidden font-semibold cursor-pointer'
                       role='button'
                       tabIndex={0}
-                      aria-label={t('common.back', { defaultValue: 'Back to Chat' })}
+                      aria-label={t('common.back', { defaultValue: 'Back' })}
                       onClick={handleBrandHome}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
@@ -529,6 +535,7 @@ const Layout: React.FC<{
               {workspaceAvailable && <WorkPanelHost rowWidth={panelRowWidth} isMobile={isMobile} />}
             </div>
           </ArcoLayout>
+          {!isMobile && <KernelBar />}
         </div>
       </NavigationHistoryProvider>
     </LayoutContext.Provider>

@@ -15,9 +15,9 @@ const execFileAsync = promisify(execFile);
 
 /** Lines of the main process's output and logs that mean an error nothing handled. */
 const MAIN_PROBLEMS = [
-  /\[AionUi\] (uncaughtException|unhandledRejection)/,
+  /\[mu\] (uncaughtException|unhandledRejection)/,
   /render-process-gone/,
-  /\[AionUi\] App initialization failed/,
+  /\[mu\] App initialization failed/,
   /Failed to initialize process/,
 ];
 /** Lines of the logs that mean the adapter or mu met an error nothing handled. */
@@ -430,6 +430,21 @@ export function descendants(table, pid) {
 /** The processes started under `pid` (the app's main process: the backend, the adapter, mu and their children). */
 export async function processTree(pid) {
   return descendants(await processes(), pid);
+}
+
+/** Milliseconds from 1601, where a Windows start time counts from, to 1970. */
+const WINDOWS_EPOCH_MS = 11_644_473_600_000;
+
+/**
+ * Windows only (elsewhere the table has no start times): the processes started since `since` (Date.now() then) that
+ * still run, one line each. A process whose folder is a run's folder keeps it from being removed (EBUSY), and once its
+ * parent has ended it is in no one's tree, so this is how it is found.
+ */
+export async function startedSince(since) {
+  if (process.platform !== 'win32') return [];
+  return (await processes())
+    .filter((entry) => entry.start >= since + WINDOWS_EPOCH_MS && entry.pid !== process.pid)
+    .map((entry) => `${entry.pid} (parent ${entry.ppid}): ${entry.command}`);
 }
 
 /** The test's own look at the process table (`ps` lists itself), which is no leftover of the app. */

@@ -17,10 +17,14 @@ import {
 	closeSync,
 	createReadStream,
 	existsSync,
+	fsyncSync,
+	linkSync,
 	mkdirSync,
 	openSync,
 	readdirSync,
 	readSync,
+	renameSync,
+	rmSync,
 	type Stats,
 	statSync,
 	writeFileSync,
@@ -30,7 +34,7 @@ import { basename, join, resolve } from "path";
 import { createInterface } from "readline";
 import { StringDecoder } from "string_decoder";
 import { APP_NAME, getAgentDir as getDefaultAgentDir, getSessionsDir } from "../config.ts";
-import { normalizePath, resolvePath } from "../utils/paths.ts";
+import { normalizePath, pathsEqual, resolvePath } from "../utils/paths.ts";
 import {
 	type BashExecutionMessage,
 	type CustomMessage,
@@ -742,7 +746,7 @@ function getSessionHeaderCwd(header: SessionHeader): string | undefined {
 }
 
 function sessionCwdMatches(cwd: string | undefined, resolvedCwd: string): boolean {
-	return cwd !== undefined && cwd !== "" && resolvePath(cwd) === resolvedCwd;
+	return cwd !== undefined && cwd !== "" && pathsEqual(resolvePath(cwd), resolvedCwd);
 }
 
 /** Exported for testing */
@@ -1125,13 +1129,41 @@ export class SessionManager {
 
 	private _rewriteFile(): void {
 		if (!this.persist || !this.sessionFile) return;
-		const fd = openSync(this.sessionFile, "w");
+		this._writeWhole(this.fileEntries, false);
+	}
+
+	/**
+	 * Writes the session file whole, never part of it: the entries go to a new file beside it, which then takes its
+	 * place (rename, on the same file system). A rewrite (a migration, a branch) that fails or is cut short leaves the
+	 * file as it was rather than truncated. `exclusive`: the file must not exist yet, as for a new session's first
+	 * write; the new file is linked into place, which fails if one is there, and written there directly where links
+	 * are not supported.
+	 */
+	private _writeWhole(entries: readonly FileEntry[], exclusive: boolean): void {
+		const file = this.sessionFile;
+		if (!file) return;
+		// Serialized first: an entry that cannot be (a cycle, a BigInt) leaves no file behind.
+		const text = entries.map((entry) => `${JSON.stringify(entry)}\n`).join("");
+		const temp = `${file}.${randomUUID()}.tmp`;
 		try {
-			for (const entry of this.fileEntries) {
-				writeFileSync(fd, `${JSON.stringify(entry)}\n`);
+			const fd = openSync(temp, "wx");
+			try {
+				writeFileSync(fd, text);
+				fsyncSync(fd);
+			} finally {
+				closeSync(fd);
+			}
+			if (!exclusive) renameSync(temp, file);
+			else {
+				try {
+					linkSync(temp, file);
+				} catch (error) {
+					if ((error as NodeJS.ErrnoException).code === "EEXIST") throw error;
+					writeFileSync(file, text, { flag: "wx" });
+				}
 			}
 		} finally {
-			closeSync(fd);
+			rmSync(temp, { force: true });
 		}
 	}
 
@@ -1148,7 +1180,7 @@ export class SessionManager {
 	}
 
 	usesDefaultSessionDir(): boolean {
-		return this.sessionDir === getDefaultSessionDirPath(this.cwd);
+		return pathsEqual(this.sessionDir, getDefaultSessionDirPath(this.cwd));
 	}
 
 	getSessionId(): string {
@@ -1165,25 +1197,21 @@ export class SessionManager {
 	 * closing pi without chatting leaves no file behind. Starting at the user message (not the
 	 * first assistant reply) keeps the prompt on disk if the first turn never completes (#10000).
 	 */
-	private _hasConversation(): boolean {
-		return this.fileEntries.some(
-			(e) => e.type === "message" && (e.message.role === "user" || e.message.role === "assistant"),
-		);
+	private _hasConversation(entries: readonly FileEntry[] = this.fileEntries): boolean {
+		return entries.some((e) => e.type === "message" && (e.message.role === "user" || e.message.role === "assistant"));
 	}
 
+	/**
+	 * Saves an entry about to join the session (`_appendEntry` adds it to memory only once this returns): appended, or
+	 * with the first conversation entry the whole session so far, which makes the file.
+	 */
 	_persist(entry: SessionEntry): void {
 		if (!this.persist || !this.sessionFile) return;
 
 		if (!this.flushed) {
-			if (!this._hasConversation()) return;
-			const fd = openSync(this.sessionFile, "wx");
-			try {
-				for (const e of this.fileEntries) {
-					writeFileSync(fd, `${JSON.stringify(e)}\n`);
-				}
-			} finally {
-				closeSync(fd);
-			}
+			const entries = [...this.fileEntries, entry];
+			if (!this._hasConversation(entries)) return;
+			this._writeWhole(entries, true);
 			this.flushed = true;
 		} else {
 			appendFileSync(this.sessionFile, `${JSON.stringify(entry)}\n`);
@@ -1205,16 +1233,19 @@ export class SessionManager {
 		return id;
 	}
 
-	/** The reserved id when there is one to spend, else a new one. */
+	/** The reserved id when there is one, else a new one. It is spent once its entry is in the session. */
 	private takeEntryId(reserved: string | undefined): string {
-		return reserved !== undefined && this.reservedIds.delete(reserved) ? reserved : this.newId();
+		return reserved !== undefined && this.reservedIds.has(reserved) ? reserved : this.newId();
 	}
 
 	private _appendEntry(entry: SessionEntry): void {
+		// Saved before the session takes it: an entry that cannot be written (it does not serialize, the disk is full)
+		// leaves the session as it was in memory and on disk, its reserved id still to spend.
+		this._persist(entry);
+		this.reservedIds.delete(entry.id);
 		this.fileEntries.push(entry);
 		this.byId.set(entry.id, entry);
 		this.leafId = entry.id;
-		this._persist(entry);
 	}
 
 	/** Append a message as child of current leaf, then advance leaf. Returns entry id.
@@ -1816,7 +1847,7 @@ export class SessionManager {
 	 */
 	static continueRecent(cwd: string, sessionDir?: string): SessionManager {
 		const dir = sessionDir ? normalizePath(sessionDir) : getDefaultSessionDir(cwd);
-		const filterCwd = sessionDir !== undefined && dir !== getDefaultSessionDirPath(cwd);
+		const filterCwd = sessionDir !== undefined && !pathsEqual(dir, getDefaultSessionDirPath(cwd));
 		const mostRecent = findMostRecentSession(dir, filterCwd ? cwd : undefined);
 		if (mostRecent) {
 			return new SessionManager(cwd, dir, mostRecent, true);
@@ -1877,13 +1908,18 @@ export class SessionManager {
 			cwd: resolvedTargetCwd,
 			parentSession: resolvedSourcePath,
 		};
-		writeFileSync(newSessionFile, `${JSON.stringify(newHeader)}\n`, { flag: "wx" });
-
-		// Copy all non-header entries from source
-		for (const entry of sourceEntries) {
-			if (entry.type !== "session") {
-				appendFileSync(newSessionFile, `${JSON.stringify(entry)}\n`);
+		// Write the header and all non-header entries through one fd. Reopening the file per entry
+		// is slow where open/close is expensive (e.g. filesystem security monitors).
+		const fd = openSync(newSessionFile, "wx");
+		try {
+			writeFileSync(fd, `${JSON.stringify(newHeader)}\n`);
+			for (const entry of sourceEntries) {
+				if (entry.type !== "session") {
+					writeFileSync(fd, `${JSON.stringify(entry)}\n`);
+				}
 			}
+		} finally {
+			closeSync(fd);
 		}
 
 		return new SessionManager(resolvedTargetCwd, dir, newSessionFile, true);
@@ -1897,7 +1933,7 @@ export class SessionManager {
 	 */
 	static findById(cwd: string, id: string, sessionDir?: string): string | undefined {
 		const dir = sessionDir ? normalizePath(sessionDir) : getDefaultSessionDir(cwd);
-		const filterCwd = sessionDir !== undefined && dir !== getDefaultSessionDirPath(cwd);
+		const filterCwd = sessionDir !== undefined && !pathsEqual(dir, getDefaultSessionDirPath(cwd));
 		const resolvedCwd = resolvePath(cwd);
 
 		try {
@@ -1928,7 +1964,7 @@ export class SessionManager {
 		signal?: AbortSignal,
 	): Promise<SessionInfo[]> {
 		const dir = sessionDir ? normalizePath(sessionDir) : getDefaultSessionDir(cwd);
-		const filterCwd = sessionDir !== undefined && dir !== getDefaultSessionDirPath(cwd);
+		const filterCwd = sessionDir !== undefined && !pathsEqual(dir, getDefaultSessionDirPath(cwd));
 		const resolvedCwd = resolvePath(cwd);
 		const includeSession = (session: SessionInfo) => !filterCwd || sessionCwdMatches(session.cwd, resolvedCwd);
 		const progress: SessionListProgress | undefined = onProgress

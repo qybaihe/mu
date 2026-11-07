@@ -114,6 +114,11 @@ export type ScmResourceRowProps = {
   onAction?: (action: ScmActionKind, resource: ScmResource) => void;
   /** True while an action involving this row is in flight (buttons disabled). */
   busy?: boolean;
+  /**
+   * Whether the row offers discard. A native conversation's source tab sets it off: it only stages, unstages and
+   * commits, and the conversation's checkpoints are where files go back.
+   */
+  discard?: boolean;
   /** True when the last action reported this row in its `failed[]`. */
   failed?: boolean;
   /**
@@ -137,6 +142,7 @@ export const ScmResourceRow: React.FC<ScmResourceRowProps> = ({
   staging,
   onAction,
   busy = false,
+  discard = true,
   failed = false,
   indent = 0,
   hideDir = false,
@@ -183,7 +189,7 @@ export const ScmResourceRow: React.FC<ScmResourceRowProps> = ({
   // "working tree vs committed" notion, and discard is its most basic action, so it
   // must keep the button. Gating on the row's flag alone would silently take a
   // whole provider's capability away while fixing this bug.
-  const canDiscard = actionable && !(staging && resource.staged === true);
+  const canDiscard = discard && actionable && !(staging && resource.staged === true);
 
   // ⚠️ `isActionable` is checked TWICE on purpose — here (via `actionable`) and again
   // in the JSX wrapper below (`{actionable && …}`). **This duplication is load-bearing,

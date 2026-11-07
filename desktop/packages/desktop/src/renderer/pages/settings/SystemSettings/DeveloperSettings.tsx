@@ -16,7 +16,7 @@ import { SettingsPage } from '../components/SettingsPageHeader';
 const DeveloperSettings: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <SettingsPage title={t('settings.developer.title')} description={t('settings.developer.description')}>
+    <SettingsPage title={t('settings.developer.title')}>
       <DevSettings />
     </SettingsPage>
   );

@@ -1,0 +1,159 @@
+name: pi upstream sync
+
+# Weekly: merge earendil-works/pi main into a branch and open a PR.
+# A conflict in package-lock.json alone is resolved by keeping ours and refreshing it.
+# Any other conflict opens an issue instead: those need a person (or an agent) to adapt mu.
+
+on:
+  schedule:
+    - cron: '17 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM: https://github.com/earendil-works/pi.git
+  BRANCH: sync/pi-upstream
+  GH_TOKEN: ${{ github.token }}
+  # With an `upstream` remote, gh would otherwise act on earendil-works/pi.
+  GH_REPO: ${{ github.repository }}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The sync branch is main plus upstream, whichever ref started the run.
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Fetch upstream
+        id: fetch
+        run: |
+          git remote add upstream "$UPSTREAM"
+          git fetch upstream main --no-tags
+          ahead=$(git rev-list --count HEAD..upstream/main)
+          echo "ahead=$ahead" >> "$GITHUB_OUTPUT"
+          echo "head=$(git rev-parse --short upstream/main)" >> "$GITHUB_OUTPUT"
+          echo "Upstream commits not in main: $ahead"
+
+      - name: Merge
+        id: merge
+        if: steps.fetch.outputs.ahead != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          if git merge --no-ff --no-edit upstream/main; then
+            echo "result=clean" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          conflicts=$(git diff --name-only --diff-filter=U)
+          if [ "$conflicts" = "package-lock.json" ]; then
+            git checkout --ours package-lock.json
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+            git add package-lock.json
+            git commit --no-edit
+            echo "result=clean" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git merge --abort
+          {
+            echo "result=conflict"
+            echo "files<<EOF"
+            echo "$conflicts"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the PR
+        if: steps.merge.outputs.result == 'clean'
+        run: |
+          head="${{ steps.fetch.outputs.head }}"
+          ahead="${{ steps.fetch.outputs.ahead }}"
+          git push --force origin "$BRANCH"
+          # A push or a PR made with GITHUB_TOKEN starts no other workflow, so they are started here: CI, and the
+          # Environments and Windows runs, which upstream changes to Durable, env and the RPC layer reach first.
+          for workflow in ci.yml env.yml windows-tests.yml windows-permission.yml; do
+            gh workflow run "$workflow" --ref "$BRANCH"
+          done
+          body="Merges earendil-works/pi main at \`$head\` ($ahead commits not yet in main).
+
+          Opened by the weekly upstream-sync workflow. CI is started on this branch by the workflow. Read the upstream changes for anything that touches mu's integrations before merging. Merge with a merge commit, not a squash: the upstream history has to stay an ancestor of main."
+          # The fork ledger's entries for the files this merge changes: there, check that mu's side survived.
+          ledger=$(git diff --name-only HEAD^1 HEAD | node scripts/fork-ledger.mjs explain --skip-unlisted - || true)
+          if [ -n "$ledger" ]; then
+            body="$body
+
+          ## mu's changes in files this merge touches
+
+          From kyrn/docs/fork-ledger.md. Check that each still does what it says.
+
+          $ledger"
+          fi
+          if gh pr view "$BRANCH" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$BRANCH" --title "merge: pi upstream $head" --body "$body"
+            exit 0
+          fi
+          if gh pr create --base main --head "$BRANCH" --title "merge: pi upstream $head" --body "$body"; then
+            exit 0
+          fi
+          # A repository whose settings do not let Actions open pull requests refuses this. The branch is pushed
+          # either way, so say where it is: one click opens the PR.
+          compare="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/main...$BRANCH?expand=1"
+          title="pi upstream ready to merge: $head"
+          note="$body
+
+          The workflow could not open the pull request itself. Open it here: $compare"
+          existing=$(gh issue list --state open --search "in:title pi upstream ready to merge" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --title "$title" --body "$note"
+          else
+            gh issue create --title "$title" --body "$note"
+          fi
+
+      - name: Report conflicts
+        if: steps.merge.outputs.result == 'conflict'
+        env:
+          CONFLICTS: ${{ steps.merge.outputs.files }}
+        run: |
+          head="${{ steps.fetch.outputs.head }}"
+          title="pi upstream merge needs hands: $head"
+          body="Merging earendil-works/pi main at \`$head\` (${{ steps.fetch.outputs.ahead }} commits) conflicts in:
+
+          \`\`\`
+          ${{ steps.merge.outputs.files }}
+          \`\`\`
+
+          Merge locally: \`git fetch upstream && git merge upstream/main\`, adapt mu, then \`npm run check\` and \`./test.sh\`."
+          # What mu's side of each conflicting file is for, from the fork ledger.
+          ledger=$(printf '%s\n' "$CONFLICTS" | node scripts/fork-ledger.mjs explain - || true)
+          if [ -n "$ledger" ]; then
+            body="$body
+
+          ## What mu changes in these files
+
+          From kyrn/docs/fork-ledger.md. Keep what each entry says to keep.
+
+          $ledger"
+          fi
+          existing=$(gh issue list --state open --search "in:title pi upstream merge needs hands" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --title "$title" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

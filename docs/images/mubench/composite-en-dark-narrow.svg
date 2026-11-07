@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="402" viewBox="0 0 360 402" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif'>
+<title id="t">mubench 1.0 · main board: overall score</title>
+<desc id="d">3,193 requests mu sent to decision models in real coding sessions on open-source repositories, from 86 tasks. The thin lines are 95% intervals. mude 1.0: 64.9 (95% 59.1–72.3); Jev 1.14: 63.1 (95% 55.6–70.5); Jev 1.13: 61.5 (95% 53.8–69.1); d3-nano (original): 32.0 (95% 21.3–39.0); No decision model: 0. 0 = mu with no decision model · 100 = all of the cost it pays removed</desc>
+<text x="0" y="22" font-size="15" font-weight="650" fill="#f2f2f4">mubench 1.0 · main board: overall score</text>
+<text x="0" y="46" font-size="12.5" fill="#a6a6b0">3,193 requests mu sent to decision models in real coding</text>
+<text x="0" y="65" font-size="12.5" fill="#a6a6b0">sessions on open-source repositories, from 86 tasks. The</text>
+<text x="0" y="84" font-size="12.5" fill="#a6a6b0">thin lines are 95% intervals.</text>
+<line x1="6" y1="102" x2="6" y2="334" stroke="#34343c" stroke-width="1"/>
+<line x1="61.5" y1="102" x2="61.5" y2="334" stroke="#26262c" stroke-width="1"/>
+<line x1="117" y1="102" x2="117" y2="334" stroke="#26262c" stroke-width="1"/>
+<line x1="172.5" y1="102" x2="172.5" y2="334" stroke="#26262c" stroke-width="1"/>
+<line x1="228" y1="102" x2="228" y2="334" stroke="#26262c" stroke-width="1"/>
+<text x="0" y="112" font-size="13" font-weight="600" stroke="#0e0e10" stroke-width="4" stroke-linejoin="round" paint-order="stroke" fill="#f2f2f4">mude 1.0</text>
+<path d="M6,118 H146.1 Q150.1,118 150.1,122 V132 Q150.1,136 146.1,136 H6 Z" fill="#d63fa2"/>
+<line x1="137.2" y1="127" x2="166.5" y2="127" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="137.2" y1="122" x2="137.2" y2="132" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="166.5" y1="122" x2="166.5" y2="132" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<text x="178.5" y="132" font-size="14" font-weight="650" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">64.9</text>
+<text x="217.6" y="131.5" font-size="11.5" style="font-variant-numeric: tabular-nums" fill="#777782">59.1–72.3</text>
+<text x="0" y="162" font-size="13" font-weight="600" stroke="#0e0e10" stroke-width="4" stroke-linejoin="round" paint-order="stroke" fill="#f2f2f4">Jev 1.14</text>
+<path d="M6,168 H142.1 Q146.1,168 146.1,172 V182 Q146.1,186 142.1,186 H6 Z" fill="#8f7cf7"/>
+<line x1="129.4" y1="177" x2="162.5" y2="177" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="129.4" y1="172" x2="129.4" y2="182" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="162.5" y1="172" x2="162.5" y2="182" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<text x="174.5" y="182" font-size="14" font-weight="650" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">63.1</text>
+<text x="213.6" y="181.5" font-size="11.5" style="font-variant-numeric: tabular-nums" fill="#777782">55.6–70.5</text>
+<text x="0" y="212" font-size="13" font-weight="600" stroke="#0e0e10" stroke-width="4" stroke-linejoin="round" paint-order="stroke" fill="#f2f2f4">Jev 1.13</text>
+<path d="M6,218 H138.5 Q142.5,218 142.5,222 V232 Q142.5,236 138.5,236 H6 Z" fill="#5f52b8"/>
+<line x1="125.4" y1="227" x2="159.4" y2="227" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="125.4" y1="222" x2="125.4" y2="232" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="159.4" y1="222" x2="159.4" y2="232" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<text x="171.4" y="232" font-size="14" font-weight="650" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">61.5</text>
+<text x="210.5" y="231.5" font-size="11.5" style="font-variant-numeric: tabular-nums" fill="#777782">53.8–69.1</text>
+<text x="0" y="262" font-size="13" font-weight="600" stroke="#0e0e10" stroke-width="4" stroke-linejoin="round" paint-order="stroke" fill="#f2f2f4">d3-nano (original)</text>
+<path d="M6,268 H73 Q77,268 77,272 V282 Q77,286 73,286 H6 Z" fill="#8b8b96"/>
+<line x1="53.3" y1="277" x2="92.6" y2="277" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="53.3" y1="272" x2="53.3" y2="282" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="92.6" y1="272" x2="92.6" y2="282" stroke="#f2f2f4" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+<text x="104.6" y="282" font-size="14" font-weight="650" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">32.0</text>
+<text x="143.7" y="281.5" font-size="11.5" style="font-variant-numeric: tabular-nums" fill="#777782">21.3–39.0</text>
+<text x="0" y="312" font-size="13" font-weight="500" stroke="#0e0e10" stroke-width="4" stroke-linejoin="round" paint-order="stroke" fill="#a6a6b0">No decision model</text>
+<rect x="2" y="323" width="8" height="8" rx="1.2" fill="#777782" transform="rotate(45 6 327)"/>
+<text x="20" y="332" font-size="14" font-weight="650" style="font-variant-numeric: tabular-nums" fill="#a6a6b0">0</text>
+<text x="6" y="352" font-size="11.5" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">0</text>
+<text x="117" y="352" font-size="11.5" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">50</text>
+<text x="228" y="352" font-size="11.5" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">100</text>
+<text x="0" y="374" font-size="12.5" fill="#a6a6b0">0 = mu with no decision model · 100 = all of the cost it pays</text>
+<text x="0" y="392" font-size="12.5" fill="#a6a6b0">removed</text>
+</svg>

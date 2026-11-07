@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The work panel's tab strip in a panel too narrow for its labels (eight tabs in the 279px a 900px window leaves):
  * one icon per tab, each named by its tooltip and for screen readers, and the labels back once they fit again. The
  * strip never keeps tabs out of sight behind a sideways scroll.
@@ -17,7 +11,12 @@ import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import common from '@/renderer/services/i18n/locales/en-US/common.json';
 import WorkPanelTabs from '@/renderer/components/layout/WorkPanel/WorkPanelTabs';
-import { WORK_PANEL_TABS, type WorkPanelTab } from '@/renderer/components/layout/WorkPanel/workPanelStore';
+import {
+  WORK_PANEL_TABS,
+  readWorkPanelFollow,
+  resetWorkPanelStoreForTest,
+  type WorkPanelTab,
+} from '@/renderer/components/layout/WorkPanel/workPanelStore';
 
 const i18n = createInstance();
 beforeAll(async () => {
@@ -153,6 +152,26 @@ describe('the work panel tab strip', () => {
     resize(380);
     expect(strip()).not.toHaveAttribute('data-icons');
     expect(tabs().map((tab) => tab.textContent)).toEqual(labels);
+  });
+});
+
+describe('following the agent', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetWorkPanelStoreForTest();
+  });
+
+  it('is a toggle on the workspace tabs, pressed while on, and absent on the kernel tabs', () => {
+    show([], { active: 'files' });
+    const toggle = screen.getByRole('button', { name: 'Follow the agent' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(readWorkPanelFollow()).toBe(false);
+    cleanup();
+
+    show([], { active: 'board' });
+    expect(screen.queryByTestId('work-panel-follow')).toBeNull();
   });
 });
 

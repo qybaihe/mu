@@ -342,7 +342,6 @@
   "language": "Idioma",
   "saveUploadToWorkspace": "Guardar subidas en la carpeta del proyecto",
   "startOnBoot": "Iniciar al encender",
-  "startOnBootDesc": "Inicia mu automáticamente cuando inicias sesión en macOS o Windows.",
   "startOnBootUnsupported": "Disponible solo en la aplicación instalada de macOS y Windows.",
   "startOnBootUpdateFailed": "Error al actualizar la configuración de inicio al encender",
   "closeToTray": "Minimizar a la bandeja",
@@ -361,10 +360,8 @@
   "groupApp": "Aplicación",
   "groupAbout": "Otros",
   "agentIdleTimeout": "Tiempo de inactividad del agente",
-  "agentIdleTimeoutDesc": "Un agente inactivo se detiene pasado este tiempo para liberar memoria.",
   "previewTextSizeLimit": "Límite de tamaño de vista previa",
   "previewTextSizeLimitUnit": "MB",
-  "previewTextSizeLimitDesc": "Los archivos de texto que superen este tamaño se abren con un aviso en lugar del contenido. Solo se aplica a las pestañas nuevas.",
   "gemini": "Gemini CLI",
   "model": "Modelo",
   "system": "Sistema",
@@ -974,32 +971,26 @@
       "addModel": "Ayúdame a añadir un nuevo proveedor de LLM y una clave de API, y a establecerlo como modelo predeterminado.",
       "addMcp": "Ayúdame a configurar un servidor MCP.",
       "addSkill": "Ayúdame a importar una habilidad y a vincularla a un asistente.",
-      "setupRemote": "Ayúdame a configurar el acceso remoto para poder abrir mu desde el móvil o por internet.",
-      "diagnoseChatError": "Encontré un error durante una conversación en mu, ayúdame a diagnosticarlo.\n\n[Error] {{error}}\n\nPor favor, diagnostica la causa y dime cómo solucionarlo."
-    },
-    "solveWithButler": "Preguntar al Mayordomo"
+      "setupRemote": "Ayúdame a configurar el acceso remoto para poder abrir mu desde el móvil o por internet."
+    }
   },
   "providerIdConflict": "El ID del proveedor ya existe. Inténtalo de nuevo.",
   "autoInjectedSkillsHint": "Se cargan automáticamente en cada conversación: no hace falta activarlas; el agente decide cuándo usarlas.",
   "browserData": {
     "title": "Navegador integrado",
     "agentControlLabel": "Permitir que el agente use el navegador integrado",
-    "agentControlDesc": "Cuando está activado, el agente puede abrir páginas, hacer clic y rellenar formularios por ti en el navegador integrado, por ejemplo para buscar información o completar un trámite en un sitio web. Solo puede controlar esa vista del navegador: no llega a la interfaz de mu ni abre nunca una ventana de Chrome aparte. Si lo desactivas, el navegador sigue funcionando para ti; solo el agente pierde el acceso.",
     "agentControlSaved": "Ajuste guardado",
     "agentControlFailed": "No se pudo guardar el ajuste",
     "agentControlRestartRequired": "Este ajuste se aplica al reiniciar la aplicación.",
     "clearLabel": "Borrar datos de navegación",
-    "clearDesc": "Cierra la sesión en todos los sitios donde el navegador está conectado y borra la caché. Las pestañas abiertas se actualizan al recargar.",
     "clearConfirmTitle": "¿Borrar los datos de navegación?",
     "clearConfirmContent": "Se cerrará tu sesión en todos los sitios del navegador integrado. Esta acción no se puede deshacer.",
     "clearSuccess": "Datos de navegación borrados",
-    "clearFailed": "No se pudieron borrar los datos de navegación",
-    "description": "Si el agente puede usar el navegador integrado y cómo borrar lo que guarda el navegador."
+    "clearFailed": "No se pudieron borrar los datos de navegación"
   },
   "archived": {
     "navLabel": "Conversaciones archivadas",
     "title": "Archivados",
-    "description": "Conversaciones que has archivado. Restáuralas en la barra lateral o elimínalas permanentemente por lotes.",
     "empty": "No hay elementos archivados",
     "noProject": "Sin proyecto",
     "chatCount": "{{count}} conversaciones",
@@ -1072,13 +1063,8 @@
   },
   "mcpAuthRequiredNamed": "{{name}} necesita que inicies sesión",
   "mcpTestConnectionSuccessNamed": "{{name}} conectado",
-  "appearanceDescription": "El idioma, el tema, las fuentes y la escala.",
-  "systemDescription": "El inicio con el equipo, seguir en marcha al cerrar la ventana, las notificaciones y las carpetas donde mu trabaja y guarda sus registros.",
-  "conversationsDescription": "Los tiempos de espera, el límite de tamaño de la vista previa, dónde se guardan las subidas y los mensajes entre conversaciones.",
-  "aboutDescription": "Qué versión de mu es esta, sus actualizaciones y el acceso a sus registros.",
   "developer": {
     "title": "Desarrollo",
-    "description": "Las herramientas de desarrollo, y el puerto y las configuraciones MCP con que otras herramientas llegan al navegador integrado.",
     "devOnly": "Estas herramientas solo están disponibles cuando mu se ejecuta desde su código fuente."
   },
   "search": {
@@ -1087,5 +1073,9 @@
     "results": "Resultados de la búsqueda"
   },
   "learnMore": "Más información",
-  "showLess": "Mostrar menos"
+  "showLess": "Mostrar menos",
+  "keepAwakeWhileRunning": "Mantener activo mientras una conversación se ejecuta",
+  "keepAwakeWhileRunningDesc": "Mientras haya una ejecución en curso, el equipo no entra en reposo por inactividad. La pantalla puede apagarse y cerrar la tapa sigue suspendiéndolo.",
+  "completionSound": "Reproducir un sonido cuando una conversación termine o te necesite",
+  "completionSoundDesc": "Un aviso corto, incluso mientras miras mu. Otro distinto cuando mu pregunta algo o una ejecución falla. Mientras esté activado, las notificaciones del sistema no suenan, para que no oigas dos sonidos."
 }

@@ -16,14 +16,14 @@ import { openExternalUrl } from '@/renderer/utils/platform';
 import { parseHttpUrl } from '@/renderer/utils/url';
 import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview/context/PreviewContext';
 import classNames from 'classnames';
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { convertLatexDelimiters } from '@renderer/utils/chat/latexDelimiters';
 import LocalImageView from '@renderer/components/media/LocalImageView';
 import CodeBlock from './CodeBlock';
 import LocalFileLink from './LocalFileLink';
 import ShadowView from './ShadowView';
-import { MARKDOWN_REMARK_PLUGINS, MarkdownTable, MarkdownTd } from './markdownComponents';
+import { MARKDOWN_REMARK_PLUGINS, MarkdownFileSlotsContext, MarkdownTable, MarkdownTd } from './markdownComponents';
 import {
   resolveLocalFileLinkPath,
   resolveLocalFileLinkReference,
@@ -60,6 +60,8 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
     const preview = useOptionalPreviewContext();
     const previewRef = useRef(preview);
     previewRef.current = preview;
+    // A reply draws the file links it can check its own way (renderer/components/media/FileRefs/).
+    const fileSlots = useContext(MarkdownFileSlotsContext);
 
     const normalizedChildren = useMemo(() => {
       if (typeof childrenProp === 'string') {
@@ -119,10 +121,17 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
           const localFileReference =
             resolveLocalFileLinkReference(rawHref) ?? resolveRelativeFileLinkReference(rawHref);
           if (localFileReference) {
-            return (
+            const link = (
               <LocalFileLink reference={localFileReference} onOpen={onLocalFileLink}>
                 {anchorProps.children}
               </LocalFileLink>
+            );
+            return fileSlots ? (
+              <fileSlots.LocalFileLink reference={localFileReference} fallback={link}>
+                {anchorProps.children}
+              </fileSlots.LocalFileLink>
+            ) : (
+              link
             );
           }
           return (
@@ -146,7 +155,7 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
           return <img {...imgProps} alt={imgProps.alt || ''} />;
         },
       }),
-      [codeStyle, hiddenCodeCopyButton, handleLinkClick, onLocalFileLink]
+      [codeStyle, hiddenCodeCopyButton, handleLinkClick, onLocalFileLink, fileSlots]
     );
 
     const rehypePlugins = useMemo(() => (allowHtml ? [rehypeRaw, rehypeKatex] : [rehypeKatex]), [allowHtml]);

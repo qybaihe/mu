@@ -2,7 +2,7 @@
 	"name": "@kyrn/judge",
 	"version": "0.1.0",
 	"private": true,
-	"description": "KYRN judgment kernel: typed decisions backed by a System One judge model (Jev), with fail-open fallbacks and a decision ledger",
+	"description": "KYRN judgment kernel: typed decisions backed by a judge model, with fail-open fallbacks and a decision ledger",
 	"keywords": [
 		"pi-package",
 		"pi-extension",
@@ -63,7 +63,7 @@
 		"node": ">=22.19.0"
 	},
 	"dependencies": {
-		"undici": "8.10.2"
+		"undici": "8.12.3"
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-coding-agent": "^1.0.2",
@@ -79,6 +79,6 @@
 	},
 	"devDependencies": {
 		"shx": "0.4.0",
-		"vitest": "4.1.11"
+		"vitest": "4.1.12"
 	}
 }

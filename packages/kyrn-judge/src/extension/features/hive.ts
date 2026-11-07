@@ -11,13 +11,22 @@ import {
 	type PublishInput,
 	type RelateInput,
 } from "../../decisions/hive.ts";
-import { type RoutingOutcome, swarmRouting } from "../../decisions/swarm-routing.ts";
+import type { RoutingInput, RoutingOutcome } from "../../decisions/swarm-routing.ts";
 import { Board, foldRelations, isDuplicate, type Note, overlapping } from "../../hive/board.ts";
 import { hiveRequest, parseHiveArgs } from "../../hive/request.ts";
 import { say } from "../../language.ts";
 import { BRIEF_ENV, briefEnv, briefFor, knownLessons } from "../../swarm/brief.ts";
-import { CHECKPOINT, conflictLine, correctionLine, HIVE_MESSAGE, lastCall, NOTES_HEADER } from "../../swarm/markers.ts";
+import {
+	CHECKPOINT,
+	conflictLine,
+	correctionLine,
+	HIVE_MESSAGE,
+	lastCall,
+	markOf,
+	NOTES_HEADER,
+} from "../../swarm/markers.ts";
 import { type BeeSpec, type BoardSummary, SwarmRun } from "../../swarm/run.ts";
+import { subagentSessionFile } from "../../swarm/sessions.ts";
 import { loadAgents } from "../agents.ts";
 import { clip, failOpen, type KyrnRuntime, textOf, userWords } from "../runtime.ts";
 import {
@@ -27,13 +36,19 @@ import {
 	limitsFrom,
 	permissionEnv,
 	pickModel,
+	ratingMatters,
+	recordBeeUsage,
+	recordSubagentSessions,
 	registerSwarmCommand,
 	renderSwarmResult,
+	routeTasks,
 	SWARM_LIMIT_DEFAULTS,
 	type SwarmAssignment,
 	type SwarmRunner,
+	settledEnv,
 	spawnRunner,
 	streamUpdates,
+	thinkingForRoute,
 	uniqueNames,
 } from "./swarm.ts";
 import { isWrappingUp } from "./swarm-child.ts";
@@ -46,15 +61,20 @@ interface Candidate {
 	source: string;
 }
 
-/** What one step of a bee produced that could be news: what it said, and the beginning of what its tools returned. */
+/**
+ * What one step of a bee produced that could be news: what it said and, with `toolOutputs`, the beginning of what
+ * its tools returned. Off by default: of 32 tool outputs put to the judge in 7 hives, none was published (2026-10).
+ */
 export function candidatesOf(
 	message: { content?: unknown },
 	toolResults: readonly { toolCallId?: string; toolName?: string; content?: unknown }[],
-	limit = 4,
+	options: { toolOutputs?: boolean; limit?: number } = {},
 ): Candidate[] {
+	const limit = options.limit ?? 4;
 	const candidates: Candidate[] = [];
 	const said = textOf(message.content).trim();
 	if (said.length >= 40) candidates.push({ text: clip(said, 700), source: "said" });
+	if (!options.toolOutputs) return candidates;
 	const calls = new Map<string, string>();
 	if (Array.isArray(message.content)) {
 		for (const block of message.content as Record<string, unknown>[]) {
@@ -78,6 +98,22 @@ type InboxItem =
 	| { kind: "correction"; earlier: Note; later: Note; score: number }
 	| { kind: "conflict"; a: Note; b: Note; score: number };
 
+/** The options of `features.hive` that only a bee reads. */
+const MEMBER_OPTIONS = {
+	maxNotesPerBee: 12,
+	maxDeliveriesPerBee: 10,
+	/** Earlier notes a new one is held against, at most: the ones sharing the most words with it. */
+	maxRelatedPerNote: 2,
+	/** A note a bee starts with FOUND: or DEAD END:, as the checkpoint asks, is published without asking the judge. */
+	publishMarked: true,
+	/** What a bee's tools returned is also put to the judge as a possible note, not only what the bee said. */
+	publishToolOutputs: false,
+	/** Tool calls a bee may make in silence before it is asked what it has found. 0 turns checkpoints off. */
+	checkpointEvery: 4,
+	/** Notes that arrive while a bee writes its report get one hearing: a corrected report, or "NO CHANGE". */
+	lastCall: true,
+};
+
 /**
  * Inside a bee. After every step the judge decides whether what the bee said
  * or saw is news for the hive (H1), what each new note does to the earlier
@@ -85,17 +121,7 @@ type InboxItem =
  * bee (H2). The bee's own model spends nothing on any of it.
  */
 function registerMember(runtime: KyrnRuntime, dir: string): void {
-	const options = runtime.options("hive", {
-		enabled: true,
-		maxNotesPerBee: 12,
-		maxDeliveriesPerBee: 10,
-		/** Earlier notes a new one is held against, at most: the ones sharing the most words with it. */
-		maxRelatedPerNote: 6,
-		/** Tool calls a bee may make in silence before it is asked what it has found. 0 turns checkpoints off. */
-		checkpointEvery: 4,
-		/** Notes that arrive while a bee writes its report get one hearing: a corrected report, or "NO CHANGE". */
-		lastCall: true,
-	});
+	const options = runtime.options("hive", { enabled: true, ...MEMBER_OPTIONS });
 	const me = process.env.KYRN_HIVE_BEE ?? "bee";
 	const goal = process.env.KYRN_HIVE_GOAL ?? "";
 	const focus = process.env.KYRN_HIVE_FOCUS ?? "";
@@ -226,13 +252,24 @@ function registerMember(runtime: KyrnRuntime, dir: string): void {
 		const novel = candidates.filter((candidate) => !isDuplicate(candidate.text, known));
 		const mine: Note[] = [];
 		if (novel.length > 0 && posted < options.maxNotesPerBee) {
-			const inputs: PublishInput[] = novel.map((candidate) => ({
+			// What the bee marked as the checkpoint asks is news by its own word: the judge is asked about the rest.
+			// In 7 hives every note the judge published was a marked one, and it held back 14 of 45 marked findings.
+			const marks = novel.map((candidate) =>
+				options.publishMarked && candidate.source === "said" ? markOf(candidate.text) : undefined,
+			);
+			const asked = novel.filter((_, at) => !marks[at]);
+			const inputs: PublishInput[] = asked.map((candidate) => ({
 				goal,
 				focus,
 				note: candidate.text,
 				source: candidate.source,
 			}));
-			const verdicts = await runtime.engine.decideMany(hivePublish, inputs, { signal });
+			const judged = inputs.length > 0 ? await runtime.engine.decideMany(hivePublish, inputs, { signal }) : [];
+			const verdicts = novel.map((candidate, at) => {
+				const kind = marks[at];
+				if (kind) return { outcome: { publish: true, kind, score: 1 }, reason: "marked" };
+				return judged[asked.indexOf(candidate)];
+			});
 			verdicts.forEach((verdict, at) => {
 				const { publish, kind, score } = verdict.outcome;
 				board.log({
@@ -309,7 +346,9 @@ function registerMember(runtime: KyrnRuntime, dir: string): void {
 		"turn_end",
 		failOpen<TurnEndEvent, undefined>(async (event, ctx) => {
 			runtime.touch(ctx);
-			const candidates = candidatesOf(event.message as { content?: unknown }, event.toolResults);
+			const candidates = candidatesOf(event.message as { content?: unknown }, event.toolResults, {
+				toolOutputs: options.publishToolOutputs,
+			});
 			queue = queue.then(() => step(candidates, ctx.signal)).catch(() => undefined);
 			// Told to wrap up: nothing more goes in, it only has to get its report out.
 			if (isWrappingUp(runtime)) return undefined;
@@ -377,6 +416,8 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 		verifyConflicts: 1,
 		verifyAfterSeconds: 60,
 		...SWARM_LIMIT_DEFAULTS,
+		// Read here too, so that the session's check of mu.json knows them (`featureConfigProblems`).
+		...MEMBER_OPTIONS,
 	});
 	if (!options.enabled) return;
 	const memberDir = process.env.KYRN_HIVE_DIR;
@@ -406,7 +447,7 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 				{ minItems: 2 },
 			),
 		}),
-		execute: async (_toolCallId, params, signal, onUpdate, ctx) => {
+		execute: async (toolCallId, params, signal, onUpdate, ctx) => {
 			runtime.touch(ctx);
 			const asked = params.bees.slice(0, options.maxBees);
 			const names = uniqueNames(asked.map((bee) => bee.name));
@@ -418,12 +459,29 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 			const swarm = runtime.options("swarm", { enabled: true, models: [] as string[] });
 			const ladder = options.models.length > 0 ? options.models : swarm.models;
 			const current = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
+			const sessionThinking = pi.getThinkingLevel();
+			const roleOf = (agentName: string | undefined) =>
+				roles.get(agentName ?? "") ?? roles.get(options.defaultAgent);
+			/** What the judge is asked about a bee: only how hard its angle is, and only when that can matter. */
+			const routing = (task: string, agentName: string | undefined): RoutingInput => ({
+				task: clip(task, 600),
+				rate: ratingMatters(ladder, [roleOf(agentName)]),
+			});
 			const placement = (verdict: RoutingOutcome, agentName: string | undefined): SwarmAssignment => {
-				const agent = roles.get(agentName ?? "") ?? roles.get(options.defaultAgent);
+				const agent = roleOf(agentName);
+				const model = agent?.model ?? pickModel(ladder, verdict.strength) ?? current;
 				return {
 					agent,
-					model: agent?.model ?? pickModel(ladder, verdict.strength) ?? current,
-					thinking: agent?.thinking ?? verdict.thinking,
+					model,
+					// As for delegate: a bee on the session's model keeps the session's thinking, so its first call reads
+					// the parent's prompt cache.
+					thinking: thinkingForRoute({
+						pinned: agent?.thinking,
+						model,
+						sessionModel: current,
+						sessionThinking,
+						judged: verdict.thinking,
+					}),
 					routedBy: agentName && roles.has(agentName) ? "caller" : "default",
 				};
 			};
@@ -431,10 +489,10 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 			const tasks = bees.map((bee) => `${bee.focus} (part of: ${params.goal})`);
 			// What this project's lessons say about each angle, asked alongside the routing.
 			const lessons = runtime.knownLessons?.(tasks, signal);
-			const routes = await runtime.engine.decideMany(
-				swarmRouting,
-				tasks.map((task) => ({ task: clip(task, 600) })),
-				{ signal },
+			const routes = await routeTasks(
+				runtime,
+				tasks.map((task, at) => routing(task, bees[at].agent)),
+				signal,
 			);
 			const known = (await lessons?.catch(() => undefined)) ?? [];
 			interface Member {
@@ -446,7 +504,7 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 			const members: Member[] = bees.map((bee, at) => ({
 				name: bee.name,
 				focus: bee.focus,
-				assignment: placement(routes[at].judged ?? routes[at].outcome, bee.agent),
+				assignment: placement(routes[at], bee.agent),
 				lessons: known[at],
 			}));
 			const specFor = (member: Member, all: readonly Member[]): BeeSpec<SwarmAssignment> => {
@@ -462,12 +520,15 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 				return {
 					name: member.name,
 					task: { title: member.name, instructions },
-					assignment: member.assignment,
+					// Like a delegate's subagent, a bee keeps a session of its own where this one does.
+					assignment: { ...member.assignment, session: subagentSessionFile(ctx.sessionManager, member.name) },
 					role: member.assignment.agent?.name,
 					model: member.assignment.model,
 					thinking: member.assignment.thinking,
 					env: {
 						...permissionEnv(runtime),
+						// The skills and capabilities this session settled on: the bee does not ask again.
+						...settledEnv(runtime),
 						// The angle is the bee's goal; what the user asked for is what its calls are weighed against.
 						[BRIEF_ENV]: briefEnv(
 							briefFor(
@@ -494,6 +555,8 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 			// The board is part of the live view: what the judge let through, whom it reached, how much it has ruled on.
 			run.board = () => summarizeBoard(board);
 			streamUpdates(run, onUpdate);
+			recordBeeUsage(runtime, run);
+			recordSubagentSessions(runtime, run, toolCallId);
 
 			// A dispute nobody settles gets a verifier of its own, while the hive still runs: one more bee whose
 			// angle is the two notes. What it finds goes through the same gates, so the losing side is corrected
@@ -508,12 +571,12 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 					const wanted = `verify-${verifiers + 1}`;
 					const name = uniqueNames([...members.map((member) => member.name), wanted]).at(-1) ?? wanted;
 					const focus = `Two investigators disagree. ${a.bee} reported: "${clip(a.text, 400)}" ${b.bee} reported: "${clip(b.text, 400)}" Find out which holds, or that both do under different conditions, with the command, file and line that shows it, and state it as FOUND: in your report.`;
-					const route = await runtime.engine.decide(
-						swarmRouting,
-						{ task: clip(`${focus} (part of: ${params.goal})`, 600) },
-						{ signal },
+					const [route] = await routeTasks(
+						runtime,
+						[routing(`${focus} (part of: ${params.goal})`, undefined)],
+						signal,
 					);
-					const member: Member = { name, focus, assignment: placement(route.judged ?? route.outcome, undefined) };
+					const member: Member = { name, focus, assignment: placement(route, undefined) };
 					if (run.add(specFor(member, [...members, member])) < 0) return;
 					verifiers++;
 					members.push(member);
@@ -640,20 +703,37 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 /** How long `/hive` in print mode waits for the turn it asked for to start. It takes that long only when something is wrong. */
 const TURN_START_MS = 60_000;
 
+/** Custom message type of the request to start a hive: the model reads it, the chat does not show it. */
+export const HIVE_REQUEST_ENTRY = "kyrn.hive-request";
+
 /**
  * `/hive <question>`: a person asks for a hive. The command sends the question
  * with the request to put a hive on it at once (`hiveRequest`); the main model
  * plans the bees, because it knows the project and the angles. Without a
  * question, `/hive` is `/swarm`, as it always was.
  *
- * The request is a user message the command sends, so the turn runs as a typed
- * message's would. Print mode is the exception: it ends the process when the
- * command returns, so there the command waits for the turn it started to end.
+ * The command sends what was typed as a user message, so the turn runs as a
+ * typed message's would and the chat shows `/hive <question>`. The request goes
+ * with it as a hidden message of that turn: it is written for the model, in
+ * English, and would otherwise sit in the person's bubble. Print mode ends the
+ * process when the command returns, so there the command waits for the turn it
+ * started to end.
  */
 function registerHiveCommand(runtime: KyrnRuntime): void {
 	const { pi } = runtime;
 	/** The turn a waiting `/hive` asked for: whether it has started, and what to call when it is over. */
 	let waiting: { started: boolean; over: () => void } | undefined;
+	/** The request for the turn `/hive` is about to start, matched by what it sends as the user message. */
+	let request: { typed: string; text: string } | undefined;
+	pi.on(
+		"before_agent_start",
+		failOpen((event) => {
+			const pending = request;
+			request = undefined;
+			if (!pending || event.messageType !== "user" || event.prompt !== pending.typed) return undefined;
+			return { message: { customType: HIVE_REQUEST_ENTRY, content: pending.text, display: false } };
+		}),
+	);
 	pi.on(
 		"agent_start",
 		failOpen(() => {
@@ -687,7 +767,7 @@ function registerHiveCommand(runtime: KyrnRuntime): void {
 	pi.registerCommand("hive", {
 		description: say({
 			zh: "让几个调查员同时查一个问题：/hive <问题>；不带问题时同 /swarm，看正在干活的子代理",
-			en: "Put several investigators on one question at once: /hive <question>. Without one, the same as /swarm",
+			en: "Have several investigators work on one question at once: /hive <question>. With no question, it works like /swarm",
 		}),
 		// No argument completions, like /swarm: "/hive stop" is typed by someone who wants it to happen now.
 		handler: async (args, ctx) => {
@@ -695,7 +775,12 @@ function registerHiveCommand(runtime: KyrnRuntime): void {
 			const asked = parseHiveArgs(args);
 			if (asked.kind !== "question") {
 				const control = asked.kind === "control" ? `${asked.verb} ${asked.name ?? ""}` : "";
-				controlSwarm(runtime, control, ctx, "/hive <question> puts several investigators on a question of yours.");
+				controlSwarm(
+					runtime,
+					control,
+					ctx,
+					"/hive <question> puts several investigators to work on your question.",
+				);
 				return;
 			}
 			const refuse = (message: string): void => {
@@ -704,29 +789,31 @@ function registerHiveCommand(runtime: KyrnRuntime): void {
 				ctx.ui.notify(message, "warning");
 			};
 			if (!pi.getActiveTools().includes("hive")) {
-				refuse("The hive tool is not active in this session (--tools leaves it out), so /hive cannot start one.");
+				refuse("The hive tool isn't active in this session (--tools leaves it out), so /hive can't start one.");
 				return;
 			}
 			if (!ctx.model) {
-				refuse("No model is selected: /login, then /model.");
+				refuse("No model is selected. Run /login, then /model.");
 				return;
 			}
-			const request = hiveRequest(asked.question);
 			if (!ctx.isIdle()) {
-				pi.sendUserMessage(request, { deliverAs: "followUp" });
-				ctx.ui.notify("The hive starts when the current turn is over.", "info");
+				// A queued message joins the running loop, which starts no new turn to attach the request to:
+				// the request goes in the message itself.
+				pi.sendUserMessage(hiveRequest(asked.question), { deliverAs: "followUp" });
+				ctx.ui.notify("The hive will start when the current turn ends.", "info");
 				return;
 			}
 			// The request is sent by the command, and what an extension sends is not counted as the user speaking.
 			// This one is the user's: the task frame, the lessons and the permission judge read it as what they typed,
-			// as they do for /goal. Otherwise Jev would be asked to approve a hive against the turn before.
+			// as they do for /goal. Otherwise the judge would be asked to approve a hive against the turn before.
 			const typed = `/hive ${asked.question}`;
 			runtime.beginTurn(typed);
 			runtime.startTurnWork(typed);
 			// Without credentials pi refuses the request with an error of its own; there is no turn to wait for.
 			const wait = (ctx.mode === "print" || ctx.mode === "json") && ctx.modelRegistry.hasConfiguredAuth(ctx.model);
 			const over = wait ? untilTurnEnds() : undefined;
-			pi.sendUserMessage(request);
+			request = { typed, text: hiveRequest(asked.question) };
+			pi.sendUserMessage(typed);
 			await over;
 		},
 	});

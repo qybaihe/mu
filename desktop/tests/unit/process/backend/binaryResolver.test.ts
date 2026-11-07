@@ -20,7 +20,7 @@ vi.mock('node:fs', () => ({
 }));
 
 const originalResourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
-const originalBackendBin = process.env.AIONUI_BACKEND_BIN;
+const originalBackendBin = process.env.MU_BACKEND_BIN;
 
 function setResourcesPath(resourcesPath: string | undefined): void {
   Object.defineProperty(process, 'resourcesPath', {
@@ -31,9 +31,9 @@ function setResourcesPath(resourcesPath: string | undefined): void {
 
 function restoreBackendBin(): void {
   if (originalBackendBin === undefined) {
-    delete process.env.AIONUI_BACKEND_BIN;
+    delete process.env.MU_BACKEND_BIN;
   } else {
-    process.env.AIONUI_BACKEND_BIN = originalBackendBin;
+    process.env.MU_BACKEND_BIN = originalBackendBin;
   }
 }
 
@@ -47,7 +47,7 @@ function dirEntry(name: string, isDirectory = false): ReturnType<typeof readdirS
 describe('resolveBinaryPath', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    delete process.env.AIONUI_BACKEND_BIN;
+    delete process.env.MU_BACKEND_BIN;
   });
 
   afterEach(() => {
@@ -55,11 +55,11 @@ describe('resolveBinaryPath', () => {
     restoreBackendBin();
   });
 
-  it('returns the AIONUI_BACKEND_BIN override when the file exists', () => {
+  it('returns the MU_BACKEND_BIN override when the file exists', () => {
     const overrideInput = '/custom/aioncore';
     // Resolve mirrors the implementation so the expectation holds on Windows too.
     const overridePath = resolve(overrideInput);
-    process.env.AIONUI_BACKEND_BIN = overrideInput;
+    process.env.MU_BACKEND_BIN = overrideInput;
     vi.mocked(existsSync).mockImplementation((path) => path === overridePath);
 
     expect(resolveBinaryPath()).toBe(overridePath);
@@ -67,31 +67,31 @@ describe('resolveBinaryPath', () => {
     expect(execSync).not.toHaveBeenCalled();
   });
 
-  it('trims whitespace around AIONUI_BACKEND_BIN before use', () => {
+  it('trims whitespace around MU_BACKEND_BIN before use', () => {
     const overrideInput = '/custom/aioncore';
     const overridePath = resolve(overrideInput);
-    process.env.AIONUI_BACKEND_BIN = `  ${overrideInput}  `;
+    process.env.MU_BACKEND_BIN = `  ${overrideInput}  `;
     vi.mocked(existsSync).mockImplementation((path) => path === overridePath);
 
     expect(resolveBinaryPath()).toBe(overridePath);
   });
 
-  it('resolves a relative AIONUI_BACKEND_BIN against process.cwd', () => {
-    process.env.AIONUI_BACKEND_BIN = 'rel/aioncore';
+  it('resolves a relative MU_BACKEND_BIN against process.cwd', () => {
+    process.env.MU_BACKEND_BIN = 'rel/aioncore';
     const absolute = resolve('rel/aioncore');
     vi.mocked(existsSync).mockImplementation((path) => path === absolute);
 
     expect(resolveBinaryPath()).toBe(absolute);
   });
 
-  it('throws with override diagnostics when AIONUI_BACKEND_BIN points at a missing file', () => {
+  it('throws with override diagnostics when MU_BACKEND_BIN points at a missing file', () => {
     const overrideInput = '/custom/missing-aioncore';
     const overridePath = resolve(overrideInput);
-    process.env.AIONUI_BACKEND_BIN = overrideInput;
+    process.env.MU_BACKEND_BIN = overrideInput;
     vi.mocked(existsSync).mockReturnValue(false);
 
     // Error message quotes the raw input, diagnostics carry the resolved path.
-    expect(() => resolveBinaryPath()).toThrow(`AIONUI_BACKEND_BIN is set to "${overrideInput}"`);
+    expect(() => resolveBinaryPath()).toThrow(`MU_BACKEND_BIN is set to "${overrideInput}"`);
 
     try {
       resolveBinaryPath();
@@ -108,8 +108,8 @@ describe('resolveBinaryPath', () => {
     expect(execSync).not.toHaveBeenCalled();
   });
 
-  it('ignores a blank AIONUI_BACKEND_BIN and falls back to the normal search order', () => {
-    process.env.AIONUI_BACKEND_BIN = '   ';
+  it('ignores a blank MU_BACKEND_BIN and falls back to the normal search order', () => {
+    process.env.MU_BACKEND_BIN = '   ';
     const resolved = '/usr/local/bin/aioncore';
 
     setResourcesPath(undefined);
@@ -119,18 +119,18 @@ describe('resolveBinaryPath', () => {
     expect(resolveBinaryPath()).toBe(resolved);
   });
 
-  it('attaches bundled path diagnostics when aioncore cannot be resolved', () => {
+  it('attaches bundled path diagnostics when the backend cannot be resolved', () => {
     const resourcesPath = '/app/resources';
     const runtimeKey = `${process.platform}-${process.arch}`;
     const binaryName = process.platform === 'win32' ? 'aioncore.exe' : 'aioncore';
-    const bundledDir = join(resourcesPath, 'bundled-aioncore');
+    const bundledDir = join(resourcesPath, 'bundled-backend');
     const runtimeDir = join(bundledDir, runtimeKey);
     const checkedBundledPath = join(runtimeDir, binaryName);
 
     setResourcesPath(resourcesPath);
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(readdirSync).mockImplementation((path) => {
-      if (path === resourcesPath) return [dirEntry('bundled-aioncore', true)];
+      if (path === resourcesPath) return [dirEntry('bundled-backend', true)];
       if (path === runtimeDir) return [dirEntry('manifest.json')];
       return [] as ReturnType<typeof readdirSync>;
     });
@@ -152,7 +152,7 @@ describe('resolveBinaryPath', () => {
           checkedBundledPath,
           bundledDirExists: false,
           runtimeDirExists: false,
-          resourcesDirEntries: ['bundled-aioncore/'],
+          resourcesDirEntries: ['bundled-backend/'],
           runtimeDirEntries: ['manifest.json'],
           pathLookupCommand: process.platform === 'win32' ? 'where aioncore' : 'which aioncore',
           pathLookupError: expect.stringContaining('not found on PATH'),

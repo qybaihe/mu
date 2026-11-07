@@ -116,7 +116,7 @@ function resolveLegacyRuntimeDisplayName(conversation: TChatConversation): strin
     backend?: unknown;
   };
   const agent_name = typeof extra?.agent_name === 'string' ? extra.agent_name.trim() : '';
-  // A conversation stored by the backend's built-in agent carries its name, "Aion CLI" (backend `aionrs`).
+  // A conversation of the backend's built-in agent carries the name the backend gives it, which showAsMu shows as mu's.
   if (agent_name) return showAsMu(agent_name);
 
   const backend = typeof extra?.backend === 'string' ? extra.backend.trim() : '';
@@ -148,7 +148,7 @@ function normalizeAvatar(avatar: string | undefined): { logo: string; isEmoji: b
   return { logo: resolved.value, isEmoji: true };
 }
 
-/** The catalog shows backend names as mu (see `assistants.list`); rules stored before that still say AionUi. */
+/** The catalog shows backend names as mu (see `assistants.list`); rules stored before that still have the old names. */
 function normalizeAssistantLabel(value: string | undefined): string {
   return showAsMu(value || '')
     .normalize('NFKC')

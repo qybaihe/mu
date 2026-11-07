@@ -103,6 +103,9 @@ function Area({ page: routed, feature, part, focus, onView, mu }: SettingsAreaPr
     const area = detailAreaOf(page);
     const onKey = (variable: string, value: string) =>
       mu.edit((now) => ({ ...now, judgeKeys: { ...now.judgeKeys, [variable]: value } }));
+    // A judge's saved key goes from mu's .env when the draft is saved.
+    const onRemoveKey = (variable: string) =>
+      mu.edit((now) => ({ ...now, removedKeys: [...now.removedKeys.filter((name) => name !== variable), variable] }));
     if (page === 'providers')
       content = <ProvidersSection draft={draft} base={base} available={mu.available} onDraft={mu.edit} />;
     else if (page === 'default-model')
@@ -110,9 +113,26 @@ function Area({ page: routed, feature, part, focus, onView, mu }: SettingsAreaPr
     else if (page === 'board-model')
       content = <BoardModelSection draft={draft} base={base} available={mu.available} onDraft={mu.edit} />;
     else if (page === 'judges')
-      content = <JudgesSection draft={draft} base={base} onChange={mu.editSettings} onKey={onKey} />;
+      content = (
+        <JudgesSection
+          draft={draft}
+          base={base}
+          onChange={mu.editSettings}
+          onKey={onKey}
+          onRemoveKey={onRemoveKey}
+          onReload={mu.refresh}
+        />
+      );
     else if (page === 'judge-order')
-      content = <JudgeOrderSection draft={draft} base={base} onChange={mu.editSettings} onKey={onKey} />;
+      content = (
+        <JudgeOrderSection
+          draft={draft}
+          base={base}
+          onChange={mu.editSettings}
+          onKey={onKey}
+          onRemoveKey={onRemoveKey}
+        />
+      );
     else if (page === 'features')
       content = (
         <CoreFeaturesSection
@@ -154,7 +174,7 @@ function Area({ page: routed, feature, part, focus, onView, mu }: SettingsAreaPr
     <div className={styles.area} data-testid='kyrn-settings'>
       {messageHolder}
       {/* Not sticky: the section list is what stays in view here. */}
-      {routed ? null : <SettingsPageHeader sticky={false} title={t('mu.title')} description={t('mu.description')} />}
+      {routed ? null : <SettingsPageHeader sticky={false} title={t('mu.title')} />}
       {base?.harness.status === 'unsupported' ? (
         <Alert type='warning' content={t('mu.harness.unsupported', { version: base.harness.version })} />
       ) : null}

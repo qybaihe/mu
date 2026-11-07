@@ -18,9 +18,10 @@ export interface NoticeOptions {
 	/** What the model reads when the notice is delivered. The judge only sees the one-line event. */
 	readonly content?: string;
 	/**
-	 * Delivery without a verdict (the decision is off or in shadow, the judge is unreachable). The default
-	 * is `drop`: a notice that exists only because of the judge must not appear without it. A source whose
-	 * events the model has to hear of anyway (a background job that ended) passes `next_turn`.
+	 * Delivery without a verdict (the decision is off or in shadow, as it is by default; the judge is
+	 * unreachable). The default is `drop`: a notice that exists only because of the judge must not appear
+	 * without it. A source whose events the model has to hear of anyway (a background job that ended) passes
+	 * `now`: a `next_turn` notice is only read when another run starts, which a one-shot run never does.
 	 */
 	readonly unjudged?: NotifyOutcome;
 	/** Let a `now` verdict start a turn when the agent is idle. */

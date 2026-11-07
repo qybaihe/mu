@@ -1,16 +1,10 @@
 /**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * Replays the frames of a mu turn in 最小权限 (minimal permission) mode, as the conversation E2E test recorded them:
  * every frame of the turn shares one msg_id, and the permission card (`acp_permission`) arrives between the tool call
  * it asks about and that call's result.
  *
  * Before the fix the card went through the generic msg_id arm of `composeMessageWithIndex`, found whatever frame was
- * indexed last under the shared msg_id and overwrote it: the `write` row (or the Jev line) turned into the card. The
+ * indexed last under the shared msg_id and overwrote it: the `write` row (or the judge's line) turned into the card. The
  * call's result then found no row, was added as a row with no name, and the tool row's icon threw on the missing name:
  * the whole conversation page fell to the error screen right after 允许 (Allow).
  */
@@ -22,7 +16,7 @@ import { normalizeToolMessages } from '@/common/chat/normalizeToolCall';
 import { buildMessageIndex, composeMessageWithIndex } from '@/renderer/pages/conversation/Messages/hooks';
 
 const MSG_ID = 'abdbca15';
-const JEV = 'jev:5a367a6d-1ea9-49ae-92be-37f3f8ee18d4:3';
+const PREFLIGHT = 'jev:5a367a6d-1ea9-49ae-92be-37f3f8ee18d4:3';
 
 const frame = (type: string, data: unknown): TMessage => {
   const message = transformMessage({ type, conversation_id: 'conv-1', msg_id: MSG_ID, data } as never);
@@ -33,16 +27,16 @@ const frame = (type: string, data: unknown): TMessage => {
 const toolCall = (update: Record<string, unknown>): TMessage =>
   frame('acp_tool_call', { session_id: 'session-1', update });
 
-const jevPending = toolCall({
+const preflightPending = toolCall({
   session_update: 'tool_call',
-  tool_call_id: JEV,
+  tool_call_id: PREFLIGHT,
   status: 'in_progress',
   title: 'Jev · Classifying',
   kind: 'execute',
 });
-const jevVerdict = toolCall({
+const preflightVerdict = toolCall({
   session_update: 'tool_call_update',
-  tool_call_id: JEV,
+  tool_call_id: PREFLIGHT,
   status: 'completed',
   title: 'Jev · unknown',
   raw_output: { state: 'none', turn_type: 'unknown', reason_code: 'off', preflight: 'verdict' },
@@ -75,8 +69,8 @@ const toolRows = (list: TMessage[]) =>
 describe('permission card live merge', () => {
   it('keeps the row of the call it asks about, and the call settles in that row (write, 允许)', () => {
     const list = replay([
-      jevPending,
-      jevVerdict,
+      preflightPending,
+      preflightVerdict,
       toolCall({
         session_update: 'tool_call',
         tool_call_id: 'call_e2e_4',
@@ -98,15 +92,15 @@ describe('permission card live merge', () => {
     expect(list.filter((message) => message.type === 'acp_permission')).toHaveLength(1);
     const rows = toolRows(list);
     expect(rows.map((row) => [row.key, row.name, row.status])).toEqual([
-      [JEV, 'Jev · unknown', 'completed'],
+      [PREFLIGHT, 'Jev · unknown', 'completed'],
       ['call_e2e_4', 'write', 'completed'],
     ]);
   });
 
-  it('keeps the Jev line when the card comes before the call (bash, 不允许)', () => {
+  it('keeps the judge’s line when the card comes before the call (bash, 不允许)', () => {
     const list = replay([
-      jevPending,
-      jevVerdict,
+      preflightPending,
+      preflightVerdict,
       permission('permission:ec3afaa2', 'echo hi > bash-out.txt'),
       toolCall({
         session_update: 'tool_call',
@@ -121,16 +115,16 @@ describe('permission card live merge', () => {
 
     expect(list.filter((message) => message.type === 'acp_permission')).toHaveLength(1);
     expect(toolRows(list).map((row) => [row.key, row.name, row.status])).toEqual([
-      [JEV, 'Jev · unknown', 'completed'],
+      [PREFLIGHT, 'Jev · unknown', 'completed'],
       ['call_e2e_6', 'bash', 'error'],
     ]);
   });
 
   it('shows one card for a question sent again, and one card per question', () => {
     const list = replay([
-      jevPending,
+      preflightPending,
       permission('permission:a', 'write a.txt'),
-      jevVerdict,
+      preflightVerdict,
       permission('permission:a', 'write a.txt'),
       permission('permission:b', 'write b.txt'),
     ]);

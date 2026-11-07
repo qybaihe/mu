@@ -157,7 +157,25 @@
     "tabLimitReached": "Tab-Limit erreicht ({{count}}). Der älteste Tab wurde wiederverwendet.",
     "agentFirstUseTitle": "Der Agent nutzt den integrierten Browser",
     "agentFirstUseContent": "Er kann in diesem Bereich Seiten öffnen, klicken und Inhalte lesen. Deine Anmeldung bleibt erhalten.",
-    "agentFirstUseAction": "Einstellungen öffnen"
+    "agentFirstUseAction": "Einstellungen öffnen",
+    "pick": {
+      "start": "Element auswählen, um es mu zu zeigen",
+      "stop": "Auswahl beenden",
+      "hint": "Klicke auf ein Element, um es deiner Nachricht hinzuzufügen · ↑ wählt das übergeordnete · Esc bricht ab",
+      "added": "{{name}} zur Nachricht hinzugefügt",
+      "failed": "Elemente dieser Seite lassen sich nicht auswählen"
+    },
+    "screenshot": {
+      "send": "mu zeigen, wie diese Seite gerade aussieht",
+      "chip": "Screenshot von {{site}}",
+      "added": "Screenshot von {{site}} zur Nachricht hinzugefügt",
+      "failed": "Diese Seite kann gerade nicht aufgenommen werden"
+    },
+    "console": {
+      "send": "Fehler und Warnungen aus der Konsole der Seite an mu senden",
+      "chip": "Konsole von {{site}}",
+      "added": "Konsole von {{site}} zur Nachricht hinzugefügt"
+    }
   },
   "saveConflict": "Speichern fehlgeschlagen: Diese Datei wurde auf der Festplatte geändert, nachdem du sie geöffnet hast. Lade neu, um die anderen Änderungen zu sehen – deine Bearbeitungen sind noch da, aber nicht gespeichert.",
   "persistQuotaExceeded": "Der lokale Speicher ist voll, offene Tabs dieses Projekts können nicht mehr gemerkt werden. Schließen Sie einige Tabs oder löschen Sie die Websitedaten.",
@@ -319,5 +337,31 @@
   "saveFailedWithDetail": "Speichern fehlgeschlagen: {{detail}}",
   "zoomActualSize": "Zoom zurücksetzen",
   "zoomFit": "Einpassen",
-  "zoomFitTooltip": "An Panelbreite anpassen"
+  "zoomFitTooltip": "An Panelbreite anpassen",
+  "gallery": {
+    "label": "Bild {{name}}",
+    "previous": "Vorheriges Bild",
+    "next": "Nächstes Bild",
+    "position": "{{index}} von {{count}}",
+    "gone": "Diese Datei ist nicht mehr da. Sie wurde vielleicht verschoben oder gelöscht.",
+    "tooLarge": "Das Bild ist zu groß für die Vorschau ({{size}}). Bitte in der Standard-App öffnen."
+  },
+  "reveal": {
+    "mac": "Im Finder anzeigen",
+    "windows": "Im Explorer anzeigen",
+    "linux": "Im Ordner anzeigen"
+  },
+  "diffComment": {
+    "add": "Diese Zeile kommentieren",
+    "placeholder": "Was soll mu hier ändern?",
+    "save": "Kommentar hinzufügen",
+    "hint": "Kommentare gehen mit deiner nächsten Nachricht mit",
+    "remove": "Kommentar entfernen"
+  },
+  "diffHunk": {
+    "stage": "Diese Änderung vormerken",
+    "unstage": "Diese Änderung aus der Vormerkung nehmen",
+    "stale": "Die Datei hat sich geändert, seit dieser Diff angezeigt wurde, daher wurde nichts geändert. So sieht sie jetzt aus.",
+    "failed": "Git konnte das nicht tun: {{reason}}"
+  }
 }

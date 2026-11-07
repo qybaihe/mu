@@ -14,20 +14,13 @@ import {
 } from '../settingsNav';
 
 /**
- * The texts on each page that are always there, by i18n key: the rows' titles and the sentences under them, what the
- * rail's search finds a page by besides its own name and description. What the harness describes (every feature and
+ * The texts on each page that are always there, by i18n key: the rows' titles, the sentences under them and the
+ * buttons, what the rail's search finds a page by besides its own name. What the harness describes (every feature and
  * decision point) is found from its manifest instead.
  */
 const PAGE_TEXTS: Partial<Record<SettingsPageId, string[]>> = {
-  appearance: [
-    'settings.appearanceDescription',
-    'settings.language',
-    'settings.theme',
-    'settings.fonts',
-    'settings.scale',
-  ],
+  appearance: ['settings.language', 'settings.theme', 'settings.fonts', 'settings.scale'],
   system: [
-    'settings.systemDescription',
     'settings.startOnBoot',
     'settings.closeToTray',
     'settings.closeToMenuBar',
@@ -39,43 +32,37 @@ const PAGE_TEXTS: Partial<Record<SettingsPageId, string[]>> = {
     'mu.importChats.title',
   ],
   conversations: [
-    'settings.conversationsDescription',
     'settings.promptTimeout',
     'settings.agentIdleTimeout',
     'settings.previewTextSizeLimit',
     'settings.saveUploadToWorkspace',
     'settings.crossSessionMessage',
   ],
-  providers: ['mu.providers.lead'],
-  'default-model': ['mu.defaults.summary', 'mu.defaults.provider', 'mu.defaults.model', 'mu.defaults.level'],
+  providers: ['mu.providers.subscriptions', 'mu.providers.custom', 'mu.providers.add'],
+  'default-model': ['mu.defaults.provider', 'mu.defaults.model', 'mu.defaults.level'],
   'board-model': ['mu.boardModel.summary', 'mu.boardModel.pick', 'mu.boardModel.session'],
   judges: [
     'mu.judges.mode',
-    'mu.judges.modeHelp',
     'mu.judges.service',
     'mu.judges.choices.jev.title',
-    'mu.judges.choices.laya.title',
+    'mu.judges.choices.mude.title',
+    'mu.judges.models.title',
     'mu.judges.choices.clm.title',
+    'mu.judges.choices.openai.title',
   ],
-  'judge-order': ['mu.judges.tiersHelp', 'mu.judges.order', 'mu.judges.model'],
-  features: ['mu.features.lead'],
-  'details-context': ['mu.context.lead', 'mu.context.auto', 'mu.context.limit'],
+  'judge-order': ['mu.judges.order', 'mu.judges.model'],
+  'details-context': ['mu.context.auto', 'mu.context.limit'],
   skills: ['settings.skillsHub.description'],
   tools: ['settings.toolsDescription'],
-  browser: [
-    'settings.browserData.description',
-    'settings.browserData.agentControlLabel',
-    'settings.browserData.clearLabel',
-  ],
-  archived: ['settings.archived.description'],
-  developer: ['settings.developer.description', 'settings.devTools', 'settings.cdp.title'],
-  about: ['settings.aboutDescription'],
+  browser: ['settings.browserData.agentControlLabel', 'settings.browserData.clearLabel'],
+  developer: ['settings.devTools', 'settings.cdp.title'],
+  about: ['settings.checkForUpdates', 'settings.updateLog', 'common.backendStartup.openLogs'],
 };
 
 /** The texts of the pages that show something else while mu runs inside the app. */
 const NATIVE_PAGE_TEXTS: Partial<Record<SettingsPageId, string[]>> = {
-  skills: ['mu.capabilities.skills.lead', 'mu.capabilities.skills.add'],
-  tools: ['mu.capabilities.mcp.lead', 'mu.capabilities.mcp.add'],
+  skills: ['mu.capabilities.skills.add'],
+  tools: ['mu.capabilities.mcp.add'],
 };
 
 /** One thing the rail's search finds: a page, or a feature or decision point on a page of the details. */

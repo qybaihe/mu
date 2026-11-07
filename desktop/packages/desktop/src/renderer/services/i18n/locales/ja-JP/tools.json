@@ -78,7 +78,8 @@
     "callAria": "{{name}} · {{status}}",
     "denied": "実行していません：あなたが許可しませんでした。",
     "showMore": "すべて表示",
-    "showLess": "折りたたむ"
+    "showLess": "折りたたむ",
+    "openInBrowser": "{{address}} をブラウザで開く"
   },
   "activity": {
     "running": "{{steps}} ステップ · 実行中 {{label}}",

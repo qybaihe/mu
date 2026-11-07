@@ -74,7 +74,7 @@ describe('renaming a native conversation from its header', () => {
     expect(renames(host)).toEqual([{ method: 'rename', id: 'c1', name: 'Release notes' }]);
     await waitFor(() => expect(title()).toHaveTextContent('Release notes'));
     expect(screen.queryByTestId('native-header-title-input')).toBeNull();
-    expect(said.success).toHaveBeenCalledWith('Renamed successfully');
+    expect(said.success).toHaveBeenCalledWith('Renamed');
   });
 
   it('leaves the title as it was on Esc, and asks nothing for an unchanged or empty name', async () => {

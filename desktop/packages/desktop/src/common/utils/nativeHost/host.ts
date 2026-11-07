@@ -1,6 +1,6 @@
 /**
  * What only a live host says, folded into a view's `host` part (view.ts `ViewHost`) and never into what a session file
- * gives: the judgment layer's presentation frames and the run's edges for the Jev panel (`activity`), what extensions
+ * gives: the judgment layer's presentation frames and the run's edges for the work panel (`activity`), what extensions
  * notify (`notices`), pi's queue of steering and follow-up messages, and the session as pi describes it when asked.
  * Also the permission question mu announces before it opens the dialog that asks it.
  *
@@ -9,7 +9,17 @@
  */
 import type { PresentationFrame } from './presentation.ts';
 import { asList, asNumber, asObject, asText, hasModel, type JsonObject, type PiRecord } from './records.ts';
-import type { NativeView, ViewActivity, ViewHost, ViewNotice, ViewPermission, ViewSession, ViewUsage } from './view.ts';
+import type {
+  NativeView,
+  ViewActivity,
+  ViewHost,
+  ViewJob,
+  ViewNotice,
+  ViewPermission,
+  ViewQuestion,
+  ViewSession,
+  ViewUsage,
+} from './view.ts';
 
 /** How many lines of activity a view keeps: the oldest go first. */
 export const ACTIVITY_LIMIT = 2000;
@@ -80,6 +90,64 @@ export function addFrame(view: NativeView, frame: PresentationFrame): NativeView
   }
   const at = frame.at ?? clockOf(view);
   return addActivity(view, { kind: frame.kind, payload, at, ...frame.correlation });
+}
+
+/** How many background jobs a view keeps: the oldest that ended go first. */
+export const JOB_LIMIT = 20;
+
+/**
+ * A background job's frame (`background.start`, `background.stop`, `background.exit`), at `at`: a job starts running,
+ * is being stopped, or ended. mu says a job was stopped once its kill is done, after the job's end when it ended: a job
+ * that ended keeps its end, and what it left running (`lingering`) is gone. A stop or an end for a job the view never
+ * saw start is left out.
+ */
+export function takeJob(view: NativeView, kind: string, payload: JsonObject, at: number): NativeView {
+  const id = asText(payload.id);
+  if (!id) return view;
+  const jobs = view.host.jobs ?? [];
+  const known = jobs.find((job) => job.id === id);
+  let next: ViewJob;
+  if (kind === 'background.start') {
+    next = {
+      id,
+      name: asText(payload.name) || id,
+      command: asText(payload.command),
+      ...(asText(payload.cwd) ? { cwd: asText(payload.cwd) } : {}),
+      ...(asText(payload.logPath) ? { logPath: asText(payload.logPath) } : {}),
+      state: 'running',
+      startedAt: at,
+    };
+  } else if (!known) {
+    return view;
+  } else if (kind === 'background.stop') {
+    if (known.state === 'running') next = { ...known, state: 'stopping' };
+    else if (known.state === 'exited' && known.lingering) {
+      const { lingering: _lingering, ...rest } = known;
+      next = rest;
+    } else return view;
+  } else if (kind === 'background.exit') {
+    const exitCode = asNumber(payload.exitCode);
+    const durationMs = asNumber(payload.durationMs);
+    const { exitCode: _code, durationMs: _ms, stoppedBy: _by, lingering: _lingering, ...rest } = known;
+    next = {
+      ...rest,
+      state: 'exited',
+      ...(exitCode !== undefined ? { exitCode } : {}),
+      ...(durationMs !== undefined ? { durationMs } : {}),
+      ...(asText(payload.stoppedBy) ? { stoppedBy: asText(payload.stoppedBy) } : {}),
+      ...(payload.lingering === true ? { lingering: true } : {}),
+    };
+  } else {
+    return view;
+  }
+  const others = jobs.filter((job) => job.id !== id);
+  const kept = [...others, next];
+  // Over the limit: the oldest that ended (and left nothing running) go first.
+  while (kept.length > JOB_LIMIT) {
+    const gone = kept.findIndex((job) => job.state === 'exited' && !job.lingering);
+    kept.splice(gone >= 0 ? gone : 0, 1);
+  }
+  return withHost(view, { jobs: kept });
 }
 
 /** One of pi's events the panel reads (a run's start and end, a compaction), at the latest time the view has seen. */
@@ -167,24 +235,37 @@ export function takeCheckpointOff(view: NativeView, payload: JsonObject): Native
   return withHost(view, { notices: next });
 }
 
+/** The codes of mu's `judge.notice` the app words. */
+const JUDGE_NOTICE_CODES: ReadonlySet<string> = new Set([
+  'free_jev',
+  'free_jev_unavailable',
+  'laya_removed',
+  'openai_key',
+]);
+/** The judge notices that say the judge stopped answering: warnings. */
+const JUDGE_WARNINGS: ReadonlySet<string> = new Set(['free_jev_unavailable', 'openai_key']);
+
 /**
- * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), or the free Jev stopped
- * (`free_jev_unavailable`, with `paid` or `gone`), said once each, by code, so the app words it. mu sends its own line
- * with `notify` right after (`takeNotify` drops it); a line already said becomes the coded notice where it stands. A
- * code this build does not know leaves mu's line to say it.
+ * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), the free Jev stopped
+ * (`free_jev_unavailable`, with `paid` or `gone`), Laya is gone and `judge` answers in its place (`laya_removed`), or
+ * OpenAI's decision model has no usable key (`openai_key`, with `missing` or `rejected`), said once each, by code, so the app words it. mu sends its own line with `notify` right after (`takeNotify` drops
+ * it); a line already said becomes the coded notice where it stands. A code this build does not know leaves mu's line
+ * to say it.
  */
 export function takeJudgeNotice(view: NativeView, payload: JsonObject): NativeView {
   const named = asText(payload.code);
-  const code = named === 'free_jev' || named === 'free_jev_unavailable' ? named : undefined;
+  const code = JUDGE_NOTICE_CODES.has(named) ? (named as NonNullable<ViewNotice['code']>) : undefined;
   if (!code) return view;
   const notices = view.host.notices;
   if (notices.some((notice) => notice.code === code)) return view;
   const text = asText(payload.message).trim();
   const reason = asText(payload.reason);
-  const coded: Pick<ViewNotice, 'level' | 'code' | 'reason'> = {
-    level: code === 'free_jev' ? 'info' : 'warning',
+  const judge = code === 'laya_removed' ? asText(payload.judge) : '';
+  const coded: Pick<ViewNotice, 'level' | 'code' | 'reason' | 'judge'> = {
+    level: JUDGE_WARNINGS.has(code) ? 'warning' : 'info',
     code,
     ...(reason ? { reason } : {}),
+    ...(judge ? { judge } : {}),
   };
   const said = text ? notices.findIndex((notice) => notice.text === text) : -1;
   if (said < 0) return addNotice(view, { text, ...coded });
@@ -295,6 +376,45 @@ export function readPermission(payload: JsonObject): ViewPermission | undefined 
     ...(flagCode ? { flagCode } : {}),
     ...(grantLabel ? { grantLabel } : {}),
     ...(toolCallId ? { toolCallId } : {}),
+  };
+}
+
+/** At most this many options a question of ask_user has, and this many questions a call asks: what mu sends. */
+const QUESTION_OPTIONS = 6;
+const QUESTIONS = 4;
+
+/**
+ * mu's `question.asked`: none without the question, or with a pick-one question whose dialog choices are not its
+ * options and one more (the line for the person's own words). Sizes past what mu sends are not taken.
+ */
+export function readQuestion(payload: JsonObject): ViewQuestion | undefined {
+  const id = callId(payload.id);
+  const question = asText(payload.question).trim();
+  const index = asNumber(payload.index);
+  const count = asNumber(payload.count);
+  if (!id || !question || index === undefined || count === undefined) return undefined;
+  if (!Number.isSafeInteger(index) || !Number.isSafeInteger(count) || index < 0 || count > QUESTIONS || index >= count)
+    return undefined;
+  const options = asList(payload.options)
+    .map(asObject)
+    .map((option) => ({ label: asText(option.label), description: asText(option.description) }))
+    .filter((option) => option.label);
+  if (options.length > QUESTION_OPTIONS) return undefined;
+  const multiSelect = payload.multiSelect === true;
+  const choices = asList(payload.choices).map(asText);
+  if (!multiSelect && (choices.length !== options.length + 1 || choices.some((choice) => !choice))) return undefined;
+  const header = asText(payload.header).trim();
+  const toolCallId = callId(payload.toolCallId);
+  return {
+    id,
+    ...(toolCallId ? { toolCallId } : {}),
+    index,
+    count,
+    question,
+    ...(header ? { header } : {}),
+    options: options.map(({ label, description }) => Object.assign({ label }, description ? { description } : {})),
+    multiSelect,
+    ...(multiSelect ? {} : { choices }),
   };
 }
 

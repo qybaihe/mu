@@ -102,7 +102,7 @@ const persistZoomFactor = (factor: number): void => {
       const { ProcessConfig } = await import('./initStorage');
       await ProcessConfig.set('ui.zoomFactor', factor);
     } catch (error) {
-      console.error('[AionUi] Failed to persist zoom factor:', error);
+      console.error('[mu] Failed to persist zoom factor:', error);
     }
   })();
   trackPersistedWrite(op);

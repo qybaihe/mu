@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 /** An absolute path on either platform: a POSIX root, a UNC share or a drive letter. */
 export const isAbsoluteFilePath = (path: string): boolean =>
   path.startsWith('/') || path.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(path);

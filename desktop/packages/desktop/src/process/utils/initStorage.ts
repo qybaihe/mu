@@ -29,6 +29,7 @@ import {
 } from './utils';
 import { runLegacyDatabaseMigrations } from '@process/services/database/runLegacyDatabaseMigrations';
 import { BUILTIN_IMAGE_GEN_ID } from '../resources/builtinMcp/constants';
+import { CONFIG_FILES, DIRS_KEY } from '@/common/platform/legacyNames';
 // Platform and architecture types (moved from deleted updateConfig)
 type PlatformType = 'win32' | 'darwin' | 'linux';
 type ArchitectureType = 'x64' | 'arm64' | 'ia32' | 'arm';
@@ -36,10 +37,10 @@ type ArchitectureType = 'x64' | 'arm64' | 'ia32' | 'arm';
 const nodePath = path;
 
 const STORAGE_PATH = {
-  config: 'aionui-config.txt',
-  chatMessage: 'aionui-chat-message.txt',
-  chat: 'aionui-chat.txt',
-  env: '.aionui-env',
+  config: CONFIG_FILES.config,
+  chatMessage: CONFIG_FILES.chatMessage,
+  chat: CONFIG_FILES.chat,
+  env: CONFIG_FILES.env,
   assistants: 'assistants',
   skills: 'skills',
   cronSkills: 'cron-skills',
@@ -70,7 +71,7 @@ const migrateLegacyData = async () => {
         try {
           return existsSync(newDir) && readdirSync(newDir).length === 0;
         } catch (error) {
-          console.warn('[AionUi] Warning: Could not read new directory during migration check:', error);
+          console.warn('[mu] Warning: Could not read new directory during migration check:', error);
           return false; // 假设非空以避免迁移覆盖
         }
       })();
@@ -91,7 +92,7 @@ const migrateLegacyData = async () => {
           try {
             await fs.rm(oldDir, { recursive: true });
           } catch (cleanupError) {
-            console.warn('[AionUi] 原目录清理失败，请手动删除:', oldDir, cleanupError);
+            console.warn('[mu] 原目录清理失败，请手动删除:', oldDir, cleanupError);
           }
         }
       }
@@ -99,7 +100,7 @@ const migrateLegacyData = async () => {
       return true;
     }
   } catch (error) {
-    console.error('[AionUi] 数据迁移失败:', error);
+    console.error('[mu] 数据迁移失败:', error);
   }
 
   return false;
@@ -236,7 +237,7 @@ const JsonFileBuilder = <S extends object = Record<string, unknown>>(file_path: 
 
 const envFile = JsonFileBuilder<IEnvStorageRefer>(path.join(getHomePage(), STORAGE_PATH.env));
 
-const dirConfig = envFile.getSync('aionui.dir');
+const dirConfig = envFile.getSync(DIRS_KEY);
 
 const cacheDir = dirConfig?.cacheDir || getHomePage();
 
@@ -249,11 +250,11 @@ const _chatFile = JsonFileBuilder<IChatConversationRefer>(path.join(cacheDir, ST
 const chatFile = _chatFile;
 
 const buildMessageListStorage = (conversation_id: string, dir: string) => {
-  const fullName = path.join(dir, 'aionui-chat-history', conversation_id + '.txt');
+  const fullName = path.join(dir, CONFIG_FILES.chatHistory, conversation_id + '.txt');
   if (!existsSync(fullName)) {
-    mkdirSync(path.join(dir, 'aionui-chat-history'));
+    mkdirSync(path.join(dir, CONFIG_FILES.chatHistory));
   }
-  return JsonFileBuilder<TMessage[]>(path.join(dir, 'aionui-chat-history', conversation_id + '.txt'));
+  return JsonFileBuilder<TMessage[]>(path.join(dir, CONFIG_FILES.chatHistory, conversation_id + '.txt'));
 };
 
 const conversationHistoryProxy = (options: typeof _chatMessageFile, dir: string) => {
@@ -274,7 +275,7 @@ const conversationHistoryProxy = (options: typeof _chatMessageFile, dir: string)
     backup(conversation_id: string) {
       const storage = buildMessageListStorage(conversation_id, dir);
       return storage.backup(
-        path.join(dir, 'aionui-chat-history', 'backup', conversation_id + '_' + Date.now() + '.txt')
+        path.join(dir, CONFIG_FILES.chatHistory, 'backup', conversation_id + '_' + Date.now() + '.txt')
       );
     },
   };
@@ -315,7 +316,7 @@ const cleanupLegacyBuiltinSkillsDir = () => {
   const legacyDir = path.join(cacheDir, LEGACY_BUILTIN_SKILLS_DIR);
   if (!existsSync(legacyDir)) return;
   fs.rm(legacyDir, { recursive: true, force: true })
-    .then(() => console.log('[AionUi] Cleaned up legacy builtin-skills cache'))
+    .then(() => console.log('[mu] Cleaned up legacy builtin-skills cache'))
     .catch(() => {
       /* swallow — cleanup is not critical */
     });
@@ -324,8 +325,8 @@ const cleanupLegacyBuiltinSkillsDir = () => {
 /**
  * Ensure user-facing config directories exist. Built-in assistant rules and
  * skill files are now owned by the backend (see
- * `crates/aionui-app/assets/builtin-assistants/` and
- * `crates/aionui-app/assets/builtin-skills/`) — neither is synced from
+ * the backend's app crate, `assets/builtin-assistants/` and
+ * `assets/builtin-skills/`) — neither is synced from
  * renderer resources anymore.
  */
 const ensureAssistantDirs = async (): Promise<void> => {
@@ -365,7 +366,7 @@ const getBuiltinMcpScriptPath = (scriptName: string): string => {
 
 const initStorage = async () => {
   const t0 = performance.now();
-  const mark = (label: string) => console.log(`[AionUi:init] ${label} +${Math.round(performance.now() - t0)}ms`);
+  const mark = (label: string) => console.log(`[mu:init] ${label} +${Math.round(performance.now() - t0)}ms`);
   mark('start');
 
   // 1. 先执行数据迁移（在任何目录创建之前）
@@ -385,7 +386,7 @@ const initStorage = async () => {
   mark('4. MCP config initialization skipped');
 
   // 5. Ensure assistant-related directories exist. Built-in assistant records
-  //    now live in the backend SQLite catalog (see aionui-assistant crate) and
+  //    now live in the backend SQLite catalog (see the backend's assistant crate) and
   //    are no longer seeded into ConfigStorage. User-authored rule md files
   //    continue to live under `{cacheDir}/assistants/` until the one-shot
   //    migration (T3b) imports them into the backend.
@@ -393,7 +394,7 @@ const initStorage = async () => {
     await ensureAssistantDirs();
     mark('5. ensureAssistantDirs');
   } catch (error) {
-    console.error('[AionUi] Failed to ensure assistant dirs:', error);
+    console.error('[mu] Failed to ensure assistant dirs:', error);
   }
 
   // 5b. Best-effort cleanup of the legacy builtin-skills cache left behind

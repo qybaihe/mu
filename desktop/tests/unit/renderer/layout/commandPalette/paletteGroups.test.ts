@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { describe, expect, it } from 'vitest';
 import type { SlashCommandItem } from '@/common/chat/slash/types';
 import type { TChatConversation } from '@/common/config/storage';
@@ -162,7 +156,20 @@ describe('buildPaletteGroups', () => {
     expect(group(groups, 'commands')?.items).toMatchObject([
       { kind: 'action', action: 'newConversation', label: 'common.commandPalette.actions.newConversation' },
       { kind: 'action', action: 'scheduledTasks', label: 'common.commandPalette.actions.scheduledTasks' },
+      { kind: 'action', action: 'quickOpen', label: 'common.commandPalette.actions.quickOpen' },
+      { kind: 'action', action: 'shortcuts', label: 'common.commandPalette.actions.shortcuts' },
     ]);
+  });
+
+  it('offers the next conversation that wants its person only with the native host on, and the scheduled tasks only with it off', () => {
+    const actions = (hostOn: boolean) =>
+      group(buildPaletteGroups(sources({ commandTarget: null, native: hostOn })), 'commands')?.items.map((item) =>
+        item.kind === 'action' ? item.action : item.kind
+      );
+
+    expect(actions(false)).toEqual(['newConversation', 'scheduledTasks', 'quickOpen', 'shortcuts']);
+    // Scheduled tasks run the backend's assistants, never mu on the host.
+    expect(actions(true)).toEqual(['newConversation', 'quickOpen', 'nextWaiting', 'shortcuts']);
   });
 
   it('finds the settings by the word for them and by their group, leading with the row that opens them', () => {

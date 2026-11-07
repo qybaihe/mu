@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { processLocalCronResponse } from '@/renderer/pages/conversation/platforms/aionrs/localCronCommands';
+import { processLocalCronResponse } from '@/renderer/pages/conversation/platforms/builtinAgent/localCronCommands';
 
 describe('processLocalCronResponse', () => {
   it('keeps legacy cron command text visible instead of parsing it locally', async () => {

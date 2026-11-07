@@ -13,6 +13,7 @@
 
 import * as crypto from "node:crypto";
 import type { AgentSessionRuntime } from "../../core/agent-session-runtime.ts";
+import { enabledModelIds } from "../../core/enabled-models.ts";
 import type {
 	ExtensionUIContext,
 	ExtensionUIDialogOptions,
@@ -379,6 +380,18 @@ export async function runRpcMode(
 	await rebindSession();
 	registerSignalHandlers();
 
+	// mu: another process (the desktop app's `mu auth logout`, a /logout in a terminal) may have signed a provider in or
+	// out since this session started. What can be used is checked against the credential store again, instead of read
+	// from the snapshot this process last took: a signed-out subscription's models otherwise stayed listed until the
+	// session restarted. The check reads no network; when it fails, the snapshot answers as before.
+	const availableModels = async () => {
+		try {
+			return await session.modelRuntime.getAvailable(undefined, { signal: AbortSignal.timeout(10_000) });
+		} catch {
+			return session.modelRuntime.getAvailableSnapshot();
+		}
+	};
+
 	// Handle a single command
 	const handleCommand = async (command: RpcCommand): Promise<RpcResponse | undefined> => {
 		const id = command.id;
@@ -467,7 +480,7 @@ export async function runRpcMode(
 			// =================================================================
 
 			case "set_model": {
-				const models = session.modelRuntime.getAvailableSnapshot();
+				const models = await availableModels();
 				const model = models.find((m) => m.provider === command.provider && m.id === command.modelId);
 				if (!model) {
 					return error(id, "set_model", `Model not found: ${command.provider}/${command.modelId}`);
@@ -485,8 +498,11 @@ export async function runRpcMode(
 			}
 
 			case "get_available_models": {
-				const models = session.modelRuntime.getAvailableSnapshot();
-				return success(id, "get_available_models", { models });
+				const models = await availableModels();
+				// mu: the ones the settings enable (`enabledModels`, read again: the app may have changed it), so an app's
+				// model menu shows the models /model shows. Left out while every model is enabled.
+				const enabledModels = enabledModelIds(session.settingsManager.reloadEnabledModels(), models);
+				return success(id, "get_available_models", { models, ...(enabledModels ? { enabledModels } : {}) });
 			}
 
 			// =================================================================

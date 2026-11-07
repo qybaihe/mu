@@ -394,7 +394,7 @@ describe('the kernel tabs: entry and hive navigation', () => {
 
     await screen.findAllByTestId('judge-line');
     const [mcp, goal, rule] = screen.getAllByTestId('judge-line');
-    expect(mcp).toHaveTextContent('github: it did not answer in time');
+    expect(mcp).toHaveTextContent("github: it didn't respond in time");
     fireEvent.click(within(mcp).getByRole('button'));
     expect(within(mcp).getByText('Details: no answer within 30000 ms')).toBeVisible();
     // The raw payload stays under the summary, as it came.

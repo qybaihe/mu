@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The command palette as a person meets it: Cmd/Ctrl+K opens it anywhere, one input finds conversations, settings
  * pages and the harness's slash commands, the arrow keys choose, Enter runs, Esc closes. Arco's modal, the app's
  * event bus, the shortcut hook and the palette's own hooks are real; the data sources are stubbed.
@@ -31,6 +25,10 @@ const state = vi.hoisted(() => ({
   nativeOn: undefined as boolean | undefined,
   commands: [] as unknown[],
   slashCommandCalls: [] as Array<{ id: string; options: Record<string, unknown> }>,
+  /** Quick open: the folder's files as the main process lists them, the folders asked for, the files opened. */
+  files: [] as string[],
+  filesAsked: [] as string[],
+  opened: [] as Array<{ folder?: string; path: string }>,
 }));
 const navigate = vi.hoisted(() => vi.fn());
 
@@ -90,6 +88,22 @@ vi.mock('@/renderer/hooks/chat/useSlashCommands', () => ({
 vi.mock('@/renderer/pages/conversation/GroupedHistory/hooks/useVisibleConversationIds', () => ({
   useVisibleConversationIds: (): string[] => [],
 }));
+vi.mock('@/common/kyrn/folderBridge', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/common/kyrn/folderBridge')>()),
+  kyrnFolderBridge: {
+    find: {
+      invoke: async ({ cwd }: { cwd: string }) => {
+        state.filesAsked.push(cwd);
+        return { ok: true, data: { paths: state.files, more: false } };
+      },
+    },
+  },
+}));
+vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () => ({
+  useOptionalLocalFilePreview: (folder?: string) => async (path: string) => {
+    state.opened.push({ folder, path });
+  },
+}));
 // The message search has its own tests; here it only has to be there.
 vi.mock('@/renderer/pages/conversation/GroupedHistory/ConversationSearchPopover', () => ({
   default: (): null => null,
@@ -102,6 +116,12 @@ import {
   setCurrentConversation,
 } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { emitter } from '@/renderer/utils/emitter';
+import { formatPrimaryShortcut, NEXT_WAITING_SHORTCUT } from '@/renderer/utils/ui/keyboardShortcuts';
+import { forgetNativeUnread, markNativeUnread } from '@/renderer/pages/native/hooks/useNativeAttention';
+import { publishNativeSiderOrder, resetNativeSiderOrderForTest } from '@/renderer/pages/native/sider/jump';
+import { nativeConversationPath } from '@/renderer/pages/native/utils/paths';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
+import { publishNativeActivity } from '@/renderer/pages/native/utils/nativeActivityStore';
 
 const MINUTE = 60_000;
 const NOW = Date.now();
@@ -145,6 +165,9 @@ const openPalette = () => {
 };
 const type = (value: string) => fireEvent.change(input(), { target: { value } });
 const key = (name: string) => fireEvent.keyDown(input(), { key: name });
+/** The keys a row of the keyboard shortcuts shows, as written. */
+const keysOf = (id: string) =>
+  Array.from(document.querySelectorAll(`[data-shortcut="${id}"] kbd`)).map((node) => node.textContent);
 const groupsShown = () =>
   Array.from(document.querySelectorAll('[data-palette-group]')).map((node) => node.getAttribute('data-palette-group'));
 /** The labels of a group's rows, without the time or description beside them. */
@@ -173,7 +196,7 @@ describe('command palette', () => {
       conversation('c5', 'Windows installer', 60 * 26),
       conversation('c6', 'Older idea', 60 * 24 * 3),
       conversation('c7', 'Oldest idea', 60 * 24 * 9),
-      conversation('c9', 'A local model chat', 60 * 24 * 20, 'aionrs'),
+      conversation('c9', 'A local model chat', 60 * 24 * 20, BUILTIN_AGENT),
     ];
     state.commands = [
       command('board', 'Show the plain-language board'),
@@ -192,6 +215,118 @@ describe('command palette', () => {
     resetCurrentConversationForTest();
     emitter.removeAllListeners('sendbox.command');
     emitter.removeAllListeners('conversationSearch.open');
+  });
+
+  describe('quick open', () => {
+    const native = () =>
+      act(() =>
+        publishNativeActivity({
+          conversationId: 'n1',
+          activity: { events: [], loading: false, settled: true },
+          cwd: '/work/app',
+        })
+      );
+    const openQuickly = () => press(window, state.mac ? { key: 'p', metaKey: true } : { key: 'p', ctrlKey: true });
+    const files = () => screen.getAllByRole('option').map((row) => row.getAttribute('data-path'));
+
+    beforeEach(() => {
+      state.files = ['README.md', 'src/app.ts', 'src/components/AppShell.tsx', 'docs/app-notes.md'];
+      state.filesAsked = [];
+      state.opened = [];
+    });
+    afterEach(() => {
+      publishNativeActivity(undefined);
+    });
+
+    it('finds a file of the open conversation’s folder by its name with Cmd+P, and opens it in the preview', async () => {
+      setCurrentConversation('n1');
+      native();
+      render(<Harness />);
+      openQuickly();
+      await waitFor(() => expect(files()).toEqual(state.files));
+      expect(state.filesAsked).toEqual(['/work/app']);
+
+      type('app');
+      expect(files()).toEqual(['src/app.ts', 'docs/app-notes.md', 'src/components/AppShell.tsx']);
+      key('ArrowDown');
+      key('Enter');
+      expect(state.opened).toEqual([{ folder: '/work/app', path: 'docs/app-notes.md' }]);
+      await waitFor(() => expect(queryInput()).not.toBeInTheDocument());
+    });
+
+    it('opens from the palette’s row too, and says so when the conversation has no folder', async () => {
+      setCurrentConversation(null);
+      render(<Harness />);
+      openPalette();
+      type('open a file');
+      expect(labelsOf('commands')).toContain('Open a file by name');
+      key('Enter');
+      expect(await screen.findByTestId('quick-open-no-folder')).toHaveTextContent(
+        'Open a conversation with a folder to find its files by name.'
+      );
+    });
+  });
+
+  describe('keyboard shortcuts', () => {
+    const sheet = () => screen.queryByTestId('shortcut-sheet');
+
+    it('shows the app’s keys in groups with Cmd+/, as a Mac writes them, and the same keys close them', async () => {
+      render(<Harness />);
+      press(window, { key: '/', metaKey: true });
+
+      expect(sheet()).toHaveTextContent('Keyboard shortcuts');
+      expect(
+        Array.from(document.querySelectorAll('[data-shortcut-group]')).map((node) =>
+          node.getAttribute('data-shortcut-group')
+        )
+      ).toEqual(['general', 'conversations', 'panels', 'sendBox', 'view']);
+      expect(document.querySelector('[data-shortcut="palette"]')).toHaveTextContent(
+        'Search conversations, settings and commands'
+      );
+      expect(keysOf('palette')).toEqual(['⌘K']);
+      expect(keysOf('nextWaiting')).toEqual(['⇧⌘A']);
+      expect(keysOf('byPosition')).toEqual(['⌘1', '⌘9']);
+      expect(keysOf('nextPrevious')).toEqual(['⌃Tab', '⌃⇧Tab']);
+      expect(keysOf('newLine')).toEqual(['⇧Enter']);
+
+      press(window, { key: '/', metaKey: true });
+      await waitFor(() => expect(sheet()).not.toBeInTheDocument());
+    });
+
+    it('writes them with Ctrl on Windows and Linux, and opens with Ctrl+/ there', () => {
+      state.mac = false;
+      render(<Harness />);
+      press(window, { key: '/', ctrlKey: true });
+
+      expect(keysOf('nextWaiting')).toEqual(['Ctrl+Shift+A']);
+      expect(keysOf('nextPrevious')).toEqual(['Ctrl+Tab', 'Ctrl+Shift+Tab']);
+      expect(keysOf('newLine')).toEqual(['Shift+Enter']);
+    });
+
+    it('leaves Cmd+/ to an editor in the page (its comment toggle)', () => {
+      render(<Harness />);
+      const editor = document.createElement('div');
+      editor.className = 'cm-editor';
+      document.body.append(editor);
+
+      press(editor, { key: '/', metaKey: true });
+
+      expect(sheet()).not.toBeInTheDocument();
+      editor.remove();
+    });
+
+    it('opens from the palette’s row, which says its key', () => {
+      setCurrentConversation(null);
+      render(<Harness />);
+      openPalette();
+      type('shortcuts');
+      const row = screen.getByRole('option', { name: /Show keyboard shortcuts/ });
+      expect(row).toHaveTextContent('⌘/');
+
+      key('Enter');
+
+      expect(sheet()).toBeInTheDocument();
+    });
   });
 
   describe('opening and closing', () => {
@@ -280,7 +415,7 @@ describe('command palette', () => {
       expect(groupsShown()).toEqual(['conversations', 'settings', 'commands', 'messages']);
       expect(labelsOf('conversations')).toEqual(['A local model chat']);
       // The pages named by the query first, then the one the rail puts under "Models".
-      expect(labelsOf('settings')).toEqual(['Default model', 'Plain-language model', 'Providers']);
+      expect(labelsOf('settings')).toEqual(['Default model', 'Board model', 'Providers']);
       expect(labelsOf('commands')).toEqual(['/model']);
     });
 
@@ -298,7 +433,7 @@ describe('command palette', () => {
       openPalette();
 
       expect(groupsShown()).toEqual(['conversations', 'settings', 'commands']);
-      expect(labelsOf('settings')).toEqual(['Open settings']);
+      expect(labelsOf('settings')).toEqual(['Open Settings']);
       expect(labelsOf('conversations')).toEqual([
         'Refactor the auth flow',
         'Board copy review',
@@ -312,10 +447,28 @@ describe('command palette', () => {
     it('lists the settings pages once the person types, not before', () => {
       render(<Harness />);
       openPalette();
-      expect(labelsOf('settings')).toEqual(['Open settings']);
+      expect(labelsOf('settings')).toEqual(['Open Settings']);
 
       type('model');
-      expect(labelsOf('settings')).toEqual(['Default model', 'Plain-language model', 'Providers']);
+      expect(labelsOf('settings')).toEqual(['Default model', 'Board model', 'Providers']);
+    });
+
+    it('with the native host on, goes to the next conversation waiting for the person from its row, which says its key', async () => {
+      state.nativeOn = true;
+      setCurrentConversation(null);
+      publishNativeSiderOrder(['n1', 'n2'], ['n1', 'n2']);
+      markNativeUnread('n2');
+      render(<Harness />);
+      // The hook hears the host is on once its answer is in.
+      await act(async () => {});
+      openPalette();
+      type('waiting');
+      const row = screen.getByRole('option', { name: /Go to the next conversation waiting for you/ });
+      expect(row).toHaveTextContent(formatPrimaryShortcut(NEXT_WAITING_SHORTCUT));
+      key('Enter');
+      expect(navigate).toHaveBeenLastCalledWith(nativeConversationPath('n2'));
+      forgetNativeUnread();
+      resetNativeSiderOrderForTest();
     });
 
     it('with no conversation yet, shows the way into the settings and what the app can do, and says why', () => {
@@ -325,7 +478,12 @@ describe('command palette', () => {
       openPalette();
 
       expect(groupsShown()).toEqual(['settings', 'commands']);
-      expect(labelsOf('commands')).toEqual(['Start a new chat', 'Open scheduled tasks']);
+      expect(labelsOf('commands')).toEqual([
+        'Start a new conversation',
+        'Open scheduled tasks',
+        'Open a file by name',
+        'Show keyboard shortcuts',
+      ]);
       expect(screen.getByTestId('command-palette-hint')).toHaveTextContent(
         'No conversations yet. Type to find settings and commands.'
       );
@@ -342,7 +500,7 @@ describe('command palette', () => {
       type('sett');
 
       const found = labelsOf('settings');
-      expect(found[0]).toBe('Open settings');
+      expect(found[0]).toBe('Open Settings');
       expect(found).toHaveLength(8);
       expect(found).toEqual(expect.arrayContaining(['Appearance', 'Default model']));
       key('Enter');
@@ -382,7 +540,8 @@ describe('command palette', () => {
       openPalette();
       type('board');
 
-      expect(groupsShown()).not.toContain('commands');
+      // "board" matches the app's own "Show keyboard shortcuts", but no command of the harness's.
+      expect(document.querySelector('[data-kind="command"]')).toBeNull();
     });
 
     it('offers no commands in a conversation whose send box does not take them', () => {
@@ -391,7 +550,7 @@ describe('command palette', () => {
       openPalette();
       type('board');
 
-      expect(groupsShown()).not.toContain('commands');
+      expect(document.querySelector('[data-kind="command"]')).toBeNull();
     });
 
     it('asks for the commands without starting the runtime of the conversation', async () => {
@@ -510,7 +669,7 @@ describe('command palette', () => {
       openPalette();
       type('deploy');
 
-      expect(chosen()).toBe('Search messages for “deploy”');
+      expect(chosen()).toBe('Search messages for "deploy"');
       key('Enter');
 
       expect(opened).toHaveBeenCalledWith('deploy');
@@ -525,7 +684,7 @@ describe('command palette', () => {
       expect(onNavigate).toHaveBeenCalledTimes(1);
 
       openPalette();
-      type('new chat');
+      type('new conversation');
       key('Enter');
       expect(navigate).toHaveBeenLastCalledWith('/guid', { state: { resetAssistant: true } });
     });
@@ -561,7 +720,7 @@ describe('command palette', () => {
       type('comp');
       key('Enter');
       expect(info).toHaveBeenCalledTimes(1);
-      expect(info).toHaveBeenCalledWith('Runs once this reply is done');
+      expect(info).toHaveBeenCalledWith('Runs after this reply is done');
 
       outcome = 'sent';
       openPalette();

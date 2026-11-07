@@ -34,7 +34,7 @@ const PROSE: Record<string, string[]> = {
     '.choiceHint',
   ],
   'pages/settings/KyrnSettings/providers/providers.module.css': ['.hint'],
-  'pages/welcome/Welcome.module.css': ['.lead', '.pointText', '.subtitle', '.note'],
+  'pages/welcome/Welcome.module.css': ['.lead', '.pointText', '.note'],
   // The board tab's own explanations: what the switch does, what it costs, what comes.
   'pages/conversation/KyrnPanel/Board/Board.module.css': ['.offText', '.faint', '.empty'],
 };

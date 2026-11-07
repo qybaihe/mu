@@ -3,7 +3,7 @@ import { type FSWatcher, watch as fsWatch, type Stats } from "node:fs";
 import { lstat, readdir, readFile, stat, statfs } from "node:fs/promises";
 import { dirname, relative, sep } from "node:path";
 import type { Context } from "@earendil-works/chord";
-import { FileError, type FileWatcher, type WatchChange, type WatchTarget } from "./index.ts";
+import { type FileChange, FileError, type FileWatcher, type WatchTarget } from "./index.ts";
 
 /** How `NodeExecutionEnv` watches. */
 export interface NodeWatchOptions {
@@ -37,6 +37,12 @@ type Entry = {
 
 type Snapshot = Map<string, Entry>;
 
+/** A native watcher and the identity of what it was installed on: a path replaced by another file needs a new one. */
+type Installed = { readonly watcher: FSWatcher; readonly dev: number; readonly ino: number };
+
+/** A scan: the snapshot, and targets that are symbolic links to files, whose files need their own watchers. */
+type Scan = { readonly snapshot: Snapshot; readonly linkedFiles: ReadonlySet<string> };
+
 const DEBOUNCE_MS = 50;
 /**
  * On macOS, `fs.watch` returns before libuv's FSEvents stream is live, and changes in between are never reported
@@ -46,6 +52,8 @@ const DEBOUNCE_MS = 50;
 const FSEVENTS_SETTLE_MS = 500;
 const DEFAULT_POLL_MS = 2000;
 const DEFAULT_MAX_DIRECTORIES = 10_000;
+/** The one `overflow` change; it carries nothing else. */
+const OVERFLOW: FileChange = { kind: "overflow" };
 /** In polling mode, recently modified small files are also compared by content: a second write within the file system's
  * timestamp granularity can keep size and modification time. */
 const HASH_MAX_BYTES = 256 * 1024;
@@ -71,6 +79,10 @@ class BudgetExceeded extends Error {}
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
 	return error instanceof Error && "code" in error;
+}
+
+function isDenied(error: unknown): boolean {
+	return isNodeError(error) && (error.code === "EACCES" || error.code === "EPERM");
 }
 
 function entryOf(stats: Stats, hash?: string): Entry {
@@ -128,10 +140,10 @@ function excluded(target: ResolvedTarget, name: string): boolean {
  */
 export class NodeFileWatcher implements FileWatcher {
 	readonly #targets: readonly ResolvedTarget[];
-	readonly #onChange: (change: WatchChange) => void;
+	readonly #onChange: (change: FileChange) => void;
 	readonly #pollIntervalMs: number;
 	readonly #maxDirectories: number;
-	readonly #watchers = new Map<string, FSWatcher>();
+	readonly #watchers = new Map<string, Installed>();
 	readonly #events = new Set<string>();
 	#mode: "native" | "polling";
 	#snapshot: Snapshot = new Map();
@@ -139,11 +151,11 @@ export class NodeFileWatcher implements FileWatcher {
 	#settleTimer: ReturnType<typeof setTimeout> | undefined;
 	#running: Promise<void> | undefined;
 	#dirty = false;
-	#closed = false;
+	#stopped = false;
 
 	private constructor(
 		targets: readonly ResolvedTarget[],
-		onChange: (change: WatchChange) => void,
+		onChange: (change: FileChange) => void,
 		mode: "native" | "polling",
 		options: NodeWatchOptions,
 	) {
@@ -158,7 +170,7 @@ export class NodeFileWatcher implements FileWatcher {
 	static async open(
 		targets: readonly WatchTarget[],
 		resolvePath: (path: string) => string,
-		onChange: (change: WatchChange) => void,
+		onChange: (change: FileChange) => void,
 		options: NodeWatchOptions,
 	): Promise<NodeFileWatcher> {
 		const resolved = targets.map((target) => ({
@@ -190,24 +202,24 @@ export class NodeFileWatcher implements FileWatcher {
 		return this.#mode;
 	}
 
-	async close(_context: Context): Promise<void> {
-		if (this.#closed) return;
+	async stop(_context: Context): Promise<void> {
+		if (this.#stopped) return;
 		this.#stop();
 		await this.#running;
 	}
 
 	#stop(): void {
-		this.#closed = true;
+		this.#stopped = true;
 		clearTimeout(this.#timer);
 		this.#timer = undefined;
 		clearTimeout(this.#settleTimer);
 		this.#settleTimer = undefined;
-		for (const watcher of this.#watchers.values()) watcher.close();
+		for (const { watcher } of this.#watchers.values()) watcher.close();
 		this.#watchers.clear();
 	}
 
-	#deliver(change: WatchChange): void {
-		if (this.#closed) return;
+	#deliver(change: FileChange): void {
+		if (this.#stopped) return;
 		try {
 			this.#onChange(change);
 		} catch {
@@ -216,7 +228,7 @@ export class NodeFileWatcher implements FileWatcher {
 	}
 
 	#schedulePoll(): void {
-		if (this.#closed || this.#mode !== "polling") return;
+		if (this.#stopped || this.#mode !== "polling") return;
 		this.#timer = setTimeout(() => {
 			this.#timer = undefined;
 			void this.#flush().finally(() => this.#schedulePoll());
@@ -224,7 +236,7 @@ export class NodeFileWatcher implements FileWatcher {
 	}
 
 	#scheduleFlush(): void {
-		if (this.#closed || this.#timer !== undefined) return;
+		if (this.#stopped || this.#timer !== undefined) return;
 		this.#timer = setTimeout(() => {
 			this.#timer = undefined;
 			void this.#flush();
@@ -232,7 +244,7 @@ export class NodeFileWatcher implements FileWatcher {
 	}
 
 	#scheduleSettle(): void {
-		if (this.#closed) return;
+		if (this.#stopped) return;
 		clearTimeout(this.#settleTimer);
 		this.#settleTimer = setTimeout(() => {
 			this.#settleTimer = undefined;
@@ -253,14 +265,15 @@ export class NodeFileWatcher implements FileWatcher {
 					this.#events.clear();
 					const changed = await this.#sync(true);
 					for (const path of events) changed.add(path);
-					if (changed.size > 0) this.#deliver({ paths: [...changed].sort() });
-				} while (this.#dirty && !this.#closed);
+					if (changed.size > 0) this.#deliver({ kind: "paths", paths: [...changed].sort() });
+				} while (this.#dirty && !this.#stopped);
 			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
 				const fileError =
 					error instanceof FileError
 						? error
-						: new FileError("invalid", error instanceof Error ? error.message : String(error));
-				this.#deliver({ error: fileError });
+						: new FileError(isDenied(error) ? "permission_denied" : "invalid", message);
+				this.#deliver({ kind: "failed", error: fileError });
 				this.#stop();
 			} finally {
 				this.#running = undefined;
@@ -272,11 +285,14 @@ export class NodeFileWatcher implements FileWatcher {
 	/** Rescan, report differences, and install watchers for new directories, rescanning until none are new. */
 	async #sync(report: boolean): Promise<Set<string>> {
 		const changed = new Set<string>();
-		for (let round = 0; round < 10 && !this.#closed; round++) {
-			const next = await this.#scan();
+		for (let round = 0; round < 10 && !this.#stopped; round++) {
+			const scan = await this.#scan();
+			// Closed during the scan: installing watchers now would leak them.
+			if (this.#stopped) break;
+			const next = scan.snapshot;
 			if (report) for (const path of this.#diff(this.#snapshot, next)) changed.add(path);
 			this.#snapshot = next;
-			if (this.#mode === "polling" || !this.#reconcileWatchers(next)) break;
+			if (this.#mode === "polling" || !this.#reconcileWatchers(scan)) break;
 			if (process.platform === "darwin") this.#scheduleSettle();
 			// Something written into a new directory before its watcher existed shows up in the next round.
 			report = true;
@@ -300,11 +316,19 @@ export class NodeFileWatcher implements FileWatcher {
 		return this.#targets.find((target) => isWithin(target.path, path))?.path ?? path;
 	}
 
-	async #scan(): Promise<Snapshot> {
+	async #scan(): Promise<Scan> {
 		const snapshot: Snapshot = new Map();
-		let directories = 0;
-		const countDirectory = (): void => {
-			if (++directories > this.#maxDirectories) {
+		const linkedFiles = new Set<string>();
+		// Directories are counted once, but traversed once per target: overlapping targets differ in recursion and
+		// exclusions, and an entry recorded for one target must still be descended into for another.
+		const counted = new Set<string>();
+		const traversed = new Set<string>();
+		/** Kinds of listed entries, not following links: a target that links to a directory is recorded by `stat`, but
+		 * symbolic links below a recursive target are not followed. */
+		const listed = new Map<string, Entry["kind"]>();
+		const countDirectory = (path: string): void => {
+			counted.add(path);
+			if (counted.size > this.#maxDirectories) {
 				throw new BudgetExceeded(`Watched paths exceed ${this.#maxDirectories} directories`);
 			}
 		};
@@ -323,52 +347,73 @@ export class NodeFileWatcher implements FileWatcher {
 			}
 			snapshot.set(path, entryOf(stats, hash));
 		};
-		const scanDirectory = async (target: ResolvedTarget, directory: string): Promise<void> => {
+		const scanDirectory = async (index: number, target: ResolvedTarget, directory: string): Promise<void> => {
+			const key = `${index}\0${directory}`;
+			if (traversed.has(key)) return;
+			traversed.add(key);
 			let names: string[];
 			try {
 				names = await readdir(directory);
 			} catch (error) {
+				// The watched directory itself must be readable; below it, unreadable directories are skipped.
+				if (directory === target.path && isDenied(error)) throw error;
 				if (isNodeError(error) && ["ENOENT", "EACCES", "EPERM", "ENOTDIR"].includes(error.code ?? "")) return;
 				throw error;
 			}
 			for (const name of names) {
 				if (excluded(target, name)) continue;
 				const path = `${directory.endsWith(sep) ? directory : directory + sep}${name}`;
-				if (snapshot.has(path)) continue;
-				const stats = await lstat(path).catch(() => undefined);
-				if (stats === undefined) continue;
-				await record(path, stats);
-				if (target.recursive && stats.isDirectory()) {
-					countDirectory();
-					await scanDirectory(target, path);
+				let kind = listed.get(path);
+				if (kind === undefined) {
+					const stats = await lstat(path).catch(() => undefined);
+					if (stats === undefined) continue;
+					kind = entryOf(stats).kind;
+					listed.set(path, kind);
+					// A target's own entry (following links) wins over its listing by another target.
+					if (!snapshot.has(path)) await record(path, stats);
+				}
+				if (target.recursive && kind === "directory") {
+					countDirectory(path);
+					await scanDirectory(index, target, path);
 				}
 			}
 		};
-		for (const target of this.#targets) {
+		for (const [index, target] of this.#targets.entries()) {
 			for (const ancestor of ancestorsOf(target.path)) {
 				if (snapshot.has(ancestor)) continue;
 				const stats = await lstat(ancestor).catch(() => undefined);
 				// Identity only: an ancestor's own timestamps change with every unrelated sibling.
 				if (stats !== undefined) snapshot.set(ancestor, { ...entryOf(stats), size: 0, mtimeMs: 0 });
 			}
-			// The target itself may be a symbolic link to what is watched; follow it.
-			const stats = await stat(target.path).catch(() => undefined);
-			if (stats === undefined) continue;
+			// The target itself may be a symbolic link to what is watched; follow it. A missing target is watched for its
+			// creation; one that cannot be reached for lack of permission fails.
+			let stats: Stats;
+			try {
+				stats = await stat(target.path);
+			} catch (error) {
+				if (isDenied(error)) throw error;
+				continue;
+			}
 			await record(target.path, stats);
+			if (stats.isFile() && (await lstat(target.path).catch(() => undefined))?.isSymbolicLink()) {
+				linkedFiles.add(target.path);
+			}
 			if (stats.isDirectory()) {
-				countDirectory();
-				await scanDirectory(target, target.path);
+				countDirectory(target.path);
+				await scanDirectory(index, target, target.path);
 			}
 		}
-		return snapshot;
+		return { snapshot, linkedFiles };
 	}
 
 	/**
-	 * Watch every existing ancestor of each target, each target directory, and on Linux each directory below a recursive
-	 * target (elsewhere one recursive watcher per target). Returns whether a watcher was added.
+	 * Watch every existing ancestor of each target, each target directory, each target that is a symbolic link to a file
+	 * (changes to that file are not events of the link's directory), and on Linux each directory below a recursive target
+	 * (elsewhere one recursive watcher per target). Returns whether a watcher was added.
 	 */
-	#reconcileWatchers(snapshot: Snapshot): boolean {
+	#reconcileWatchers({ snapshot, linkedFiles }: Scan): boolean {
 		const wanted = new Map<string, boolean>();
+		for (const path of linkedFiles) wanted.set(path, false);
 		const perDirectory = process.platform === "linux" || process.platform === "android";
 		for (const target of this.#targets) {
 			for (const ancestor of ancestorsOf(target.path)) {
@@ -385,26 +430,32 @@ export class NodeFileWatcher implements FileWatcher {
 				}
 			}
 		}
-		for (const [path, watcher] of this.#watchers) {
-			if (!wanted.has(path)) {
-				watcher.close();
+		for (const [path, installed] of this.#watchers) {
+			const entry = snapshot.get(path);
+			// Gone, or replaced: a watcher follows the directory it was installed on, not the path.
+			if (!wanted.has(path) || entry === undefined || entry.dev !== installed.dev || entry.ino !== installed.ino) {
+				installed.watcher.close();
 				this.#watchers.delete(path);
 			}
 		}
 		let added = false;
 		for (const [path, recursive] of wanted) {
-			if (this.#watchers.has(path)) continue;
+			const entry = snapshot.get(path);
+			if (this.#watchers.has(path) || entry === undefined) continue;
+			const linked = linkedFiles.has(path);
 			try {
 				const watcher = fsWatch(path, { recursive, persistent: false }, (_event, filename) =>
-					this.#onEvent(path, filename === null ? undefined : String(filename)),
+					linked
+						? this.#onLinkedFileEvent(path)
+						: this.#onEvent(path, filename === null ? undefined : String(filename)),
 				);
 				// A watched directory that disappears or fails: rescan, which also replaces the watcher.
 				watcher.on("error", () => {
 					watcher.close();
-					if (this.#watchers.get(path) === watcher) this.#watchers.delete(path);
+					if (this.#watchers.get(path)?.watcher === watcher) this.#watchers.delete(path);
 					this.#scheduleFlush();
 				});
-				this.#watchers.set(path, watcher);
+				this.#watchers.set(path, { watcher, dev: entry.dev, ino: entry.ino });
 				added = true;
 			} catch (error) {
 				// Out of watches or unsupported: compare snapshots from now on, and say coverage was uncertain.
@@ -420,22 +471,29 @@ export class NodeFileWatcher implements FileWatcher {
 	#switchToPolling(): void {
 		if (this.#mode === "polling") return;
 		this.#mode = "polling";
-		for (const watcher of this.#watchers.values()) watcher.close();
+		for (const { watcher } of this.#watchers.values()) watcher.close();
 		this.#watchers.clear();
-		this.#deliver({ overflow: true });
+		this.#deliver(OVERFLOW);
 		clearTimeout(this.#timer);
 		this.#timer = undefined;
 		this.#schedulePoll();
 	}
 
 	#onEvent(directory: string, filename: string | undefined): void {
-		if (this.#closed) return;
+		if (this.#stopped) return;
 		const path =
 			filename === undefined ? directory : `${directory.endsWith(sep) ? directory : directory + sep}${filename}`;
 		// Events about unrelated siblings of an ancestor, or about excluded entries, are ignored.
 		const relevant = this.#inScope(path);
 		if (relevant) this.#events.add(this.#reported(path));
 		if (relevant || filename === undefined) this.#scheduleFlush();
+	}
+
+	/** The file a target links to changed: report the target. */
+	#onLinkedFileEvent(target: string): void {
+		if (this.#stopped) return;
+		this.#events.add(target);
+		this.#scheduleFlush();
 	}
 
 	#inScope(path: string): boolean {

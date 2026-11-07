@@ -1,5 +1,6 @@
 import { app, shell } from 'electron';
 import { join } from 'node:path';
+import type { SwitchedModel } from '../../common/kyrn/login';
 import { nativeBridge, type NativeFailure, type NativeResult } from '../../common/kyrn/nativeBridge';
 import type { DialogAnswer, PiCommand, PiCommandType } from '../../common/utils/nativeHost/records';
 import { muHome } from '../agent/kyrn/naming';
@@ -8,6 +9,7 @@ import { NativeHostError } from '../services/nativeHost/NativeHost';
 import { cleanName } from '../services/nativeHost/conversations/Conversation';
 import { NativeRequestError } from '../services/nativeHost/conversations/errors';
 import { hostEnv } from '../services/nativeHost/conversations/hostEnv';
+import type { ModelChoice } from '../services/nativeHost/conversations/modelSearch';
 import { NativeConversations } from '../services/nativeHost/conversations/NativeConversations';
 import type { ConversationEvents, NativeConversationsApi } from '../services/nativeHost/conversations/types';
 import { AcpBindings } from '../services/nativeHost/sessions/acpBindings';
@@ -143,7 +145,7 @@ export function readAnswer(value: unknown): DialogAnswer {
   throw invalid('Invalid dialog answer');
 }
 
-/** Permission modes are words (`full`, `jev`, `ask`), as mu names them. */
+/** Permission modes are words (`full`, `judge`, `ask`), as mu names them. */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 
 function readCreate(value: unknown): { cwd: string; permissions?: string } {
@@ -170,7 +172,7 @@ const params = (value: unknown): Record<string, unknown> => (isObject(value) ? v
 /**
  * Answers every provider of the bridge from `conversations`, or with `off` for all but `enabled` when there are none
  * (MU_NATIVE_HOST=0). `ready` is the rest of `enabled`: whether the mu on this machine can run inside the app (the
- * screens show the native host only when it can, and an older mu leaves every conversation on AionCore).
+ * screens show the native host only when it can, and an older mu leaves every conversation on the backend).
  */
 export function registerNativeBridge(
   conversations: NativeConversationsApi | undefined,
@@ -248,7 +250,7 @@ export function initNativeBridge(): void {
     env: (conversation) => hostEnv(conversation),
     // A removed conversation's session goes to the bin, where the person can still get it back.
     trash: (file) => shell.trashItem(file),
-    // Sessions AionCore's mu conversations run (the ACP adapter's records) are listed there, not here as well.
+    // Sessions the backend's mu conversations run (the ACP adapter's records) are listed there, not here as well.
     bound: () => bindings.files(),
   });
   conversations = native;
@@ -277,3 +279,10 @@ export function initNativeBridge(): void {
 /** The native conversation mu names by MU_DESKTOP_SESSION when it drives the app's browser (kyrnBrowserBridge.ts). */
 export const nativeConversationOf = (desktopSession: string): string | undefined =>
   conversations?.conversationOf(desktopSession);
+
+/**
+ * A sign-out of `provider` (kyrnBridge.ts): the native conversations running on one of its models go on with another
+ * (NativeConversations.leave). None while the native host is off.
+ */
+export const leaveInNativeConversations = async (provider: string, wanted?: ModelChoice): Promise<SwitchedModel[]> =>
+  conversations ? conversations.leave(provider, wanted) : [];

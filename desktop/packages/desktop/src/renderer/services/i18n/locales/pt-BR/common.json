@@ -168,7 +168,6 @@
     "judge": "Configuração do juiz",
     "reload": "Recarregar",
     "starting": "Iniciando o mu…",
-    "startingHint": "Conectando ao núcleo local do mu e lendo a configuração do modelo e do juiz.",
     "startupError": "Falha ao iniciar o mu",
     "hiveView": {
       "title": "Hive",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · último passo: {{step}}",
       "runs": "Execuções do Hive",
       "graph": "Mapa de colaboração",
-      "graphHint": "Quanto mais grossa a linha, mais passou por ela. Escolha uma abelha para abrir sua linha; aponte para um traço para ler o que ele levou.",
       "map": "Mapa",
       "legend": "Legenda",
       "legendDelivery": "entrega",
@@ -206,7 +204,6 @@
       "board": "Quadro compartilhado",
       "noNotes": "Ainda não há descobertas compartilhadas.",
       "context": "Contexto de execução",
-      "contextHint": "Mensagens registradas e saída de ferramenta concluída, não o prompt completo do modelo. A saída aparece após a conclusão.",
       "focus": "Atribuição",
       "missingFocus": "A atribuição não foi registrada para esta execução.",
       "current": "Atividade atual",
@@ -227,7 +224,7 @@
       "noteMissing": "Descoberta não registrada.",
       "allFlow": "Todas as entregas",
       "beeFlow": "Entregas para {{name}}",
-      "audit": "Vereditos do Jev",
+      "audit": "Vereditos",
       "waitingRun": "Aguardando eventos registrados deste Hive.",
       "recordedAt": "Registrado em {{time}}",
       "beeMissing": "Esta abelha não está no instantâneo registrado.",
@@ -296,6 +293,17 @@
       "batchFailures": "Sem resposta, com a estratégia padrão aplicada: {{count}}.",
       "changedThinking": "Nível de raciocínio: {{from}} → {{to}}",
       "sentHints": "Dicas enviadas ao modelo principal",
+      "userAnswer": {
+        "once": "Você permitiu uma vez.",
+        "session": "Você permitiu nesta conversa.",
+        "deny": "Você não permitiu.",
+        "dismissed": "Você fechou a pergunta sem responder.",
+        "none": "Não havia ninguém para perguntar, então a etapa foi recusada."
+      },
+      "markedWrong": "Você marcou este veredito como errado.",
+      "markedWrongWhy": "Você marcou este veredito como errado: {{note}}",
+      "markWrong": "Marcar como errado",
+      "markWrongHint": "Diga ao mu que este veredito estava errado. A marcação fica guardada com o veredito no ledger desta sessão.",
       "unlinked": "Registro independente",
       "unlinkedHint": "Registrado sem correlação de turno. É exibido sozinho e não é combinado com registros próximos no tempo.",
       "state": {
@@ -959,7 +967,7 @@
       "auto_compaction_end": "Compactação concluída",
       "hive.note": "Descoberta compartilhada",
       "hive.delivery": "Entrega confirmada",
-      "hive.gate": "Portão do Jev",
+      "hive.gate": "Portão do Hive",
       "hive.manifest": "Atribuição do Hive",
       "bee.event": "Evento de abelha",
       "memory.recalled": "Experiência recuperada",
@@ -1065,7 +1073,6 @@
     "compactionAborted": "Compactação cancelada",
     "compactionFailed": "Falha na compactação",
     "compactionSavings": "Redução do contexto ≈{{saved}}",
-    "compactionEstimate": "Os tokens após a compactação são estimados; a próxima resposta do modelo atualiza o uso.",
     "cacheHit": "Acertos de cache",
     "cachePending": "Nenhum uso de cache informado ainda",
     "cacheLabel": "Taxa de acerto de cache da sessão: {{percent}}",
@@ -1076,24 +1083,6 @@
         "idle": "Juiz de prontidão",
         "judging": "Juiz avaliando",
         "off": "Juiz desativado"
-      },
-      "starters": {
-        "hint": "Não sabe por onde começar? Experimente uma destas opções:",
-        "understand": {
-          "title": "Entender este projeto",
-          "desc": "Mapear a estrutura, os pontos de entrada e os módulos principais",
-          "prompt": "Primeiro leia este projeto e me explique a estrutura geral, os principais pontos de entrada e os módulos mais importantes. Indique os três arquivos que vale a pena ler primeiro."
-        },
-        "fix": {
-          "title": "Encontrar e corrigir um problema",
-          "desc": "Partir de um erro ou sintoma até chegar à causa",
-          "prompt": "Encontrei um problema: <descreva o sintoma ou cole o erro>. Primeiro reproduza e encontre a causa raiz, depois faça a menor correção possível e execute os testes relacionados para verificar."
-        },
-        "plan": {
-          "title": "Planejar uma mudança",
-          "desc": "Primeiro o plano; as alterações, depois da sua confirmação",
-          "prompt": "Quero implementar: <descreva o que você precisa>. Primeiro apresente um plano de implementação e os arquivos envolvidos, e só comece a editar depois que eu confirmar."
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1096,7 @@
       "switch": "Painel em linguagem simples deste projeto",
       "switching": "Alternando…",
       "afterTurn": "Alterna quando o agente terminar esta etapa",
-      "unknown": "Esta conversa ainda não tem painel. Ele aparece nas conversas do mu enquanto o painel em linguagem simples está ativado em Recursos.",
+      "unknown": "Esta conversa ainda não tem painel. Ele aparece nas conversas do mu enquanto o painel em linguagem simples está ativado em Configurações → Recursos principais.",
       "off": "Quando ativado, ele diz em palavras simples como o trabalho está indo, o que o agente está fazendo agora e o que precisa de você.",
       "cost": "Só para este projeto. Cada atualização custa uma chamada ao modelo.",
       "empty": "Dê um momento ao agente; aqui aparecerá em palavras simples como está indo.",
@@ -1119,7 +1108,6 @@
       "needsYou": "Precisa de você",
       "needsYouText": "O agente está esperando sua resposta na conversa.",
       "quote": "Citar na sua resposta",
-      "quoteHint": "Clique em um item para citá-lo na sua resposta; nada é enviado até você enviar.",
       "account": "O que ele fez",
       "earlierNotes": "{{count, number}} anteriores",
       "earlierNotes_one": "{{count, number}} anterior",
@@ -1132,7 +1120,8 @@
         "fixing": "Corrigindo o que a verificação encontrou",
         "waiting": "Esperando por você",
         "wrapping_up": "Finalizando",
-        "stuck": "Parece travado"
+        "stuck": "Parece travado",
+        "blocked": "Esperando outra coisa"
       },
       "checks_one": "{{done}} de {{total}} verificação feita",
       "checks_other": "{{done}} de {{total}} verificações feitas",
@@ -1158,8 +1147,9 @@
           "wrapping_up": "O trabalho está feito; finalizando.",
           "stuck": "Parece estar andando em círculos; talvez precise de uma dica sua.",
           "unclear": "Trabalhando.",
-          "focus": "{{now}} (Item atual: {{focus}})",
-          "planning": "Pensando em como fazer; nada foi alterado ainda."
+          "planning": "Pensando em como fazer; nada foi alterado ainda.",
+          "blocked": "Esperando um comando, um ajudante ou a rede.",
+          "focus": "{{now}} (Item atual: {{focus}})"
         }
       },
       "notes": {
@@ -1190,8 +1180,42 @@
         "did": "Usou {{tool}}: {{what}}",
         "said_quote": "Ele disse: {{text}}",
         "ended": "Parou.",
-        "waiting_reply": "Parado, esperando sua resposta."
-      }
+        "waiting_reply": "Parado, esperando sua resposta.",
+        "still_running": "Ainda rodando {{what}}, há {{minutes, number}} min",
+        "still_running_who": "{{who}}: {{what}} está rodando há {{minutes, number}} min sem saída",
+        "helper_done": "{{name}} voltou: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} falhou",
+          "timed_out": "{{name}} estourou o tempo",
+          "stopped": "{{name}} foi parado"
+        },
+        "helpers_back_failed": "{{count, number}} ajudantes voltaram, {{failed, number}} com erro",
+        "helpers_back_failed_one": "{{count, number}} ajudante voltou, {{failed, number}} com erro",
+        "helpers_back_failed_other": "{{count, number}} ajudantes voltaram, {{failed, number}} com erro",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "list": {
+        "separator": ", "
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} ajudantes trabalhando",
+        "helpers_working_one": "{{count, number}} ajudante trabalhando",
+        "helpers_working_other": "{{count, number}} ajudantes trabalhando",
+        "waiting_permission": "Esperando sua permissão: {{what}}"
+      },
+      "updated": "Atualizado há {{ago}}",
+      "updatedNow": "Atualizado agora",
+      "blocked": "Travado",
+      "blockedLine": "Travado: {{text}}",
+      "next": "Próximo passo",
+      "agents": "Quem está fazendo o quê",
+      "agentStates": {
+        "working": "Trabalhando",
+        "waiting": "Esperando",
+        "stuck": "Travado"
+      },
+      "stripOpen": "Painel em linguagem simples: {{headline}}",
+      "stripHint": "Clique para abrir o painel"
     },
     "lessonsView": {
       "filterLabel": "Quais lições mostrar",
@@ -1279,7 +1303,7 @@
     "compactionDropped": "{{count}} chamadas removidas",
     "compactionDropped_one": "{{count}} chamada removida",
     "compactionDropped_other": "{{count}} chamadas removidas",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} está classificando a mensagem…",
       "classified": "Classificado por {{judge}}: {{type}}",
       "byRule": "Classificado por regra: {{type}}",
@@ -1291,9 +1315,16 @@
       "setUp": "Configurar um juiz",
       "skipped": "Classificação pulada",
       "off": "A classificação está desativada",
-      "firstHint": "Esta linha é o veredito do Jev: o Jev classifica cada mensagem primeiro e depois o mu decide como seguir. Todos os vereditos ficam em Vereditos, à direita."
+      "firstHint": "Esta linha é o veredito do juiz: o juiz classifica cada mensagem primeiro e depois o mu decide como seguir. Todos os vereditos ficam em Vereditos, à direita."
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "Nenhuma chave do Jev definida: o Jev gratuito do OpenCode Zen responde",
+        "freeJevUnavailable": "O Jev gratuito parou de responder: regras fixas decidem até que uma chave do Jev seja definida",
+        "openaiKeyMissing": "O modelo de decisão da OpenAI está sem chave de API: o próximo juiz ou regras fixas decidem",
+        "openaiKeyRejected": "A OpenAI recusou a chave de API do modelo de decisão: o próximo juiz ou regras fixas decidem",
+        "layaRemoved": "O Laya não vem mais integrado ao mu: o juiz agora é {{judge}}"
+      },
       "detail": "Detalhes: {{detail}}",
       "progress": {
         "frame": "Atualizando a definição da tarefa",
@@ -1301,7 +1332,7 @@
         "skills": "Escolhendo as habilidades de que esta sessão precisa",
         "capabilities": "Escolhendo as capacidades de que esta tarefa precisa",
         "goal_check": "Verificando se o objetivo foi alcançado",
-        "permissionReview": "O Jev está avaliando: {{summary}}"
+        "permissionReview": "O juiz está avaliando: {{summary}}"
       },
       "goal": {
         "paused": "Pausado: {{reason}}",
@@ -1428,6 +1459,26 @@
       "reviewer": "revisor",
       "scout": "explorador",
       "worker": "executor"
+    },
+    "kernel": {
+      "free": "grátis",
+      "local": "local",
+      "judgeHint": "O juiz que responde aos pontos de decisão do mu. Clique para trocar.",
+      "points": "{{active}}/{{total}} pontos de decisão ativos",
+      "shadow_one": "· {{count}} em modo sombra",
+      "shadow_other": "· {{count}} em modo sombra",
+      "off": "Juiz desativado",
+      "verdicts_one": "veredito",
+      "verdicts_other": "vereditos",
+      "last": "último",
+      "context": "contexto",
+      "cache": "cache"
+    },
+    "hero": {
+      "kernel": "Núcleo de julgamento",
+      "judgeReady": "{{judge}} está pronto",
+      "judgeOff": "Juiz desativado",
+      "title": "No que o mu deve trabalhar?"
     }
   },
   "menu": {
@@ -1464,7 +1515,8 @@
     "bringAllToFront": "Trazer todas para a frente",
     "help": "Ajuda",
     "checkForUpdates": "Verificar atualizações…",
-    "projectPage": "{{name}} no GitHub"
+    "projectPage": "{{name}} no GitHub",
+    "keyboardShortcuts": "Atalhos de teclado"
   },
   "trayMenu": {
     "runningTasks": "Tarefas em execução: {{count}}"
@@ -1486,7 +1538,10 @@
     "openSettings": "Abrir configurações",
     "actions": {
       "newConversation": "Começar um novo chat",
-      "scheduledTasks": "Abrir tarefas agendadas"
+      "scheduledTasks": "Abrir tarefas agendadas",
+      "quickOpen": "Abrir um arquivo pelo nome",
+      "nextWaiting": "Ir para a próxima conversa esperando por você",
+      "shortcuts": "Mostrar atalhos de teclado"
     },
     "commandWaits": "Será executado quando esta resposta terminar"
   },
@@ -1517,7 +1572,12 @@
     "previewEmpty": "Nada para pré-visualizar ainda. Arquivos abertos na conversa aparecem aqui.",
     "previewHidden": "A prévia está oculta.",
     "browserEmpty": "Nenhuma página aberta. Digite um endereço ou uma pesquisa acima. As páginas abertas na conversa também aparecem aqui.",
-    "firstHint": "Painel conta o progresso em palavras simples, Vereditos lista cada veredito do Jev e Arquivos é a pasta desta conversa. As outras abas aparecem quando são usadas."
+    "firstHint": "Painel conta o progresso em palavras simples, Vereditos lista cada veredito e Arquivos é a pasta desta conversa. As outras abas aparecem quando são usadas.",
+    "follow": {
+      "label": "Acompanhar o agente",
+      "on": "Acompanhando o agente: os arquivos que ele edita e as páginas que abre aparecem aqui. Clique para parar.",
+      "off": "Acompanhar o agente: mostrar aqui os arquivos que ele edita e as páginas que abre."
+    }
   },
   "nodeRuntime": {
     "title": "Baixar o Node.js?",
@@ -1530,5 +1590,46 @@
   },
   "firstHint": {
     "close": "Entendi"
+  },
+  "quickOpen": {
+    "title": "Abrir um arquivo",
+    "placeholder": "Pesquisar arquivos na pasta desta conversa",
+    "loading": "Lendo a pasta…",
+    "failed": "Não foi possível ler a pasta desta conversa.",
+    "more": "Esta pasta tem mais arquivos do que os listados. Digite mais do nome para filtrar.",
+    "noFolder": "Abra uma conversa com uma pasta para encontrar os arquivos pelo nome."
+  },
+  "shortcuts": {
+    "title": "Atalhos de teclado",
+    "groups": {
+      "general": "Geral",
+      "conversations": "Conversas",
+      "panels": "Painéis",
+      "sendBox": "Caixa de envio",
+      "view": "Visualização"
+    },
+    "rows": {
+      "palette": "Pesquisar conversas, configurações e comandos",
+      "quickOpen": "Abrir um arquivo pelo nome",
+      "searchMessages": "Pesquisar todas as mensagens",
+      "findInConversation": "Localizar nesta conversa",
+      "newConversation": "Nova conversa",
+      "settings": "Configurações",
+      "shortcuts": "Atalhos de teclado",
+      "byPosition": "Abrir a conversa nessa posição da barra lateral",
+      "nextWaiting": "Próxima conversa esperando por você",
+      "nextPrevious": "Conversa seguinte ou anterior",
+      "sidebar": "Mostrar ou ocultar a barra lateral",
+      "workPanel": "Mostrar ou ocultar o painel de trabalho",
+      "closeTab": "Fechar a aba de visualização ou a página do navegador em que você está",
+      "saveFile": "Salvar o arquivo que você está editando",
+      "send": "Enviar",
+      "newLine": "Nova linha",
+      "history": "Trazer de volta uma mensagem anterior",
+      "commands": "Executar um comando",
+      "mention": "Mencionar um arquivo",
+      "zoom": "Aumentar ou diminuir o zoom",
+      "resetZoom": "Tamanho real"
+    }
   }
 }

@@ -1,13 +1,14 @@
 /**
- * The top of a conversation made from a Claude Code or Codex transcript: where it came from, how much came along, and
- * a way to read what was said before (common/kyrn/importChats.ts). In place of the greeting while the conversation has
- * no message of its own yet, and above its first message after that.
+ * The top of a conversation made from a Claude Code, Codex or ZCode conversation: its tool's mark, where it came from,
+ * how much came along, and a way to read what was said before (common/kyrn/importChats.ts). In place of the greeting
+ * while the conversation has no message of its own yet, and above its first message after that.
  */
 import { Button } from '@arco-design/web-react';
 import classNames from 'classnames';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IMPORT_TOOL_NAMES, type ImportMark } from '@/common/kyrn/importChats';
+import ImportToolMark from '@/renderer/components/brand/ImportToolMark';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import ImportedHistoryModal from './ImportedHistoryModal';
 
@@ -31,7 +32,8 @@ const ImportedChatNotice: React.FC<Props> = ({ conversationId, mark, inline = fa
         inline ? 'mb-16px pb-12px border-b border-border-2' : 'items-center px-24px text-center max-w-440px'
       )}
     >
-      <span className='text-15px font-600 leading-22px text-t-primary'>
+      <span className='flex items-center gap-8px text-15px font-600 leading-22px text-t-primary'>
+        <ImportToolMark tool={mark.tool} size={18} />
         {t('mu.importChats.notice.title', { tool })}
       </span>
       <span className='text-12px leading-18px text-t-tertiary break-all' title={mark.source}>

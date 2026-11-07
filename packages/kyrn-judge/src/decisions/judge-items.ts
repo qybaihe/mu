@@ -30,6 +30,8 @@ export const judgeItems = defineDecision({
 	version: 1,
 	cacheImpact: "none",
 	latency: "inline",
+	// The model asked: it gets the answers in shadow too.
+	actsInShadow: true,
 	questions: {} as Questions,
 	questionsFor(input: ItemsInput): Questions {
 		return Object.fromEntries(

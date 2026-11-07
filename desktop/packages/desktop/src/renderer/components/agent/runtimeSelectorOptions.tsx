@@ -5,7 +5,7 @@
  */
 
 import type { AcpConfigSetStatus } from '@/renderer/hooks/agent/useAcpConfigOptions';
-import AionInlineSearchInput from '@/renderer/components/base/AionInlineSearchInput';
+import MuInlineSearchInput from '@/renderer/components/base/MuInlineSearchInput';
 import { isThinkingLevel, thinkingLevelLabel } from '@/renderer/utils/model/thinkingLevel';
 import { Menu, Tooltip } from '@arco-design/web-react';
 import type { TFunction } from 'i18next';
@@ -102,7 +102,7 @@ export const RuntimeSelectorSubMenuTitle: React.FC<{ label: string; value: strin
 /**
  * Model options with search + fixed-height scroll. Reused by:
  * - the direct dropdown (no thought level) and the model submenu — flat via `models`;
- * - the aionrs selector — provider-grouped via `groups`.
+ * - the built-in agent selector — provider-grouped via `groups`.
  * Search box shows only when the total model count exceeds DROPDOWN_SEARCH_THRESHOLD;
  * filtering is client-side, case-insensitive on label/id, and spans all groups.
  */
@@ -162,7 +162,7 @@ export const RuntimeSelectorModelList: React.FC<{
     <>
       {showSearch ? (
         <div className='px-6px pt-4px pb-6px' style={{ background: 'var(--color-bg-popup)' }}>
-          <AionInlineSearchInput
+          <MuInlineSearchInput
             value={query}
             onChange={setQuery}
             placeholder={t('agent.model.searchPlaceholder', { defaultValue: 'Search models' })}

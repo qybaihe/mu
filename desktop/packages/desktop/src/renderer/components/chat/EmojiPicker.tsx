@@ -421,7 +421,7 @@ const EMOJI_CATEGORIES = {
 
 type CategoryKey = keyof typeof EMOJI_CATEGORIES;
 
-const RECENT_EMOJIS_KEY = 'aionui.emoji.recent';
+const RECENT_EMOJIS_KEY = 'mu.emoji.recent';
 const MAX_RECENT_EMOJIS = 24;
 
 // Arco Design Popover position types

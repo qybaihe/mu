@@ -159,6 +159,19 @@ describe("Models runtime", () => {
 		expect(long.cacheWrite).toBe(0.0000125);
 	});
 
+	it("marks catalog-derived totals as not provider-reported", () => {
+		const usage: Usage = {
+			input: 1_000_000,
+			output: 0,
+			cacheRead: 0,
+			cacheWrite: 0,
+			totalTokens: 1_000_000,
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 9, totalFromProvider: true },
+		};
+		calculateCost(testModel("openai", "gpt-5.6-sol"), usage);
+		expect(usage.cost.totalFromProvider).toBe(false);
+	});
+
 	it("registers, replaces, and deletes providers", () => {
 		const models = createModels();
 		models.setProvider(testProvider({ id: "p1" }));
@@ -437,6 +450,26 @@ describe("Models runtime", () => {
 		expect(effectiveCredential).toEqual({ type: "api_key", key: "ambient-key", env: undefined });
 		expect(forceRefresh).toBe(true);
 		expect(unconfiguredRefreshes).toBe(0);
+	});
+
+	it("passes the registered provider's base URL, including wrapper overrides, to refreshModels", async () => {
+		// A models.json baseUrl (e.g. a regional OpenRouter host) is applied by a wrapper around the
+		// built-in provider. The built-in refresh must still request that URL.
+		const baseUrls: (string | undefined)[] = [];
+		const inner: Provider = {
+			...testProvider({
+				id: "dynamic",
+				refreshModels: async (context) => {
+					baseUrls.push(context.baseUrl);
+				},
+			}),
+			baseUrl: "https://default.example.test/v1",
+		};
+		const models = createModels();
+		models.setProvider({ ...inner, baseUrl: "https://regional.example.test/v1" });
+
+		await models.refresh();
+		expect(baseUrls).toEqual(["https://regional.example.test/v1", "https://regional.example.test/v1"]);
 	});
 
 	it("refreshes expired OAuth before refreshing models", async () => {

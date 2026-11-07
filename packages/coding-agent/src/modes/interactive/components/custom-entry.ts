@@ -3,6 +3,7 @@ import { Box, Container, Spacer, Text } from "@earendil-works/pi-tui";
 import type { EntryRenderer } from "../../../core/extensions/types.ts";
 import type { CustomEntry } from "../../../core/session-manager.ts";
 import { theme } from "../theme/theme.ts";
+import { keyHint, keyText } from "./keybinding-hints.ts";
 
 /**
  * Component that renders a custom session entry from extensions.
@@ -13,11 +14,13 @@ export class CustomEntryComponent extends Container {
 	private renderer: EntryRenderer;
 	private customComponent?: Component;
 	private _expanded = false;
+	private outputPad: number;
 
-	constructor(entry: CustomEntry<unknown>, renderer: EntryRenderer) {
+	constructor(entry: CustomEntry<unknown>, renderer: EntryRenderer, outputPad = 1) {
 		super();
 		this.entry = entry;
 		this.renderer = renderer;
+		this.outputPad = outputPad;
 		this.rebuild();
 	}
 
@@ -32,6 +35,11 @@ export class CustomEntryComponent extends Container {
 		}
 	}
 
+	setOutputPad(outputPad: number): void {
+		this.outputPad = outputPad;
+		this.rebuild();
+	}
+
 	override invalidate(): void {
 		super.invalidate();
 		this.rebuild();
@@ -43,10 +51,10 @@ export class CustomEntryComponent extends Container {
 
 		let component: Component | undefined;
 		try {
-			component = this.renderer(this.entry, { expanded: this._expanded }, theme);
+			component = this.renderer(this.entry, { expanded: this._expanded, keyText, keyHint }, theme);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			const box = new Box(1, 1, (text) => theme.bg("customMessageBg", text));
+			const box = new Box(this.outputPad, 1, (text) => theme.bg("customMessageBg", text));
 			box.addChild(new Text(theme.fg("error", `[${this.entry.customType}] renderer failed: ${message}`), 0, 0));
 			component = box;
 		}

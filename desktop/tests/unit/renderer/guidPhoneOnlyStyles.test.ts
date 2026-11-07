@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The home page's phone rules hold in the phone layout alone (html[data-phone-layout], which Layout sets). A desktop
  * window narrower than the phone breakpoint keeps the desktop page, centred and with no room at the bottom for a
  * phone's quick buttons, and scrolls it when it is taller than the window.

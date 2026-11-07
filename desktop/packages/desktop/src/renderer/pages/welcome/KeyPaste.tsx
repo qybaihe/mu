@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Input, Link } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import MuErrorMessage from '@/renderer/pages/settings/KyrnSettings/fields/MuErrorMessage';
 import { camel } from '@/renderer/pages/settings/KyrnSettings/providers/endpoints';
 import { StatusDot, type DotState } from '@/renderer/pages/settings/KyrnSettings/providers/parts';
@@ -9,7 +9,7 @@ import choiceStyles from '@/renderer/pages/settings/KyrnSettings/sections/sectio
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { openExternalUrl } from '@/renderer/utils/platform';
 import Field from './Field';
-import { isServiceId, MODEL_SERVICES, type ModelService } from './services';
+import { isServiceId, type ModelService, servicesInOrder } from './services';
 import type { KeyCheck, KeySetup } from './useKeySetup';
 import styles from './Welcome.module.css';
 
@@ -58,21 +58,30 @@ function useCheckWords(service: ModelService | undefined, check: KeyCheck, works
  * the key with that service alone, and starts on a model the service lists. No address, no wire format.
  */
 export default function KeyPaste({ setup, tried }: KeyPasteProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { service, candidates, check } = setup;
   const typed = setup.key.trim();
   const said = useCheckWords(service, check, setup.works);
-  // A key several services' shapes fit is asked about with just those; any other key with every service.
-  const offered = candidates.length > 1 ? candidates : MODEL_SERVICES;
-  let serviceHint = t('mu.welcome.apiKey.serviceHint');
+  // A key several services' shapes fit is asked about with just those; any other key with every service, in the order
+  // for the app's language.
+  const offered = candidates.length > 1 ? candidates : servicesInOrder(i18n.language);
+  // Nothing until there is a key: the placeholder says the service is told from it.
+  let serviceHint = '';
   if (service) serviceHint = setup.recognized ? t('mu.welcome.apiKey.recognized') : '';
-  else if (typed) serviceHint = t(candidates.length > 1 ? 'mu.welcome.apiKey.ambiguous' : 'mu.welcome.apiKey.unknown');
+  else if (typed && !setup.refused)
+    serviceHint = t(candidates.length > 1 ? 'mu.welcome.apiKey.ambiguous' : 'mu.welcome.apiKey.unknown');
 
   return (
     <div className={styles.fields}>
       <Field
         label={t('mu.welcome.model.key')}
-        problem={tried && !typed && !service?.keyless ? t('mu.welcome.apiKey.problems.key') : undefined}
+        problem={
+          setup.refused
+            ? t('mu.welcome.apiKey.subscriptionToken')
+            : tried && !typed && !service?.keyless
+              ? t('mu.welcome.apiKey.problems.key')
+              : undefined
+        }
       >
         <Input.Password
           autoFocus
@@ -85,9 +94,9 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
       </Field>
       <Field
         label={t('mu.welcome.apiKey.service')}
-        problem={tried && typed && !service ? t('mu.welcome.apiKey.problems.service') : undefined}
+        problem={tried && typed && !service && !setup.refused ? t('mu.welcome.apiKey.problems.service') : undefined}
       >
-        <AionSelect
+        <MuSelect
           aria-label={t('mu.welcome.apiKey.service')}
           data-testid='mu-welcome-key-service'
           value={service?.id}
@@ -172,7 +181,7 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
           problem={tried && !setup.model.trim() ? t('mu.welcome.apiKey.problems.model') : undefined}
         >
           {check.outcome === 'ok' ? (
-            <AionSelect
+            <MuSelect
               showSearch
               aria-label={t('mu.welcome.apiKey.startsWith')}
               data-testid='mu-welcome-key-model'
@@ -190,7 +199,6 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
               onChange={setup.setModel}
             />
           )}
-          <div className={choiceStyles.choiceHint}>{t('mu.welcome.apiKey.modelHint')}</div>
         </Field>
       ) : null}
     </div>

@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+	afterSetup,
 	dependenciesInstalled,
 	MODEL_KEY_VARIABLES,
 	mcpAddDefaults,
@@ -13,6 +14,7 @@ import {
 	planSetup,
 	SETUP_DECLINED_FILE,
 	SETUP_EXIT_CANCELLED,
+	SETUP_EXIT_SIGN_IN,
 	SETUP_EXIT_START,
 	SETUP_VALUE_FLAGS,
 	usage,
@@ -55,6 +57,7 @@ const POSIX_ROOT = "/home/bai/KYRN";
 const posixInstalled = {
 	[`${POSIX_ROOT}/node_modules/undici/package.json`]: "{}",
 	[`${POSIX_ROOT}/packages/coding-agent/src/experimental/source-resolver.ts`]: "",
+	[`${POSIX_ROOT}/packages/ai/src/providers/data/.manifest.json`]: "{}",
 };
 const POSIX_NATIVE = [
 	"--disable-warning=ExperimentalWarning",
@@ -69,7 +72,7 @@ const WIN_PACKAGE = "C:\\Users\\bai\\AppData\\Roaming\\npm\\node_modules\\mu-age
 const WIN_HOME = "C:\\Users\\bai";
 const winPackage = {
 	[`${WIN_PACKAGE}\\dist\\bundle\\cli.js`]: "",
-	[`${WIN_PACKAGE}\\judge\\dist\\kyrn-judge.js`]: "",
+	[`${WIN_PACKAGE}\\judge\\mu\\index.js`]: "",
 };
 
 const setupArgs = { env: {}, home: "/home/bai", execPath: "/usr/bin/node" };
@@ -127,6 +130,31 @@ describe("mu setup, as the launcher starts it", () => {
 		expect(plan([KEY, "another"])).toEqual({ error: "mu setup takes one key at most (mu setup --help)", code: 2 });
 	});
 
+	it("tells the wizard on a Mac where mude 1.0 goes, as mu judge mude is told", () => {
+		const plan = planSetup({
+			...setupArgs,
+			platform: "darwin",
+			argv: [],
+			root: POSIX_ROOT,
+			fs: disk(posixInstalled),
+		});
+		if (plan.error !== undefined) throw new Error(plan.error);
+		expect(plan.env).toMatchObject({
+			MU_MUDE_HOME: "/home/bai/.mu",
+			MU_MUDE_ENV_FILE: `${POSIX_ROOT}/.env`,
+			MU_MUDE_LOCK: `${POSIX_ROOT}/kyrn/local-judge/mude-requirements.lock.txt`,
+		});
+		const linux = planSetup({
+			...setupArgs,
+			platform: "linux",
+			argv: [],
+			root: POSIX_ROOT,
+			fs: disk(posixInstalled),
+		});
+		if (linux.error !== undefined) throw new Error(linux.error);
+		expect(linux.env.MU_MUDE_HOME).toBeUndefined();
+	});
+
 	it("runs the package's built wizard on Windows, and the .env of mu's home", () => {
 		const built = `${WIN_PACKAGE}\\judge\\dist\\setup.js`;
 		const plan = planSetup({
@@ -168,7 +196,7 @@ describe("mu setup, as the launcher starts it", () => {
 			stripsTypes: false,
 			fs: disk(posixInstalled),
 		});
-		expect(unstripped.error).toContain("does not strip types");
+		expect(unstripped.error).toContain("doesn't strip types");
 		const moved = planSetup({
 			...setupArgs,
 			platform: "linux",
@@ -193,9 +221,20 @@ describe("mu setup, as the launcher starts it", () => {
 	it("keeps the same names and codes as the wizard, and is in mu's usage", () => {
 		expect(SETUP_DECLINED_FILE).toBe(WIZARD_DECLINED_FILE);
 		expect(SETUP_EXIT_START).toBe(SETUP_EXIT.start);
+		expect(SETUP_EXIT_SIGN_IN).toBe(SETUP_EXIT.signIn);
 		expect(SETUP_EXIT_CANCELLED).toBe(SETUP_EXIT.cancelled);
 		expect([...SETUP_VALUE_FLAGS]).toEqual([...WIZARD_VALUE_FLAGS]);
 		expect(usage("linux")).toContain("mu setup                 connect a model");
+	});
+
+	it("opens the session on /login after a subscription, unless the command line says what to do", () => {
+		expect(afterSetup(SETUP_EXIT_SIGN_IN, [])).toEqual(["/login"]);
+		expect(afterSetup(SETUP_EXIT_SIGN_IN, ["--model", "openai/gpt-5.6-luna"])).toEqual([
+			"--model",
+			"openai/gpt-5.6-luna",
+		]);
+		expect(afterSetup(SETUP_EXIT_START, [])).toEqual([]);
+		expect(afterSetup(SETUP_EXIT.done, [])).toEqual([]);
 	});
 });
 

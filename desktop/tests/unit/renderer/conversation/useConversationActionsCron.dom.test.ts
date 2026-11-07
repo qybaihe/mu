@@ -16,7 +16,7 @@ const { navigateMock, requestPrefillMock, routeState } = vi.hoisted(() => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => (key === 'cron.status.defaultPrompt' ? 'Create with /cron in AionUi' : key),
+    t: (key: string) => (key === 'cron.status.defaultPrompt' ? 'Create with /cron in mu' : key),
   }),
 }));
 
@@ -56,6 +56,7 @@ vi.mock('@/renderer/utils/ui/focus', () => ({
 }));
 
 import { useConversationActions } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationActions';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const makeConversation = (id: string, type: TChatConversation['type']): TChatConversation =>
   ({
@@ -91,7 +92,7 @@ describe('create scheduled task conversation action', () => {
 
     act(() => result.current.handleCreateCronTask(makeConversation('current-conversation', 'acp')));
 
-    expect(requestPrefillMock).toHaveBeenCalledWith('current-conversation', 'Create with /cron in AionUi');
+    expect(requestPrefillMock).toHaveBeenCalledWith('current-conversation', 'Create with /cron in mu');
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
@@ -99,9 +100,9 @@ describe('create scheduled task conversation action', () => {
     const onSessionClick = vi.fn();
     const { result } = renderActions(onSessionClick);
 
-    act(() => result.current.handleCreateCronTask(makeConversation('background-conversation', 'aionrs')));
+    act(() => result.current.handleCreateCronTask(makeConversation('background-conversation', BUILTIN_AGENT)));
 
-    expect(requestPrefillMock).toHaveBeenCalledWith('background-conversation', 'Create with /cron in AionUi');
+    expect(requestPrefillMock).toHaveBeenCalledWith('background-conversation', 'Create with /cron in mu');
     expect(navigateMock).toHaveBeenCalledWith('/conversation/background-conversation');
     expect(requestPrefillMock.mock.invocationCallOrder[0]).toBeLessThan(navigateMock.mock.invocationCallOrder[0]);
     expect(onSessionClick).toHaveBeenCalledOnce();
@@ -117,7 +118,7 @@ describe('create scheduled task conversation action', () => {
       expect(requestPrefillMock).not.toHaveBeenCalled();
       expect(navigateMock).toHaveBeenCalledWith('/guid', {
         state: {
-          prefillPrompt: 'Create with /cron in AionUi',
+          prefillPrompt: 'Create with /cron in mu',
           preservePrefillDraft: true,
           focusPrefill: true,
         },

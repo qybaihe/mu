@@ -35,8 +35,8 @@ const HELP = `${chalk.bold("Usage:")}
   ${APP_NAME} mcp add <server> [options] --url <url>
   ${APP_NAME} mcp remove <server> [-l]
   ${APP_NAME} mcp list [--json]
-  ${APP_NAME} mcp login <server> [--timeout <seconds>]
-  ${APP_NAME} mcp logout <server>
+  ${APP_NAME} mcp login <server> [-l] [--timeout <seconds>]
+  ${APP_NAME} mcp logout <server> [-l]
 
 Configure and check MCP servers and sign in to OAuth servers without starting a session.
 Reads ~/${CONFIG_DIR_NAME}/agent/mcp.json and, in trusted projects, ${CONFIG_DIR_NAME}/mcp.json.
@@ -48,7 +48,7 @@ Commands:
   login <server>          Sign in through the browser
   logout <server>         Delete the stored OAuth credentials
 
-Options for add and remove:
+Options for add, remove, login, and logout:
   -l, --local             Use ${CONFIG_DIR_NAME}/mcp.json in the current project instead of the global file
 
 Options for add:
@@ -65,12 +65,14 @@ Options for add:
                           Fixed OAuth callback port
   --oauth-client-name <name>
                           Client name sent when registering with the OAuth server
+  --oauth-client-registration <mode>
+                          auto (default), cimd, or dcr
   --exposure <mode>       codemode (default), deferred, direct, or hidden
   --description <text>    What the server offers, shown in the system prompt
 
 Other options:
   --json                  Print the list as JSON
-  --timeout <seconds>     How long login waits for the browser (default: 300)`;
+  --timeout <seconds>     Time limit for the whole sign-in (default: 300)`;
 
 const HELP_HINT = chalk.dim(`Use "${APP_NAME} mcp --help" for usage.`);
 
@@ -101,8 +103,8 @@ interface ServerReport {
 	tools: string[];
 	/** Tools whose exposure differs from the server's, from `toolExposure`. */
 	toolExposure?: Record<string, string>;
-	resources?: number;
-	resourceTemplates?: number;
+	/** Whether the server offers resources. They are not listed: listing every one can take long. */
+	resources?: true;
 	error?: string;
 }
 
@@ -151,7 +153,8 @@ function parseOptions(
 	const values = new Map<string, string | true>();
 	const lists = new Map<string, string[]>();
 	for (let index = 0; index < args.length; index++) {
-		const arg = OPTION_ALIASES.get(args[index]) ?? args[index];
+		const typed = args[index];
+		const arg = OPTION_ALIASES.get(typed) ?? typed;
 		if (arg === "--" || positional.length >= maxPositionals) {
 			positional.push(...args.slice(arg === "--" ? index + 1 : index));
 			break;
@@ -163,7 +166,7 @@ function parseOptions(
 		const name = arg.slice(2);
 		const kind = known[name];
 		if (!kind) {
-			error(`Unknown option ${arg}.\n${HELP_HINT}`);
+			error(`Unknown option ${typed}.\n${HELP_HINT}`);
 			return undefined;
 		}
 		if (kind === "flag") {
@@ -217,18 +220,28 @@ export async function runMcpCommand(args: string[], options: McpCommandOptions):
 		}
 		case "login":
 		case "logout": {
-			const parsed = parseOptions(rest, command === "login" ? { timeout: "value" } : {}, error);
+			const parsed = parseOptions(
+				rest,
+				command === "login" ? { local: "flag", timeout: "value" } : { local: "flag" },
+				error,
+			);
 			if (!parsed) return 1;
 			const [name, ...extra] = parsed.positional;
 			if (!name || extra.length > 0) {
-				error(`Usage: ${APP_NAME} mcp ${command} <server>\n${HELP_HINT}`);
+				error(`Usage: ${APP_NAME} mcp ${command} <server> [-l]\n${HELP_HINT}`);
 				return 1;
 			}
 			const entry = loaded.servers.find((server) => server.name === name);
 			if (!entry) {
+				const names = loaded.servers.map((server) => server.name);
+				const suggestion = names.find((candidate) => editDistance(candidate, name) <= 2);
 				error(
-					`No MCP server named "${name}".${untrustedNote ? ` ${untrustedNote}` : ""} Configured: ${loaded.servers.map((server) => server.name).join(", ") || "none"}.`,
+					`No MCP server named "${name}".${suggestion ? ` Did you mean "${suggestion}"?` : ""}${untrustedNote ? ` ${untrustedNote}` : ""} Configured: ${names.join(", ") || "none"}.`,
 				);
+				return 1;
+			}
+			if (parsed.values.has("local") && entry.scope !== "project") {
+				error(`MCP server "${name}" is defined in ${entry.source}, not in the project; omit --local.`);
 				return 1;
 			}
 			const connection = createConnection(entry, options, credentials);
@@ -257,6 +270,19 @@ export async function runMcpCommand(args: string[], options: McpCommandOptions):
 			error(`Unknown mcp command "${command}".\n${HELP_HINT}`);
 			return 1;
 	}
+}
+
+/** Levenshtein distance, to suggest a configured server name for a mistyped one. */
+function editDistance(a: string, b: string): number {
+	let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+	for (let i = 1; i <= a.length; i++) {
+		const current = [i];
+		for (let j = 1; j <= b.length; j++) {
+			current[j] = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+		}
+		previous = current;
+	}
+	return previous[b.length];
 }
 
 /** Parse `KEY=VALUE` pairs of a repeatable option into a record. */
@@ -295,6 +321,7 @@ function add(
 			"oauth-client-secret": "value",
 			"oauth-callback-port": "value",
 			"oauth-client-name": "value",
+			"oauth-client-registration": "value",
 			exposure: "value",
 			description: "value",
 		},
@@ -321,6 +348,7 @@ function add(
 		"oauth-client-secret",
 		"oauth-callback-port",
 		"oauth-client-name",
+		"oauth-client-registration",
 	];
 	const stdioOnly = ["env", "cwd"];
 	const misplaced = (url === undefined ? httpOnly : stdioOnly).find(
@@ -343,6 +371,9 @@ function add(
 			...(value("oauth-client-secret") === undefined ? {} : { clientSecret: value("oauth-client-secret") }),
 			...(port === undefined ? {} : { callbackPort: Number(port) }),
 			...(value("oauth-client-name") === undefined ? {} : { clientName: value("oauth-client-name") }),
+			...(value("oauth-client-registration") === undefined
+				? {}
+				: { clientRegistration: value("oauth-client-registration") }),
 		};
 		config = {
 			url,
@@ -466,10 +497,7 @@ async function list(
 				return exposure === report.exposure ? [] : [[tool.name, exposure] as const];
 			});
 			if (overrides.length > 0) report.toolExposure = Object.fromEntries(overrides);
-			if (connection.hasResources) {
-				report.resources = connection.resources.length;
-				report.resourceTemplates = connection.resourceTemplates.length;
-			}
+			if (connection.hasResources) report.resources = true;
 			if (connection.state !== "connected" && connection.error) report.error = connection.error;
 			await connection.close();
 			return report;
@@ -508,9 +536,7 @@ async function list(
 			});
 			log(`  tools: ${tools.join(", ")}`);
 		}
-		if (report.resources !== undefined) {
-			log(`  resources: ${report.resources}, URI templates: ${report.resourceTemplates ?? 0}`);
-		}
+		if (report.resources) log("  offers resources");
 		if (report.error) log(`  ${report.error.split("\n").join("\n  ")}`);
 	}
 	for (const configError of loaded.errors) log(`config error: ${configError}`);
@@ -554,8 +580,9 @@ async function login(
 					log(`Sign in to MCP server "${name}" in your browser:\n${authorizationUrl.href}`);
 					openUrl(authorizationUrl.href);
 				},
-				promptForRedirectUrl: (signal) => waitForRedirectUrl(signal, timeoutMs, interactive),
+				promptForRedirectUrl: (signal) => waitForRedirectUrl(signal, interactive),
 			},
+			signal: AbortSignal.timeout(timeoutMs),
 		});
 	} catch (signInError) {
 		error(
@@ -578,37 +605,21 @@ async function login(
 
 /**
  * The pasted redirect URL in a terminal; otherwise only the browser callback can finish the sign-in.
- * Resolves to undefined (cancelling the sign-in) after `timeoutMs`, or when the callback arrived.
+ * Resolves to undefined when `signal` aborts: the callback arrived, or the sign-in timed out.
  */
-async function waitForRedirectUrl(
-	signal: AbortSignal,
-	timeoutMs: number,
-	interactive: boolean,
-): Promise<string | undefined> {
-	const controller = new AbortController();
-	const abort = () => controller.abort();
-	signal.addEventListener("abort", abort, { once: true });
-	const timer = setTimeout(abort, timeoutMs);
+async function waitForRedirectUrl(signal: AbortSignal, interactive: boolean): Promise<string | undefined> {
+	if (!interactive) {
+		if (!signal.aborted) await new Promise((resolve) => signal.addEventListener("abort", resolve, { once: true }));
+		return undefined;
+	}
+	const readline = createInterface({ input: process.stdin, output: process.stderr });
 	try {
-		if (!interactive) {
-			await new Promise<void>((resolve) =>
-				controller.signal.addEventListener("abort", () => resolve(), { once: true }),
-			);
-			return undefined;
-		}
-		const readline = createInterface({ input: process.stdin, output: process.stderr });
-		try {
-			return await readline.question(
-				"If the browser cannot reach this machine, paste the URL it was redirected to: ",
-				{ signal: controller.signal },
-			);
-		} catch {
-			return undefined;
-		} finally {
-			readline.close();
-		}
+		return await readline.question("If the browser cannot reach this machine, paste the URL it was redirected to: ", {
+			signal,
+		});
+	} catch {
+		return undefined;
 	} finally {
-		clearTimeout(timer);
-		signal.removeEventListener("abort", abort);
+		readline.close();
 	}
 }

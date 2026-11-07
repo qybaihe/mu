@@ -71,6 +71,8 @@ export type FakeHost = {
   enable: (on: boolean) => void;
   /** The folder the person picks next; undefined when they pick none. */
   pick: (folder: string | undefined) => void;
+  /** A repository on the disk, by its top folder: `repoRoots` puts every folder inside it there. */
+  repo: (root: string) => void;
   seqOf: (id: string) => number;
   viewOf: (id: string) => NativeView;
 };
@@ -101,6 +103,7 @@ export function createFakeHost(): FakeHost {
   const attentions = new Set<(event: NativeAttentionEvent) => void>();
   let on = true;
   let picked: string | undefined;
+  const repos = new Set<string>();
   let handler: Answer = succeed;
   const get = (id: string): Hosted => {
     const found = hosted.get(id);
@@ -180,6 +183,16 @@ export function createFakeHost(): FakeHost {
       calls.push({ method: 'pickFolder' });
       return picked;
     },
+    // Not kept in `calls`: the sidebar asks it on its own, as it reads the list.
+    repoRoots: async (folders) =>
+      Object.fromEntries(
+        folders.flatMap((folder) => {
+          const top = [...repos]
+            .filter((root) => folder === root || folder.startsWith(`${root}/`))
+            .toSorted((a, b) => b.length - a.length)[0];
+          return top ? [[folder, top]] : [];
+        })
+      ),
   };
 
   const push = (id: string, record: PiRecord, quiet = false): number => {
@@ -243,6 +256,9 @@ export function createFakeHost(): FakeHost {
     },
     pick: (folder) => {
       picked = folder;
+    },
+    repo: (root) => {
+      repos.add(root);
     },
     seqOf: (id) => get(id).seq,
     viewOf: (id) => get(id).view,

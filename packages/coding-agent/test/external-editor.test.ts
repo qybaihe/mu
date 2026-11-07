@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,8 +21,11 @@ async function runExternalEditor(fixtureFlag?: "--fail" | "--empty"): Promise<{
 	const testDirectory = mkdtempSync(join(tmpdir(), "pi-external-editor-test-"));
 	const capturePath = join(testDirectory, "capture.json");
 	try {
+		// Keep the editor command independent of spaces in the source checkout path.
+		const fixturePath = join(testDirectory, "editor.mjs");
+		copyFileSync(editorFixturePath, fixturePath);
 		const result = await editInExternalEditor({
-			command: `${process.execPath} ${editorFixturePath} ${capturePath}${fixtureFlag ? ` ${fixtureFlag}` : ""}`,
+			command: `${process.execPath} ${fixturePath} ${capturePath}${fixtureFlag ? ` ${fixtureFlag}` : ""}`,
 			content: "original",
 		});
 		const capture = JSON.parse(readFileSync(capturePath, "utf-8")) as EditorCapture;
@@ -52,12 +55,21 @@ describe("editInExternalEditor", () => {
 	it("keeps the original content when the editor exits unsuccessfully", async () => {
 		const { result, capture } = await runExternalEditor("--fail");
 
-		expect(result).toEqual({ status: "failed" });
+		expect(result).toEqual({ status: "failed", message: "External editor exited with code 1; prompt unchanged" });
 		expect(existsSync(dirname(capture.filePath))).toBe(false);
 	});
 	it("returns empty content when the editor clears the prompt", async () => {
 		const { result } = await runExternalEditor("--empty");
 
 		expect(result).toEqual({ status: "complete", content: "" });
+	});
+
+	// #11592: launch failures must be reported, not silently ignored.
+	it.skipIf(process.platform === "win32")("reports an editor that cannot be launched", async () => {
+		const command = "pi-external-editor-does-not-exist";
+		expect(await editInExternalEditor({ command, content: "original" })).toEqual({
+			status: "failed",
+			message: `Failed to launch external editor: ${command}`,
+		});
 	});
 });

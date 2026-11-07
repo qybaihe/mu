@@ -89,8 +89,8 @@ vi.mock('@/renderer/pages/conversation/platforms/useConversationCommandQueue', (
   }),
 }));
 vi.mock('@/renderer/pages/conversation/Preview', () => ({ usePreviewContext: () => ({ setSendBoxHandler: vi.fn() }) }));
-vi.mock('@/renderer/pages/conversation/platforms/aionrs/useAionrsMessage', () => ({
-  useAionrsMessage: () => ({
+vi.mock('@/renderer/pages/conversation/platforms/builtinAgent/useBuiltinAgentMessage', () => ({
+  useBuiltinAgentMessage: () => ({
     thought: null,
     running: false,
     setActiveMsgId: vi.fn(),
@@ -119,7 +119,7 @@ vi.mock('@/renderer/services/FileService', () => ({ allSupportedExts: [] }));
 
 import { emitter } from '@/renderer/utils/emitter';
 import AcpSendBox from '@/renderer/pages/conversation/platforms/acp/AcpSendBox';
-import AionrsSendBox from '@/renderer/pages/conversation/platforms/aionrs/AionrsSendBox';
+import BuiltinAgentSendBox from '@/renderer/pages/conversation/platforms/builtinAgent/BuiltinAgentSendBox';
 import type { UseAcpMessageReturn } from '@/renderer/pages/conversation/platforms/acp/useAcpMessage';
 
 const CONV = 'conv-A';
@@ -150,16 +150,16 @@ const scenarios = [
     appendEvent: 'acp.selected.file.append' as const,
   },
   {
-    name: 'AionrsSendBox',
+    name: 'BuiltinAgentSendBox',
     render: () =>
       render(
-        <AionrsSendBox
+        <BuiltinAgentSendBox
           conversation_id={CONV}
           modelSelection={{ current_model: { use_model: 'm', id: 'p' }, providers: [] } as never}
         />
       ),
-    setEvent: 'aionrs.selected.file' as const,
-    appendEvent: 'aionrs.selected.file.append' as const,
+    setEvent: 'builtinAgent.selected.file' as const,
+    appendEvent: 'builtinAgent.selected.file.append' as const,
   },
 ];
 

@@ -1,60 +1,60 @@
 {
   "health": {
-    "detectedError": "Detected error with current agent ({{agent}})",
-    "autoSwitching": ". System will attempt to switch automatically.",
-    "evaluating": "Evaluating network latency and model availability...",
-    "checking": "Checking {{agent}} endpoint...",
-    "foundBest": "Found best alternative",
+    "detectedError": "The current agent ({{agent}}) ran into an error",
+    "autoSwitching": ". mu will try to switch automatically.",
+    "evaluating": "Checking network latency and model availability…",
+    "checking": "Checking the {{agent}} endpoint…",
+    "foundBest": "Found the best alternative",
     "recommendSwitch": "Recommended",
     "available": "Available",
-    "lowLatency": "Low Latency",
-    "mediumLatency": "Medium Latency",
-    "highLatency": "High Latency",
-    "bestMatch": "Best Match",
-    "noAvailable": "No available agents in current environment",
-    "checkConfig": "Please check configuration or try again later"
+    "lowLatency": "Low latency",
+    "mediumLatency": "Medium latency",
+    "highLatency": "High latency",
+    "bestMatch": "Best match",
+    "noAvailable": "No agents available in this environment",
+    "checkConfig": "Check your configuration or try again later"
   },
   "setup": {
-    "connectionError": "Connection Error",
-    "notConfigured": "{{agent}} is not configured",
-    "authRequired": "Authentication or API key is required to use this agent.",
-    "findingAlternatives": "Finding available alternatives...",
-    "checkingAgent": "Checking {{agent}}...",
-    "alternativesFound": "{{count}} available alternatives found",
-    "autoSwitching": "Auto-switching to best available agent...",
-    "configError": "Configuration error. Please check your settings or select an alternative:",
-    "noAlternatives": "No available agents found",
-    "configureFirst": "Please configure an agent in Settings first.",
-    "switching": "Switching agent..."
+    "connectionError": "Connection error",
+    "notConfigured": "{{agent}} isn't set up",
+    "authRequired": "Sign in or add an API key to use this agent.",
+    "findingAlternatives": "Looking for available alternatives…",
+    "checkingAgent": "Checking {{agent}}…",
+    "alternativesFound": "Alternatives found: {{count}}",
+    "autoSwitching": "Switching to the best available agent…",
+    "configError": "Configuration error. Check your settings or pick an alternative:",
+    "noAlternatives": "No other agents available",
+    "configureFirst": "Set up an agent in Settings first.",
+    "switching": "Switching agent…"
   },
   "model": {
-    "switchSuccess": "Model switched successfully",
-    "switchFailed": "Failed to switch model",
+    "switchSuccess": "Model switched",
+    "switchFailed": "Couldn't switch model",
     "searchPlaceholder": "Search models",
     "noResults": "No matching models",
     "withThoughtLevel": "{{model}} · {{level}}"
   },
   "config": {
-    "setting": "Applying setting...",
-    "commandAck": "Command sent, but the state is not confirmed. Refresh or try again later.",
-    "timeout": "Setting confirmation timed out. The previous state is still shown.",
-    "busy": "Another setting is being applied. Try again later.",
-    "failed": "Failed to apply setting. The previous state is still shown."
+    "setting": "Applying setting…",
+    "commandAck": "Command sent, but the new state isn't confirmed yet. Refresh or try again later.",
+    "timeout": "Timed out confirming the setting. Showing the previous state.",
+    "busy": "Another setting is still being applied. Try again in a moment.",
+    "failed": "Couldn't apply the setting. Showing the previous state."
   },
   "thoughtLevel": {
-    "label": "Thinking Level",
+    "label": "Thinking level",
     "switchSuccess": "Thinking level switched",
-    "switchFailed": "Failed to switch thinking level"
+    "switchFailed": "Couldn't switch thinking level"
   },
   "warmup": {
     "clickToWake": "Click to wake this member"
   },
   "runtimeRestart": {
     "tooltip": "Reconnect agent",
-    "confirmContent": "Restart the agent process so it picks up external CLI config changes (such as a channel switch). Chat history is kept and the session resumes when possible.",
+    "confirmContent": "Restart the agent process so it loads CLI config changes made outside mu, such as a new API key or provider. Conversation history is kept, and the agent picks up where it left off when it can.",
     "success": "Agent reconnected",
-    "failed": "Failed to reconnect agent",
-    "initializingTooltip": "The agent is initializing. Reconnect when it is ready",
+    "failed": "Couldn't reconnect agent",
+    "initializingTooltip": "Available once the agent has finished starting",
     "processingTooltip": "Wait for the current reply to finish before reconnecting"
   }
 }

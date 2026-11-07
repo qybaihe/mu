@@ -1,6 +1,6 @@
 # Build Scripts Documentation
 
-This directory contains scripts for building and packaging AionUi across different platforms and architectures.
+This directory contains scripts for building and packaging mu's desktop app across platforms and architectures.
 
 ## Scripts Overview
 
@@ -200,5 +200,5 @@ When modifying build scripts:
 
 - `/packages/desktop/electron-builder.yml` - electron-builder configuration
 - `/forge.config.ts` - Electron Forge configuration
-- `/.github/workflows/build-and-release.yml` - CI/CD pipeline
+- `.github/workflows/desktop.yml` at the repository root - the pipeline that builds and publishes the installers
 - `/package.json` - Build scripts and dependencies

@@ -23,7 +23,11 @@ const PALETTE_KEYS = [
   'searchMessages',
   'empty',
   'commandWaits',
+  'actions.quickOpen',
 ];
+
+/** Quick open's own strings (common.quickOpen). */
+const QUICK_OPEN_KEYS = ['title', 'placeholder', 'loading', 'failed', 'more', 'noFolder'];
 
 const paletteCopy = (lang: string): Record<string, unknown> => {
   const common = JSON.parse(readFileSync(path.join(LOCALES_DIR, lang, 'common.json'), 'utf8')) as Record<
@@ -47,6 +51,16 @@ describe('command palette copy', () => {
       const value = valueAt(copy, key);
       expect(typeof value, `${lang} common.commandPalette.${key}`).toBe('string');
       expect((value as string).trim().length, `${lang} common.commandPalette.${key} is empty`).toBeGreaterThan(0);
+    }
+  });
+
+  it.each(supportedLanguages)('has every quick open string in %s', (lang) => {
+    const common = JSON.parse(readFileSync(path.join(LOCALES_DIR, lang, 'common.json'), 'utf8')) as {
+      quickOpen?: Record<string, unknown>;
+    };
+    for (const key of QUICK_OPEN_KEYS) {
+      const value = common.quickOpen?.[key];
+      expect(typeof value === 'string' && value.trim().length > 0, `${lang} common.quickOpen.${key}`).toBe(true);
     }
   });
 

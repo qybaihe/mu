@@ -6,7 +6,7 @@
 
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import { DROPDOWN_SEARCH_THRESHOLD } from '@/renderer/components/agent/runtimeSelectorOptions';
 import { SYSTEM_FONT_FAMILY } from '@/common/config/fontFamilies';
 import useSystemFonts from '@renderer/hooks/ui/font/useSystemFonts';
@@ -53,7 +53,7 @@ const FontFamilySelect: React.FC<FontFamilySelectProps> = ({ value, onChange }) 
         : t('settings.fontFamilyNoResults');
 
   return (
-    <AionSelect
+    <MuSelect
       // As wide as its label and the default's words ("システムのデフォルト" is not cut), at least 240px, whatever is
       // chosen: the four rows line up, and a family name longer than that is cut, whole on hover and in the menu's
       // tooltip.

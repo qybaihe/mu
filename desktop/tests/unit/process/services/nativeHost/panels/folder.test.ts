@@ -3,8 +3,9 @@ import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { KyrnError } from '@/common/kyrn/errors';
-import { FOLDER_LISTING_LIMIT } from '@/common/kyrn/folderBridge';
-import { listFolder, readFolder } from '@/process/agent/kyrn/folderFiles';
+import { FOLDER_LISTING_LIMIT, FOLDER_SCRIPTS_LIMIT } from '@/common/kyrn/folderBridge';
+import { findFiles, folderScripts, listFolder, readFolder } from '@/process/agent/kyrn/folderFiles';
+import { GitNotStarted, type GitRunner } from '@/process/services/folderGit/runGit';
 import { lessonsProject, LessonsStore } from '@/process/agent/kyrn/lessons';
 import { canSymlink } from '../symlinks.ts';
 
@@ -115,6 +116,109 @@ const line = (id: string, cwd?: string) => ({
   uses: { recalled: 0, applied: 0 },
   created: '2026-09-29T08:00:00.000Z',
   updated: '2026-09-29T08:00:00.000Z',
+});
+
+/** git in a folder outside any repository, and no git at all. */
+const notRepository: GitRunner = async () => ({
+  code: 128,
+  stdout: '',
+  stderr: 'not a git repository',
+  overflow: false,
+});
+const noGit: GitRunner = async () => {
+  throw new GitNotStarted('spawn git ENOENT');
+};
+/** git listing more than it may write: cut in the middle of a name. */
+const cutShort: GitRunner = async () => ({ code: 0, stdout: 'a.ts\0b.ts\0c.t', stderr: '', overflow: true });
+
+describe('a folder’s files for quick open', () => {
+  it('are git’s own list in a repository: tracked and new, never what it ignores', async () => {
+    const asked: string[][] = [];
+    const git: GitRunner = async (args) => {
+      asked.push(args);
+      return { code: 0, stdout: 'src/a.ts\0README.md\0src/new.ts\0', stderr: '', overflow: false };
+    };
+    expect(await findFiles('/work/app', git)).toEqual({ paths: ['src/a.ts', 'README.md', 'src/new.ts'], more: false });
+    expect(asked).toEqual([['ls-files', '--cached', '--others', '--exclude-standard', '-z']]);
+  });
+
+  it('drops the name a cut list ends in, and says some were left out', async () => {
+    expect(await findFiles('/work/app', cutShort)).toEqual({ paths: ['a.ts', 'b.ts'], more: true });
+  });
+
+  it('walks the folder outside a repository, or without git: no dot folders, dependencies or build output', async () => {
+    const folder = temp();
+    for (const dir of ['src/deep', '.cache', 'node_modules/pkg', 'dist'])
+      mkdirSync(join(folder, dir), { recursive: true });
+    writeFileSync(join(folder, 'README.md'), '');
+    writeFileSync(join(folder, '.env'), '');
+    writeFileSync(join(folder, '.DS_Store'), '');
+    writeFileSync(join(folder, 'src', 'a.ts'), '');
+    writeFileSync(join(folder, 'src', 'deep', 'b.ts'), '');
+    writeFileSync(join(folder, '.cache', 'x'), '');
+    writeFileSync(join(folder, 'node_modules', 'pkg', 'index.js'), '');
+    writeFileSync(join(folder, 'dist', 'out.js'), '');
+    const found = await Promise.all([notRepository, noGit, undefined].map((git) => findFiles(folder, git)));
+    for (const { paths, more } of found) {
+      expect(more).toBe(false);
+      expect(paths.toSorted()).toEqual(['.env', 'README.md', 'src/a.ts', 'src/deep/b.ts']);
+    }
+  });
+});
+
+describe('a folder’s scripts for the send box’s Run', () => {
+  const manifest = (dir: string, value: unknown) =>
+    writeFileSync(join(dir, 'package.json'), typeof value === 'string' ? value : JSON.stringify(value));
+
+  it('lists package.json’s scripts in its order, with npm when nothing names another runner', async () => {
+    const dir = temp();
+    manifest(dir, { scripts: { dev: 'vite', test: 'vitest --run', 'test:e2e': 'playwright test', empty: '  ' } });
+    expect(await folderScripts(dir)).toEqual({
+      runner: 'npm',
+      scripts: [
+        { name: 'dev', command: 'vite' },
+        { name: 'test', command: 'vitest --run' },
+        { name: 'test:e2e', command: 'playwright test' },
+      ],
+      more: 0,
+    });
+  });
+
+  it('runs them with packageManager’s runner, else the lockfile’s', async () => {
+    const dir = temp();
+    manifest(dir, { scripts: { build: 'tsc' } });
+    writeFileSync(join(dir, 'yarn.lock'), '');
+    expect((await folderScripts(dir))?.runner).toBe('yarn');
+    writeFileSync(join(dir, 'pnpm-lock.yaml'), '');
+    expect((await folderScripts(dir))?.runner).toBe('pnpm');
+    writeFileSync(join(dir, 'bun.lock'), '');
+    expect((await folderScripts(dir))?.runner).toBe('bun');
+    manifest(dir, { packageManager: 'yarn@4.5.0', scripts: { build: 'tsc' } });
+    expect((await folderScripts(dir))?.runner).toBe('yarn');
+  });
+
+  it('leaves out a name a shell would need quoted, and counts what it left out', async () => {
+    const dir = temp();
+    const many = Object.fromEntries(Array.from({ length: FOLDER_SCRIPTS_LIMIT + 2 }, (_, i) => [`s${i}`, 'true']));
+    manifest(dir, { scripts: { 'two words': 'true', '-flag': 'true', '@scope': 'true', 'a;b': 'true', ...many } });
+    const read = await folderScripts(dir);
+    expect(read?.scripts).toHaveLength(FOLDER_SCRIPTS_LIMIT);
+    expect(read?.scripts[0]).toEqual({ name: 's0', command: 'true' });
+    expect(read?.more).toBe(6);
+  });
+
+  it('offers none without a package.json, scripts, or JSON that parses', async () => {
+    const dir = temp();
+    expect(await folderScripts(dir)).toBeNull();
+    manifest(dir, { name: 'app' });
+    expect(await folderScripts(dir)).toBeNull();
+    manifest(dir, { scripts: ['build'] });
+    expect(await folderScripts(dir)).toBeNull();
+    manifest(dir, '{ "scripts": ');
+    expect(await folderScripts(dir)).toBeNull();
+    manifest(dir, 'null');
+    expect(await folderScripts(dir)).toBeNull();
+  });
 });
 
 describe('a folder’s lessons', () => {

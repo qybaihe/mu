@@ -555,7 +555,7 @@ const drainBackgroundCommandQueue = async (runner: BackgroundCommandQueueRunner)
     // The background runner outlives the page that started it, so it asks i18next for the language of the moment.
     Message.warning(
       i18next.t('conversation.commandQueue.pausedAfterFailure', {
-        defaultValue: 'The next queued command could not start. Edit, reorder, or remove it to continue.',
+        defaultValue: "The next queued message couldn't start. Edit, reorder or remove it to continue.",
       })
     );
   } finally {
@@ -584,11 +584,11 @@ const getQueueValidationMessage = (
     queueTooLarge: 'conversation.commandQueue.queueTooLarge',
   } as const;
   const defaultValueMap = {
-    emptyInput: 'Queued commands cannot be empty.',
-    queueFull: 'Queue is full. Remove a command before adding more.',
-    inputTooLong: 'This queued command is too long. Shorten it before sending.',
-    tooManyFiles: 'Too many files are attached to this queued command.',
-    queueTooLarge: 'Queue data is too large to persist safely. Remove some queued commands first.',
+    emptyInput: "Queued messages can't be empty.",
+    queueFull: 'The queue is full. Remove a message before adding more.',
+    inputTooLong: 'This queued message is too long. Shorten it before sending.',
+    tooManyFiles: 'Too many files are attached to this queued message.',
+    queueTooLarge: 'The queue is too large to save. Remove some queued messages first.',
   } as const;
 
   return t(warningKeyMap[reason], {
@@ -955,7 +955,7 @@ export const useConversationCommandQueue = ({
         }));
         Message.warning(
           t('conversation.commandQueue.pausedAfterFailure', {
-            defaultValue: 'The next queued command could not start. Edit, reorder, or remove it to continue.',
+            defaultValue: "The next queued message couldn't start. Edit, reorder or remove it to continue.",
           })
         );
       });
@@ -1150,7 +1150,7 @@ export const useConversationCommandQueue = ({
         }));
         Message.warning(
           t('conversation.commandQueue.pausedAfterFailure', {
-            defaultValue: 'The next queued command could not start. Edit, reorder, or remove it to continue.',
+            defaultValue: "The next queued message couldn't start. Edit, reorder or remove it to continue.",
           })
         );
       })

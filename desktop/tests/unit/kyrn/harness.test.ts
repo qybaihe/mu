@@ -15,7 +15,6 @@ import {
 } from '../../../packages/desktop/src/process/agent/kyrn/harness.ts';
 import { loadManifest } from '../../../packages/desktop/src/process/agent/kyrn/config/features.ts';
 import { endTree, launchCommand } from '../../../packages/desktop/src/process/agent/kyrn/piRpc.ts';
-import { LocalJudge } from '../../../packages/desktop/src/process/agent/kyrn/localJudge.ts';
 // @ts-expect-error -- a plain .mjs script with no type declarations
 import { nodeVersionOk } from '../../../scripts/kyrn/acp.mjs';
 
@@ -216,25 +215,5 @@ describe('files of an npm-installed harness', () => {
     writeFileSync(file, '{"not":"a manifest"');
     expect(loadManifest(dir, file)).toEqual({ status: 'missing' });
     expect(loadManifest(dir)).toEqual({ status: 'missing' });
-  });
-
-  it('finds the Core ML judge’s venv and weights in mu’s home', async () => {
-    // Spelled by this machine's join, as the judge builds its paths whatever platform it is told it runs on.
-    const state = join('/home/someone', '.mu', 'local-judge');
-    const files = new Set([
-      join('/home/someone', '.local', 'bin', 'uv'),
-      join(state, '.venv', 'bin', 'python'),
-      join(state, 'models', 'laya-multilingual-coreml', 'coreml_config.json'),
-    ]);
-    const local = new LocalJudge('/g/mu-agent', {
-      platform: 'darwin',
-      arch: 'arm64',
-      home: '/home/someone',
-      env: { PATH: '/usr/bin' },
-      exists: (file) => files.has(file),
-      health: async () => false,
-      stateDir: state,
-    });
-    expect(await local.state()).toMatchObject({ support: 'ok', installed: true });
   });
 });

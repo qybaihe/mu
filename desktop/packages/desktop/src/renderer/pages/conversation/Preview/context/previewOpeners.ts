@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * Who put something in the work panel, which decides what the panel does with it.
  *
  * - `user`: the person opened it (a file link, the explorer, a diff, a web link, the browser's plus). The panel comes

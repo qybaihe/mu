@@ -9,9 +9,10 @@
  * - A failed attempt that pi retries is hidden from the model by a `context_edit` naming its entry: the view folds it
  *   into the attempt that follows (`retries`). Nothing else a `context_edit` hides or replaces leaves the view:
  *   extensions edit what the model reads, not what the person saw.
- * - Jev's judgments are the ledger's `kyrn.decision` records: live they come twice (the `entry_appended` and the
+ * - The judge's judgments are the ledger's `kyrn.decision` records: live they come twice (the `entry_appended` and the
  *   `decision` presentation frame), once in the file, and count once by record id. Each is filed under the turn that
- *   asked (`origin.turn`), not the turn during which it arrived.
+ *   asked (`origin.turn`), not the turn during which it arrived. What the person did about one (`kyrn.outcome`: their
+ *   answer to the permission question it sent them to, a mark that it was wrong) joins it by that id.
  * - The verdict line of a message (`kyrn.verdict`) follows its user message, live and in the file.
  * - mu's goal is its latest `kyrn.goal` entry, or a `goal.state` frame after it (view.ts `ViewGoal`).
  * - The status comes from pi's events: `agent_start` to `agent_settled` is a run, a thinking block is `thinking`, and
@@ -22,9 +23,12 @@
 import {
   addFrame,
   addRunEvent,
+  clockOf,
   nextNumber,
   readPermission,
+  readQuestion,
   takeCheckpointOff,
+  takeJob,
   takeJudgeNotice,
   takeNotify,
   takeQueue,
@@ -50,6 +54,7 @@ import {
   type ViewAssistantMessage,
   type ViewBlock,
   type ViewDialog,
+  type ViewQuestion,
   type ViewGoal,
   type ViewImage,
   type ViewJudgment,
@@ -57,18 +62,32 @@ import {
   type ViewMessage,
   type ViewToolCall,
   type ViewToolResult,
+  type ViewUserAnswer,
+  USER_ANSWERS,
 } from './view.ts';
 import { wordsOf } from './words.ts';
 
 /** The judgment layer's ledger entries (LEDGER_ENTRY_TYPE in the harness). */
 export const DECISION_ENTRY = 'kyrn.decision';
+/** What the person did about a judgment, joined to its record by `ledgerId` (OUTCOME_ENTRY in the harness). */
+export const OUTCOME_ENTRY = 'kyrn.outcome';
 /** The verdict line the preflight shows under a message (VERDICT_ENTRY in the harness). */
 export const VERDICT_ENTRY = 'kyrn.verdict';
 /** mu's goal, saved each time it changes (GOAL_ENTRY in the harness); its `goal.state` frame says the same. */
 export const GOAL_ENTRY = 'kyrn.goal';
+/** A checkpoint mu took before a turn's first file change (`ViewCheckpoint`). */
+export const CHECKPOINT_ENTRY = 'kyrn.checkpoint';
 export const GOAL_FRAME = 'goal.state';
 
 const GOAL_STATUSES: ReadonlySet<string> = new Set(['active', 'paused', 'met', 'cleared']);
+
+/**
+ * The status mu shows while questions of ask_user that nobody answered in time wait for `/answer`
+ * (packages/kyrn-judge/src/extension/features/ask-user.ts `PENDING_STATUS`).
+ */
+export const QUESTIONS_OPEN_STATUS = 'mu.ask.pending';
+/** The command that asks them again. */
+export const ANSWER_COMMAND = '/answer';
 
 /** A goal as a `kyrn.goal` entry or a `goal.state` frame says it, or undefined when it says nothing usable. */
 export function readGoal(data: unknown): ViewGoal | undefined {
@@ -79,6 +98,21 @@ export function readGoal(data: unknown): ViewGoal | undefined {
 }
 
 /** The view with the goal `data` says, or as it was when `data` says nothing usable. */
+/** A checkpoint entry's data, when it names its number and the person's message it goes back to before. */
+function addCheckpoint(view: NativeView, data: JsonObject): NativeView {
+  const id = asNumber(data.id);
+  const entryId = asText(data.entryId);
+  if (id === undefined || !Number.isSafeInteger(id) || !entryId) return view;
+  const checkpoint = {
+    id,
+    entryId,
+    label: asText(data.label),
+    turn: asNumber(data.turn) ?? 0,
+    at: asNumber(data.at) ?? 0,
+  };
+  return { ...view, checkpoints: [...(view.checkpoints ?? []).filter((each) => each.id !== id), checkpoint] };
+}
+
 function takeGoal(view: NativeView, data: unknown): NativeView {
   const goal = readGoal(data);
   return goal ? { ...view, goal } : view;
@@ -183,9 +217,18 @@ function withLive(view: NativeView, live: ViewLive): NativeView {
 }
 
 /** The live part without one of its fields. */
-function liveWithout(live: ViewLive, key: 'classifying' | 'progress' | 'retry' | 'permission'): ViewLive {
+function liveWithout(live: ViewLive, key: 'classifying' | 'progress' | 'retry' | 'permission' | 'question'): ViewLive {
   const { [key]: _dropped, ...rest } = live;
   return rest;
+}
+
+/**
+ * What the judgment layer said it was working out (the judge reviewing a command, choosing skills) is over once the
+ * model writes again, a tool starts or mu asks the person: the line above the send box then says what happens now, not
+ * a review that ended. A judge that failed (rate limited, say) ends its review with mu asking instead.
+ */
+function stepOver(view: NativeView): NativeView {
+  return view.live.progress ? withLive(view, liveWithout(view.live, 'progress')) : view;
 }
 
 function withStatus(view: NativeView, status: TurnStatus, error?: string): NativeView {
@@ -388,6 +431,30 @@ function addJudgment(view: NativeView, data: JsonObject, frameTurn?: number): Na
   return { ...view, judgments: [...view.judgments, judgment] };
 }
 
+/**
+ * What the person did about a judgment, on the judgment whose record it names: their answer to the permission question
+ * (`kind: permission`), or a mark that it judged wrong (`kind: mark`); neither replaces the other. An outcome no
+ * judgment here has is left out: no judge was asked (no `ledgerId`), or its record is not in this view. The harness
+ * writes the record before the person is asked, so it comes first, live and in the file.
+ */
+function addOutcome(view: NativeView, data: JsonObject): NativeView {
+  const ledgerId = asText(data.ledgerId);
+  const index = ledgerId ? view.judgments.findIndex((judgment) => judgment.id === ledgerId) : -1;
+  if (index < 0) return view;
+  const judgment = view.judgments[index];
+  let next: ViewJudgment | undefined;
+  const answer = asText(data.answer) as ViewUserAnswer;
+  if (data.kind === 'permission' && USER_ANSWERS.includes(answer)) next = { ...judgment, answer };
+  else if (data.kind === 'mark' && data.mark === 'wrong') {
+    const note = asText(data.note).trim();
+    next = { ...judgment, markedWrong: note ? { note } : {} };
+  }
+  if (!next) return view;
+  const judgments = view.judgments.slice();
+  judgments[index] = next;
+  return { ...view, judgments };
+}
+
 /** The verdict line of the latest user message. */
 function attachVerdict(view: NativeView, verdict: JsonObject): NativeView {
   for (let index = view.messages.length - 1; index >= 0; index--) {
@@ -414,8 +481,10 @@ function contextEdit(view: NativeView, entry: JsonObject): NativeView {
 function addEntry(view: NativeView, entry: JsonObject): NativeView {
   if (entry.type === 'custom') {
     if (entry.customType === DECISION_ENTRY) return addJudgment(view, asObject(entry.data));
+    if (entry.customType === OUTCOME_ENTRY) return addOutcome(view, asObject(entry.data));
     if (entry.customType === VERDICT_ENTRY) return attachVerdict(view, asObject(entry.data));
     if (entry.customType === GOAL_ENTRY) return takeGoal(view, entry.data);
+    if (entry.customType === CHECKPOINT_ENTRY) return addCheckpoint(view, asObject(entry.data));
     return view;
   }
   // Extensions' messages for the person that pi writes at a turn's boundary come only as entries.
@@ -436,6 +505,7 @@ function openDialog(view: NativeView, record: PiRecord, method: DialogMethod): N
     options && asked && asked.answers.length === options.length && asked.answers.every((a, i) => a === options[i])
       ? asked
       : undefined;
+  const question = permission ? undefined : askedBy(view.live.question, method, asText(record.title), options);
   const dialog: ViewDialog = {
     id,
     method,
@@ -447,15 +517,52 @@ function openDialog(view: NativeView, record: PiRecord, method: DialogMethod): N
     ...(timeout !== undefined ? { timeout } : {}),
     inRun: isRunning(view.status),
     ...(permission ? { permission } : {}),
+    ...(question ? { question } : {}),
   };
-  const live = permission ? liveWithout(view.live, 'permission') : view.live;
+  // The question stays announced until mu says how it ended: a pick-one question may open a second dialog.
+  const asking = stepOver(view).live;
+  const live = permission ? liveWithout(asking, 'permission') : asking;
   return { ...view, live, dialogs: [...view.dialogs.filter((open) => open.id !== id), dialog] };
+}
+
+/**
+ * The question of ask_user a dialog asks, when it asks the one mu announced: a select of exactly its choices, or a
+ * line whose title starts with the question's (pick-any, or the person's own words after the select).
+ */
+function askedBy(
+  question: ViewQuestion | undefined,
+  method: DialogMethod,
+  title: string,
+  options: string[] | undefined
+): ViewQuestion | undefined {
+  if (!question) return undefined;
+  if (method === 'select') {
+    const choices = question.choices;
+    return !question.multiSelect &&
+      options &&
+      choices &&
+      options.length === choices.length &&
+      options.every((option, at) => option === choices[at])
+      ? question
+      : undefined;
+  }
+  if (method !== 'input') return undefined;
+  const asked = question.header ? `${question.header}: ${question.question}` : question.question;
+  return title.startsWith(asked) ? question : undefined;
 }
 
 function uiRequest(view: NativeView, record: PiRecord): NativeView {
   const method = asText(record.method);
   if ((DIALOG_METHODS as readonly string[]).includes(method)) return openDialog(view, record, method as DialogMethod);
   if (method === 'notify') return takeNotify(view, record);
+  if (method === 'set_editor_text') {
+    const id = asText(record.id);
+    return id ? { ...view, host: { ...view.host, editorText: { id, text: asText(record.text) } } } : view;
+  }
+  if (method === 'setStatus' && record.statusKey === QUESTIONS_OPEN_STATUS) {
+    const { questionsOpen: _was, ...host } = view.host;
+    return { ...view, host: asText(record.statusText) ? { ...host, questionsOpen: true } : host };
+  }
   const frame = readPresentation(record);
   if (!frame || frame.version !== 1) return view;
   const shown = addFrame(view, frame);
@@ -488,7 +595,23 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
     }
     case 'permissions.request': {
       const permission = readPermission(frame.payload);
-      return permission ? withLive(shown, { ...shown.live, permission }) : shown;
+      if (!permission) return shown;
+      const asking = stepOver(shown);
+      return withLive(asking, { ...asking.live, permission });
+    }
+    case 'question.asked': {
+      const question = readQuestion(frame.payload);
+      if (!question) return shown;
+      const asking = stepOver(shown);
+      return withLive(asking, { ...asking.live, question });
+    }
+    case 'question.resolved': {
+      // Answered, skipped, out of time or stopped: pi stops waiting on the dialog, and may say nothing of it.
+      const id = asText(frame.payload.id);
+      if (!id) return shown;
+      const dialogs = shown.dialogs.filter((dialog) => dialog.question?.id !== id);
+      const live = shown.live.question?.id === id ? liveWithout(shown.live, 'question') : shown.live;
+      return { ...withLive(shown, live), dialogs };
     }
     case 'permissions.resolved': {
       // Answered, or given up when the run was stopped (mu then says `deny` and pi says nothing of the dialog).
@@ -500,6 +623,10 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
     }
     case 'checkpoint.off':
       return takeCheckpointOff(shown, frame.payload);
+    case 'background.start':
+    case 'background.stop':
+    case 'background.exit':
+      return takeJob(shown, frame.kind, frame.payload, frame.at ?? clockOf(shown));
     case 'judge.notice':
       return takeJudgeNotice(shown, frame.payload);
     case GOAL_FRAME:
@@ -555,14 +682,16 @@ export function reduce(view: NativeView, record: PiRecord): NativeView {
       return addRunEvent(withStatus(view, 'working'), record);
     case 'agent_settled':
       return addRunEvent(settle(view), record);
-    case 'message_start':
-      return startMessage(view, asObject(record.message));
+    case 'message_start': {
+      const message = asObject(record.message);
+      return startMessage(message.role === 'assistant' ? stepOver(view) : view, message);
+    }
     case 'message_update':
       return streamInto(view, asObject(record.assistantMessageEvent));
     case 'message_end':
       return endMessage(view, asObject(record.message), entryIdOf(record.entryId));
     case 'tool_execution_start':
-      return updateTool(view, asText(record.toolCallId), (tool) => ({ ...tool, status: 'running' }));
+      return updateTool(stepOver(view), asText(record.toolCallId), (tool) => ({ ...tool, status: 'running' }));
     case 'tool_execution_update':
       return updateTool(view, asText(record.toolCallId), (tool) => ({
         ...tool,

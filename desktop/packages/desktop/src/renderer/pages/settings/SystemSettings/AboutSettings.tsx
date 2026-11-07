@@ -13,7 +13,7 @@ import { SettingsPage } from '../components/SettingsPageHeader';
 const AboutSettings: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <SettingsPage title={t('settings.about')} description={t('settings.aboutDescription')}>
+    <SettingsPage title={t('settings.about')}>
       <AboutModalContent />
     </SettingsPage>
   );

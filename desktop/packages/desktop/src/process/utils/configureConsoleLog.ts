@@ -10,9 +10,9 @@
  * daily log files on disk.
  *
  * Log file location (managed by electron-log):
- *   - macOS:   ~/Library/Logs/AionUi/YYYY/MM/DD/YYYY-MM-DD.log
- *   - Windows: %USERPROFILE%\AppData\Roaming\AionUi\logs\YYYY\MM\DD\YYYY-MM-DD.log
- *   - Linux:   ~/.config/AionUi/logs/YYYY/MM/DD/YYYY-MM-DD.log
+ *   - macOS:   ~/Library/Logs/mu/YYYY/MM/DD/YYYY-MM-DD.log
+ *   - Windows: %USERPROFILE%\AppData\Roaming\mu\logs\YYYY\MM\DD\YYYY-MM-DD.log
+ *   - Linux:   ~/.config/mu/logs/YYYY/MM/DD/YYYY-MM-DD.log
  *
  * Users can share the relevant date's file for debugging (#1157).
  *
@@ -69,7 +69,7 @@ log.transports.file.level = FILE_LOG_LEVEL;
 log.transports.file.maxSize = FILE_SIZE_LIMIT;
 log.transports.console.level = app.isPackaged ? false : CONSOLE_LOG_LEVEL;
 
-const BACKEND_PREFIX = '[aioncore]';
+const BACKEND_PREFIX = '[backend]';
 
 // Strip ANSI escape sequences from a string.
 const ANSI_RE = new RegExp(String.raw`\u001B\[[0-9;]*m`, 'g');

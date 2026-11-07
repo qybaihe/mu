@@ -2,7 +2,7 @@
 // A mu too old to run inside the app, end to end in the real app. The native host is on by default, but only where the
 // mu the app finds can run inside it: the packaged app carries the mu it was built with, and a launcher from before the
 // native host has no `planHost`. Here the profile's copy of the launcher is made so. The app must carry on as it did
-// before the native host: quietly on AionCore, with one line in the app's log saying why, no native group in
+// before the native host: quietly on the backend, with one line in the app's log saying why, no native group in
 // the sidebar, and a message sent from the home page starting a conversation that the model answers. Run with
 // `bun run e2e:conversation --native` (every native*.spec.mjs).
 import { expect, test } from '@playwright/test';
@@ -47,7 +47,7 @@ const appLog = () =>
     .join('\n');
 const classicReplies = () => page().locator('[data-testid="message-text-left"] .markdown-shadow-body');
 
-test('the app starts on AionCore and says in its log why the native host stays off', async () => {
+test('the app starts on the backend and says in its log why the native host stays off', async () => {
   await start();
   const p = page();
   const welcome = p.getByTestId('mu-welcome');
@@ -68,7 +68,7 @@ test('the app starts on AionCore and says in its log why the native host stays o
   expectNoProblems();
 });
 
-test('a message sent from the home page starts a conversation on AionCore, and the model answers it', async () => {
+test('a message sent from the home page starts a conversation on the backend, and the model answers it', async () => {
   const p = page();
   await p.getByTestId('workspace-selector-btn').click();
   // With a recent folder the button opens a menu first; on a fresh profile it opens the picker right away.

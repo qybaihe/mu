@@ -5,6 +5,7 @@
  * so individual test files stay DRY.
  */
 import type { Page } from '@playwright/test';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 // ── Route constants ──────────────────────────────────────────────────────────
 
@@ -157,7 +158,7 @@ export async function goToGuid(page: Page): Promise<void> {
 }
 
 /** Compatibility helper kept for older specs; Guid selection is now assistant-first and local-state free. */
-export async function resetGuidLastSelectedAgent(page: Page, _agentKey = 'aionrs'): Promise<void> {
+export async function resetGuidLastSelectedAgent(page: Page, _agentKey = BUILTIN_AGENT): Promise<void> {
   await page.evaluate(() => {
     sessionStorage.removeItem('guid.openAssistantEditorIntent');
   });

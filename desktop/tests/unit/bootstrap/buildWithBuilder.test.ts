@@ -23,7 +23,7 @@ const repoRoot = resolve(__dirname, '../../..');
 
 function readInstallerErrorDefinitions(): Array<{ defineName: string; code: string }> {
   const source = readFileSync(resolve(repoRoot, 'resources/windows/installer-errors.nsh'), 'utf8');
-  return Array.from(source.matchAll(/!define\s+(AIONUI_E_[A-Z0-9_]+)\s+"(E\d{4})"/g), (match) => ({
+  return Array.from(source.matchAll(/!define\s+(MU_E_[A-Z0-9_]+)\s+"(E\d{4})"/g), (match) => ({
     defineName: match[1],
     code: match[2],
   }));
@@ -52,7 +52,7 @@ describe('build-with-builder', () => {
   it('rejects skip-vite when renderer output is only a source html shell', () => {
     const outDir = resolve(repoRoot, 'out');
     const backupOutDir = resolve(repoRoot, `.tmp-out-backup-${process.pid}-${Date.now()}`);
-    const tempDir = mkdtempSync(join(tmpdir(), 'aionui-build-skip-vite-test-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'mu-build-skip-vite-test-'));
     const hookPath = join(tempDir, 'hook.cjs');
 
     writeFileSync(
@@ -107,18 +107,16 @@ childProcess.execSync = function mockedExecSync(command) {
 
   it('releases the NSIS output directory before any update repair or uninstall work', () => {
     const script = readFileSync(resolve(repoRoot, 'resources/windows/installer-update-verify.nsh'), 'utf8');
-    const preInit = script.match(/!macro AIONUI_INSTALLER_PREINIT([\s\S]*?)!macroend/)?.[1];
-    const releaseMacro = script.match(/!macro AIONUI_RELEASE_INSTALL_DIR_OUTDIR([\s\S]*?)!macroend/)?.[1];
+    const preInit = script.match(/!macro MU_INSTALLER_PREINIT([\s\S]*?)!macroend/)?.[1];
+    const releaseMacro = script.match(/!macro MU_RELEASE_INSTALL_DIR_OUTDIR([\s\S]*?)!macroend/)?.[1];
 
     expect(preInit).toBeTruthy();
     expect(releaseMacro).toBeTruthy();
     expect(releaseMacro).toContain('InitPluginsDir');
     expect(releaseMacro).toContain('SetOutPath "$PLUGINSDIR"');
     expect(releaseMacro).not.toContain('SetOutPath $INSTDIR');
-    expect(preInit).toContain('!insertmacro AIONUI_RELEASE_INSTALL_DIR_OUTDIR');
-    expect(preInit!.indexOf('AIONUI_RELEASE_INSTALL_DIR_OUTDIR')).toBeLessThan(
-      preInit!.indexOf('AIONUI_SESSION_BEGIN')
-    );
+    expect(preInit).toContain('!insertmacro MU_RELEASE_INSTALL_DIR_OUTDIR');
+    expect(preInit!.indexOf('MU_RELEASE_INSTALL_DIR_OUTDIR')).toBeLessThan(preInit!.indexOf('MU_SESSION_BEGIN'));
   });
 
   it('uses install-directory ownership checks in the shared Windows NSIS include', () => {
@@ -128,17 +126,17 @@ childProcess.execSync = function mockedExecSync(command) {
     expect(script).toContain('$$ownedPrefix');
     expect(script).toContain('StartsWith($$ownedPrefix');
     expect(script).toContain('[System.IO.Path]::GetFullPath($$path)');
-    expect(script).not.toContain("Name -ieq '${AIONUI_APP_EXECUTABLE_FILENAME}'");
+    expect(script).not.toContain("Name -ieq '${MU_APP_EXECUTABLE_FILENAME}'");
   });
 
   it('records installer self-lock diagnostics when Restart Manager finds no locking process', () => {
     const script = readFileSync(resolve(repoRoot, 'resources/windows/installer-process-control.nsh'), 'utf8');
     const queryScript = readFileSync(resolve(repoRoot, 'resources/windows/support/query-lockers.ps1'), 'utf8');
-    const captureMacro = script.match(/!macro AIONUI_CAPTURE_FAILED_PATH_LOCKERS[\s\S]*?!macroend/)?.[0];
+    const captureMacro = script.match(/!macro MU_CAPTURE_FAILED_PATH_LOCKERS[\s\S]*?!macroend/)?.[0];
 
-    expect(script).toContain('aionui-query-lockers.ps1');
-    expect(captureMacro).toContain('AIONUI_QUERY_LOCKERS');
-    expect(captureMacro).not.toContain('AIONUI_QUERY_LOCKERS_INLINE_LEGACY');
+    expect(script).toContain('mu-query-lockers.ps1');
+    expect(captureMacro).toContain('MU_QUERY_LOCKERS');
+    expect(captureMacro).not.toContain('MU_QUERY_LOCKERS_INLINE_LEGACY');
     expect(queryScript).toContain('$CurrentOutDir');
     expect(queryScript).toContain('$script:installerSelfLock');
     expect(queryScript).toContain("'installer-self-lock'");
@@ -152,14 +150,14 @@ childProcess.execSync = function mockedExecSync(command) {
     const messages = readFileSync(resolve(repoRoot, 'resources/windows/installer-messages.nsh'), 'utf8');
 
     const retryFailureBranch = script.match(
-      /\$\{If\} \$\{Errors\}\s+([\s\S]*?)\$\{Else\}\s+!insertmacro AIONUI_LOG_UNINSTALLER_REPAIR "after-copy-retry"/
+      /\$\{If\} \$\{Errors\}\s+([\s\S]*?)\$\{Else\}\s+!insertmacro MU_LOG_UNINSTALLER_REPAIR "after-copy-retry"/
     )?.[1];
 
     expect(retryFailureBranch).toBeTruthy();
     expect(retryFailureBranch).toContain('copy-failed-using-bundled');
-    expect(retryFailureBranch).toContain('$AionUiBundledUninstaller');
+    expect(retryFailureBranch).toContain('$MuBundledUninstaller');
     expect(retryFailureBranch).not.toContain('MessageBox');
-    expect(retryFailureBranch).not.toContain('AIONUI_MSG_UNINSTALLER_LOCKED');
+    expect(retryFailureBranch).not.toContain('MU_MSG_UNINSTALLER_LOCKED');
     expect(messages).not.toContain('existing uninstaller is locked');
   });
 
@@ -171,10 +169,10 @@ childProcess.execSync = function mockedExecSync(command) {
     for (const file of files) {
       const source = readFileSync(resolve(resourcesDir, file), 'utf8');
       source.split(/\r?\n/).forEach((line, index) => {
-        if (line.includes('!macro AIONUI_FAIL ')) {
+        if (line.includes('!macro MU_FAIL ')) {
           offenders.push(`${file}:${index + 1}: defines non-reportable coded failure macro`);
         }
-        if (line.includes('!insertmacro AIONUI_FAIL ')) {
+        if (line.includes('!insertmacro MU_FAIL ')) {
           offenders.push(`${file}:${index + 1}: uses non-reportable coded failure macro`);
         }
         if (/^\s*Abort\b/.test(line)) {
@@ -197,7 +195,7 @@ childProcess.execSync = function mockedExecSync(command) {
       ['installer-errors.nsh', [/MessageBox MB_OK\|MB_ICONSTOP/]],
       [
         'installer-process-control.nsh',
-        [/AIONUI_MSG_FILE_OR_FOLDER_IN_USE_ZH/, /\$\(appRunning\)/, /AIONUI_MSG_CLOSE_OR_REMOVE_PREVIOUS_ZH/],
+        [/MU_MSG_FILE_OR_FOLDER_IN_USE_ZH/, /\$\(appRunning\)/, /MU_MSG_CLOSE_OR_REMOVE_PREVIOUS_ZH/],
       ],
     ]);
 
@@ -222,12 +220,12 @@ childProcess.execSync = function mockedExecSync(command) {
   it('routes app-cannot-be-closed cancellation through E1003 instead of quitting silently', () => {
     const script = readFileSync(resolve(repoRoot, 'resources/windows/installer-process-control.nsh'), 'utf8');
     const cannotCloseBranch = script.match(
-      /AIONUI_MSG_CLOSE_OR_REMOVE_PREVIOUS_ZH[\s\S]*?IDRETRY aionui_wait_for_close([\s\S]*?)\$\{Else\}/
+      /MU_MSG_CLOSE_OR_REMOVE_PREVIOUS_ZH[\s\S]*?IDRETRY mu_wait_for_close([\s\S]*?)\$\{Else\}/
     )?.[1];
 
     expect(cannotCloseBranch).toBeTruthy();
-    expect(cannotCloseBranch).toContain('AIONUI_E_INSTALL_DIR_REMOVE_OR_LOCKED');
-    expect(cannotCloseBranch).toContain('AIONUI_FAIL_REPORTABLE_BILINGUAL_DIAGNOSTICS');
+    expect(cannotCloseBranch).toContain('MU_E_INSTALL_DIR_REMOVE_OR_LOCKED');
+    expect(cannotCloseBranch).toContain('MU_FAIL_REPORTABLE_BILINGUAL_DIAGNOSTICS');
     expect(cannotCloseBranch).not.toMatch(/^\s*Quit\s*$/m);
   });
 
@@ -270,8 +268,8 @@ childProcess.execSync = function mockedExecSync(command) {
       expectedArch: 'x64',
       expectedPlatform: 'darwin',
     },
-  ])('prepares AionCore and mu for $expectedArch with args $args', ({ args, expectedArch, expectedPlatform }) => {
-    const tempDir = mkdtempSync(join(tmpdir(), 'aionui-build-test-'));
+  ])('prepares the backend and mu for $expectedArch with args $args', ({ args, expectedArch, expectedPlatform }) => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'mu-build-test-'));
     const hookPath = join(tempDir, 'hook.cjs');
     const callsPath = join(tempDir, 'prepare-calls.json');
     const harnessCallsPath = join(tempDir, 'harness-calls.json');
@@ -289,24 +287,24 @@ const path = require('node:path');
 const originalLoad = Module._load;
 
 function recordPrepareCall(options) {
-  const callsPath = process.env.AIONUI_PREPARE_CALLS_FILE;
+  const callsPath = process.env.MU_PREPARE_CALLS_FILE;
   const calls = fs.existsSync(callsPath) ? JSON.parse(fs.readFileSync(callsPath, 'utf8')) : [];
   calls.push(options ?? null);
   fs.writeFileSync(callsPath, JSON.stringify(calls));
-  return { prepared: true, dir: 'mock-bundled-aioncore', sourceType: 'mock' };
+  return { prepared: true, dir: 'mock-bundled-backend', sourceType: 'mock' };
 }
 
 Module._load = function patchedLoad(request, parent, isMain) {
-  if (request === './prepareAioncore' || request.endsWith('/prepareAioncore')) {
+  if (request === './prepareBackend' || request.endsWith('/prepareBackend')) {
     return recordPrepareCall;
   }
 
-  if (request.endsWith('packages/shared-scripts/src/prepare-aioncore.js')) {
-    return { prepareAioncore: recordPrepareCall };
+  if (request.endsWith('packages/shared-scripts/src/prepare-backend.js')) {
+    return { prepareBackend: recordPrepareCall };
   }
 
-  if (request === './resolveAioncoreVersion.js' || request.endsWith('/resolveAioncoreVersion.js')) {
-    return { resolveAioncoreVersion: () => 'v-test' };
+  if (request === './resolveBackendVersion.js' || request.endsWith('/resolveBackendVersion.js')) {
+    return { resolveBackendVersion: () => 'v-test' };
   }
 
   return originalLoad.call(this, request, parent, isMain);
@@ -328,7 +326,7 @@ function ensurePlaceholder(relativePath) {
 const originalExecFileSync = childProcess.execFileSync;
 childProcess.execFileSync = function mockedExecFileSync(file, args, options) {
   if (Array.isArray(args) && String(args[0]).endsWith('bundle-harness.mjs')) {
-    const callsPath = process.env.AIONUI_HARNESS_CALLS_FILE;
+    const callsPath = process.env.MU_HARNESS_CALLS_FILE;
     const calls = fs.existsSync(callsPath) ? JSON.parse(fs.readFileSync(callsPath, 'utf8')) : [];
     calls.push(args.slice(1));
     fs.writeFileSync(callsPath, JSON.stringify(calls));
@@ -367,8 +365,8 @@ childProcess.execSync = function mockedExecSync(command) {
         encoding: 'utf8',
         env: {
           ...process.env,
-          AIONUI_PREPARE_CALLS_FILE: callsPath,
-          AIONUI_HARNESS_CALLS_FILE: harnessCallsPath,
+          MU_PREPARE_CALLS_FILE: callsPath,
+          MU_HARNESS_CALLS_FILE: harnessCallsPath,
           NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${hookPath}`].filter(Boolean).join(' '),
         },
       });
@@ -380,6 +378,12 @@ childProcess.execSync = function mockedExecSync(command) {
         expect(installUtil).toContain('mu-bundled-uninstaller override source');
         expect(installUtil).toContain('$PLUGINSDIR\\mu-fixed-uninstaller.exe');
         expect(installUtil.match(/mu-bundled-uninstaller override source/g)).toHaveLength(1);
+        // Both uninstaller ExecWait lines pass the installer's session, under the names
+        // installer-observability.nsh declares, whichever earlier patch node_modules carried.
+        expect(installUtil.match(/--installer-log=/g)).toHaveLength(2);
+        expect(
+          installUtil.match(/--installer-log="\$MuSessionLogPath" --installer-session="\$MuSessionId" _\?=/g)
+        ).toHaveLength(2);
       }
 
       const calls = JSON.parse(readFileSync(callsPath, 'utf8')) as Array<{ arch?: string } | null>;

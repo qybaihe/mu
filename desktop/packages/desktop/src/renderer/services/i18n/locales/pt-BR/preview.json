@@ -157,7 +157,25 @@
     "tabLimitReached": "Limite de abas atingido ({{count}}). A aba mais antiga foi reutilizada.",
     "agentFirstUseTitle": "O agente está usando o navegador integrado",
     "agentFirstUseContent": "Ele pode abrir páginas, clicar e ler conteúdo neste painel. Seu login é preservado.",
-    "agentFirstUseAction": "Abrir configurações"
+    "agentFirstUseAction": "Abrir configurações",
+    "pick": {
+      "start": "Selecionar um elemento para mostrar ao mu",
+      "stop": "Parar de selecionar",
+      "hint": "Clique em um elemento para adicioná-lo à mensagem · ↑ seleciona o elemento pai · Esc cancela",
+      "added": "{{name}} adicionado à mensagem",
+      "failed": "Não é possível selecionar elementos desta página"
+    },
+    "screenshot": {
+      "send": "Mostrar ao mu como esta página está agora",
+      "chip": "Captura de {{site}}",
+      "added": "Captura de {{site}} adicionada à sua mensagem",
+      "failed": "Não é possível capturar esta página agora"
+    },
+    "console": {
+      "send": "Enviar ao mu os erros e avisos do console da página",
+      "chip": "Console de {{site}}",
+      "added": "Console de {{site}} adicionado à sua mensagem"
+    }
   },
   "saveConflict": "Não foi possível salvar: este arquivo mudou no disco depois que você o abriu. Recarregue para ver as outras alterações — suas edições continuam aqui, não salvas.",
   "persistQuotaExceeded": "O armazenamento local está cheio, então as abas abertas deste projeto não podem mais ser lembradas. Feche algumas abas ou limpe os dados do site.",
@@ -319,5 +337,31 @@
   "saveFailedWithDetail": "Falha ao salvar: {{detail}}",
   "zoomActualSize": "Redefinir zoom",
   "zoomFit": "Ajustar",
-  "zoomFitTooltip": "Ajustar à largura do painel"
+  "zoomFitTooltip": "Ajustar à largura do painel",
+  "gallery": {
+    "label": "Imagem {{name}}",
+    "previous": "Imagem anterior",
+    "next": "Próxima imagem",
+    "position": "{{index}} de {{count}}",
+    "gone": "Este arquivo não está mais lá. Pode ter sido movido ou excluído.",
+    "tooLarge": "Esta imagem é grande demais para mostrar aqui ({{size}}). Abra-a no aplicativo padrão."
+  },
+  "reveal": {
+    "mac": "Mostrar no Finder",
+    "windows": "Mostrar no Explorador de Arquivos",
+    "linux": "Mostrar na pasta"
+  },
+  "diffComment": {
+    "add": "Comentar nesta linha",
+    "placeholder": "O que o mu deve mudar aqui?",
+    "save": "Adicionar comentário",
+    "hint": "Os comentários vão com sua próxima mensagem",
+    "remove": "Remover comentário"
+  },
+  "diffHunk": {
+    "stage": "Preparar esta alteração",
+    "unstage": "Remover esta alteração da preparação",
+    "stale": "O arquivo mudou depois que este diff foi mostrado, então nada foi alterado. Aqui está como ele está agora.",
+    "failed": "O Git não conseguiu fazer isso: {{reason}}"
+  }
 }

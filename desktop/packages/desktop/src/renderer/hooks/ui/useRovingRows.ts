@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { FocusEvent, KeyboardEvent } from 'react';
 

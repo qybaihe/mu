@@ -15,7 +15,7 @@ import {
 } from '@/common/utils/nativeHost/index.ts';
 
 /**
- * What only a live host says, in the view's `host` part: the judgment layer's frames and the run's edges for the Jev
+ * What only a live host says, in the view's `host` part: the judgment layer's frames and the run's edges for the work
  * panel, notices, pi's queue and the session as pi describes it; and mu's permission question, from its announcement
  * to its dialog. None of it is in a session file.
  */
@@ -58,7 +58,7 @@ const userMessage = (text: string, timestamp: number): PiRecord => ({
   message: { role: 'user', content: [{ type: 'text', text }], timestamp },
 });
 
-describe('the activity the Jev panel reads', () => {
+describe('the activity the work panel reads', () => {
   it('holds every frame of the recorded conversation and the run’s edges, none of it in the file', () => {
     const view = reduceAll(records);
     const frames = records.flatMap((record) => {
@@ -247,6 +247,28 @@ describe('notices', () => {
     expect(
       reduceAll([notify(free, 'info'), frame('judge.notice', { code: 'free_jev', message: free })]).host.notices
     ).toEqual([{ id: 'n1', level: 'info', text: free, code: 'free_jev' }]);
+  });
+
+  it('says once, by code, as a warning, that OpenAI’s decision model has no usable key', () => {
+    const line = 'mu: OpenAI rejected the decision model’s API key, so the next judge answers.';
+    const view = reduceAll([
+      frame('judge.notice', { code: 'openai_key', reason: 'rejected', message: line }),
+      notify(line, 'warning'),
+      frame('judge.notice', { code: 'openai_key', reason: 'missing', message: 'again' }),
+    ]);
+    expect(view.host.notices).toEqual([
+      { id: 'n1', level: 'warning', text: line, code: 'openai_key', reason: 'rejected' },
+    ]);
+  });
+
+  it('says once, by code, that Laya is gone and which judge is in its place', () => {
+    const line = 'mu: Laya is no longer built in, so your judge is now mude 1.0.';
+    const view = reduceAll([
+      frame('judge.notice', { code: 'laya_removed', judge: 'mude', message: line }),
+      notify(line, 'info'),
+      frame('judge.notice', { code: 'laya_removed', judge: 'mude', message: line }),
+    ]);
+    expect(view.host.notices).toEqual([{ id: 'n1', level: 'info', text: line, code: 'laya_removed', judge: 'mude' }]);
   });
 
   it('keeps the latest notices only', () => {

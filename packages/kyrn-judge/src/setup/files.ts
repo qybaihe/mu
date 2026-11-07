@@ -39,6 +39,14 @@ export function backupStamp(now: Date): string {
 	return `${now.getFullYear()}-${two(now.getMonth() + 1)}-${two(now.getDate())}T${two(now.getHours())}-${two(now.getMinutes())}-${two(now.getSeconds())}`;
 }
 
+const holdsNothing = (file: string): boolean => {
+	try {
+		return /^\s*(\{\s*\})?\s*$/.test(readFileSync(file, "utf8"));
+	} catch {
+		return false;
+	}
+};
+
 /** One run's backup folder, made when the first file is copied into it. */
 export class Backups {
 	private readonly root: string;
@@ -51,9 +59,13 @@ export class Backups {
 		this.stamp = backupStamp(now);
 	}
 
-	/** Copies `file` the first time it is about to change in this run. A file that does not exist has nothing to keep. */
+	/**
+	 * Copies `file` the first time it is about to change in this run. A file that does not exist, or holds nothing (empty,
+	 * or the `{}` pi writes to auth.json when it first starts), has nothing to keep: a first setup makes no backup folder
+	 * and does not say it kept the previous files.
+	 */
 	save(file: string): void {
-		if (this.saved.has(file) || !existsSync(file)) return;
+		if (this.saved.has(file) || !existsSync(file) || holdsNothing(file)) return;
 		const folder = this.folder();
 		const copy = join(folder, basename(file));
 		copyFileSync(file, copy);
@@ -233,6 +245,20 @@ export function tiersOf(config: Record<string, unknown> | undefined): string[] {
 
 export function withTiers(config: Record<string, unknown>, tiers: readonly string[]): Record<string, unknown> {
 	return { ...config, tiers: [...tiers] };
+}
+
+/** Whether `mu.json` turns the judge off: the default mode "off", with which no decision point asks it. */
+export function judgeOff(config: Record<string, unknown> | undefined): boolean {
+	return isRecord(config?.modes) && config.modes.default === "off";
+}
+
+/** `config` with the judge off (`modes.default` "off"), or on again: that "off" taken out, the default back to active. */
+export function withJudge(config: Record<string, unknown>, on: boolean): Record<string, unknown> {
+	const { default: _default, ...modes } = isRecord(config.modes) ? config.modes : {};
+	if (!on) return { ...config, modes: { default: "off", ...modes } };
+	if (!judgeOff(config)) return config;
+	const { modes: _modes, ...rest } = config;
+	return Object.keys(modes).length > 0 ? { ...rest, modes } : rest;
 }
 
 // ---------------------------------------------------------------------------------------------------------------

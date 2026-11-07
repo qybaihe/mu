@@ -1,13 +1,12 @@
 import {
+  BachelorCap,
   Book,
-  Brain,
   Browser,
   Code,
   Comments,
   Communication,
   Cpu,
   DocDetail,
-  Gavel,
   Inbox,
   Info,
   LinkCloud,
@@ -25,6 +24,7 @@ import {
   Tool,
   Toolkit,
 } from '@icon-park/react';
+import JudgeIcon from '@/renderer/components/brand/JudgeIcon';
 
 /**
  * The settings rail: six groups of short pages. No page holds more than twelve rows: a list that would run longer is
@@ -107,7 +107,8 @@ export type SettingsPage = {
 const DETAIL_ICONS: Record<DetailArea, unknown> = {
   input: Login,
   context: DocDetail,
-  memory: Brain,
+  // Lessons get a mark of their own: the brain is the model's (the model chips).
+  memory: BachelorCap,
   tools: Tool,
   safety: Protect,
   turn: Refresh,
@@ -187,7 +188,7 @@ export const SETTINGS_PAGES = [
     path: 'judges',
     route: '/settings/judges',
     labelKey: 'mu.sections.judges',
-    Icon: Gavel,
+    Icon: JudgeIcon,
   },
   {
     id: 'judge-order',

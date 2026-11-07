@@ -8,7 +8,7 @@
  * Pure display-layer grouping for the Repositories section: fold linked worktrees
  * under the primary clone they belong to, VS Code style. No I/O, no React.
  *
- * Contract it consumes (aioncore `scm/types.rs`, frozen by that repo's
+ * Contract it consumes (the backend's `scm/types.rs`, frozen by that repo's
  * `wire_test.rs`): each `ScmRepository` may carry
  *
  *  - `is_worktree` — omitted (⇒ `undefined`) when false; true only for a linked

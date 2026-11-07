@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { Server } from "node:http";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { openaiChatGPTOAuth } from "../src/auth/oauth/openai-chatgpt.ts";
 import type { OAuthCredential, ProviderAuthInteraction } from "../src/auth/types.ts";
 
@@ -67,7 +68,16 @@ function connectedCredential(): OAuthCredential {
 }
 
 describe("OpenAI ChatGPT OAuth", () => {
+	beforeEach(() => {
+		// These tests supply manual callbacks; avoid competing with a real login's fixed port.
+		const listen = Server.prototype.listen;
+		vi.spyOn(Server.prototype, "listen").mockImplementation(function (this: Server, ...args: unknown[]) {
+			return Reflect.apply(listen, this, [0, ...args.slice(1)]) as Server;
+		});
+	});
+
 	afterEach(() => {
+		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	});
 
@@ -106,6 +116,23 @@ describe("OpenAI ChatGPT OAuth", () => {
 			clientId: "oaiapp_issued",
 			scopes: REQUIRED_SCOPE.split(" "),
 		});
+	});
+
+	it("uses the app's agent name as the name hint", async () => {
+		let authorizeUrl: URL | undefined;
+		stubTokenEndpoint(tokenResponse());
+
+		await openaiChatGPTOAuth.login(
+			loginInteraction({
+				callbackClientId: "oaiapp_issued",
+				onAuthorize: (url) => {
+					authorizeUrl = url;
+				},
+			}),
+			{ getDeviceId: () => DEVICE_ID, agentName: "my-app" },
+		);
+
+		expect(authorizeUrl?.searchParams.get("agent_name_hint")).toBe("my-app");
 	});
 
 	it("rejects registration without an issued client ID", async () => {

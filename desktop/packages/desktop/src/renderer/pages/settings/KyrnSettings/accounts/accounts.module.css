@@ -154,3 +154,58 @@
   color: var(--text-secondary);
   overflow-wrap: anywhere;
 }
+
+.problemActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* An account's models, each with a box: whether the model menus offer it. */
+.modelsFresh {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--color-fill-1);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.modelsActions {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.modelsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 4px 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.modelName {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.modelTag {
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--color-fill-2);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.modelId {
+  margin-left: 6px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}

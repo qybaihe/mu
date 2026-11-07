@@ -12,13 +12,19 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 | `bg_output` | 可选 `id`、`since`、`wait_for`、`timeout` | 只返回上次读取之后的新输出和状态；不给 `id` 就列出全部任务；给 `wait_for`（正则）或 `timeout` 时阻塞到“出现匹配行 / 任务结束 / 超时 / 被中断”，模型不用循环轮询 |
 | `bg_stop` | `id` | 结束任务以及它启动的所有进程 |
 
-另有 `/jobs`、`/jobs stop <id|all>`，终端状态栏显示运行中的任务数。
+另有 `/jobs`、`/jobs stop <id|all>`，终端状态栏显示运行中的任务数。用户自己也能起一个：`/jobs start [--name <标签>] <命令>`，在会话目录里像 `bg_start` 一样跑（桌面端发送框的「运行」按钮就是发这条，跑 package.json 的脚本）。这是用户自己的命令，不过风险把关，就像用户在终端里敲的命令一样；任务结束时照常告诉模型，但写明是“用户的后台任务”，这样用户问“测试为什么挂了”时模型能去读它的输出。
 
 做法和理由：
 
 - **同一个 shell。** 复用 pi 的 `getShellConfig` / `getPowerShellConfig`（`/bin/bash`、Windows 上的 Git Bash、从 stdin 取命令的旧版 WSL 启动器），并读取 `settings.json` 的 `shellPath`、`shellCommandPrefix`（项目级设置只在项目受信任时生效：仓库不能指定要运行的二进制）。Windows 上只有当 `powershell` 是唯一启用的 shell 工具时才用 PowerShell，并带上 pi 的 UTF-8 前缀。环境变量与前台一致（agent 的 `bin` 目录排在 PATH 最前）。
 - **输出两份。** 环形缓冲（默认 262144 字符，只留最新，去掉颜色码，回车换成换行）给模型读；日志文件留全部原始字节，默认在 `~/.mu/jobs/<会话 id>/bg-N.log`，单个日志 50 MB 封顶，7 天前的会话目录在下次启动任务时清掉。`since` 早于缓冲起点时，结果里写明丢了多少字符、日志在哪。
-- **杀的是进程树。** POSIX 上 shell 以 `detached` 启动，自成进程组：先向整组发 SIGTERM，`killGraceMs`（默认 3 秒）后还活着就 SIGKILL。Windows 上是 `taskkill /T /PID`，之后 `taskkill /T /F /PID`，用 `System32` 下的绝对路径。命令里自己写了 `&` 的情况（`server & echo ok`：shell 退出了，子进程还在组里）会标成 `lingering`，`bg_stop` 和会话结束时照样清理。
+- **杀的是进程树。**
+  - POSIX：shell 以 `detached` 启动，自成进程组。先向整组发 SIGTERM，`killGraceMs`（默认 3 秒）后还活着就 SIGKILL。
+  - Windows 用 Git Bash（或其他 MSYS bash）时，不能只靠 `taskkill /T`，它按父进程号找子进程。带 `#!` 行的脚本（npm、npx、pnpm、yarn）经 `/usr/bin/env` 执行；MSYS 的 exec 会起一个新的 Windows 进程、结束旧的，于是 npm 的父进程已经退出，`taskkill /T` 从 shell 找不到它，也找不到它下面的 cmd.exe 和脚本。2026-11-05 之前，停掉的 `npm run` 会在项目目录里继续跑，退出应用后也一样（#307 没修好的 Windows e2e EBUSY 就是它）。
+  - 现在的做法：MSYS 在这些 exec 之间保留自己的进程组，npm 的 node.exe 这类原生程序也在组里，Git 自带的 `ps` 能列出每个的 Windows pid。job 的 bash 启动时先把自己的 pid（就是组号）写到日志旁的 `bg-N.group`。停止时用一条 `taskkill /T /F` 结束 shell 和组里的每个进程，原生程序下面的 cmd.exe 和脚本也一起结束。不先“请求”：Windows 上不加 `/F` 结束不了控制台程序。
+  - Windows 用 PowerShell 或旧版 WSL 启动器时，仍是 `taskkill /T /PID`，之后 `taskkill /T /F /PID`。这两种情况下进程树是完整的。
+  - 都用 `System32` 下的绝对路径。
+  - 命令里自己写了 `&` 的情况（`server & echo ok`：shell 退出了，子进程还在组里）会标成 `lingering`，`bg_stop` 和会话结束时照样清理。Windows 上用 Git Bash 时也一样：shell 退出时查一次 MSYS 的组。
 - **不会悄悄活过会话。** `session_shutdown`（退出、reload、新建、恢复、分叉）时全部终止；不是退出的情况下会告诉用户停了几个。进程不经 `session_shutdown` 直接退出时，`process.on("exit")` 里同步 SIGKILL 兜底。
 - **风险闸门一视同仁。** `guard.ts` 现在检查 `bash` 和 `bg_start` 两个工具的 `command`：危险命令不会因为放到后台就变安全。约束闸门（`constraints.ts`）的 `MUTATING` 里本来就有 `bg_start`，工具名保持不变。
 - **准入控制一视同仁。** `bg_output` 的结果在 `details.command` 里带着任务的命令，`admission.ts` 用它来描述这次调用。于是后台跑的 `vitest` 长日志同样走测试日志策略（`testLog: "rules" | "jev"`），其他长输出走分块分类。输出前有一行“不可信数据”的标注。
@@ -32,10 +38,10 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 
 - `now`：作为 steer 消息插进当前回合；`next_turn`：随下一条用户消息送达；`drop`：不说。
 - 送给判定器的 `event` 只有一行事实（任务 id、命令、退出码、时长），不含输出。送给模型的消息同样只有事实加“用 `bg_output` 读”；`watch` 命中时附上那一行（截到 300 字符，标明不可信）。
-- 两种情况不通知：任务是模型或用户自己停的；任务结束时模型正阻塞在这个任务的 `bg_output` 里。
+- 两种情况不通知：任务是模型或用户自己停的；任务结束或 `watch` 命中时模型正阻塞在这个任务的 `bg_output` 里（那一行会出现在它自己的输出里）。
 - `watch` 命中一次后解除，模型读过输出再重新生效，所以一个 `error` 正则不会刷屏。
 
-为此对路由器做了最小扩展（`notify.ts`，通过 `runtime.notify` 暴露）：调用方可以给出 `content`（模型读到的文字）、`unjudged`（没有判定时怎么办）、`wake`。预算提醒保持原样：没有判定就不说。后台任务传 `unjudged: "next_turn"`：判定关闭、shadow 或判定器不可用时，下一回合告诉模型，永不打断。这是“没有判定器时的确定性行为”。
+为此对路由器做了最小扩展（`notify.ts`，通过 `runtime.notify` 暴露）：调用方可以给出 `content`（模型读到的文字）、`unjudged`（没有判定时怎么办）、`wake`。`notify.routing` 默认是 shadow：判定照问照记，但不等它，由事件源自己的规则投递。后台任务和预算提醒都传 `unjudged: "now"`（选项 `features.background.unjudged`、`features.notify.unjudged`）：判定关闭、shadow 或判定器不可用时，立刻作为 steer 告诉模型。原来的 `next_turn` 要等下一次运行开始才读到，单次运行（`mu --print`）里永远读不到：评测里 22 次 Jev 判定有 18 次就这样落空了。这是“没有判定器时的确定性行为”。
 
 ### 选项（`features.background`）
 
@@ -56,6 +62,7 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 - **HTML 转文字，零依赖。** 容错的标签扫描器建一棵轻量树；丢掉 script、style、noscript、template、svg、nav、footer、aside、form、iframe、button、select 和隐藏元素（`hidden`、`aria-hidden`、`display:none`：隐藏文字是提示注入最常见的藏身处）；保留标题、`#` 级标题、段落、列表（含嵌套）、代码块、表格（每行 `| a | b |`）、引用、图片的 alt。有 `<main>` / `role=main` / `<article>` 且占正文四成以上就只取它。链接只在正文里写成 `文字 (网址)`；`<header>` 和“几乎全是链接的盒子”（≥5 个链接且链接文字占七成：侧边栏、菜单，很多站点并不写 `<nav>`）只留文字。JSON 和纯文本原样返回。
 - 页面文字很少而脚本很多时，明说“这个页面要跑脚本，请用 `browse`”。
 - 结果第一行是标题，第二行是最终地址和事实（状态码、类型、编码、字节数、重定向次数），然后是与 `browse` **同一句**不可信标注（从 `browser.ts` 导出的 `UNTRUSTED`），再是正文，超出 `max_length` 时写明截到哪。
+- **截掉的后半页留着。** 模型有 `recall` 时，截断的页面全文存进会话的临时目录（只有用户能读，`0600`），会话里记一条 `kyrn.full-output`，截断说明改成 `recall({ id, offset })` 取后面的内容。这样不用重新抓一遍（页面可能已经变了），也不用把整页拉进上下文。后半页模型从没看过，也没筛过，所以 `recall` 取回时先过注入筛查（`tool.injection`），前面照样带不可信标注。没有 `recall` 时，说明仍是「用 max_length 要更多」。
 
 ## 3. `web_search`
 
@@ -78,6 +85,14 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 
 360 的结果偏中文社区（CSDN、掘金、博客园），英文技术查询很少出现 Stack Overflow、MDN、GitHub。这是现在的真实质量，不是解析问题。
 
+### Tavily（有密钥时）
+
+设置了环境变量 `TAVILY_API_KEY`（也可以写在 `.env` 里）时，`web_search` 先问 Tavily（`POST https://api.tavily.com/search`，`Authorization: Bearer <key>`，`search_depth: "basic"`），上面这些源作为后备：401（密钥无效）、429（限流）、432（套餐额度用完）、5xx 都记为 HTTP 错误，接着问下一个源。`features.web.search` 设为 `tavily` 而没有密钥时，记一条“TAVILY_API_KEY is not set”并改用内置源；设为 `tavily` 且 `searchFallback: false` 时只问 Tavily。Tavily 的结果不做诱饵检查（有密钥的 API 不会给机器人返回诱饵，而且中文查询可能得到切题的英文结果）。
+
+`web_fetch` 在本机读不到（超时、连接被重置等网络错误）或读不出（403、429、451、5xx，或页面要跑脚本才有文字）时，若有密钥，改用 Tavily 的 `/extract`（`extract_depth: "basic"`，`format: "markdown"`）读同一个网址，结果第一行写明“read through Tavily”。被地址策略拒绝的网址、localhost、内网字面地址、用户中断，以及开了 `allowPrivate` 时，一律不交给 Tavily。
+
+密钥每次调用时从环境读取，只放在请求头里，不出现在结果、展示事件或错误信息中（传输错误里若带了密钥会先替换掉）。
+
 ### 选项（`features.web`）
 
 `search` "so" · `searchFallback` true · `maxChars` 20000 · `timeoutMs` 20000 · `maxBytes` 2000000 · `maxRedirects` 5 · `allowLoopback` true · `allowPrivate` false。
@@ -95,10 +110,16 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 - `test/web-search.test.ts` 14 个：必应（HTML 与 RSS）、360、搜狗、通用 / SearXNG 解析器，跟踪跳转还原，验证页，相关性检查（用实测到的诱饵结果），源的回退顺序和原因；经完整会话：读本机开发服务器、截断、重定向到内网被拒、`allowLoopback: false`、用本地假 SearXNG 搜索、全部失败时的报错。
 - `test/manifest.test.ts`、`extension.test.ts`、`features.test.ts`、`admission*.test.ts`、`browser.test.ts`、`catalog.test.ts` 通过；`npm run check` 通过。
 - **一次真实联网检查**（经由上述代理网络）：`web_fetch` 的读取器读 `https://www.runoob.com/nodejs/nodejs-process.html`：200，132908 字节，187 毫秒，标题“Node.js 多进程 | 菜鸟教程”，24922 字符文字；`web_search` 默认链查 “vitest mock fetch example”：360 应答，941 毫秒，6 条结果，5 条切题（CSDN 的 Vitest mock 文章），1 条是 360 翻译的小组件（之后已在解析器里过滤 `*.so.com` 小组件，并给链接盒子去掉网址；这两处修改只有离线测试，没有再联网）。
+- **Tavily 的真实调用**（2026-10-26，npm 上的 mu-agent 0.2.13，代理为 Nebius Token Factory 上的 Nemotron 3 Super）：`web_search` 查 “datetime.utcnow() deprecated Python docs recommendation”，Tavily 应答，8 条结果，切题；`web_fetch` 读一个有机器人检查的页面（403，要跑脚本才有文字），改用 Tavily 的 `/extract` 读到了 40437 字符正文，结果第一行写明“read through Tavily”。另用 `tavily.ts` 本身直接调了一次 `/search`（200，5 条结果）和 `/extract`（约 20 万字符，372 毫秒）。
 
 没有验证：
 
-- **没有在 Windows 和 WSL 上运行过。** `taskkill` 的参数拼装、PowerShell 前缀、Git Bash / 旧版 WSL 启动器的命令传递只有按平台参数化的单元测试。Windows 没有进程组，shell 退出后遗留的孙进程 `taskkill /T` 找不到（`lingering` 只在 POSIX 上能发现）；旧版 WSL 的 `bash.exe` 被杀后 Linux 侧子进程是否跟着退出，未知。
+- **Windows 只验证了 Git Bash。** `test/background-windows.test.ts`（2026-11-05 加入，只在 Windows 上跑，CI 的 windows-tests.yml）在 windows-2022 上用真的 Git Bash、node、npm 跑过：
+  - 停掉的 `npm run` 结束了 npm、cmd 和脚本，项目目录能立即删掉；
+  - 会话结束也一样；
+  - `server &` 被标成 `lingering`，会话结束时被结束。
+
+  打包后的桌面应用在 Windows x64 和 arm64 上的 e2e 也通过。PowerShell 前缀和旧版 WSL 启动器仍只有按平台参数化的单元测试；旧版 WSL 的 `bash.exe` 被杀后 Linux 侧子进程是否跟着退出，未知。
 - **没有在“不开隧道的国内直连网络”上测过任何搜索源**，包括必应。上表只说明这台机器上的情况。必应的诱饵结果是它对脚本客户端的反应还是对隧道出口 IP 的反应，没有分清。
 - 解析器的 fixture 是照着观察到的标记手写的，不是保存的真实页面（不提交抓取的页面）。搜索引擎改版会让对应解析器失效；失效时表现为“没有结果”，自动换下一个源。
 - `wait_for` / `watch` 的正则来自模型，限制了长度（300）和被匹配的行长（2000），但没有超时：病态正则仍可能卡住事件循环。

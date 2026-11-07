@@ -1,8 +1,8 @@
 // @ts-check
 // The thinking level picked on the home page, end to end, in the real app on the native host (on by default): mu's
-// default model reasons, the home page's pill opens it to its levels, and "high" picked there is the level the
-// conversation starts with (its chip says it, and the model is asked with `reasoning_effort: high`). The pill shows a
-// level whether or not one was picked: a start without a pick leaves mu's own (checked in the DOM tests, not here).
+// default model reasons, the home page's pill offers its levels under the list, and "high" picked there is the level
+// the conversation starts with (its chip says it, and the model is asked with `reasoning_effort: high`). The pill shows
+// a level whether or not one was picked: a start without a pick leaves mu's own (checked in the DOM tests, not here).
 // Run with `bun run e2e:conversation --native` (every native*.spec.mjs).
 import { expect, test } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
@@ -49,7 +49,7 @@ test('the level picked on the home page is the one the conversation starts with'
   await pill.click();
   const thinker = p.locator(`[data-testid="composer-model-option"][data-value="e2e/${THINKING_MODEL_ID}"]`);
   await expect(thinker).toBeVisible();
-  await thinker.hover();
+  // The levels of the model in use (the default here) sit under the list.
   const high = p.locator('[data-testid="composer-level-option"][data-value="high"]');
   await expect(high).toBeVisible();
   await sleep(400);

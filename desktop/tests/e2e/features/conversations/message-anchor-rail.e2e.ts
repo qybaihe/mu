@@ -27,7 +27,7 @@ type StreamRegistry = {
   >;
 };
 
-const ENABLED_CONVERSATION_KEY = 'aionui:e2e-message-stream-conversation-id';
+const ENABLED_CONVERSATION_KEY = 'mu:e2e-message-stream-conversation-id';
 const SEEDED_HISTORY_PAIRS = 6;
 /**
  * Long enough to overflow the rail on the short window these tests use, so the
@@ -119,8 +119,8 @@ async function openConversationPage(page: Page, targetConversationId: string): P
 async function waitForStreamController(page: Page, targetConversationId: string): Promise<void> {
   await page.waitForFunction(
     (id) => {
-      const registry = (window as typeof window & { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
-        .__AIONUI_E2E_MESSAGE_STREAM__;
+      const registry = (window as typeof window & { __MU_E2E_MESSAGE_STREAM__?: StreamRegistry })
+        .__MU_E2E_MESSAGE_STREAM__;
       return Boolean(registry?.controllers[id]);
     },
     targetConversationId,
@@ -131,8 +131,8 @@ async function waitForStreamController(page: Page, targetConversationId: string)
 async function seedHistory(page: Page, targetConversationId: string, historyPairs: number): Promise<void> {
   await page.evaluate(
     async ({ conversationId, pairs }) => {
-      const registry = (window as typeof window & { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
-        .__AIONUI_E2E_MESSAGE_STREAM__;
+      const registry = (window as typeof window & { __MU_E2E_MESSAGE_STREAM__?: StreamRegistry })
+        .__MU_E2E_MESSAGE_STREAM__;
       const controller = registry?.controllers[conversationId];
       if (!controller) {
         throw new Error(`No E2E stream controller registered for conversation ${conversationId}`);

@@ -9,13 +9,17 @@ import {
 } from "../../decisions/input-preflight.ts";
 import { failOpen, judgedText, type KyrnRuntime, lastTurnStoppedToAsk, recentTurnDigests } from "../runtime.ts";
 import {
+	gearLabel,
 	renderPending,
 	renderVerdict,
+	turnLabel,
 	VERDICT_ENTRY,
 	type VerdictData,
 	type VerdictState,
 	verdictData,
 } from "./preflight-view.ts";
+import { isUnattended } from "./unattended.ts";
+import { judgeDisplayName } from "./welcome.ts";
 
 const LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 type Level = (typeof LEVELS)[number];
@@ -91,14 +95,22 @@ export function hintsFor(
 	return hintIdsFor(outcome, tools, flags).map((id) => PREFLIGHT_HINTS[id]);
 }
 
-function describe(label: string, decision: Decision<PreflightOutcome>): string {
-	const latency = decision.latencyMs === undefined ? "" : ` ${decision.latencyMs}ms`;
+/**
+ * The footer's line after a verdict, in the verdict line's words: "Jev: multi-step task · full effort · 71 ms".
+ * A verdict in shadow mode says it was only recorded, since it changed nothing. With the point off no judge was asked
+ * and the chat shows no verdict, so the footer says nothing either: naming the judge there read as if it had answered.
+ */
+export function statusLine(label: string, decision: Decision<PreflightOutcome>): string | undefined {
+	if (decision.mode === "off") return undefined;
+	const latency = decision.latencyMs === undefined ? "" : ` · ${decision.latencyMs} ms`;
 	const cut = decision.warnings?.length ? ` (${decision.warnings.length} warnings)` : "";
+	const recorded = decision.mode === "shadow" ? " · recorded only" : "";
 	const shown = decision.mode === "active" ? decision.outcome : (decision.judged ?? decision.outcome);
-	if (shown.turnType === "unknown" && !decision.judged) {
-		return `${label} ${decision.mode}: ${decision.reason ?? "no verdict"}${latency}`;
-	}
-	return `${label} ${decision.mode}: ${shown.turnType} -> ${shown.gear}${latency}${cut}`;
+	const said =
+		shown.turnType === "unknown" && !decision.judged
+			? (decision.reason ?? "no verdict")
+			: `${turnLabel(shown.turnType)} · ${gearLabel(shown.gear)}`;
+	return `${judgeDisplayName(label)}: ${said}${latency}${cut}${recorded}`;
 }
 
 const PANEL = "kyrn.preflight";
@@ -154,6 +166,8 @@ export function verdictStateOf(staged: {
  * the judge reads it, the verdict shows there the moment it lands, and only
  * then does the message move into the chat, with the verdict as a line under
  * it that expands to every answer the judge gave.
+ *
+ * An unattended run (`mu --print`, json mode; see `unattended.ts`) is not asked about.
  */
 export function registerPreflight(runtime: KyrnRuntime): void {
 	const options = runtime.options("preflight", {
@@ -163,7 +177,17 @@ export function registerPreflight(runtime: KyrnRuntime): void {
 		hints: true,
 		/** Show the wait and the verdict in the terminal UI. */
 		show: true,
-		waitMs: 4000,
+		/**
+		 * Every wait before a turn ends by this much after the message arrived (`catalog`, `skills` and `memory` have
+		 * the same; the frame 3 s). In 67 judged messages from the owner's network none answered between 3 and 4 s: past
+		 * 3 s the answer came after 4.3 s or not at all, so the fourth second was always waited for nothing.
+		 */
+		waitMs: 3000,
+		/**
+		 * Ask in a `mu --print` or json run too. Off by default: there the verdict buys a hint that is rarely
+		 * followed, for judge tokens and up to `waitMs` before every prompt.
+		 */
+		unattended: false,
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
@@ -287,6 +311,11 @@ export function registerPreflight(runtime: KyrnRuntime): void {
 			// Whatever the last message left on screen or in flight is no longer about the current one.
 			closePanel(ctx);
 			staged = undefined;
+			if (!options.unattended && isUnattended(ctx)) {
+				// The turn is still counted, and what else is asked about the message is asked now.
+				runtime.startTurnWork(event.text);
+				return { action: "continue" as const };
+			}
 			const judged = judgedText(event.text, pi.getCommands());
 			if (judged === undefined) return { action: "continue" as const };
 			const input: PreflightInput = {
@@ -327,7 +356,7 @@ export function registerPreflight(runtime: KyrnRuntime): void {
 				current.decision = decision;
 				runtime.present("preflight.verdict", data(current), turnId);
 				try {
-					runtime.status(describe(runtime.judgeLabel, decision));
+					runtime.status(statusLine(runtime.judgeLabel, decision));
 					// A verdict that outlived its turn has no message left to stand under.
 					if (staged === current) showEntry(current);
 				} catch {

@@ -1,4 +1,4 @@
-# Pre-commit configuration for AionUi
+# Pre-commit configuration for the mu desktop app
 # Ensures local checks match CI checks (TypeScript, Oxlint, Oxfmt)
 #
 # Installation:

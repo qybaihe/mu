@@ -1,11 +1,21 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { KyrnError } from '@/common/kyrn/errors';
 import type { FolderGitStatus } from '@/common/kyrn/gitBridge';
 import { createFolderGit } from '@/process/services/folderGit';
+import { splitPatch } from '@/process/services/folderGit/folderGit';
 import { parseStatus } from '@/process/services/folderGit/parseStatus';
 import { GitNotStarted, gitEnv, gitRunner } from '@/process/services/folderGit/runGit';
 
@@ -91,6 +101,26 @@ describe('git’s environment', () => {
     expect(made.GIT_DIR).toBeUndefined();
     expect(made.GIT_WORK_TREE).toBeUndefined();
     expect(made.git_index_file).toBeUndefined();
+  });
+
+  it('is the person’s own for a commit: only what points elsewhere goes, and prompts stay off', () => {
+    const made = gitEnv(
+      {
+        PATH: '/bin',
+        LANG: 'de_DE.UTF-8',
+        GIT_DIR: '/elsewhere/.git',
+        GIT_AUTHOR_NAME: 'Ada',
+        GIT_SSH_COMMAND: 'ssh -i k',
+      },
+      true
+    );
+    expect(made).toEqual({
+      PATH: '/bin',
+      LANG: 'de_DE.UTF-8',
+      GIT_AUTHOR_NAME: 'Ada',
+      GIT_SSH_COMMAND: 'ssh -i k',
+      GIT_TERMINAL_PROMPT: '0',
+    });
   });
 });
 
@@ -299,5 +329,227 @@ describe.skipIf(!working)('one file’s diff', () => {
     expect(await failure(() => diff({ cwd: dir, path: 'a.txt', area: 'everything' }))).toBe('invalid');
     expect(await failure(() => diff({ cwd: dir, path: 'b2.txt', area: 'staged', from: '../b.txt' }))).toBe('invalid');
     expect(await failure(() => diff({ cwd: temp(), path: 'a.txt', area: 'unstaged' }))).toBe('invalid');
+  });
+});
+
+describe.skipIf(!working)('one hunk of a file’s diff', () => {
+  /** twenty.txt committed with lines 1 to 20, then lines 2 and 18 changed: two hunks, far apart. */
+  const twoHunks = (): string => {
+    const dir = repository();
+    const lines = Array.from({ length: 20 }, (_, index) => `line ${index + 1}`);
+    writeFileSync(join(dir, 'twenty.txt'), `${lines.join('\n')}\n`);
+    git(dir, 'add', 'twenty.txt');
+    git(dir, 'commit', '-q', '-m', 'twenty');
+    lines[1] = 'line 2, changed';
+    lines[17] = 'line 18, changed';
+    writeFileSync(join(dir, 'twenty.txt'), `${lines.join('\n')}\n`);
+    return dir;
+  };
+  const hunksOf = (patch: string) => splitPatch(patch)?.hunks ?? [];
+
+  it('stages one hunk of an unstaged diff and unstages it again, the working tree untouched', async () => {
+    const dir = twoHunks();
+    const { diff, hunk } = folderGit();
+    const before = readFileSync(join(dir, 'twenty.txt'), 'utf8');
+    const unstaged = await diff({ cwd: dir, path: 'twenty.txt', area: 'unstaged' });
+    expect(unstaged.hunks).toBe(true);
+    const [first, second] = hunksOf(unstaged.patch);
+    expect(first).toContain('+line 2, changed');
+    expect(second).toContain('+line 18, changed');
+
+    // The answer is the area's diff as it is now: the other hunk alone.
+    const left = await hunk({ cwd: dir, path: 'twenty.txt', area: 'unstaged', hunk: first });
+    expect(hunksOf(left.patch)).toEqual([second]);
+    const staged = await diff({ cwd: dir, path: 'twenty.txt', area: 'staged' });
+    expect(staged.patch).toContain('+line 2, changed');
+    expect(staged.patch).not.toContain('line 18, changed');
+    expect(readFileSync(join(dir, 'twenty.txt'), 'utf8')).toBe(before);
+
+    const [stagedHunk] = hunksOf(staged.patch);
+    expect((await hunk({ cwd: dir, path: 'twenty.txt', area: 'staged', hunk: stagedHunk })).patch).toBe('');
+    expect(hunksOf((await diff({ cwd: dir, path: 'twenty.txt', area: 'unstaged' })).patch)).toHaveLength(2);
+    expect(readFileSync(join(dir, 'twenty.txt'), 'utf8')).toBe(before);
+  });
+
+  it('changes nothing when the hunk is no longer in the diff, and says so', async () => {
+    const dir = twoHunks();
+    const { diff, hunk } = folderGit();
+    const [first] = hunksOf((await diff({ cwd: dir, path: 'twenty.txt', area: 'unstaged' })).patch);
+    writeFileSync(
+      join(dir, 'twenty.txt'),
+      readFileSync(join(dir, 'twenty.txt'), 'utf8').replace('line 2, changed', 'line 2, again')
+    );
+
+    expect(await failure(() => hunk({ cwd: dir, path: 'twenty.txt', area: 'unstaged', hunk: first }))).toBe('stale');
+    expect((await diff({ cwd: dir, path: 'twenty.txt', area: 'staged' })).patch).toBe('');
+    // A hunk made up by the screen is not one of the diff's either.
+    const madeUp = '@@ -1,1 +1,1 @@\n-line 1\n+rm -rf\n';
+    expect(await failure(() => hunk({ cwd: dir, path: 'twenty.txt', area: 'unstaged', hunk: madeUp }))).toBe('stale');
+  });
+
+  it('offers no hunks for a new file, a rename, a change of mode or an untracked file, and refuses other areas', async () => {
+    const dir = repository();
+    const { diff, hunk } = folderGit();
+    writeFileSync(join(dir, 'new.txt'), 'new\n');
+    git(dir, 'add', 'new.txt');
+    git(dir, 'mv', 'b.txt', 'b2.txt');
+    chmodSync(join(dir, 'a.txt'), 0o755);
+    writeFileSync(join(dir, 'a.txt'), 'one, and more\n');
+    writeFileSync(join(dir, 'loose.txt'), 'loose\n');
+
+    expect((await diff({ cwd: dir, path: 'new.txt', area: 'staged' })).hunks).toBeUndefined();
+    expect((await diff({ cwd: dir, path: 'b2.txt', area: 'staged', from: 'b.txt' })).hunks).toBeUndefined();
+    expect((await diff({ cwd: dir, path: 'loose.txt', area: 'untracked' })).hunks).toBeUndefined();
+    const moded = await diff({ cwd: dir, path: 'a.txt', area: 'unstaged' });
+    if (moded.patch.includes('new mode')) expect(moded.hunks).toBeUndefined();
+
+    const any = '@@ -1 +1 @@\n-x\n+y\n';
+    expect(await failure(() => hunk({ cwd: dir, path: 'loose.txt', area: 'untracked', hunk: any }))).toBe('invalid');
+    expect(await failure(() => hunk({ cwd: dir, path: 'a.txt', area: 'unstaged', hunk: 42 }))).toBe('invalid');
+    expect(await failure(() => hunk({ cwd: dir, path: '../out.txt', area: 'unstaged', hunk: any }))).toBe('invalid');
+  });
+});
+
+describe('a diff taken apart into its hunks', () => {
+  it('splits a content change’s diff at its @@ lines, and none whose header says more', () => {
+    const patch = 'diff --git a/x b/x\nindex 1..2 100644\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n@@ -9 +9 @@\n-c\n+d\n';
+    expect(splitPatch(patch)).toEqual({
+      header: 'diff --git a/x b/x\nindex 1..2 100644\n--- a/x\n+++ b/x\n',
+      hunks: ['@@ -1 +1 @@\n-a\n+b\n', '@@ -9 +9 @@\n-c\n+d\n'],
+    });
+    expect(splitPatch(patch.replace('index 1..2 100644\n', 'old mode 100644\nnew mode 100755\n'))).toBeNull();
+    expect(splitPatch('')).toBeNull();
+  });
+});
+
+describe.skipIf(!working)('staging and committing', () => {
+  /** A home whose git config names a person and does not sign, as a person who commits has. */
+  const person = (): string => {
+    const dir = temp('mu-git-person-');
+    writeFileSync(
+      join(dir, '.gitconfig'),
+      '[user]\n\tname = Ada Lovelace\n\temail = ada@mu.invalid\n[commit]\n\tgpgsign = false\n'
+    );
+    return dir;
+  };
+  const as = (personHome: string) => createFolderGit({ run: gitRunner({ env: { ...env(), HOME: personHome } }) });
+  const areas = async (dir: string) =>
+    Object.fromEntries((await readRepository(dir)).changes.map((change) => [change.path, change.area]));
+
+  it('stages files as they are, a deletion and a new file included, and takes them out again', async () => {
+    const dir = repository();
+    writeFileSync(join(dir, 'a.txt'), 'two\n');
+    rmSync(join(dir, 'b.txt'));
+    writeFileSync(join(dir, 'new [1].txt'), 'n\n');
+    const folder = folderGit();
+    await folder.stage({ cwd: dir, paths: ['a.txt', 'b.txt', 'new [1].txt'] });
+    expect(await areas(dir)).toEqual({ 'a.txt': 'staged', 'b.txt': 'staged', 'new [1].txt': 'staged' });
+
+    await folder.unstage({ cwd: dir, paths: ['a.txt', 'new [1].txt'] });
+    expect(await areas(dir)).toEqual({ 'a.txt': 'unstaged', 'b.txt': 'staged', 'new [1].txt': 'untracked' });
+    // The working tree is as it was.
+    expect(readFileSync(join(dir, 'a.txt'), 'utf8')).toBe('two\n');
+    expect(existsSync(join(dir, 'b.txt'))).toBe(false);
+  });
+
+  it('takes a new file out of the index before the first commit', async () => {
+    const dir = temp();
+    git(dir, 'init', '-q', '-b', 'main');
+    writeFileSync(join(dir, 'first.txt'), '1\n');
+    const folder = folderGit();
+    await folder.stage({ cwd: dir, paths: ['first.txt'] });
+    expect(await areas(dir)).toEqual({ 'first.txt': 'staged' });
+    await folder.unstage({ cwd: dir, paths: ['first.txt'] });
+    expect(await areas(dir)).toEqual({ 'first.txt': 'untracked' });
+  });
+
+  it('stages many files in several runs', async () => {
+    const dir = repository();
+    const names = Array.from({ length: 250 }, (_, index) => `many/f${index}.txt`);
+    mkdirSync(join(dir, 'many'));
+    for (const name of names) writeFileSync(join(dir, name), 'x\n');
+    await folderGit().stage({ cwd: dir, paths: names });
+    expect(Object.values(await areas(dir)).filter((area) => area === 'staged')).toHaveLength(250);
+  });
+
+  it('refuses paths that leave the repository, no paths, and a folder in no repository', async () => {
+    const dir = repository();
+    const folder = folderGit();
+    expect(await failure(() => folder.stage({ cwd: dir, paths: ['../x'] }))).toBe('invalid');
+    expect(await failure(() => folder.stage({ cwd: dir, paths: [] }))).toBe('invalid');
+    expect(await failure(() => folder.unstage({ cwd: dir, paths: 'a.txt' }))).toBe('invalid');
+    expect(await failure(() => folder.stage({ cwd: temp(), paths: ['a.txt'] }))).toBe('invalid');
+  });
+
+  it('commits what is staged as the person, and says the commit and its first line', async () => {
+    const dir = repository();
+    writeFileSync(join(dir, 'a.txt'), 'two\n');
+    writeFileSync(join(dir, 'b.txt'), 'bee bee\n');
+    const folder = as(person());
+    await folder.stage({ cwd: dir, paths: ['a.txt'] });
+    const made = await folder.commit({ cwd: dir, message: '  Two in a\r\n\nBecause one was not enough.\n' });
+    expect(made).toEqual({
+      committed: true,
+      commit: git(dir, 'rev-parse', '--short', 'HEAD').trim(),
+      subject: 'Two in a',
+    });
+    expect(git(dir, 'log', '-1', '--format=%an <%ae>%n%B').trim()).toBe(
+      'Ada Lovelace <ada@mu.invalid>\nTwo in a\n\nBecause one was not enough.'
+    );
+    // Only what was staged went in.
+    expect(await areas(dir)).toEqual({ 'b.txt': 'unstaged' });
+  });
+
+  it('commits every change with `all`, new files included', async () => {
+    const dir = repository();
+    writeFileSync(join(dir, 'a.txt'), 'two\n');
+    writeFileSync(join(dir, 'new.txt'), 'n\n');
+    const made = await as(person()).commit({ cwd: dir, message: 'Everything', all: true });
+    expect(made).toMatchObject({ committed: true, subject: 'Everything' });
+    expect(await areas(dir)).toEqual({});
+    expect(git(dir, 'show', '--name-only', '--format=', 'HEAD').trim().split('\n').sort()).toEqual([
+      'a.txt',
+      'new.txt',
+    ]);
+  });
+
+  it('says what git and the hooks wrote when the commit does not happen', async () => {
+    const dir = repository();
+    writeFileSync(join(dir, 'a.txt'), 'two\n');
+    // Nothing staged.
+    const nothing = await as(person()).commit({ cwd: dir, message: 'Nothing' });
+    expect(nothing.committed).toBe(false);
+
+    // No name to commit as (and git told not to make one up from the machine's).
+    git(dir, 'add', 'a.txt');
+    const nameless = temp('mu-git-nobody-');
+    writeFileSync(join(nameless, '.gitconfig'), '[user]\n\tuseConfigOnly = true\n[commit]\n\tgpgsign = false\n');
+    const nobody = await as(nameless).commit({ cwd: dir, message: 'Who' });
+    expect(nobody).toMatchObject({ committed: false });
+    if (!nobody.committed) expect(nobody.output).toMatch(/tell me who you are|user\.email|identity/i);
+
+    // A hook that says no, run in the person's environment (pathspecs are not forced to be literal there).
+    if (process.platform !== 'win32') {
+      const hook = join(dir, '.git', 'hooks', 'pre-commit');
+      writeFileSync(
+        hook,
+        '#!/bin/sh\necho "literal=${GIT_LITERAL_PATHSPECS:-unset}"\necho "lint failed: a.txt" >&2\nexit 1\n'
+      );
+      chmodSync(hook, 0o755);
+      const refused = await as(person()).commit({ cwd: dir, message: 'Lint me' });
+      expect(refused).toMatchObject({ committed: false });
+      if (!refused.committed) {
+        expect(refused.output).toContain('lint failed: a.txt');
+        expect(refused.output).toContain('literal=unset');
+      }
+      expect(git(dir, 'log', '-1', '--format=%s').trim()).toBe('first');
+    }
+  });
+
+  it('refuses an empty message', async () => {
+    const dir = repository();
+    const folder = as(person());
+    expect(await failure(() => folder.commit({ cwd: dir, message: ' \n ' }))).toBe('invalid');
+    expect(await failure(() => folder.commit({ cwd: dir, message: 42 }))).toBe('invalid');
   });
 });

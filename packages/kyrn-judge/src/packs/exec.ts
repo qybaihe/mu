@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { statSync } from "node:fs";
 import { posix, win32 } from "node:path";
+import { codedError } from "../language.ts";
 import { killPlan, runKillStep } from "../process-tree.ts";
 
 /**
@@ -222,6 +223,11 @@ export function invocationFor(command: string, args: readonly string[], lookup: 
 }
 
 export type Binary = "ast-grep" | "git" | "gh";
+
+/** The error a pack throws when its program is missing: the install hint, coded `missing_program`. */
+export function missingProgram(binary: Binary, platform: NodeJS.Platform): Error {
+	return codedError(installHint(binary, platform), { code: "missing_program", params: { program: binary } });
+}
 
 /**
  * What to tell someone whose machine lacks a program a pack needs. mu installs

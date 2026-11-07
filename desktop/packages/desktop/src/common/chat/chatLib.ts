@@ -8,6 +8,7 @@ import type { AcpPermissionRequest, PlanUpdate, ToolCallUpdate } from '@/common/
 import type { AcpAvailableCommand } from '@/common/chat/slash/types';
 import type { IResponseMessage } from '../adapter/ipcBridge';
 import { uuid } from '../utils';
+import { fromBackendCode, fromBackendOwnership } from '../platform/backendNames';
 import { sanitizeAcpToolCallContent, sanitizeAcpToolUpdate } from './acpToolCallOutput';
 
 export { sanitizeAcpToolCallContent } from './acpToolCallOutput';
@@ -143,7 +144,7 @@ export type IMessageText = IMessage<
   }
 >;
 
-export type AgentErrorOwnership = 'aionui' | 'user_agent' | 'user_llm_provider' | 'unknown_upstream';
+export type AgentErrorOwnership = 'mu' | 'user_agent' | 'user_llm_provider' | 'unknown_upstream';
 
 export type AgentErrorResolutionKind =
   | 'retry'
@@ -561,7 +562,7 @@ export const normalizeTextMessageContent = (
 };
 
 const AGENT_ERROR_OWNERSHIPS = new Set<AgentErrorOwnership>([
-  'aionui',
+  'mu',
   'user_agent',
   'user_llm_provider',
   'unknown_upstream',
@@ -644,10 +645,12 @@ export const normalizeAgentStreamError = (value: unknown): AgentStreamErrorInfo 
     return undefined;
   }
 
-  const code = typeof value.code === 'string' ? value.code : undefined;
+  // The error came from the backend: its own errors' code and ownership go by the app's names.
+  const code = typeof value.code === 'string' ? fromBackendCode(value.code) : undefined;
+  const namedOwnership = typeof value.ownership === 'string' ? fromBackendOwnership(value.ownership) : undefined;
   const ownership =
-    typeof value.ownership === 'string' && AGENT_ERROR_OWNERSHIPS.has(value.ownership as AgentErrorOwnership)
-      ? (value.ownership as AgentErrorOwnership)
+    namedOwnership !== undefined && AGENT_ERROR_OWNERSHIPS.has(namedOwnership as AgentErrorOwnership)
+      ? (namedOwnership as AgentErrorOwnership)
       : undefined;
   const detail = typeof value.detail === 'string' ? value.detail : undefined;
   const workspacePath = typeof value.workspacePath === 'string' ? value.workspacePath : undefined;

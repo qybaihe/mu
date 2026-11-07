@@ -39,6 +39,18 @@
   line-height: 20px;
 }
 
+/* The judge's mark, as in a conversation's judge lines: a small pink diamond with a faint ring. */
+.judgeMark {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-inline: 1px 2px;
+  border-radius: 1px;
+  background: var(--mu-judge-dot, var(--text-secondary));
+  box-shadow: 0 0 0 2px var(--mu-judge-dot-ring, transparent);
+  transform: rotate(45deg);
+}
+
 .cardSpacer {
   flex: 1;
 }
@@ -106,6 +118,16 @@
 
 .choiceActive {
   cursor: default;
+}
+
+/* A choice this machine cannot take: readable, never picked. */
+.choiceDisabled {
+  cursor: not-allowed;
+}
+
+.choiceDisabled .choiceRadio,
+.choiceDisabled .choiceTitle {
+  opacity: 0.5;
 }
 
 .choiceRadio {
@@ -210,12 +232,13 @@
   text-wrap: balance;
 }
 
-/* Laya further down the judge order: its panel in the group's list, spaced as a row. */
+/* A judge further down the order with a panel of its own (CLM's server check): in the group's list, spaced as a row. */
 .tierPanel {
   padding: 12px 0;
 }
 
-/* Laya on this machine: where it stands, what can be done, and the script's last words while it works. */
+/* A judge's panel (mude, a decision model, a CLM server): where it stands, what can be done, and the command's last
+   words while it works. */
 .localJudge {
   display: flex;
   flex-direction: column;
@@ -292,6 +315,40 @@
   user-select: all;
 }
 
+/* Why this machine cannot run mude, in the command's words: one line each, under the sentence that says it. */
+.mudeReason {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* "Error details" under a failed mude command: a quiet link at the start of the line, not a full-width bar. */
+.mudeDetails:global(.arco-btn) {
+  align-self: flex-start;
+  margin-inline-start: -4px;
+  padding-inline: 4px;
+}
+
+/* "Local only" in mude's install dialog: the box hugs its label, so a click beside it does not tick it. */
+.mudeConsentCheck {
+  align-self: flex-start;
+}
+
+/* Both explanations of "Local only" in one cell: the longer sets the height, whichever one shows. */
+.mudeConsentHelp {
+  display: grid;
+}
+
+.mudeConsentHelp > * {
+  grid-area: 1 / 1;
+}
+
+.mudeConsentHidden {
+  visibility: hidden;
+}
+
 /* Plain rows, laid out like the app's other settings pages: a quiet list of rows, each a readable title, one line
    and its control (the features' switches, the decision points' under them). A feature's options are a page of their
    own. */
@@ -345,13 +402,14 @@
   line-height: 18px;
 }
 
-/* The decision points a feature asks, under its row and indented: a hairline down their side ties them to it. */
+/* The decision points a feature asks, under its row and indented: a line in the judge's pink down their side ties them
+   to it, and to the judge. */
 .nestedList {
   display: flex;
   flex-direction: column;
   margin: -4px 0 12px;
   padding-inline-start: 16px;
-  border-inline-start: 1px solid var(--border-base);
+  border-inline-start: 1px solid var(--mu-judge-border, var(--border-base));
 }
 
 .nestedMain {
@@ -359,10 +417,37 @@
 }
 
 .nestedTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 400;
   line-height: 20px;
+}
+
+/* A decision point's id, as the judge's lines in a conversation name it: the diamond, then the id in mono. */
+.point {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bg-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+}
+
+.point::after {
+  content: attr(data-point);
+}
+
+.point .judgeMark {
+  width: 5px;
+  height: 5px;
+  margin: 0;
 }
 
 /* The row a link pointed to, marked for a moment in the app's neutral fill. */
@@ -427,4 +512,41 @@
   .plainControl {
     align-items: flex-start;
   }
+}
+
+/* The decision models added from Hugging Face, under mude: one row each, then the field that adds one. */
+.modelsTitle {
+  margin-top: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.modelRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.modelName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.modelId {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.modelsAdd {
+  display: flex;
+  gap: 8px;
 }

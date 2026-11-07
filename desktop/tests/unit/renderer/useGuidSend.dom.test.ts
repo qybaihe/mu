@@ -8,6 +8,7 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IMcpServer } from '@/common/config/storage';
 import { useGuidSend, type GuidSendDeps } from '@/renderer/pages/guid/hooks/useGuidSend';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const createConversationInvokeMock = vi.fn();
 const swrMutateMock = vi.fn();
@@ -185,10 +186,10 @@ describe('useGuidSend', () => {
     expect(payload.assistant?.conversation_overrides?.disabled_builtin_skill_ids).toEqual(['todo-tracker']);
   });
 
-  it('forwards local skill overrides for generated Aion CLI assistants through assistant conversation overrides', async () => {
+  it('forwards local skill overrides for generated built-in agent assistants through assistant conversation overrides', async () => {
     const deps = createDeps();
-    deps.selectedAssistantId = 'bare:aionrs';
-    deps.selectedAssistantBackend = 'aionrs';
+    deps.selectedAssistantId = `bare:${BUILTIN_AGENT}`;
+    deps.selectedAssistantBackend = BUILTIN_AGENT;
     deps.current_model = { provider_id: 'openai', model: 'gemini-2.5-pro', use_model: 'gemini-2.5-pro' } as never;
     deps.guidEnabledSkills = ['pdf-reader'];
     deps.guidDisabledBuiltinSkills = ['todo-tracker'];
@@ -202,16 +203,16 @@ describe('useGuidSend', () => {
     const payload = createConversationInvokeMock.mock.calls[0][0];
     expect(payload.type).toBeUndefined();
     expect(payload.model).toBe(deps.current_model);
-    expect(payload.assistant?.id).toBe('bare:aionrs');
+    expect(payload.assistant?.id).toBe(`bare:${BUILTIN_AGENT}`);
     expect(payload.assistant?.conversation_overrides?.skill_ids).toEqual(['pdf-reader']);
     expect(payload.assistant?.conversation_overrides?.disabled_builtin_skill_ids).toEqual(['todo-tracker']);
     expect(payload.extra.session_mode).toBeUndefined();
   });
 
-  it('does not write legacy preset_assistant_id for generated Aion CLI assistant conversations', async () => {
+  it('does not write legacy preset_assistant_id for generated built-in agent conversations', async () => {
     const deps = createDeps();
-    deps.selectedAssistantId = 'bare:aionrs';
-    deps.selectedAssistantBackend = 'aionrs';
+    deps.selectedAssistantId = `bare:${BUILTIN_AGENT}`;
+    deps.selectedAssistantBackend = BUILTIN_AGENT;
     deps.current_model = { provider_id: 'openai', model: 'gemini-2.5-pro', use_model: 'gemini-2.5-pro' } as never;
 
     const { result } = renderHook(() => useGuidSend(deps));
@@ -221,7 +222,7 @@ describe('useGuidSend', () => {
     });
 
     const payload = createConversationInvokeMock.mock.calls[0][0];
-    expect(payload.assistant?.id).toBe('bare:aionrs');
+    expect(payload.assistant?.id).toBe(`bare:${BUILTIN_AGENT}`);
     expect(payload.extra.preset_assistant_id).toBeUndefined();
   });
 
@@ -245,7 +246,7 @@ describe('useGuidSend', () => {
     expect(payload.extra.backend).toBeUndefined();
   });
 
-  it('does not hand a CLI agent the aionrs provider model on its first turn', async () => {
+  it('does not hand a CLI agent the built-in agent provider model on its first turn', async () => {
     // Reproduces the first-use failure: before the agent's catalog has been
     // probed there is no ACP model to offer, and the provider selection used to
     // fill the gap. A brand new Antigravity conversation therefore started on
@@ -269,10 +270,10 @@ describe('useGuidSend', () => {
     expect(payload.assistant.conversation_overrides.model).toBeUndefined();
   });
 
-  it('still gives aionrs its provider model', async () => {
-    // The fallback exists for aionrs, whose model IS the provider selection.
+  it('still gives built-in agent its provider model', async () => {
+    // The fallback exists for the built-in agent, whose model IS the provider selection.
     const deps = createDeps();
-    deps.selectedAssistantBackend = 'aionrs';
+    deps.selectedAssistantBackend = BUILTIN_AGENT;
     deps.selectedAcpModel = null;
     deps.current_model = { id: 'p1', name: 'Gemini', use_model: 'gemini-3.1-pro-preview' } as never;
 
@@ -291,7 +292,7 @@ describe('useGuidSend', () => {
     // session had written back — for claude usually its `default` row, which pins the
     // account default and overrides the user's own ANTHROPIC_MODEL. Omitting the override
     // is what lets the agent resolve the model from the user's config, exactly as its CLI
-    // does; the aionrs provider model stays gated to aionrs.
+    // does; the built-in agent provider model stays gated to the built-in agent.
     const deps = createDeps();
     deps.selectedAssistantBackend = 'antigravity';
     deps.selectedAcpModel = null;
@@ -360,11 +361,11 @@ describe('useGuidSend', () => {
     setItemSpy.mockRestore();
   });
 
-  it('allows an empty-input start for aionrs without stashing an initial message', async () => {
+  it('allows an empty-input start for the built-in agent without stashing an initial message', async () => {
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
     const deps = createDeps();
     deps.input = '';
-    deps.selectedAssistantBackend = 'aionrs';
+    deps.selectedAssistantBackend = BUILTIN_AGENT;
     deps.current_model = { provider_id: 'openai', model: 'gemini-2.5-pro', use_model: 'gemini-2.5-pro' } as never;
 
     const { result } = renderHook(() => useGuidSend(deps));
@@ -375,7 +376,7 @@ describe('useGuidSend', () => {
 
     expect(createConversationInvokeMock).toHaveBeenCalledTimes(1);
     expect(deps.navigate).toHaveBeenCalledWith('/conversation/conv-1');
-    expect(setItemSpy).not.toHaveBeenCalledWith('aionrs_initial_message_conv-1', expect.anything());
+    expect(setItemSpy).not.toHaveBeenCalledWith('builtin_agent_initial_message_conv-1', expect.anything());
     setItemSpy.mockRestore();
   });
 });

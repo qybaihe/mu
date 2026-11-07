@@ -1,24 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
+import { Message } from '@arco-design/web-react';
+import { useTranslation } from 'react-i18next';
+import { mutate } from 'swr';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import {
+  enabledAccountModels,
   offeredProviders,
+  type LoginErrorCode,
   type LoginModel,
+  type LoginPortHolder,
+  type LoginStartOptions,
   type LoginState,
   type LoginStatus,
   type SubscriptionProvider,
+  type UsableProvider,
 } from '@/common/kyrn/login';
+import { DEFAULT_MODEL_KEY } from '@/renderer/hooks/agent/useMuDefaultModel';
+import { emitter } from '@/renderer/utils/emitter';
 import { toMuError, type MuError } from '../fields/muError';
 import { recheckMu } from '../recheck';
+import { providerName } from './LoginWaiting';
 
 type Account = LoginStatus['signedIn'][number];
 
 /** Why a sign-in or sign-out did not work, for a screen to word in the app language. */
 export type LoginFailure = {
   action: 'signIn' | 'signOut';
+  /** Whose sign-in or sign-out it was, so it can be tried again. */
+  provider?: SubscriptionProvider;
   /** The call's own failure, with the code the main process gave; unset when the flow itself reported an error. */
   error?: MuError;
   /** The raw words (the flow's error, the call's message): a detail line under the sentence. */
   detail: string;
+  /** What the flow said went wrong, when the app can act on it, and for `port_in_use` the port and who keeps it. */
+  code?: LoginErrorCode;
+  port?: number;
+  holder?: LoginPortHolder;
+  /** The sign-in that failed took the pasted address. */
+  paste?: boolean;
 };
 
 export type SubscriptionLoginFlow = {
@@ -27,6 +46,11 @@ export type SubscriptionLoginFlow = {
   /** Who is signed in, with what each account can use. */
   accounts: Account[];
   account: (provider: SubscriptionProvider) => Account | undefined;
+  /**
+   * The other providers with a usable model (an API key's, models.json's), with their models and the ones offered;
+   * empty from an older harness.
+   */
+  usable: UsableProvider[];
   /** The sign-in the main process runs now or ran last; undefined before the first one. */
   login: LoginState | undefined;
   running: boolean;
@@ -34,10 +58,17 @@ export type SubscriptionLoginFlow = {
   failure: LoginFailure | undefined;
   /** The same, only when it was this provider's sign-in or sign-out. */
   failureOf: (provider: SubscriptionProvider) => LoginFailure | undefined;
-  start: (provider: SubscriptionProvider) => void;
+  /** Starts a sign-in; `paste` takes the address the browser ends on instead of listening for it. */
+  start: (provider: SubscriptionProvider, options?: LoginStartOptions) => void;
   cancel: () => void;
   answer: (value: string) => void;
   logout: (provider: SubscriptionProvider) => Promise<void>;
+  /**
+   * Which of a provider's models the model menus offer, a signed-in account's or a usable one's: these ids, or
+   * 'default' (all of them, the ones it gains later too). Rejects with the main process's error when the harness
+   * refused the choice.
+   */
+  enable: (provider: string, models: string[] | 'default') => Promise<void>;
 };
 
 /**
@@ -49,11 +80,12 @@ let lastStatus: LoginStatus = { signedIn: [] };
 /**
  * Subscription sign-in as a screen sees it. pi's OAuth flow runs in the main process; this reads who is signed in,
  * picks up a sign-in still running from an earlier visit, reads its state twice a second while it runs, and hears
- * of every finished one once (`onSignedIn`).
+ * of every finished one once (`onSignedIn`, with the account's models the model menus offer).
  */
 export function useSubscriptionLogin(
   onSignedIn?: (provider: SubscriptionProvider, models: LoginModel[]) => void
 ): SubscriptionLoginFlow {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<LoginStatus>(lastStatus);
   useEffect(() => {
     lastStatus = status;
@@ -103,17 +135,18 @@ export function useSubscriptionLogin(
     handled.current = login.id;
     const provider = login.provider;
     const models = login.models ?? [];
+    const enabled = login.enabled ? { enabled: login.enabled } : {};
     setStatus((now) => ({
       ...now,
-      signedIn: [...now.signedIn.filter((entry) => entry.provider !== provider), { provider, models }],
+      signedIn: [...now.signedIn.filter((entry) => entry.provider !== provider), { provider, models, ...enabled }],
     }));
-    heard.current?.(provider, models);
+    heard.current?.(provider, enabledAccountModels({ models, ...enabled }));
     void recheckMu();
   }, [login]);
 
   const failed = (provider: SubscriptionProvider | undefined, action: LoginFailure['action'], cause: unknown) => {
     const error = toMuError(cause);
-    setProblem({ provider, failure: { action, error, detail: error.message } });
+    setProblem({ provider, failure: { action, provider, error, detail: error.message } });
   };
   const call = async (provider: SubscriptionProvider | undefined, work: () => Promise<LoginState>) => {
     setProblem({});
@@ -124,20 +157,31 @@ export function useSubscriptionLogin(
     }
   };
   const failedLogin: LoginFailure | undefined =
-    login?.phase === 'failed' ? { action: 'signIn', detail: login.error || '' } : undefined;
+    login?.phase === 'failed'
+      ? {
+          action: 'signIn',
+          provider: login.provider,
+          detail: login.error || '',
+          code: login.code,
+          port: login.port,
+          holder: login.holder,
+          paste: login.paste,
+        }
+      : undefined;
 
   return {
     offered: offeredProviders(status),
     accounts: status.signedIn,
     account: (provider) => status.signedIn.find((entry) => entry.provider === provider),
+    usable: status.usable ?? [],
     login,
     running,
     failure: problem.failure ?? failedLogin,
     failureOf: (provider) =>
       (problem.provider === provider ? problem.failure : undefined) ??
       (login?.provider === provider ? failedLogin : undefined),
-    start: (provider) => {
-      void call(provider, async () => unwrap(await kyrnBridge.loginStart.invoke({ provider })));
+    start: (provider, options) => {
+      void call(provider, async () => unwrap(await kyrnBridge.loginStart.invoke({ provider, ...options })));
     },
     cancel: () => {
       // Cancelled after the credential was stored (a slow model list): who is signed in is read again, and mu checked.
@@ -157,14 +201,36 @@ export function useSubscriptionLogin(
         unwrap(await kyrnBridge.loginAnswer.invoke({ id: login.id, value: reply }))
       );
     },
+    enable: async (provider, models) => {
+      const choice = models === 'default' ? { provider, byDefault: true } : { provider, models };
+      setStatus(unwrap(await kyrnBridge.loginEnable.invoke(choice)));
+    },
     logout: async (provider) => {
       setProblem({});
       try {
         setStatus(unwrap(await kyrnBridge.loginLogout.invoke({ provider })));
-        void recheckMu();
       } catch (error) {
         failed(provider, 'signOut', error);
+        return;
       }
+      // mu is checked again, so every model list drops the account's models. Then the model new conversations start
+      // on, and the conversations running on one of the account's models, go on with one mu still offers.
+      await recheckMu();
+      const moved = await kyrnBridge.loginSwitchModels
+        .invoke({ provider })
+        .then(unwrap)
+        .catch((): undefined => undefined);
+      if (!moved || (!moved.defaultMoved && !moved.conversations)) return;
+      if (moved.defaultMoved) {
+        void mutate(DEFAULT_MODEL_KEY);
+        emitter.emit('mu.files.changed');
+      }
+      const name = providerName(t, provider);
+      Message.info(
+        moved.to
+          ? t('mu.accounts.switched', { name, model: moved.to.name || moved.to.model })
+          : t('mu.accounts.noModelLeft', { name })
+      );
     },
   };
 }

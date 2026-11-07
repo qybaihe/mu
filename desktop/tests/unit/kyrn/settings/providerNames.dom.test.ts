@@ -75,7 +75,9 @@ describe('what a provider is called on screen', () => {
     const t = tIn('en-US');
     expect(providerLabel(t, models, 'relay')).toBe('Relay');
     expect(providerLabel(t, models, 'lab')).toBe('Lab');
-    expect(providerLabel(t, models, 'openai-codex')).toBe('ChatGPT');
+    // OpenAI's API keys and Sign in with ChatGPT share `openai`: by its maker's name; the Codex sign-in by its own.
+    expect(providerLabel(t, models, 'openai')).toBe('OpenAI');
+    expect(providerLabel(t, models, 'openai-codex')).toBe('ChatGPT (Codex)');
     expect(providerLabel(t, models, 'anthropic')).toBe('Claude');
     // pi's built-in providers by their makers' names, never by an id like vercel-ai-gateway.
     expect(providerLabel(t, models, 'openrouter')).toBe('OpenRouter');

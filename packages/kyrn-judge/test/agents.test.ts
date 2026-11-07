@@ -69,19 +69,19 @@ describe("agent definitions", () => {
 	});
 });
 
-describe("sub-agent exit", () => {
-	it("says how a sub-agent's process ended early, and puts the same in its code", () => {
+describe("subagent exit", () => {
+	it("says how a subagent's process ended early, and puts the same in its code", () => {
 		const exited = exitedEarly(3, null, "boom");
-		expect(exited.message).toBe("sub-agent exited with code 3 before it finished: boom");
+		expect(exited.message).toBe("subagent exited with code 3 before it finished: boom");
 		expect(codeOf(exited)).toEqual({ code: "exited_early", params: { exitCode: 3 } });
 		// Killed: no exit code to make up, the signal instead.
 		const killed = exitedEarly(null, "SIGTERM", "");
-		expect(killed.message).toBe("sub-agent was ended by SIGTERM before it finished");
+		expect(killed.message).toBe("subagent was ended by SIGTERM before it finished");
 		expect(codeOf(killed)).toEqual({ code: "exited_early", params: { signal: "SIGTERM" } });
 	});
 });
 
-describe("sub-agent command line", () => {
+describe("subagent command line", () => {
 	it("passes the role's tools and prompt, and the extensions this process was started with", () => {
 		expect(forwardedExtensionArgs(["-e", "/kyrn/ext.ts", "-p", "--extension", "/other.ts", "hi", "-e"])).toEqual([
 			"-e",
@@ -120,11 +120,11 @@ describe("sub-agent command line", () => {
 	});
 });
 
-describe("the thinking level a sub-agent starts with", () => {
+describe("the thinking level a subagent starts with", () => {
 	it("keeps the session's level on the session's own model, so the first call reads the parent's cached prefix", () => {
 		const route = { model: "p/big", sessionModel: "p/big", sessionThinking: "high", judged: "low" as const };
 		expect(thinkingForRoute(route)).toBe("high");
-		// No ladder configured: every sub-agent runs on the session's model.
+		// No ladder configured: every subagent runs on the session's model.
 		expect(thinkingForRoute({ ...route, model: undefined })).toBe("high");
 		expect(thinkingForRoute({ ...route, sessionThinking: "max" })).toBe("max");
 	});

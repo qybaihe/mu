@@ -4,7 +4,9 @@ import path from 'node:path';
 import process from 'node:process';
 
 const DEFAULT_PORTS = [5173, 9230];
-const KILLABLE_NAMES = new Set(['electron', 'aionui', 'aionui.exe']);
+// The packaged app's process is `mu` (`mu.exe`): matched by its whole name, since many other names contain "mu".
+const APP_NAMES = new Set(['mu', 'mu.exe']);
+const KILLABLE_NAMES = new Set(['electron', 'electron.exe', ...APP_NAMES]);
 
 const log = (...args) => console.log('[dev-bootstrap]', ...args);
 const warn = (...args) => console.warn('[dev-bootstrap]', ...args);
@@ -68,13 +70,13 @@ function listLikelyConflictingProcesses() {
   try {
     if (isWindows()) {
       const output = run(
-        "powershell -NoProfile -Command \"Get-Process | Where-Object { $_.ProcessName -in @('electron','AionUi','node','bun') } | Select-Object ProcessName,Id | ConvertTo-Json -Compress\""
+        "powershell -NoProfile -Command \"Get-Process | Where-Object { $_.ProcessName -in @('electron','mu','node','bun') } | Select-Object ProcessName,Id | ConvertTo-Json -Compress\""
       );
       const parsed = output ? JSON.parse(output) : [];
       return Array.isArray(parsed) ? parsed : [parsed];
     }
 
-    const output = run(`ps -A -o pid=,comm= | egrep "electron|AionUi|node|bun" || true`);
+    const output = run(`ps -A -o pid=,comm= | egrep -i "electron|[/ ]mu$|node|bun" || true`);
     return output
       .split(/\r?\n/)
       .filter(Boolean)
@@ -121,7 +123,7 @@ function cleanupByName() {
     const pid = Number(proc.Id ?? proc.id);
     const rawName = String(proc.ProcessName ?? proc.name ?? '').toLowerCase();
     if (!pid || pid === process.pid) continue;
-    if (!['electron', 'aionui'].some((k) => rawName.includes(k))) continue;
+    if (!rawName.includes('electron') && !APP_NAMES.has(path.basename(rawName))) continue;
     if (killPid(pid)) {
       killed.push({ pid, name: rawName });
     }
@@ -163,8 +165,8 @@ function launch(scriptName, withExtensions) {
 
   const env = { ...process.env };
   if (withExtensions) {
-    env.AIONUI_EXTENSIONS_PATH = path.resolve(process.cwd(), 'examples');
-    log(`AIONUI_EXTENSIONS_PATH=${env.AIONUI_EXTENSIONS_PATH}`);
+    env.MU_EXTENSIONS_PATH = path.resolve(process.cwd(), 'examples');
+    log(`MU_EXTENSIONS_PATH=${env.MU_EXTENSIONS_PATH}`);
   }
 
   const child = spawn('bun', ['run', scriptName], {

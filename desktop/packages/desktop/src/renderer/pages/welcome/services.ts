@@ -160,10 +160,29 @@ export const MODEL_SERVICES: readonly ModelService[] = [
   },
 ];
 
+/** The services a list starts with outside Chinese, in this order: the ones best known outside China. */
+const FIRST_OUTSIDE_CHINESE: readonly ServiceId[] = ['openai', 'anthropic', 'google', 'xai', 'openrouter'];
+
+/**
+ * The services in the order the guide lists them for the app's language: the table's order in Chinese, and in any
+ * other language the best known ones first. Ollama stays last. `mu setup` orders its list the same way.
+ */
+export function servicesInOrder(language: string): readonly ModelService[] {
+  if (language.toLowerCase().startsWith('zh')) return MODEL_SERVICES;
+  const first = FIRST_OUTSIDE_CHINESE.flatMap((id) => MODEL_SERVICES.filter((service) => service.id === id));
+  return [...first, ...MODEL_SERVICES.filter((service) => !FIRST_OUTSIDE_CHINESE.includes(service.id))];
+}
+
 export const isServiceId = (value: unknown): value is ServiceId => (SERVICE_IDS as readonly unknown[]).includes(value);
 
 export const serviceById = (id: ServiceId): ModelService =>
   MODEL_SERVICES.find((service) => service.id === id) ?? MODEL_SERVICES[0];
+
+/**
+ * A Claude subscription token (`claude setup-token`, sk-ant-oat…), not an API key. Anthropic's terms don't let other
+ * apps use a Claude subscription, so the guide takes an Anthropic API key instead and sends the token nowhere.
+ */
+export const isClaudeSubscriptionToken = (key: string): boolean => key.trim().startsWith('sk-ant-oat');
 
 /**
  * The services a key has the shape of, in the table's order: none for a key no shape fits, two for a key that fits

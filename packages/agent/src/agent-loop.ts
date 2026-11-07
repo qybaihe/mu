@@ -5,10 +5,13 @@
 
 import {
 	type AssistantMessage,
+	type ClientIdentity,
 	EventStream,
 	getCurrentTools,
 	getToolStateChanges,
+	mergeClientIdentity,
 	normalizeContext,
+	PI_ATTRIBUTION,
 	type SystemMessage,
 	type ToolResultMessage,
 	type ToolStateChanges,
@@ -30,6 +33,12 @@ import type {
 } from "./types.ts";
 
 export type AgentEventSink = (event: AgentEvent) => Promise<void> | void;
+
+/**
+ * Request identity of agent loops: pi-ai's defaults with provider attribution to pi. `AgentLoopConfig.identity`
+ * overrides it field by field.
+ */
+export const DEFAULT_AGENT_IDENTITY: ClientIdentity = { attribution: PI_ATTRIBUTION };
 
 /**
  * Start an agent loop with a new prompt message.
@@ -413,6 +422,7 @@ async function streamAssistantResponse(
 	const response = await streamFunction(config.model, llmContext, {
 		...config,
 		apiKey: resolvedApiKey,
+		identity: mergeClientIdentity(DEFAULT_AGENT_IDENTITY, config.identity),
 		signal,
 	});
 	// Record the requested level, whichever stream function answered.
@@ -523,13 +533,49 @@ async function executeToolCalls(
 	emit: AgentEventSink,
 ): Promise<ExecutedToolCallBatch> {
 	const toolCalls = assistantMessage.content.filter((c) => c.type === "toolCall");
-	const hasSequentialToolCall = toolCalls.some(
-		(tc) => currentContext.tools?.find((t) => t.name === tc.name)?.executionMode === "sequential",
-	);
-	if (config.toolExecution === "sequential" || hasSequentialToolCall) {
+	if (config.toolExecution === "sequential") {
 		return executeToolCallsSequential(currentContext, assistantMessage, toolCalls, config, signal, emit);
 	}
-	return executeToolCallsParallel(currentContext, assistantMessage, toolCalls, config, signal, emit);
+	// mu: a sequential tool is a barrier in the batch rather than a reason to run all of it one call at a time. The
+	// calls before it have ended when it starts, and the calls after it start when it has ended; calls between two
+	// barriers still run in parallel. A batch that writes a file and then runs it runs in that order, and the reads
+	// around the write stay concurrent.
+	const isSequential = (toolCall: AgentToolCall) =>
+		currentContext.tools?.find((t) => t.name === toolCall.name)?.executionMode === "sequential";
+	if (!toolCalls.some(isSequential)) {
+		return executeToolCallsParallel(currentContext, assistantMessage, toolCalls, config, signal, emit);
+	}
+	const messages: ToolResultMessage[] = [];
+	let terminate = true;
+	for (const segment of barrierSegments(toolCalls, isSequential)) {
+		const batch = await executeToolCallsParallel(currentContext, assistantMessage, segment, config, signal, emit);
+		messages.push(...batch.messages);
+		terminate &&= batch.terminate;
+		if (signal?.aborted) {
+			break;
+		}
+	}
+	return { messages, terminate: messages.length > 0 && terminate };
+}
+
+/** mu: the batch cut at its sequential calls, each of which is a segment of its own, in the model's order. */
+function barrierSegments(
+	toolCalls: AgentToolCall[],
+	isSequential: (toolCall: AgentToolCall) => boolean,
+): AgentToolCall[][] {
+	const segments: AgentToolCall[][] = [];
+	let open: AgentToolCall[] = [];
+	for (const toolCall of toolCalls) {
+		if (!isSequential(toolCall)) {
+			open.push(toolCall);
+			continue;
+		}
+		if (open.length > 0) segments.push(open);
+		segments.push([toolCall]);
+		open = [];
+	}
+	if (open.length > 0) segments.push(open);
+	return segments;
 }
 
 type ExecutedToolCallBatch = {
@@ -685,6 +731,7 @@ type ImmediateToolCallOutcome = {
 type ExecutedToolCallOutcome = {
 	result: AgentToolResult<any>;
 	isError: boolean;
+	durationMs: number;
 };
 
 type FinalizedToolCallOutcome = AgentToolCallOutcome;
@@ -834,6 +881,8 @@ async function executePreparedToolCall(
 ): Promise<ExecutedToolCallOutcome> {
 	const updateEvents: Promise<void>[] = [];
 	let acceptingUpdates = true;
+	const startedAt = performance.now();
+	const elapsed = () => Math.round(performance.now() - startedAt);
 
 	try {
 		const result = await prepared.tool.execute(
@@ -845,15 +894,18 @@ async function executePreparedToolCall(
 				updateEvents.push(Promise.resolve(onUpdate(partialResult)));
 			},
 		);
+		const durationMs = elapsed();
 		acceptingUpdates = false;
 		await Promise.all(updateEvents);
-		return { result, isError: result.isError === true };
+		return { result, isError: result.isError === true, durationMs };
 	} catch (error) {
+		const durationMs = elapsed();
 		acceptingUpdates = false;
 		await Promise.all(updateEvents);
 		return {
 			result: createErrorToolResult(error instanceof Error ? error.message : String(error)),
 			isError: true,
+			durationMs,
 		};
 	} finally {
 		acceptingUpdates = false;
@@ -909,6 +961,7 @@ async function finalizeExecutedToolCall(
 		toolCall: prepared.toolCall,
 		result,
 		isError,
+		durationMs: executed.durationMs,
 	};
 }
 
@@ -926,6 +979,7 @@ async function emitToolExecutionEnd(finalized: FinalizedToolCallOutcome, emit: A
 		toolName: finalized.toolCall.name,
 		result: finalized.result,
 		isError: finalized.isError,
+		...(finalized.durationMs === undefined ? {} : { durationMs: finalized.durationMs }),
 	});
 }
 
@@ -940,6 +994,7 @@ function createToolResultMessage(finalized: FinalizedToolCallOutcome): ToolResul
 		details: finalized.result.details,
 		usage: finalized.result.usage,
 		isError: finalized.isError,
+		...(finalized.durationMs === undefined ? {} : { durationMs: finalized.durationMs }),
 		timestamp: Date.now(),
 	};
 }

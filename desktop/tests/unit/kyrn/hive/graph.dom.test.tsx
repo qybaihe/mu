@@ -56,7 +56,7 @@ describe('the map of a run', () => {
       'prefix-mutations → provider-cache: 2 deliveries\n· Prefix remains stable after the first request.\n· Again.'
     );
     expect(titles).toContain(
-      'provider-cache corrected a finding of prefix-mutations\n· The prefix changes once the provider swaps its cache key.'
+      'provider-cache corrected a finding from prefix-mutations\n· The prefix changes once the provider swaps its cache key.'
     );
     // Its legend names only what is on the map, in plain words.
     const legend = screen.getByRole('list', { name: 'Legend' });
@@ -91,6 +91,31 @@ describe('the map of a run', () => {
     expect(conflict).not.toHaveAttribute('marker-end');
     expect(conflict).toHaveAttribute('data-kind', 'conflict');
     expect(screen.getByRole('list', { name: 'Legend' })).toHaveTextContent('dispute');
+  });
+
+  it('draws a native conversation’s hive from its snapshots, which come without the board’s records', () => {
+    render(
+      view(
+        <HiveRows
+          events={[
+            hiveEvents[0],
+            activity('snapshot', 'swarm.snapshot', {
+              ...hiveSnapshot,
+              board: {
+                latest: [
+                  { bee: 'prefix-mutations', to: ['provider-cache'], text: 'Prefix remains stable.' },
+                  { bee: 'prefix-mutations', to: ['provider-cache'], text: 'Again.' },
+                ],
+              },
+            }),
+          ]}
+        />
+      )
+    );
+    const delivery = screen.getByTestId('hive-connection');
+    expect(delivery).toHaveAttribute('data-from', 'prefix-mutations');
+    expect(delivery).toHaveAttribute('data-to', 'provider-cache');
+    expect(delivery).toHaveAttribute('data-count', '2');
   });
 
   it('puts mu in the middle of a delegate run, with a line from each sub-agent that reported back', () => {

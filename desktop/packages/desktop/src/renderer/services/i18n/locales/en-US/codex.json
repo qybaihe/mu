@@ -1,69 +1,69 @@
 {
   "sendbox": {},
   "network": {
-    "cloudflare_blocked": "Cloudflare protection blocked access to {{service}}. Suggestions: 1) Use VPN 2) Switch network 3) Retry later 4) Switch to other AI services",
-    "network_timeout": "Network timeout, automatically retrying connection...",
-    "connection_refused": "Connection refused, please check if Codex service is running properly.",
-    "unknown_error": "Network connection error, please check network settings.",
-    "retry_attempt": "Retrying attempt {{current}}...",
-    "cloudflare_blocked_title": "{{service}} service blocked by Cloudflare protection",
-    "network_timeout_title": "Network connection timeout",
-    "connection_refused_title": "Service connection refused",
-    "unknown_error_title": "Network connection error",
-    "recovery_suggestions": "**Suggested Solutions:**",
-    "technical_info": "**Technical Information:**",
-    "error_type": "Error Type",
-    "retry_count": "Retry Count",
-    "error_details": "Error Details",
-    "quick_switch_title": "**Quick Switch Options:**",
-    "quick_switch_content": "When current service encounters network restrictions, you can:\n\n1. **Switch AI Assistant Immediately**: Select other available assistants from the left panel\n2. **Check Service Status**: Availability of different AI services may vary by region\n3. **Network Optimization**: Use stable network environment to improve connection success rate\n4. **Retry Later**: Network restrictions are usually temporary\n\n**Tip**: It's recommended to configure multiple AI services as alternatives to ensure work continuity.",
+    "cloudflare_blocked": "Cloudflare blocked access to {{service}}. Try a VPN, switch networks, try again later or switch to another AI service.",
+    "network_timeout": "The network timed out. Reconnecting…",
+    "connection_refused": "Connection refused. Check that the Codex service is running.",
+    "unknown_error": "Network error. Check your network settings.",
+    "retry_attempt": "Retrying (attempt {{current}})…",
+    "cloudflare_blocked_title": "Cloudflare blocked {{service}}",
+    "network_timeout_title": "Network timed out",
+    "connection_refused_title": "Connection refused",
+    "unknown_error_title": "Network error",
+    "recovery_suggestions": "**What to try:**",
+    "technical_info": "**Technical details:**",
+    "error_type": "Error type",
+    "retry_count": "Retry count",
+    "error_details": "Error details",
+    "quick_switch_title": "**Other options:**",
+    "quick_switch_content": "When the current service hits network restrictions, you can:\n\n1. **Switch assistants**: Pick another available assistant from the left panel.\n2. **Check service status**: Some AI services aren't available in every region.\n3. **Use a stable network**: A steadier connection fails less often.\n4. **Try again later**: Network restrictions are usually temporary.\n\n**Tip**: Set up more than one AI service so you can keep working when one isn't available.",
     "recovery_actions": {
       "cloudflare_blocked": [
-        "• Use VPN or proxy service",
-        "• Switch network environment (like mobile hotspot)",
-        "• Wait 10-30 minutes and retry",
-        "• Clear browser cache and cookies",
-        "• Switch to other available services: ChatGPT, Claude, Qwen, Gemini"
+        "• Use a VPN or proxy",
+        "• Switch networks (for example, to a mobile hotspot)",
+        "• Wait 10–30 minutes and try again",
+        "• Clear your browser cache and cookies",
+        "• Switch to another available service: ChatGPT, Claude, Qwen or Gemini"
       ],
       "network_timeout": [
-        "• Check if network connection is stable",
-        "• Retry connection operation",
-        "• Switch to more stable network environment",
-        "• Check firewall settings"
+        "• Check that your network connection is stable",
+        "• Try connecting again",
+        "• Switch to a more stable network",
+        "• Check your firewall settings"
       ],
       "connection_refused": [
-        "• Check if Codex CLI is properly installed",
-        "• Verify service configuration and API keys",
-        "• Restart application",
-        "• Check if local ports are occupied"
+        "• Check that Codex CLI is installed correctly",
+        "• Check the service configuration and API keys",
+        "• Restart the app",
+        "• Check whether the local port is already in use"
       ],
       "unknown": [
-        "• Check network connection status",
-        "• Retry current operation",
-        "• Switch network environment",
-        "• Contact technical support"
+        "• Check your network connection",
+        "• Try the operation again",
+        "• Switch networks",
+        "• Contact support"
       ]
     }
   },
   "thinking": {
-    "processing": "Codex is thinking...",
-    "completed": "Thinking process completed",
-    "analyzing": "Analyzing the problem and formulating solutions...",
-    "composing": "Composing response content..."
+    "processing": "Codex is thinking…",
+    "completed": "Done thinking",
+    "analyzing": "Analyzing the problem…",
+    "composing": "Writing a response…"
   },
   "error": {
-    "system_init_failed": "Failed to initialize Codex system",
+    "system_init_failed": "Couldn't start Codex",
     "invalid_message_format": "Invalid message format",
-    "invalid_input": "Invalid input provided",
-    "session_timeout": "Session timed out, please retry",
-    "permission_denied": "Permission denied for this operation",
-    "context_error": "Error occurred in {{context}}, please refresh or retry.",
-    "generic": "Codex component encountered an exception, please try again later.",
-    "troubleshooting": "Troubleshooting Suggestions",
-    "suggestion_1": "Check if network connection is stable",
-    "suggestion_2": "Ensure Codex service is running properly",
-    "suggestion_3": "Try restarting the application",
-    "suggestion_4": "Clear browser cache and local storage"
+    "invalid_input": "Invalid input",
+    "session_timeout": "The session timed out. Try again.",
+    "permission_denied": "Permission denied",
+    "context_error": "Something went wrong in {{context}}. Refresh or try again.",
+    "generic": "Codex ran into an error. Try again later.",
+    "troubleshooting": "Troubleshooting",
+    "suggestion_1": "Check that your network connection is stable",
+    "suggestion_2": "Make sure the Codex service is running",
+    "suggestion_3": "Try restarting the app",
+    "suggestion_4": "Clear the browser cache and local storage"
   },
   "performance": {
     "virtualization_enabled": "List virtualization is enabled for better performance",
@@ -72,32 +72,32 @@
     "debounce_disabled": "Input debouncing is disabled"
   },
   "config": {
-    "loaded": "Configuration loaded successfully",
-    "updated": "Configuration updated successfully",
+    "loaded": "Configuration loaded",
+    "updated": "Configuration updated",
     "reset": "Configuration reset to defaults",
-    "validation_failed": "Configuration validation failed",
-    "import_success": "Configuration imported successfully",
-    "import_failed": "Failed to import configuration",
-    "export_success": "Configuration exported successfully"
+    "validation_failed": "The configuration isn't valid",
+    "import_success": "Configuration imported",
+    "import_failed": "Couldn't import the configuration",
+    "export_success": "Configuration exported"
   },
   "permissions": {
-    "allow_once": "Allow Once",
-    "allow_always": "Allow Always",
-    "reject_once": "Reject Once",
-    "reject_always": "Reject Always",
-    "allow_once_desc": "Grant permission for this request only",
-    "allow_always_desc": "Always grant permission for similar requests",
+    "allow_once": "Allow once",
+    "allow_always": "Always allow",
+    "reject_once": "Reject once",
+    "reject_always": "Always reject",
+    "allow_once_desc": "Allow this request only",
+    "allow_always_desc": "Always allow similar requests",
     "reject_once_desc": "Reject this request only",
     "reject_always_desc": "Always reject similar requests",
-    "processing": "Processing...",
-    "response_sent": "Response sent successfully",
+    "processing": "Processing…",
+    "response_sent": "Response sent",
     "choose_action": "Choose an action:",
     "titles": {
-      "exec_approval_request": "Execute Command Permission",
-      "apply_patch_approval_request": "Apply File Changes Permission",
-      "command_execution": "Command Execution Permission",
-      "file_write": "File Write Permission",
-      "file_read": "File Read Permission"
+      "exec_approval_request": "Permission to run a command",
+      "apply_patch_approval_request": "Permission to apply file changes",
+      "command_execution": "Permission to run commands",
+      "file_write": "Permission to write files",
+      "file_read": "Permission to read files"
     },
     "labels": {
       "command": "Command:",
@@ -107,27 +107,27 @@
       "summary": "Summary:"
     },
     "descriptions": {
-      "command_execution": "Codex requests to execute system commands",
-      "file_write": "Codex requests to modify or create files",
-      "file_read": "Codex requests to read file contents"
+      "command_execution": "Codex wants to run system commands",
+      "file_write": "Codex wants to create or modify files",
+      "file_read": "Codex wants to read files"
     },
     "command_execution": {
-      "allow_once_desc": "Allow this command execution only",
-      "allow_always_desc": "Always allow all command execution requests",
-      "reject_once_desc": "Reject this command execution only",
-      "reject_always_desc": "Always reject all command execution requests"
+      "allow_once_desc": "Allow this command only",
+      "allow_always_desc": "Always allow commands",
+      "reject_once_desc": "Reject this command only",
+      "reject_always_desc": "Always reject commands"
     },
     "file_write": {
       "allow_once_desc": "Allow this file write only",
-      "allow_always_desc": "Always allow all file write requests",
+      "allow_always_desc": "Always allow file writes",
       "reject_once_desc": "Reject this file write only",
-      "reject_always_desc": "Always reject all file write requests"
+      "reject_always_desc": "Always reject file writes"
     },
     "file_read": {
       "allow_once_desc": "Allow this file read only",
-      "allow_always_desc": "Always allow all file read requests",
+      "allow_always_desc": "Always allow file reads",
       "reject_once_desc": "Reject this file read only",
-      "reject_always_desc": "Always reject all file read requests"
+      "reject_always_desc": "Always reject file reads"
     }
   }
 }

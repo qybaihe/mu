@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The sidebar's list is one stop in the Tab order. With a stop per conversation, a keyboard user who tabbed into the
  * sidebar went through every conversation (and its menu button) before reaching the page: 111 conversations were
  * more than 200 presses of Tab between the title bar and the scheduled tasks page. Now Tab reaches one row, the arrow

@@ -12,6 +12,12 @@ import { userWords } from "../src/extension/runtime.ts";
 import type { LedgerRecord } from "../src/ledger.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer, JudgeProvider } from "../src/types.ts";
+import { attended } from "./attended.ts";
+
+/** The harness runs in print mode; these tests are about preflight as an interactive session asks it. */
+const config = parseConfig({ features: attended() });
+/** The same, with capability disclosure on (it is off out of the box): a second question at the start of a turn. */
+const withCapabilities = parseConfig({ modes: { "capability.disclosure": "active" }, features: attended() });
 
 const yes: Answer = { type: "boolean", probability: 0.95 };
 const no: Answer = { type: "boolean", probability: 0.04 };
@@ -38,8 +44,8 @@ function ledgerRecords(harness: Harness): LedgerRecord[] {
 }
 
 /**
- * The records of the decision these tests are about. A default session holds hidden capability packs,
- * so every message is also asked which of them it needs (`capability.disclosure`).
+ * The records of the decision these tests are about. A session may ask other questions about the same message
+ * (`skills.disclosure`, and `capability.disclosure` where a test turns it on).
  */
 function preflightRecords(harness: Harness): LedgerRecord[] {
 	return ledgerRecords(harness).filter((record) => record.specId === inputPreflight.id);
@@ -55,7 +61,7 @@ describe("kyrn judge extension", () => {
 	it("judges each user message in shadow mode without changing what the model sees", async () => {
 		const provider = new MockJudgeProvider(() => chatVerdict);
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "shadow" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "shadow", config })],
 		});
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("It refreshes the access token.")]);
@@ -88,7 +94,7 @@ describe("kyrn judge extension", () => {
 
 	it("passes recent turns to the judge as short digests", async () => {
 		const provider = new MockJudgeProvider(() => chatVerdict);
-		const harness = await createHarness({ extensionFactories: [createKyrnJudgeExtension({ provider })] });
+		const harness = await createHarness({ extensionFactories: [createKyrnJudgeExtension({ provider, config })] });
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("First answer."), fauxAssistantMessage("Second answer.")]);
 
@@ -118,7 +124,7 @@ describe("kyrn judge extension", () => {
 			return chatVerdict;
 		});
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config: withCapabilities })],
 		});
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("Sure.")]);
@@ -128,34 +134,6 @@ describe("kyrn judge extension", () => {
 		await vi.waitFor(() => expect(started.has("capabilities")).toBe(true));
 		// The capability question went out while preflight's was still being answered, not after it.
 		expect((started.get("capabilities") ?? 0) - (started.get("preflight") ?? 0)).toBeLessThan(150);
-	});
-
-	it("with a judge that answers one call at a time, the other questions wait for preflight's answer", async () => {
-		const started = new Map<string, number>();
-		const provider = new MockJudgeProvider(async (request) => {
-			const kind =
-				"turn_type" in request.questions
-					? "preflight"
-					: "capability_0" in request.questions
-						? "capabilities"
-						: "other";
-			started.set(kind, Math.min(started.get(kind) ?? Number.POSITIVE_INFINITY, performance.now()));
-			if (kind === "preflight") await new Promise((resolve) => setTimeout(resolve, 250));
-			return chatVerdict;
-		});
-		const harness = await createHarness({
-			extensionFactories: [
-				createKyrnJudgeExtension({ provider, mode: "active", config: parseConfig({ tiers: ["laya"] }) }),
-			],
-		});
-		harnesses.push(harness);
-		harness.setResponses([fauxAssistantMessage("Sure.")]);
-
-		await harness.session.prompt("what does the refreshToken helper do?");
-
-		await vi.waitFor(() => expect(started.has("capabilities")).toBe(true));
-		// A local sidecar serves one request at a time: preflight's answer comes first, the rest queue behind it.
-		expect((started.get("capabilities") ?? 0) - (started.get("preflight") ?? 0)).toBeGreaterThanOrEqual(200);
 	});
 
 	it("in shadow mode hands a long tool result over at once and records the admission verdict behind it", async () => {
@@ -208,7 +186,7 @@ describe("kyrn judge extension", () => {
 			};
 		});
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config })],
 		});
 		harnesses.push(harness);
 		const seen: string[] = [];
@@ -247,7 +225,7 @@ describe("kyrn judge extension", () => {
 		};
 		const harness = await createHarness({
 			extensionFactories: [
-				createKyrnJudgeExtension({ provider: new MockJudgeProvider(() => vague), mode: "active" }),
+				createKyrnJudgeExtension({ provider: new MockJudgeProvider(() => vague), mode: "active", config }),
 			],
 		});
 		harnesses.push(harness);
@@ -268,7 +246,7 @@ describe("kyrn judge extension", () => {
 	it("judges the person's own words past a host's preamble, while the model still gets the whole message", async () => {
 		const provider = new MockJudgeProvider(() => chatVerdict);
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config })],
 		});
 		harnesses.push(harness);
 		let promptSeen = "";
@@ -279,7 +257,7 @@ describe("kyrn judge extension", () => {
 			},
 			fauxAssistantMessage("Done."),
 		]);
-		// What AionUi's core puts in front of the first message of a conversation.
+		// What the backend puts in front of the first message of a conversation.
 		const preamble =
 			"[Assistant Rules]\n## Available Skills\n\n- **aionui-config**: Configure AionUi itself with the bundled aioncore CLI.\n[/Assistant Rules]\n\n";
 
@@ -311,11 +289,15 @@ describe("kyrn judge extension", () => {
 	};
 
 	/** A heavy turn in active mode: what reasoning level the model was called with, and what it was told. */
-	async function heavyTurn(config?: ReturnType<typeof parseConfig>) {
+	async function heavyTurn(turnConfig = config) {
 		const harness = await createHarness({
 			models: [{ id: "faux-reasoner", reasoning: true }],
 			extensionFactories: [
-				createKyrnJudgeExtension({ provider: new MockJudgeProvider(() => heavyVerdict), mode: "active", config }),
+				createKyrnJudgeExtension({
+					provider: new MockJudgeProvider(() => heavyVerdict),
+					mode: "active",
+					config: turnConfig,
+				}),
 			],
 		});
 		harnesses.push(harness);
@@ -341,7 +323,7 @@ describe("kyrn judge extension", () => {
 	});
 
 	it("raises thinking for a heavy turn only when asked to, then restores the user's level", async () => {
-		const turn = await heavyTurn(parseConfig({ features: { preflight: { thinking: true } } }));
+		const turn = await heavyTurn(parseConfig({ features: attended({ preflight: { thinking: true } }) }));
 		expect(turn.reasoningSent).toBe("high");
 		expect(turn.promptSeen).toContain("Write a short plan");
 		expect(turn.levelAfter).toBe("low");
@@ -357,7 +339,7 @@ describe("kyrn judge extension", () => {
 			},
 		};
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider: down, mode: "active" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider: down, mode: "active", config })],
 		});
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("hello")]);

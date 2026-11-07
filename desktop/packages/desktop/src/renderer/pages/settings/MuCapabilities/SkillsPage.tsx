@@ -91,9 +91,6 @@ export default function MuSkillsPage() {
     })).filter((group) => group.all.length > 0);
   }, [list.data, query]);
 
-  const help = (source: SkillSource): string =>
-    t(`mu.capabilities.skills.groups.${source}.help`, { folder: list.data?.folder ?? '' });
-
   return (
     <SettingsPageWrapper>
       {messageHolder}
@@ -101,7 +98,6 @@ export default function MuSkillsPage() {
       <SectionShell
         id='mu-skills'
         title={t('settings.skills')}
-        description={t('mu.capabilities.skills.lead')}
         actions={
           <>
             <Input
@@ -149,7 +145,6 @@ export default function MuSkillsPage() {
                 testId={`mu-skills-${source}`}
                 title={t(`mu.capabilities.skills.groups.${source}.title`)}
                 badges={<Count value={all.length} />}
-                summary={<OneLine text={help(source)} />}
               >
                 {shown.length === 0 ? (
                   <div className={styles.empty}>{t('mu.capabilities.skills.noMatch')}</div>
@@ -195,7 +190,6 @@ export default function MuSkillsPage() {
             );
           })
         )}
-        {list.data ? <div className={styles.meta}>{t('mu.capabilities.skills.project')}</div> : null}
       </SectionShell>
     </SettingsPageWrapper>
   );

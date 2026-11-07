@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { AgentEndEvent, ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { isTrusted } from "../cascade.ts";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
-import { featureOptions, type KyrnConfig } from "../config.ts";
-import { DecisionEngine, type DecisionMode } from "../decision.ts";
+import { DEFAULT_CONFIG, featureOptions, type JudgeConfig, type KyrnConfig } from "../config.ts";
+import type { FloorReady } from "../confine/floor.ts";
+import { type Decision, DecisionEngine, type DecisionMode } from "../decision.ts";
 import type { PreflightOutcome, TaskFrame } from "../decisions/input-preflight.ts";
 import type { NotifyFn } from "../decisions/notify-routing.ts";
 import { JudgeError } from "../errors.ts";
@@ -13,7 +15,9 @@ import { CompositeLedger, type LedgerRecord, type LedgerSink, MemoryLedger } fro
 import type { ClassifierCall } from "../providers/classifier.ts";
 import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
+import { isOpenAIAddress, type OpenAIKeyProblem } from "../providers/openai-decisions.ts";
 import { buildJudge, resolveJudgeConfig } from "../registry.ts";
+import type { Capability, JsonValue } from "../types.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
 import {
 	type KyrnPresentationEvent,
@@ -21,9 +25,11 @@ import {
 	type PresentationListener,
 	type ProgressCode,
 } from "./presentation.ts";
+import { ToolMasks } from "./tool-masks.ts";
 
 export const LEDGER_ENTRY_TYPE = "kyrn.decision";
 const GATEWAY_PROVIDER_ID = "vercel-ai-gateway";
+const OPENAI_PROVIDER_ID = "openai";
 const STATUS_KEY = "kyrn";
 
 export function textOf(content: unknown): string {
@@ -44,9 +50,9 @@ export function clip(text: string, length: number): string {
 }
 
 /**
- * The person's own words. A host may put its instructions in front of what the person typed: AionUi's
- * core prefixes the first message of a conversation with `[Assistant Rules] … [/Assistant Rules]`, its
- * skill list, some 1,600 characters. That text is for the main model. A judge asked about "the user's
+ * The person's own words. A host may put its instructions in front of what the person typed: the backend,
+ * mu's desktop backend, prefixes the first message of a conversation with `[Assistant Rules] …
+ * [/Assistant Rules]`, its skill list, some 1,600 characters. That text is for the main model. A judge asked about "the user's
  * message", and the task frame that takes the first message as the goal, must not read it as theirs.
  */
 export function userWords(text: string): string {
@@ -161,6 +167,8 @@ export class KyrnRuntime {
 	readonly memory = new MemoryLedger();
 	/** Everything installed that the judge may open per task: packs, MCP servers, language servers. */
 	readonly catalog = new CapabilityCatalog();
+	/** Which tools are kept off the model's list, by whom and why: the one place that sets pi's active tools. */
+	readonly toolMasks: ToolMasks;
 	readonly problems: string[] = [];
 	readonly savings: Savings = {
 		admissionOmittedChars: 0,
@@ -182,15 +190,50 @@ export class KyrnRuntime {
 	lastActivityAt = Date.now();
 	/** The task frame as the frame feature keeps it. Undefined while that feature is off: the stand-in answers then. */
 	frameState: FrameState | undefined;
+	/**
+	 * Where mu keeps its own state, `<agent dir>/mu`. Undefined when whoever embeds mu owns the setup (tests, an
+	 * injected provider or config): nothing is written to the user's folder then.
+	 */
+	stateDir: string | undefined;
 	/** A goal is set and running: deciding whether the agent may stop is the goal feature's job, nobody else's. */
 	goalActive = false;
+	/** Sets of questions the model asked with ask_user that nobody answered in time and that still wait for /answer. */
+	questionsOpen = 0;
+	/**
+	 * Plan mode is on (`/plan`, features/plan.ts): nothing changes until the user approves a plan, and the checks that
+	 * send the agent back to work leave a plan as it is.
+	 */
+	planMode = false;
+	/**
+	 * Puts items on the task frame's checklist, as the user's; how many went on. Set by the frame feature, when it is on
+	 * and there is a task: an approved plan's steps go here.
+	 */
+	addChecklist: ((texts: readonly string[]) => number) | undefined;
+	/**
+	 * Offers a feature that is off by default (`feature:<name>` in the catalog) to the user: asks them, when the model
+	 * offers it, and writes it to the config file on their yes. What the model is told comes back. Set by
+	 * features/feature-offers.ts where a config file can be written.
+	 */
+	offerFeature: ((id: string, ctx: ExtensionContext, by: "model" | "user") => Promise<string>) | undefined;
+	/** The `feature:<name>` entries the user turned on in this conversation: on from the next one. */
+	readonly featuresTurnedOn = new Set<string>();
 	/** The harness itself cut the run that is ending (mid-stream correction), and will start the next one. Not the user's Esc. */
 	harnessAbort = false;
+	/**
+	 * When the run has to be done (epoch ms), set by the deadline feature from MU_TIME_BUDGET_S or
+	 * `features.deadline.budgetS`. Undefined when no budget is known: then nothing depends on it.
+	 */
+	deadlineAt: number | undefined;
 	/**
 	 * The ends of runs (pi's `agent_end` event, the one object every handler gets) after which a feature already sent
 	 * the agent back to work, so a later check says nothing more about the same end. One voice is enough.
 	 */
 	readonly nudgedEnds = new WeakSet<object>();
+	/**
+	 * Set before the features register: a feature that sent the agent back to work on a judge's verdict tells it here,
+	 * and what the agent did next is recorded (`nudge-outcome.ts`).
+	 */
+	nudges?: { sent: (decision: Decision<JsonValue>, nudged: AgentEndEvent) => void };
 	/**
 	 * Whoever keeps the task frame sets this. It hears of a message the moment its turn is counted,
 	 * so the frame's judge runs alongside preflight's instead of after its wait.
@@ -200,17 +243,42 @@ export class KyrnRuntime {
 	 * Set by the permissions feature: the mode this conversation runs in. Undefined while that feature is
 	 * off, and then the guard alone looks at risky commands, as before there were modes.
 	 */
-	permissionMode?: () => "full" | "jev" | "ask";
+	permissionMode?: () => "full" | "judge" | "ask";
+	/**
+	 * Set by the confine feature while it is on: the write floor for a project folder, made ready on first use, or why
+	 * it cannot start here. The agent's background jobs and the programs it debugs run inside it, as its bash commands do.
+	 */
+	floor?: (cwd: string) => Promise<FloorReady>;
+	/**
+	 * Set by the confine feature with the floor: the way out of it. `asks` tells a call that asks to run outside the floor
+	 * (`bash` or `bg_start` with `outside: true`); the permission gate decides it, in every mode, and `allow` lets that
+	 * one call out, once, as its input is. The tool that runs the call `take`s it: true when the gate allowed this call
+	 * with this command. A call nobody allowed runs inside the floor like any other.
+	 */
+	floorExit?: {
+		readonly asks: (toolName: string, input: unknown) => boolean;
+		readonly allow: (toolCallId: string, input: unknown) => void;
+		readonly take: (toolCallId: string, command: string) => boolean;
+	};
 	/**
 	 * Set by the memory feature: for each sub-agent task, the lessons of this project that apply to it,
 	 * one line each, for the "known lessons" of its brief. Undefined while that feature is off.
 	 */
 	knownLessons?: (tasks: readonly string[], signal?: AbortSignal) => Promise<readonly (readonly string[])[]>;
 	/**
-	 * True when the configured judge answers concurrent calls concurrently (a hosted model). The local
-	 * sidecar answers one at a time, and there the work of a turn is best asked in order of importance.
+	 * Set by the skills feature: the skills this session keeps out of the prompt, which a sub-agent takes instead of
+	 * asking again. Undefined while nothing is settled (the first verdict is still on its way, or the decision is off).
 	 */
-	readonly judgeParallel: boolean;
+	skillsHidden?: () => readonly string[] | undefined;
+	/**
+	 * Set by the catalog feature: the capabilities this session has opened, which a sub-agent opens instead of asking
+	 * again. Undefined before a turn has chosen, or while the decision is off.
+	 */
+	capabilitiesOpen?: () => readonly string[] | undefined;
+	/** The judges in use, in order: the configured tiers, or what `/mu judge` switched to. */
+	private tiers: readonly string[];
+	/** Decisions answered by their own judges (`routes` in mu.json, `/mu route`). */
+	private readonly routes = new Map<string, readonly string[]>();
 	private latestCtx: ExtensionContext | undefined;
 	private firstUserMessage = "";
 	private turnStartListeners: ((words: string) => void)[] = [];
@@ -219,19 +287,22 @@ export class KyrnRuntime {
 	onPresentation?: PresentationListener;
 	/** Set by the free Jev notice: how each call went when the `jev` judge falls back to the free Jev. */
 	onFreeJev?: (outcome: FreeJevOutcome) => void;
+	/** Told when the `openai` judge has no usable key (features/openai-key.ts says so once). */
+	onOpenAIKey?: (problem: OpenAIKeyProblem) => void;
 	/** Features that show the person what another feature announced: the board says a permission is waiting. */
 	private readonly observers = new Map<KyrnPresentationEvent["kind"], Set<(payload: unknown) => void>>();
 
 	constructor(pi: ExtensionAPI, config: KyrnConfig, judge?: JudgeLike, problem?: string) {
 		this.pi = pi;
+		this.toolMasks = new ToolMasks(pi);
 		this.config = config;
 		if (problem) this.problems.push(problem);
-		this.judgeParallel = resolveJudgeConfig(config.tiers[0] ?? "", config)?.type !== "local";
+		this.tiers = config.tiers;
 		const sessionLedger: LedgerSink = {
 			append: (record: LedgerRecord) => {
 				pi.appendEntry(LEDGER_ENTRY_TYPE, record);
 				// Raw judge inputs are not part of the UI protocol, even when the diagnostic ledger records them.
-				const { state: _state, ...visible } = record;
+				const { state: _state, questions: _questions, ...visible } = record;
 				// A judge that answers after the next message began still belongs to the turn that asked.
 				this.present("decision", visible, askedTurn(record) ?? this.userTurns);
 			},
@@ -241,6 +312,9 @@ export class KyrnRuntime {
 			ledger: new CompositeLedger([this.memory, sessionLedger]),
 			defaultMode: config.modes.default ?? "active",
 			modes: Object.fromEntries(Object.entries(config.modes).filter(([specId]) => specId !== "default")),
+			builtInModes: Object.fromEntries(
+				Object.entries(DEFAULT_CONFIG.modes).filter(([specId]) => specId !== "default"),
+			),
 			recordState: config.recordState,
 			// Which turn asked, and under which version of the task: a verdict about "the goal" is only as good as that goal.
 			origin: () => ({ turn: this.userTurns, frame: this.frameState?.frame?.version ?? 0 }),
@@ -256,6 +330,8 @@ export class KyrnRuntime {
 	route(specId: string, tiers: readonly string[]): readonly string[] {
 		const before = this.problems.length;
 		this.engine.setJudgeFor(specId, tiers.length > 0 ? this.buildConfiguredJudge(tiers) : undefined);
+		if (tiers.length > 0) this.routes.set(specId, tiers);
+		else this.routes.delete(specId);
 		return this.problems.slice(before);
 	}
 
@@ -269,19 +345,53 @@ export class KyrnRuntime {
 				gatewayApiKey: async () =>
 					(await this.latestCtx?.modelRegistry.getApiKeyForProvider(GATEWAY_PROVIDER_ID)) ??
 					process.env.AI_GATEWAY_API_KEY,
+				openaiApiKey: async () => {
+					const registry = this.latestCtx?.modelRegistry;
+					const models = registry?.getAll().filter((model) => model.provider === OPENAI_PROVIDER_ID) ?? [];
+					// A models.json that moves the `openai` provider elsewhere makes its key that address's.
+					if (models.some((model) => !isOpenAIAddress(model.baseUrl))) return undefined;
+					// The Decisions API takes API keys only, never the token of a Sign in with ChatGPT.
+					const signedIn = models.length > 0 && registry?.isUsingOAuth(models[0]) === true;
+					const stored = signedIn ? undefined : await registry?.getApiKeyForProvider(OPENAI_PROVIDER_ID);
+					return stored ?? process.env.OPENAI_API_KEY;
+				},
 				llm: (model, options) => this.llm(model, options),
 				classify: (model) => this.classifier(model),
 				freeJev: (outcome) => this.onFreeJev?.(outcome),
+				openaiKeyProblem: (problem) => this.onOpenAIKey?.(problem),
 			},
 		);
 		this.problems.push(...built.problems);
 		return built.judge;
 	}
 
-	/** Switch the decision model at runtime, e.g. `/mu judge laya,jev`. */
+	/**
+	 * Whether any judge of `specId` (its route, else the tiers) is trusted on `capability`. When none is, the cascade
+	 * gives each such question a neutral answer without asking.
+	 */
+	trusts(specId: string, capability: Capability): boolean {
+		return this.judgesFor(specId).some((judge) => isTrusted(judge.profile, capability));
+	}
+
+	/**
+	 * Whether the judge that answers `specId`'s questions takes many of them in one request. That is the first of its
+	 * judges (its route, else the tiers) trusted on `capability`, as the cascade picks it. A logprob judge sends each
+	 * question as its own request with the state in front: there a batch state would go out once per question, so its
+	 * items are asked one at a time instead.
+	 */
+	answersInBatches(specId: string, capability: Capability): boolean {
+		return this.judgesFor(specId).find((judge) => isTrusted(judge.profile, capability))?.type !== "logprob";
+	}
+
+	private judgesFor(specId: string): JudgeConfig[] {
+		return (this.routes.get(specId) ?? this.tiers).flatMap((name) => resolveJudgeConfig(name, this.config) ?? []);
+	}
+
+	/** Switch the decision model at runtime, e.g. `/mu judge mude,jev`. */
 	useJudges(tiers: readonly string[]): readonly string[] {
 		const before = this.problems.length;
 		this.engine.setJudge(this.buildConfiguredJudge(tiers));
+		this.tiers = tiers;
 		return this.problems.slice(before);
 	}
 
@@ -333,8 +443,11 @@ export class KyrnRuntime {
 		};
 	}
 
-	/** A completion function over one of the host's models. Looked up per call, because models load after extensions. */
-	llm(modelRef: string, options: { thinking?: string } = {}): LlmCompletion {
+	/**
+	 * A completion function over one of the host's models. Looked up per call, because models load after extensions.
+	 * `maxTokens` caps the reply (2000 by default, 8000 with thinking on, which spends the same budget).
+	 */
+	llm(modelRef: string, options: { thinking?: string; maxTokens?: number } = {}): LlmCompletion {
 		return async ({ system, user, signal }) => {
 			const ctx = this.latestCtx;
 			if (!ctx) throw new JudgeError("unreachable", "No session is attached yet");
@@ -352,7 +465,9 @@ export class KyrnRuntime {
 					},
 					{
 						signal,
-						maxTokens: 2000,
+						// The reasoning comes out of the same budget: thinking on mu's questions, Nemotron 3 Ultra
+						// used up to 4,400 tokens.
+						maxTokens: options.maxTokens ?? (thinking ? 8000 : 2000),
 						reasoning: thinking as never,
 						cacheRetention: "none",
 						sessionId: this.sessionId,
@@ -384,7 +499,11 @@ export class KyrnRuntime {
 		return this.engine.getMode(specId);
 	}
 
+	/** The options each feature read, with their defaults: what `features.<name>` in mu.json is checked against. */
+	readonly optionDefaults = new Map<string, Record<string, unknown>>();
+
 	options<T extends { enabled: boolean }>(feature: string, defaults: T): T {
+		this.optionDefaults.set(feature, { ...defaults, ...this.optionDefaults.get(feature) });
 		return featureOptions(this.config, feature, defaults);
 	}
 
@@ -406,8 +525,7 @@ export class KyrnRuntime {
 	 * work the moment the message arrives instead of when the turn starts: memory, skills and
 	 * capabilities are then read alongside preflight, and the turn starts after the slowest of them
 	 * rather than after all of them in a row. The listener gets what the judge should read
-	 * (`judgedText`). It is not called when the judge answers one call at a time: there, later work
-	 * would only delay preflight, and the turn's order of importance is preflight first.
+	 * (`judgedText`).
 	 */
 	atTurnStart(listener: (words: string) => void): void {
 		this.turnStartListeners.push(listener);
@@ -415,7 +533,6 @@ export class KyrnRuntime {
 
 	/** Whoever counted the turn calls this once preflight's own question is on its way. */
 	startTurnWork(userMessage: string): void {
-		if (!this.judgeParallel) return;
 		const words = judgedText(userMessage, this.pi.getCommands());
 		if (words === undefined) return;
 		for (const listener of this.turnStartListeners) {
@@ -471,7 +588,8 @@ export class KyrnRuntime {
 		return { goal, currentSubgoal: current && current !== goal ? current : undefined };
 	}
 
-	status(text: string): void {
+	/** Sets mu's line in the footer; undefined takes it down. */
+	status(text: string | undefined): void {
 		const ctx = this.latestCtx;
 		if (ctx?.hasUI) ctx.ui.setStatus(STATUS_KEY, text);
 	}
@@ -551,7 +669,7 @@ export class KyrnRuntime {
 		}
 	}
 
-	/** "cascade(local:laya>gateway:typesafe-ai/jev)" -> "laya>jev". */
+	/** "cascade(127.0.0.1:8790:mude>gateway:typesafe-ai/jev)" -> "mude>jev". */
 	get judgeLabel(): string {
 		if (!this.enabled) return "off";
 		const id = this.engine.providerId.replace(/^cascade\((.*)\)$/, "$1");
@@ -588,6 +706,19 @@ export function within<T>(work: Promise<T>, waitMs: number): Promise<T | undefin
 	]).finally(() => {
 		if (timer) clearTimeout(timer);
 	});
+}
+
+/**
+ * A judge call that is only worth having within `waitMs`, or undefined. Unlike `within`, the call does not carry on:
+ * `ask` gets a signal, aborted when the time is up. A verdict nobody waits for any more must not keep the judge busy,
+ * nor keep a one-shot run (`mu --print`) from exiting until the judge's own timeout. The engine records the call as
+ * aborted.
+ */
+export async function askWithin<T>(ask: (signal: AbortSignal) => Promise<T>, waitMs: number): Promise<T | undefined> {
+	const controller = new AbortController();
+	const result = await within(ask(controller.signal), waitMs);
+	if (result === undefined) controller.abort();
+	return result;
 }
 
 /** Wraps a handler so a bug in a feature can never block a tool or a prompt: pi treats a throw as a veto. */

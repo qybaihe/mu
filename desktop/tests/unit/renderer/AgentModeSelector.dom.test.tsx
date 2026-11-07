@@ -87,8 +87,8 @@ vi.mock('react-i18next', () => ({
           ? '默认'
           : key === 'agentMode.bypassPermissions'
             ? '全自动'
-            : key === 'agentMode.descriptions.jev'
-              ? 'Jev genehmigt Befehle für dich.'
+            : key === 'agentMode.descriptions.judge'
+              ? 'Der Judge genehmigt Befehle für dich.'
               : (options?.defaultValue ?? key),
   }),
 }));
@@ -344,9 +344,9 @@ describe('AgentModeSelector', () => {
       mode: {
         id: 'mode',
         category: 'mode',
-        currentValue: 'jev',
+        currentValue: 'judge',
         options: [
-          { value: 'jev', label: 'Jev 审批', description: '项目里的读和改直接做；命令由 Jev 替你审批。' },
+          { value: 'judge', label: '判定模式', description: '项目里的读和改直接做；命令由判定器替你审批。' },
           { value: 'custom', label: 'Custom', description: 'A mode of another agent' },
         ],
       },
@@ -360,7 +360,7 @@ describe('AgentModeSelector', () => {
     const tooltips = [...document.querySelectorAll('[data-tooltip-content]')].map((element) =>
       element.getAttribute('data-tooltip-content')
     );
-    expect(tooltips).toEqual(['Jev genehmigt Befehle für dich.', 'A mode of another agent']);
+    expect(tooltips).toEqual(['Der Judge genehmigt Befehle für dich.', 'A mode of another agent']);
   });
 
   it('shows runtime mode descriptions in option tooltips', () => {

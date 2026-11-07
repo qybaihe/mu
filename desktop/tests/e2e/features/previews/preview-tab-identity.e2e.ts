@@ -34,7 +34,7 @@ import { goToGuid } from '../../helpers';
 const PREVIEW_PANEL = '[data-project-preview-region]';
 
 /** `preview.unsavedChangesTitle`, both shipped locales. */
-const DIRTY_MARK = /Unsaved Changes|未保存的修改/;
+const DIRTY_MARK = /Unsaved changes|未保存的修改/;
 
 type BackendWindow = Window & { __backendPort?: number };
 
@@ -53,7 +53,7 @@ async function createProjectConversation(
 ): Promise<ProjectIds> {
   const ids = await page.evaluate(async (ws) => {
     const port = (window as BackendWindow).__backendPort;
-    if (!port) throw new Error('window.__backendPort is not available — is aioncore running?');
+    if (!port) throw new Error('window.__backendPort is not available — is the backend running?');
     const base = `http://127.0.0.1:${port}`;
 
     const created = await fetch(`${base}/api/conversations`, {
@@ -116,7 +116,7 @@ test.describe('Preview — tab identity and persistence', () => {
   let ids: ProjectIds | null = null;
 
   test.beforeAll(() => {
-    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-e2e-identity-'));
+    workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'mu-e2e-identity-'));
     /**
      * A `.txt` rather than a `.md`: markdown defaults to the rendered preview
      * (`MarkdownViewer.tsx:239`), so reaching its editor needs an extra

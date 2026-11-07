@@ -26,6 +26,30 @@ export type WebviewNavigation = {
   reload: () => void;
   /** Go to an address (already a URL); the page's own address again reloads it. */
   go: (url: string) => void;
+  /** Runs a script in the page and resolves with what it evaluates to (a promise's value); rejects with no page. */
+  run: (script: string) => Promise<unknown>;
+  /** The page's webContents id, for the main process; undefined before the page exists. */
+  webContentsId: () => number | undefined;
+  /** Gives the page the keyboard. */
+  focus: () => void;
+};
+
+/** A warning or an error the page wrote to its console (an uncaught exception is one). */
+export type PageConsoleEntry = {
+  level: 'error' | 'warning';
+  message: string;
+  /** The script that wrote it, when the page says. */
+  source?: string;
+  line?: number;
+  /** When it was heard, in ms since the epoch. */
+  at: number;
+};
+
+/** The console's level as Electron gives it (0 verbose, 1 info, 2 warning, 3 error; a name in later versions). */
+const consoleLevel = (level: unknown): PageConsoleEntry['level'] | null => {
+  if (level === 3 || level === 'error') return 'error';
+  if (level === 2 || level === 'warning') return 'warning';
+  return null;
 };
 
 export interface WebviewHostProps {
@@ -80,6 +104,10 @@ export interface WebviewHostProps {
   onNavigationChange?: (state: WebviewNavigationState) => void;
   /** Filled with the page's navigation while it is mounted (see `onNavigationChange`). */
   navigationRef?: React.Ref<WebviewNavigation>;
+  /** Hears the warnings and errors the page writes to its console; this host's own messages are not among them. */
+  onConsoleMessage?: (entry: PageConsoleEntry) => void;
+  /** The page loaded a new document (an address, a reload): not when it only changes its address in place. */
+  onNewDocument?: () => void;
 }
 
 const MIN_ZOOM_FACTOR = 0.75;
@@ -113,6 +141,8 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
   pristine = false,
   onNavigationChange,
   navigationRef,
+  onConsoleMessage,
+  onNewDocument,
 }) => {
   const { t, i18n } = useTranslation();
   // An owner that draws the navigation gets the state instead of a bar; the loading veil is for bare embeds only.
@@ -137,6 +167,10 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
   onFaviconChangeRef.current = onFaviconChange;
   const onNavigationChangeRef = useRef(onNavigationChange);
   onNavigationChangeRef.current = onNavigationChange;
+  const onConsoleMessageRef = useRef(onConsoleMessage);
+  onConsoleMessageRef.current = onConsoleMessage;
+  const onNewDocumentRef = useRef(onNewDocument);
+  onNewDocumentRef.current = onNewDocument;
 
   // Navigation state
   const [currentUrl, setCurrentUrl] = useState(url);
@@ -344,7 +378,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
           return;
         }
 
-        if (event.message.includes('__AIONUI_WEBVIEW_ZOOM__')) {
+        if (event.message.includes('__MU_WEBVIEW_ZOOM__')) {
           const match = event.message.match(/"deltaY":(-?\d+(\.\d+)?)/);
           if (match && match[1]) {
             const deltaY = Number(match[1]);
@@ -357,13 +391,26 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
           return;
         }
 
-        if (event.message.includes('__AIONUI_WEBVIEW_ZOOM_RESET__')) {
+        if (event.message.includes('__MU_WEBVIEW_ZOOM_RESET__')) {
           setZoomFactor(1);
+          return;
         }
+
+        const level = consoleLevel(event.level);
+        if (level && onConsoleMessageRef.current)
+          onConsoleMessageRef.current({
+            level,
+            message: String(event.message),
+            ...(event.sourceId ? { source: event.sourceId } : {}),
+            ...(event.line > 0 ? { line: event.line } : {}),
+            at: Date.now(),
+          });
       } catch {
         // Ignore parse errors
       }
     };
+
+    const handleNewDocument = () => onNewDocumentRef.current?.();
 
     const handleDidNavigate = (event: Event & { url?: string }) => {
       const newUrl = event.url;
@@ -444,18 +491,18 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
           .executeJavaScript(
             `
           (function() {
-            if (window.__aionuiZoomInjected) return true;
-            window.__aionuiZoomInjected = true;
+            if (window.__muZoomInjected) return true;
+            window.__muZoomInjected = true;
             window.addEventListener('wheel', function(e) {
               if (!(e.ctrlKey || e.metaKey)) return;
               e.preventDefault();
-              console.log('__AIONUI_WEBVIEW_ZOOM__', JSON.stringify({ deltaY: e.deltaY }));
+              console.log('__MU_WEBVIEW_ZOOM__', JSON.stringify({ deltaY: e.deltaY }));
             }, { passive: false, capture: true });
             window.addEventListener('keydown', function(e) {
               if (!(e.ctrlKey || e.metaKey)) return;
               if (e.key === '0') {
                 e.preventDefault();
-                console.log('__AIONUI_WEBVIEW_ZOOM_RESET__');
+                console.log('__MU_WEBVIEW_ZOOM_RESET__');
               }
             }, { capture: true });
             return true;
@@ -522,6 +569,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
     webviewEl.addEventListener('did-stop-loading', handleStopLoading);
     webviewEl.addEventListener('dom-ready', handleDomReady);
     webviewEl.addEventListener('did-navigate', handleDidNavigate as EventListener);
+    webviewEl.addEventListener('did-navigate', handleNewDocument);
     webviewEl.addEventListener('did-navigate-in-page', handleDidNavigate as EventListener);
     webviewEl.addEventListener('console-message', handleConsoleMessage as EventListener);
     webviewEl.addEventListener('did-finish-load', handleDidFinishLoad);
@@ -534,6 +582,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       webviewEl.removeEventListener('did-stop-loading', handleStopLoading);
       webviewEl.removeEventListener('dom-ready', handleDomReady);
       webviewEl.removeEventListener('did-navigate', handleDidNavigate as EventListener);
+      webviewEl.removeEventListener('did-navigate', handleNewDocument);
       webviewEl.removeEventListener('did-navigate-in-page', handleDidNavigate as EventListener);
       webviewEl.removeEventListener('console-message', handleConsoleMessage as EventListener);
       webviewEl.removeEventListener('did-finish-load', handleDidFinishLoad);
@@ -651,6 +700,21 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       forward: handleGoForward,
       reload: handleRefresh,
       go: (targetUrl: string) => (targetUrl === currentUrl ? handleRefresh() : navigateToWithHistory(targetUrl)),
+      run: async (script: string) => {
+        const view = webviewRef.current;
+        if (!view || !view.isConnected) throw new Error('The page is not open');
+        // A user gesture: what the person asked for may need one (a picker reading the page's own focus).
+        return view.executeJavaScript(script, true);
+      },
+      webContentsId: () => {
+        try {
+          return webviewRef.current?.getWebContentsId();
+        } catch {
+          // Before the page's dom-ready a webview has no webContents.
+          return undefined;
+        }
+      },
+      focus: () => webviewRef.current?.focus(),
     }),
     [handleGoBack, handleGoForward, handleRefresh, navigateToWithHistory, currentUrl]
   );
@@ -719,7 +783,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       {drawsNavBar && (
         <style>
           {`
-            .aion-url-viewer-toolbar {
+            .mu-url-viewer-toolbar {
               --viewer-border: var(--color-border-2);
               --viewer-border-hover: var(--color-border-3);
               --viewer-bg: var(--color-bg-3);
@@ -727,7 +791,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               --viewer-text: var(--color-text-2);
               --viewer-text-muted: var(--color-text-3);
             }
-            .aion-url-viewer-toolbar .toolbar-btn {
+            .mu-url-viewer-toolbar .toolbar-btn {
               -webkit-appearance: none;
               appearance: none;
               display: inline-flex;
@@ -745,30 +809,30 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               transition: all 150ms ease;
               cursor: pointer;
             }
-            .aion-url-viewer-toolbar .toolbar-btn.icon-btn {
+            .mu-url-viewer-toolbar .toolbar-btn.icon-btn {
               width: 30px;
               min-width: 30px;
               padding: 0;
             }
-            .aion-url-viewer-toolbar .toolbar-btn:hover:not(:disabled) {
+            .mu-url-viewer-toolbar .toolbar-btn:hover:not(:disabled) {
               background: var(--viewer-bg-hover);
               border-color: var(--viewer-border-hover);
             }
-            .aion-url-viewer-toolbar .toolbar-btn:active:not(:disabled) {
+            .mu-url-viewer-toolbar .toolbar-btn:active:not(:disabled) {
               transform: translateY(0.5px);
             }
-            .aion-url-viewer-toolbar .toolbar-btn:focus-visible {
+            .mu-url-viewer-toolbar .toolbar-btn:focus-visible {
               outline: none;
               border-color: rgb(var(--primary-6));
               box-shadow: 0 0 0 2px rgba(var(--primary-6), 0.12);
             }
-            .aion-url-viewer-toolbar .toolbar-btn:disabled {
+            .mu-url-viewer-toolbar .toolbar-btn:disabled {
               opacity: 0.55;
               cursor: not-allowed;
               color: var(--viewer-text-muted);
               background: var(--color-bg-2);
             }
-            .aion-url-viewer-toolbar .toolbar-chip {
+            .mu-url-viewer-toolbar .toolbar-chip {
               display: inline-flex;
               align-items: center;
               justify-content: center;
@@ -782,7 +846,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               font-size: 11px;
               line-height: 1;
             }
-            .aion-url-viewer-toolbar .toolbar-input {
+            .mu-url-viewer-toolbar .toolbar-input {
               -webkit-appearance: none;
               appearance: none;
               /* box-sizing 必须显式声明：width:100% 配 padding + border 时，
@@ -804,10 +868,10 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
               line-height: 30px;
               transition: all 150ms ease;
             }
-            .aion-url-viewer-toolbar .toolbar-input:hover {
+            .mu-url-viewer-toolbar .toolbar-input:hover {
               border-color: var(--viewer-border-hover);
             }
-            .aion-url-viewer-toolbar .toolbar-input:focus {
+            .mu-url-viewer-toolbar .toolbar-input:focus {
               outline: none;
               border-color: rgb(var(--primary-6));
               box-shadow: 0 0 0 2px rgba(var(--primary-6), 0.12);
@@ -817,7 +881,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       )}
       {/* Navigation bar (optional) */}
       {drawsNavBar && (
-        <div className='aion-url-viewer-toolbar flex items-center gap-6px h-40px px-10px bg-bg-2 border-b border-border-1 flex-shrink-0'>
+        <div className='mu-url-viewer-toolbar flex items-center gap-6px h-40px px-10px bg-bg-2 border-b border-border-1 flex-shrink-0'>
           <button
             onClick={handleGoBack}
             disabled={!canGoBack}

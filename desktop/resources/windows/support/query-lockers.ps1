@@ -82,6 +82,8 @@ try {
       'Uninstall mu.exe',
       'resources\app.asar',
       'resources\app-update.yml',
+      'resources\bundled-backend\win32-x64\aioncore.exe',
+      # Where versions before 0.1.10 kept it: an update over one of them meets that process.
       'resources\bundled-aioncore\win32-x64\aioncore.exe'
     )
     $known = @(
@@ -122,7 +124,7 @@ using System;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace AionUi.RestartManager {
+namespace Mu.RestartManager {
   public enum RM_APP_TYPE {
     RmUnknownApp = 0,
     RmMainWindow = 1,
@@ -169,7 +171,7 @@ namespace AionUi.RestartManager {
 
   $sessionHandle = [uint32]0
   $key = New-Object System.Text.StringBuilder 64
-  $result = [AionUi.RestartManager.Native]::RmStartSession([ref]$sessionHandle, 0, $key)
+  $result = [Mu.RestartManager.Native]::RmStartSession([ref]$sessionHandle, 0, $key)
   if ($result -ne 0) {
     throw "RmStartSession=$result"
   }
@@ -178,7 +180,7 @@ namespace AionUi.RestartManager {
     for ($i = 0; $i -lt $resources.Count; $i += 256) {
       $end = [Math]::Min($i + 255, $resources.Count - 1)
       $chunk = [string[]]$resources[$i..$end]
-      $result = [AionUi.RestartManager.Native]::RmRegisterResources($sessionHandle, [uint32]$chunk.Count, $chunk, 0, [IntPtr]::Zero, 0, $null)
+      $result = [Mu.RestartManager.Native]::RmRegisterResources($sessionHandle, [uint32]$chunk.Count, $chunk, 0, [IntPtr]::Zero, 0, $null)
       if ($result -ne 0) {
         throw "RmRegisterResources=$result"
       }
@@ -197,7 +199,7 @@ namespace AionUi.RestartManager {
       $needed = [uint32]0
       $count = [uint32]0
       $reasons = [uint32]0
-      $result = [AionUi.RestartManager.Native]::RmGetList($sessionHandle, [ref]$needed, [ref]$count, $null, [ref]$reasons)
+      $result = [Mu.RestartManager.Native]::RmGetList($sessionHandle, [ref]$needed, [ref]$count, $null, [ref]$reasons)
       if ($result -ne $ERROR_ACCESS_DENIED) {
         break
       }
@@ -214,8 +216,8 @@ namespace AionUi.RestartManager {
           Start-Sleep -Milliseconds (50 * $attempt)
         }
         $count = $needed
-        $apps = New-Object 'AionUi.RestartManager.RM_PROCESS_INFO[]' $count
-        $result = [AionUi.RestartManager.Native]::RmGetList($sessionHandle, [ref]$needed, [ref]$count, $apps, [ref]$reasons)
+        $apps = New-Object 'Mu.RestartManager.RM_PROCESS_INFO[]' $count
+        $result = [Mu.RestartManager.Native]::RmGetList($sessionHandle, [ref]$needed, [ref]$count, $apps, [ref]$reasons)
         if ($result -ne $ERROR_ACCESS_DENIED -and $result -ne $ERROR_MORE_DATA) {
           break
         }
@@ -267,7 +269,7 @@ namespace AionUi.RestartManager {
 
     Write-LockersAndExit $lockers '' '' 0 $resources.Count $needed
   } finally {
-    [void][AionUi.RestartManager.Native]::RmEndSession($sessionHandle)
+    [void][Mu.RestartManager.Native]::RmEndSession($sessionHandle)
   }
 } catch {
   Write-InstallerJson 'rm-error' @{

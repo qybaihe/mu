@@ -71,10 +71,10 @@ export default defineConfig(({ mode }) => {
       plugins: [
         // externalizeDepsPlugin replaces our custom getExternalDeps() + pluginExternalizeDynamicImports.
         // 'fix-path' excluded so it gets bundled inline (only 3KB).
-        // '@aionui/web-host' excluded so its TS sources (which use ESM ".js" import specifiers)
-        // are bundled by esbuild rather than left as `require('@aionui/web-host')`, which Node
+        // '@mu/web-host' excluded so its TS sources (which use ESM ".js" import specifiers)
+        // are bundled by esbuild rather than left as `require('@mu/web-host')`, which Node
         // cannot resolve because the package ships no compiled .js files (workspace-only).
-        externalizeDepsPlugin({ exclude: ['fix-path', '@aionui/web-host'] }),
+        externalizeDepsPlugin({ exclude: ['fix-path', '@mu/web-host'] }),
         ...(isDevelopment
           ? [
               {
@@ -111,9 +111,6 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           input: {
             index: resolve('packages/desktop/src/index.ts'),
-            // The local judge where Core ML does not run, started as a utility process (onnxruntime-node stays
-            // external and loads from node_modules, which a utility process reads inside app.asar).
-            localJudgeOnnx: resolve('packages/desktop/src/process/services/localJudgeOnnx/entry.ts'),
             // The native host (MU_NATIVE_HOST=1): pi in a utility process per session, imported at run time from the
             // harness it is started with (docs/native-host.md).
             nativeHost: resolve('packages/desktop/src/process/services/nativeHost/entry.ts'),
@@ -161,7 +158,7 @@ export default defineConfig(({ mode }) => {
       publicDir: resolve('public'),
       appType: 'mpa',
       server: {
-        // Default to 5173; when occupied (e.g. another AionUi clone is running),
+        // Default to 5173; when occupied (e.g. another clone of the repo is running),
         // Vite auto-increments to the next available port.
         // electron-vite reads the actual port and sets ELECTRON_RENDERER_URL accordingly.
         port: 5173,
@@ -272,7 +269,7 @@ export default defineConfig(({ mode }) => {
       define: {
         'process.env.NODE_ENV': JSON.stringify(mode),
         'process.env.env': JSON.stringify(process.env.env),
-        'process.env.AIONUI_MULTI_INSTANCE': JSON.stringify(process.env.AIONUI_MULTI_INSTANCE ?? ''),
+        'process.env.MU_MULTI_INSTANCE': JSON.stringify(process.env.MU_MULTI_INSTANCE ?? ''),
         // The app's version (root package.json), shown on 关于 until the main process says which version runs.
         __APP_VERSION__: JSON.stringify(rootPackageJson.version),
         global: 'globalThis',

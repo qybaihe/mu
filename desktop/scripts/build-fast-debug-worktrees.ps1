@@ -1,7 +1,7 @@
 param(
   [string[]]$Versions = @(),
   [string]$OutputDir = (Join-Path $PSScriptRoot '..\out-fast-builds'),
-  [string]$WorktreeRoot = (Join-Path $PSScriptRoot '..\..\aionui-build-worktrees'),
+  [string]$WorktreeRoot = (Join-Path $PSScriptRoot '..\..\mu-build-worktrees'),
   [int]$TimeoutSeconds = 1800,
   [switch]$Sequential
 )
@@ -75,7 +75,7 @@ function Remove-LongPathTree([string]$Path) {
   }
 }
 
-function New-BuildCommandFile([string]$WorktreePath, [string]$Version, [string]$LocalAioncoreBinary, [string]$LocalAioncoreBundleDir) {
+function New-BuildCommandFile([string]$WorktreePath, [string]$Version, [string]$LocalBackendBinary, [string]$LocalBackendBundleDir) {
   $scriptPath = Join-Path $WorktreePath "build-$Version.ps1"
   $lines = @(
     '$ErrorActionPreference = ''Stop''',
@@ -83,10 +83,10 @@ function New-BuildCommandFile([string]$WorktreePath, [string]$Version, [string]$
     'New-Item -ItemType Directory -Force -Path $buildTemp | Out-Null',
     '$env:TEMP = $buildTemp',
     '$env:TMP = $buildTemp',
-    '$env:AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION = ''' + $Version + '''',
+    '$env:MU_DEBUG_AUTO_UPDATE_CURRENT_VERSION = ''' + $Version + '''',
     '$env:ELECTRON_BUILDER_COMPRESSION_LEVEL = ''1''',
-    '$env:AIONUI_BACKEND_LOCAL_BINARY = ''' + ($LocalAioncoreBinary -replace "'", "''") + '''',
-    '$env:AIONUI_BACKEND_LOCAL_BUNDLE_DIR = ''' + ($LocalAioncoreBundleDir -replace "'", "''") + '''',
+    '$env:MU_BACKEND_LOCAL_BINARY = ''' + ($LocalBackendBinary -replace "'", "''") + '''',
+    '$env:MU_BACKEND_LOCAL_BUNDLE_DIR = ''' + ($LocalBackendBundleDir -replace "'", "''") + '''',
     '$env:ELECTRON_CACHE = Join-Path $env:LOCALAPPDATA ''electron\Cache''',
     '& bun run build-win:x64:fast',
     'exit $LASTEXITCODE'
@@ -95,8 +95,8 @@ function New-BuildCommandFile([string]$WorktreePath, [string]$Version, [string]$
   return $scriptPath
 }
 
-function Start-BuildProcess([string]$WorktreePath, [string]$Version, [string]$LogDir, [string]$LocalAioncoreBinary, [string]$LocalAioncoreBundleDir) {
-  $scriptPath = New-BuildCommandFile $WorktreePath $Version $LocalAioncoreBinary $LocalAioncoreBundleDir
+function Start-BuildProcess([string]$WorktreePath, [string]$Version, [string]$LogDir, [string]$LocalBackendBinary, [string]$LocalBackendBundleDir) {
+  $scriptPath = New-BuildCommandFile $WorktreePath $Version $LocalBackendBinary $LocalBackendBundleDir
   $stdoutPath = Join-Path $LogDir "build-$Version.out.log"
   $stderrPath = Join-Path $LogDir "build-$Version.err.log"
   $process = Start-Process -FilePath 'powershell.exe' `
@@ -218,24 +218,24 @@ Invoke-Git $repoRoot @('diff', '--binary', 'HEAD', "--output=$patchPath") | Out-
 $hasPatch = (Get-Item -LiteralPath $patchPath).Length -gt 0
 $baseRef = (Invoke-Git $repoRoot @('rev-parse', 'HEAD')).Trim()
 $nodeModules = Join-Path $repoRoot 'node_modules'
-$localAioncoreBinary = Join-Path $repoRoot 'resources\bundled-aioncore\win32-x64\aioncore.exe'
-$localAioncoreBundleDir = Join-Path $repoRoot 'out\win-unpacked\resources\bundled-aioncore\win32-x64'
-if (-not (Test-Path -LiteralPath (Join-Path $localAioncoreBundleDir 'managed-resources') -PathType Container)) {
-  $localAioncoreBundleDir = Join-Path $env:LOCALAPPDATA 'Programs\mu\resources\bundled-aioncore\win32-x64'
+$localBackendBinary = Join-Path $repoRoot 'resources\bundled-backend\win32-x64\aioncore.exe'
+$localBackendBundleDir = Join-Path $repoRoot 'out\win-unpacked\resources\bundled-backend\win32-x64'
+if (-not (Test-Path -LiteralPath (Join-Path $localBackendBundleDir 'managed-resources') -PathType Container)) {
+  $localBackendBundleDir = Join-Path $env:LOCALAPPDATA 'Programs\mu\resources\bundled-backend\win32-x64'
 }
-if (Test-Path -LiteralPath (Join-Path $localAioncoreBundleDir 'managed-resources') -PathType Container) {
-  $localAioncoreBundleDir = (Resolve-Path -LiteralPath $localAioncoreBundleDir).Path
-  Write-Host "=== using local aioncore bundle fallback: $localAioncoreBundleDir ==="
+if (Test-Path -LiteralPath (Join-Path $localBackendBundleDir 'managed-resources') -PathType Container) {
+  $localBackendBundleDir = (Resolve-Path -LiteralPath $localBackendBundleDir).Path
+  Write-Host "=== using the local backend bundle fallback: $localBackendBundleDir ==="
 } else {
-  $localAioncoreBundleDir = ''
-  Write-Warning 'Local aioncore bundle fallback was not found; builds may need to prepare managed resources.'
+  $localBackendBundleDir = ''
+  Write-Warning 'The local backend bundle fallback was not found; builds may need to prepare managed resources.'
 }
-if (Test-Path -LiteralPath $localAioncoreBinary -PathType Leaf) {
-  $localAioncoreBinary = (Resolve-Path -LiteralPath $localAioncoreBinary).Path
-  Write-Host "=== using local aioncore fallback: $localAioncoreBinary ==="
+if (Test-Path -LiteralPath $localBackendBinary -PathType Leaf) {
+  $localBackendBinary = (Resolve-Path -LiteralPath $localBackendBinary).Path
+  Write-Host "=== using the local backend fallback: $localBackendBinary ==="
 } else {
-  $localAioncoreBinary = ''
-  Write-Warning 'Local aioncore fallback was not found; builds may need to download aioncore.'
+  $localBackendBinary = ''
+  Write-Warning 'The local backend fallback was not found; builds may need to download the backend.'
 }
 $worktrees = @()
 $builds = @()
@@ -244,7 +244,7 @@ $completed = $false
 
 try {
   foreach ($version in $buildVersions) {
-    $worktreePath = Join-Path $runRoot "AionUi-$version"
+    $worktreePath = Join-Path $runRoot "mu-$version"
     $worktrees += $worktreePath
     Write-Host "=== prepare worktree ${version}: $worktreePath ==="
     Invoke-Git $repoRoot @('worktree', 'add', '--detach', $worktreePath, $baseRef) | Out-Null
@@ -260,9 +260,9 @@ try {
   }
 
   foreach ($version in $buildVersions) {
-    $worktreePath = Join-Path $runRoot "AionUi-$version"
+    $worktreePath = Join-Path $runRoot "mu-$version"
     Write-Host "=== build $version start: $(Get-Date -Format o) ==="
-    $build = Start-BuildProcess $worktreePath $version $runRoot $localAioncoreBinary $localAioncoreBundleDir
+    $build = Start-BuildProcess $worktreePath $version $runRoot $localBackendBinary $localBackendBundleDir
     if ($Sequential) {
       $result = Wait-BuildProcess $build $TimeoutSeconds
       $results += $result

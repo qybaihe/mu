@@ -84,7 +84,21 @@ const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) =
             (expanded ? ' break-all' : ' truncate') +
             (hasDetail ? ' cursor-pointer hover:color-#4E5969' : '')
           }
+          // A call with a detail opens it from the keyboard too; one without has nothing to open, so no tab stop.
+          role={hasDetail ? 'button' : undefined}
+          tabIndex={hasDetail ? 0 : undefined}
+          aria-expanded={hasDetail ? expanded : undefined}
           onClick={hasDetail ? () => setExpanded(!expanded) : undefined}
+          onKeyDown={
+            hasDetail
+              ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setExpanded(!expanded);
+                  }
+                }
+              : undefined
+          }
         >
           <span className='font-medium text-13px'>{normalized.name}</span>
           {normalized.description && <span className='m-l-4px opacity-80 text-13px'>{normalized.description}</span>}
@@ -92,6 +106,7 @@ const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) =
         {hasDetail && (
           <span
             className='flex-shrink-0 cursor-pointer hover:color-#4E5969 transition-colors'
+            aria-hidden='true'
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? <IconDown style={{ fontSize: 12 }} /> : <IconRight style={{ fontSize: 12 }} />}

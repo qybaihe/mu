@@ -78,7 +78,8 @@
     "callAria": "{{name}} · {{status}}",
     "denied": "Çalıştırılmadı: izin vermediniz.",
     "showMore": "Daha fazla göster",
-    "showLess": "Daha az göster"
+    "showLess": "Daha az göster",
+    "openInBrowser": "{{address}} adresini tarayıcıda aç"
   },
   "activity": {
     "running": "{{steps}} adım · çalışıyor {{label}}",

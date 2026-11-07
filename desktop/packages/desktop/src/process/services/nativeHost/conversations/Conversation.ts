@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { appendFile, open, stat } from 'node:fs/promises';
+import type { SwitchedModel } from '../../../../common/kyrn/login.ts';
+import { enabledModels } from '../../../../common/kyrn/models.ts';
 import type { NativeConversation, NativeHostStatus, NativeSnapshot } from '../../../../common/kyrn/nativeBridge.ts';
 import { readPresentation } from '../../../../common/utils/nativeHost/presentation.ts';
 import {
@@ -18,7 +20,7 @@ import {
 } from '../../../../common/utils/nativeHost/records.ts';
 import { fromEntries, reduce } from '../../../../common/utils/nativeHost/reducer.ts';
 import type { SessionSettings } from '../../../../common/utils/nativeHost/settings.ts';
-import { emptyView, type NativeView } from '../../../../common/utils/nativeHost/view.ts';
+import { emptyView, isJobLive, type NativeView } from '../../../../common/utils/nativeHost/view.ts';
 import { NativeHostError, type NativeHostState } from '../NativeHost.ts';
 import type { SessionRead, SessionViewRead } from '../sessions/readSession.ts';
 import type { StoredSession } from '../sessions/SessionStore.ts';
@@ -31,7 +33,7 @@ import {
   type SessionSummary,
 } from '../sessions/summary.ts';
 import { followsBranch } from './branch.ts';
-import { findModel, MODEL_WAITS_MS, PROMPT_MODEL_WAITS_MS, type ModelChoice } from './modelSearch.ts';
+import { findModel, MODEL_WAITS_MS, pickModel, PROMPT_MODEL_WAITS_MS, type ModelChoice } from './modelSearch.ts';
 import type { ConversationEvents, ConversationHost, StartHost } from './types.ts';
 
 /**
@@ -91,7 +93,7 @@ const STORE_LOCKED = /Lock file is already being held|ELOCKED/;
 /** A prompt refused because the model store was locked goes again after these waits (KyrnAgent.ts). */
 export const LOCKED_RETRY_MS = [1500, 3000] as const;
 
-/** Permission modes are words (`full`, `jev`, `ask`), as mu names them (process/agent/kyrn/permissions.ts). */
+/** Permission modes are words (`full`, `judge`, `ask`), as mu names them (process/agent/kyrn/permissions.ts). */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 
 /** The roles whose `message_end` pi saves as a `message` entry (AgentSession's `_savesMessage`, custom ones aside). */
@@ -290,7 +292,10 @@ export class Conversation {
     };
   }
 
-  /** Something runs, waits or is on its way: a run, a dialog, a compaction, a command, a start. Never ended idle. */
+  /**
+   * Something runs, waits or is on its way: a run, a dialog, a compaction, a command, a start, a command in the
+   * background (ending the host would stop it). Never ended idle.
+   */
   busy(): boolean {
     return (
       this.starting !== undefined ||
@@ -299,7 +304,8 @@ export class Conversation {
       this.inFlight > 0 ||
       this.running ||
       this.view.dialogs.length > 0 ||
-      this.view.live.compacting
+      this.view.live.compacting ||
+      (this.view.host.jobs ?? []).some(isJobLive)
     );
   }
 
@@ -400,6 +406,35 @@ export class Conversation {
     }
   }
 
+  /**
+   * `provider` was signed out. A running host on one of its models that pi no longer offers goes on with `wanted` (the
+   * model new sessions start on), else the first model pi offers, as a host that started without a model does
+   * (modelSearch.ts). Resolves with the model it went on with; undefined when the host runs another provider's model,
+   * pi still offers this one (the provider takes an API key too), or offers none. No host starts for it: one that
+   * starts later falls back by itself, as pi resumes a session whose model has no credentials.
+   */
+  async leave(provider: string, wanted?: ModelChoice): Promise<SwitchedModel | undefined> {
+    const host = this.host;
+    if (!host || !this.ready) return undefined;
+    this.inFlight += 1;
+    try {
+      const model = asObject((await host.request({ type: 'get_state' })).model);
+      if (asText(model.provider) !== provider || host !== this.host) return undefined;
+      const answer = await host.request({ type: 'get_available_models' });
+      const offered = asList(answer.models).map(asObject);
+      if (offered.some((each) => asText(each.provider) === provider && asText(each.id) === asText(model.id)))
+        return undefined;
+      const pick = pickModel(offered, wanted, enabledModels(answer));
+      if (!pick || host !== this.host) return undefined;
+      const next = { provider: asText(pick.provider), model: asText(pick.id), name: asText(pick.name) };
+      await host.request({ type: 'set_model', provider: next.provider, modelId: next.model });
+      return next;
+    } finally {
+      this.inFlight -= 1;
+      this.owner.touched(this);
+    }
+  }
+
   /** Ends the host, if one runs or is starting. The conversation stays, with its session file. */
   async end(): Promise<void> {
     this.generation += 1;
@@ -408,6 +443,12 @@ export class Conversation {
     if (host) {
       this.detach(host);
       this.setStatus({ phase: 'idle' });
+      // Its commands in the background end with it: mu stops them as its session closes.
+      if (this.view.host.jobs) {
+        const { jobs: _jobs, ...rest } = this.view.host;
+        this.view = { ...this.view, host: rest };
+        this.emitReplaced();
+      }
       // A start this end overtook says it when it lets go (ensureHost).
       if (!starting) this.changed();
       await host.dispose();
@@ -789,7 +830,7 @@ export class Conversation {
 
   /**
    * The view anew from pi's session: what its file has, and what pi has not written yet. The dialogs pi waits on, the
-   * live part of a run and what only the live host says (`host`: the Jev panel's activity, mu's notices, pi's queue)
+   * live part of a run and what only the live host says (`host`: the work panel's activity, mu's notices, pi's queue)
    * stay as they were: a session file has none of them.
    */
   private async rebuild(host: ConversationHost, known?: PiSessionState): Promise<void> {

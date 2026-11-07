@@ -77,7 +77,7 @@ const DEADLINES: RpcDeadlines = { command: 30_000, start: 180_000 };
 
 /**
  * What the adapter logs when mu stopped without being asked to: the exit, then the end of mu's error output. The adapter's
- * error output is AionCore's to log (each line under "CLI process stderr" in the app's log folder); mu's own never
+ * error output is the backend's to log (each line under "CLI process stderr" in the app's log folder); mu's own never
  * reaches the client.
  */
 export function stoppedReport(
@@ -156,7 +156,7 @@ export class PiRpc implements RpcPort {
       // No console window flashing up on Windows for a process that only speaks JSON lines.
       windowsHide: true,
     });
-    // Decoded as UTF-8 (anything else becomes U+FFFD): AionCore stops reading the adapter's error output at the first
+    // Decoded as UTF-8 (anything else becomes U+FFFD): the backend stops reading the adapter's error output at the first
     // line that is not UTF-8, and this tail can end up there.
     this.child.stderr.setEncoding('utf8');
     this.child.stderr.on('data', (chunk: string) => {

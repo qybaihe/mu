@@ -2,7 +2,7 @@ import { lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync, renameS
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isReadOnlyCommand } from "../checkpoint/mutating.ts";
+import { isReadOnlyChain, isReadOnlyCommand, shellStart } from "../checkpoint/mutating.ts";
 import { isShellTool } from "../extension/shell-tools.ts";
 
 /**
@@ -10,15 +10,15 @@ import { isShellTool } from "../extension/shell-tools.ts";
  *
  * - `full`: nothing is asked. What the user said not to do still stops a call
  *   (the constraint gate is about the user's words, not about permission).
- * - `jev`: Jev approves for the user. Reading and editing inside the project
- *   go ahead, as the task itself; a command, a change outside the project, an
- *   action on the outside world or a sub-agent goes to Jev, and only what Jev
- *   does not approve reaches the user.
+ * - `judge`: the judge approves for the user. Reading and editing inside the
+ *   project go ahead, as the task itself; a command, a change outside the
+ *   project, an action on the outside world or a sub-agent goes to the judge,
+ *   and only what the judge does not approve reaches the user.
  * - `ask`: minimal permissions. Reading goes ahead; everything else asks.
  */
-export type PermissionMode = "full" | "jev" | "ask";
+export type PermissionMode = "full" | "judge" | "ask";
 
-export const PERMISSION_MODES: readonly PermissionMode[] = ["full", "jev", "ask"];
+export const PERMISSION_MODES: readonly PermissionMode[] = ["full", "judge", "ask"];
 
 export const MODE_TEXT: Readonly<
 	Record<PermissionMode, { zh: string; en: string; zhDescription: string; enDescription: string }>
@@ -27,20 +27,20 @@ export const MODE_TEXT: Readonly<
 		zh: "完全访问",
 		en: "Full access",
 		zhDescription: "什么都不问，直接执行。你明确说过不许做的事仍然会被拦下。",
-		enDescription: "Runs everything without asking. What you said not to do is still stopped.",
+		enDescription: "Runs everything without asking. Anything you've told mu not to do is still blocked.",
 	},
-	jev: {
-		zh: "Jev 审批",
-		en: "Jev approves",
-		zhDescription: "项目里的读和改直接做；命令、项目外的改动、对外操作由 Jev 替你审批，它拿不准的才问你。",
+	judge: {
+		zh: "判定模式",
+		en: "Judge mode",
+		zhDescription: "项目里的读和改直接做；命令、项目外的改动、对外操作由判定器替你审批，它拿不准的才问你。",
 		enDescription:
-			"Reads and edits in the project go ahead; Jev approves commands, changes outside the project and outside actions for you, and asks you only when it is not sure.",
+			"Reads and edits inside the project go ahead. The judge decides on commands, changes outside the project and actions outside this computer, and asks you only when it's unsure.",
 	},
 	ask: {
 		zh: "最小权限",
-		en: "Minimal permissions",
+		en: "Ask first",
 		zhDescription: "只读操作直接做；改文件、跑命令、对外操作都先问你。",
-		enDescription: "Only reading goes ahead; every edit, command and outside action asks you first.",
+		enDescription: "Only reads go ahead. mu asks you before every edit, command and action outside this computer.",
 	},
 };
 
@@ -49,10 +49,12 @@ const ALIASES: Readonly<Record<string, PermissionMode>> = {
 	"full-access": "full",
 	yolo: "full",
 	完全访问: "full",
-	jev: "jev",
-	auto: "jev",
-	judge: "jev",
-	审批: "jev",
+	judge: "judge",
+	// The mode's name before 0.1.12: settings, MU_PERMISSIONS and saved conversations may still say it.
+	jev: "judge",
+	auto: "judge",
+	审批: "judge",
+	判定模式: "judge",
 	ask: "ask",
 	minimal: "ask",
 	"read-only": "ask",
@@ -73,9 +75,9 @@ export interface PermissionNeed {
 	readonly summary: string;
 	/** What an "allow for this conversation" covers. Undefined: this call can only be allowed once. */
 	readonly grant?: { readonly key: string; readonly label: string };
-	/** Never approved by Jev or a grant: the user decides, every time. */
+	/** Never approved by the judge or a grant: the user decides, every time. */
 	readonly protected?: string;
-	/** In the project folder (edits) — the one thing Jev mode lets through without a judgment. */
+	/** In the project folder (edits) — the one thing judge mode lets through without a judgment. */
 	readonly inProject?: boolean;
 }
 
@@ -88,11 +90,15 @@ const LOOKING: ReadonlySet<string> = new Set([
 	"find_skill",
 	"find_capability",
 	"locate",
+	"lsp",
 	"todo",
 	"web_search",
 	"web_fetch",
 	"bg_output",
 	"bg_stop",
+	"recall",
+	"ask_user",
+	"present",
 	"conflicts_list",
 	"conflicts_show",
 	"sg_search",
@@ -198,7 +204,7 @@ export function insideProject(cwd: string, path: string): boolean {
 }
 
 /**
- * A file of the project, which Jev mode edits without asking: inside the folder, and not git's own. Git runs its
+ * A file of the project, which judge mode edits without asking: inside the folder, and not git's own. Git runs its
  * hooks and reads its config on the user's next git command, and a checkpoint never holds them.
  */
 function projectFile(cwd: string, target: string | undefined): boolean {
@@ -238,13 +244,16 @@ const clip = (value: string, length: number) => {
 /**
  * Whether a call needs permission, and what it is. Wrong in the safe direction
  * only: a tool nobody listed needs permission, and a command counts as only
- * looking when every part of it is on the short read-only list.
+ * looking when every part of it is on the short read-only list. `chains`: a
+ * chain of read-only commands (`pwd && ls -la; git status`) only looks too
+ * (`isReadOnlyChain`); without it, only a single command or pipeline does.
  */
 export function permissionNeed(
 	toolName: string,
 	input: Readonly<Record<string, unknown>>,
 	cwd: string,
 	protectedPaths: readonly string[] = [],
+	chains = true,
 ): PermissionNeed | undefined {
 	// Without regard to case: Windows and macOS name a folder in any case, and more protection is the safe direction.
 	const touches = (value: string) => {
@@ -258,7 +267,11 @@ export function permissionNeed(
 		// PowerShell where that is the one shell tool. pi's bash tool runs bash on Windows too (Git Bash), where a quoted
 		// parenthesis, as in `rg 'useState\(' src`, is only text.
 		const powershell = toolName === "powershell" || (toolName === "bg_start" && process.platform === "win32");
-		if (isReadOnlyCommand(command, powershell)) return undefined;
+		const start = shellStart(toolName, input, cwd);
+		if (
+			chains ? isReadOnlyChain(command, powershell, cwd, start) : isReadOnlyCommand(command, powershell, cwd, start)
+		)
+			return undefined;
 		const guarded = touches(command);
 		const prefix = commandPrefix(command);
 		return {

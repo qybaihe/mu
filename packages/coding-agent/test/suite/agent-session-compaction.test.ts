@@ -503,6 +503,8 @@ describe("AgentSession compaction characterization", () => {
 				tools: [largeTool],
 				extensionFactories: [
 					(pi) => {
+						// Keep this threshold test independent of the default prompt and checkout path length.
+						pi.on("before_agent_start", () => ({ systemPrompt: "Compaction test." }));
 						pi.on("session_before_compact", (event) => {
 							order.push("compaction");
 							observedSettings.push(event.preparation.settings);
@@ -539,10 +541,12 @@ describe("AgentSession compaction characterization", () => {
 			expect(order.slice(0, 2)).toEqual(["compaction", "provider"]);
 			expect(observedSettings[0]).toEqual({ enabled: true, reserveTokens: 400, keepRecentTokens: 1750 });
 			expect(harness.eventsOfType("agent_start")).toHaveLength(agentStartsBefore + 1);
-			expect(harness.eventsOfType("compaction_start").at(-1)).toEqual({
-				type: "compaction_start",
-				reason: "threshold",
-			});
+			expect(harness.eventsOfType("compaction_start")).toEqual([
+				{
+					type: "compaction_start",
+					reason: "threshold",
+				},
+			]);
 			expect(resumedRequest).toContain("compacted history");
 			expect(resumedRequest).toContain("large-tool-result");
 			expect(harness.session.getLastAssistantText()).toBe("finished after compaction");

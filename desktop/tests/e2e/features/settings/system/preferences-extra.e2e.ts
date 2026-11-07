@@ -101,7 +101,7 @@ test.describe('System Preferences — Extra', () => {
 
   // TC-PREF-08: Language round-trip — switch to Japanese then back to Chinese
   test('TC-PREF-08: should switch language to Japanese and back to Chinese', async ({ page }) => {
-    const selectTrigger = page.locator('.aion-select .arco-select-view').first();
+    const selectTrigger = page.locator('.mu-select .arco-select-view').first();
     await expect(selectTrigger).toBeVisible();
 
     await selectTrigger.click();

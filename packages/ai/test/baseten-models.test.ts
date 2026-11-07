@@ -19,21 +19,18 @@ describe("Baseten models", () => {
 		expect(getModel("baseten", "zai-org/GLM-5.2-Fast").input).toEqual(["text"]);
 	});
 
-	it("models Kimi K2.6 reasoning as an explicit off/on toggle", async () => {
-		const model = getModel("baseten", "moonshotai/Kimi-K2.6");
+	it("sends only the thinking toggle for a model that takes no reasoning effort", async () => {
+		// What the generator makes of a Baseten model whose reasoning is an off/on toggle without an effort. The
+		// catalog has none at the moment (Kimi K2.6 was one), so the model is GLM 5.2 without the effort.
+		const glm52 = getModel("baseten", "zai-org/GLM-5.2");
+		const model = {
+			...glm52,
+			thinkingLevelMap: { off: "off", minimal: null, low: null, medium: null, high: "high", xhigh: null, max: null },
+			compat: { ...glm52.compat, supportsReasoningEffort: false },
+		};
 		let payload: Record<string, unknown> | undefined;
 
-		expect(model.thinkingLevelMap).toEqual({
-			off: "off",
-			minimal: null,
-			low: null,
-			medium: null,
-			high: "high",
-			xhigh: null,
-			max: null,
-		});
 		expect(model.compat).toMatchObject({
-			supportsReasoningEffort: false,
 			thinkingFormat: "baseten",
 			chatTemplateArgs: { enable_thinking: { $var: "thinking.enabled" } },
 		});

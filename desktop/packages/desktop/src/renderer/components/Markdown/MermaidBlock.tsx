@@ -74,14 +74,6 @@ function MermaidBlock({ code, style, showOpenInPanelButton = true, enablePanZoom
   } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
 
-  // Reset the view whenever a fresh diagram renders so a re-render never leaves the
-  // user staring at an off-screen, zoomed-in fragment of the previous diagram.
-  // A re-render also replaces the overlay content, so close it as well.
-  useEffect(() => {
-    setTransform({ scale: 1, x: 0, y: 0 });
-    setIsZoomOpen(false);
-  }, [svg]);
-
   const zoomBy = (delta: number) =>
     setTransform((prev) => ({
       ...prev,
@@ -159,8 +151,17 @@ function MermaidBlock({ code, style, showOpenInPanelButton = true, enablePanZoom
     let cancelled = false;
     const source = debouncedCode.trim();
 
+    // A new diagram starts from the default view and replaces what the zoom overlay showed. Both are reset in the
+    // same update that sets the diagram: a reset in an effect after it would land after the commit, and undo a zoom
+    // made the moment the diagram appeared.
+    const showDiagram = (next: string | null) => {
+      setSvg(next);
+      setTransform({ scale: 1, x: 0, y: 0 });
+      setIsZoomOpen(false);
+    };
+
     if (!source) {
-      setSvg(null);
+      showDiagram(null);
       setIsRendering(false);
       setViewMode('source');
       return () => {
@@ -168,7 +169,7 @@ function MermaidBlock({ code, style, showOpenInPanelButton = true, enablePanZoom
       };
     }
 
-    setSvg(null);
+    showDiagram(null);
     setIsRendering(true);
 
     const renderDiagram = async () => {
@@ -178,13 +179,13 @@ function MermaidBlock({ code, style, showOpenInPanelButton = true, enablePanZoom
         const { svg: renderedSvg } = await mermaid.render(`${blockIdRef.current}-${Date.now()}`, source);
 
         if (!cancelled) {
-          setSvg(withResponsiveSvg(renderedSvg));
+          showDiagram(withResponsiveSvg(renderedSvg));
           setIsRendering(false);
           setViewMode(preferredViewModeRef.current === 'source' ? 'source' : 'preview');
         }
       } catch {
         if (!cancelled) {
-          setSvg(null);
+          showDiagram(null);
           setIsRendering(false);
           setViewMode('source');
         }

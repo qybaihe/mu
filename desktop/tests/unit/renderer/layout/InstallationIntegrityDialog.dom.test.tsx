@@ -15,7 +15,7 @@ const RDC = 'common.backendStartup.recoverableDatabaseCorruption';
 const COPY: Record<string, string> = {
   [`${RDC}.title`]: 'Local data is corrupted',
   [`${RDC}.description`]:
-    'AionUi detected that the local database is corrupted and cannot continue startup. After confirmation, AionUi will back up the old database and create a new local database to continue startup. Past conversations will no longer be shown, and the old database will be kept as a backup file.',
+    'mu detected that the local database is corrupted and cannot continue startup. After confirmation, mu will back up the old database and create a new local database to continue startup. Past conversations will no longer be shown, and the old database will be kept as a backup file.',
   [`${RDC}.confirmRebuild`]: 'Back up old DB and rebuild new DB',
   [`${RDC}.rebuildFailed`]: 'Failed to back up old DB and rebuild new DB',
   [`${RDC}.confirmDialog.title`]: 'Rebuild the database?',

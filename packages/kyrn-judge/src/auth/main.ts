@@ -3,7 +3,12 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import type { Provider } from "@earendil-works/pi-ai";
 // pi itself: its sources in a checkout (run with Node's own type stripping), its own bundle's index in the npm package (kyrn/npm/build.mjs).
-import { defaultModelPerProvider, ModelRuntime } from "@earendil-works/pi-coding-agent";
+import {
+	defaultModelPerProvider,
+	FileModelsStore,
+	ModelRuntime,
+	SettingsManager,
+} from "@earendil-works/pi-coding-agent";
 import { featureOptions, loadConfig } from "../config.ts";
 import { antigravityProvider, geminiCliProvider } from "../google-login/providers.ts";
 import { muEnv, muHome } from "../naming.ts";
@@ -20,6 +25,8 @@ const agentDir = muEnv("AGENT_DIR") || join(muHome(), "agent");
 const authPath = join(agentDir, "auth.json");
 const modelsStorePath = join(agentDir, "models-store.json");
 const say = (message: Readonly<Record<string, unknown>>) => process.stdout.write(`${JSON.stringify(message)}\n`);
+/** Aborts when the process is told to end: a sign-in under way gives its callback port back before the exit. */
+const ending = new AbortController();
 
 /**
  * The Google sign-ins are mu's, offered while its googleLogin feature is on, which is read from the user's mu.json
@@ -44,17 +51,39 @@ function googleProviders(): Provider[] {
 	}
 }
 
+/** pi's settings for this agent directory, read once when a command needs them. */
+let settings: SettingsManager | undefined;
+const piSettings = (): SettingsManager => {
+	settings ??= SettingsManager.create(process.cwd(), agentDir);
+	return settings;
+};
+
 async function main(): Promise<number> {
+	const modelsStore = new FileModelsStore(modelsStorePath);
 	const runtime = await ModelRuntime.create({
 		authPath,
 		modelsPath: join(agentDir, "models.json"),
-		modelsStorePath,
+		modelsStore,
 		refreshOnCreate: false,
 	});
 	return runAuth(process.argv.slice(2), {
 		runtime,
 		preferred: defaultModelPerProvider,
 		extra: googleProviders(),
+		forgetModels: (providerId) => modelsStore.delete(providerId),
+		// The global list, the one /scoped-models saves and every session of mu reads.
+		enabledModels: {
+			read: () => piSettings().getGlobalSettings().enabledModels,
+			write: async (patterns) => {
+				piSettings().setEnabledModels(patterns);
+				await piSettings().flush();
+			},
+		},
+		login: {
+			agentName: "mu",
+			// The id pi keeps in settings.json for this installation: the same one a /login in the terminal sends.
+			getDeviceId: () => piSettings().getOrCreateDeviceId(),
+		},
 		io: {
 			say,
 			listen: (line, end) => {
@@ -63,6 +92,7 @@ async function main(): Promise<number> {
 				lines.on("close", end);
 			},
 		},
+		signal: ending.signal,
 	});
 }
 
@@ -76,7 +106,10 @@ const leave = (code: number): void => {
 // Exits once the answer is out: a sign-in's callback server or an idle connection must not keep the process alive.
 // A run the app ends (SIGTERM, at its time limit or when it quits) ends the same way, with no lock left either.
 for (const signal of ["SIGTERM", "SIGINT", "SIGHUP"] as const)
-	process.on(signal, () => leave(128 + constants.signals[signal]));
+	process.on(signal, () => {
+		ending.abort();
+		leave(128 + constants.signals[signal]);
+	});
 main().then(leave, (error: unknown) => {
 	say({ type: "error", message: error instanceof Error ? error.message : String(error) });
 	leave(1);

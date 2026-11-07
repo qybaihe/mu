@@ -2,9 +2,9 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
+import { characterEnd } from "@earendil-works/chord/output";
 import { afterAll, describe, expect, it } from "vitest";
 import { NodeExecutionEnv } from "../src/env/node.ts";
-import { characterEnd } from "../src/harness/output.ts";
 import type { ToolDiagnostic, ToolExecutionApi } from "../src/harness/types.ts";
 import { detectSupportedImageMimeType } from "../src/tools/image.ts";
 import { createReadTool } from "../src/tools/read.ts";
@@ -17,16 +17,11 @@ import { DEFAULT_MAX_BYTES, formatSize, truncateHead } from "../src/truncate.ts"
 function referenceRead(bytes: Uint8Array, path: string, offset: number | undefined, limit: number | undefined) {
 	const mimeType = detectSupportedImageMimeType(bytes);
 	if (mimeType) {
+		const block = { type: "image", data: Buffer.from(bytes).toString("base64"), mimeType };
 		return {
-			content: [],
-			isError: true,
-			diagnostics: [
-				{
-					severity: "error",
-					code: "unsupported_image",
-					message: `${path} is an image (${mimeType}); reading images is not supported`,
-				},
-			],
+			output: [block],
+			structuredOutput: block,
+			diagnostics: [{ severity: "info", code: "image", message: `Read image file [${mimeType}].` }],
 		};
 	}
 	const textContent = new TextDecoder().decode(bytes);
@@ -79,7 +74,8 @@ function referenceRead(bytes: Uint8Array, path: string, offset: number | undefin
 		});
 	}
 	return {
-		content: outputText === "" ? [] : [{ type: "text", text: outputText }],
+		output: outputText === "" ? [] : [{ type: "text", text: outputText }],
+		structuredOutput: outputText,
 		...(details === undefined ? {} : { details }),
 		diagnostics,
 	};
@@ -136,6 +132,7 @@ function apiFor(env: NodeExecutionEnv): ToolExecutionApi {
 		outputWindow: undefined,
 		diagnostic: () => {},
 		details: async () => {},
+		agent: async () => ({}),
 	} as unknown as ToolExecutionApi;
 }
 

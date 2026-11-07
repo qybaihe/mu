@@ -42,13 +42,13 @@ describe('mu presentation events', () => {
 describe('permission modes', () => {
   const modes = [
     { id: 'full', label: 'Full access', description: 'Everything runs' },
-    { id: 'jev', label: 'Jev approves', description: '' },
+    { id: 'judge', label: 'Judge mode', description: '' },
     { id: 'ask', label: '', description: 'Asks first' },
   ];
 
   it('takes the modes mu offers, with the current one among them', () => {
-    expect(readModes({ mode: 'jev', modes, conversationSwitch: true })).toEqual({
-      mode: 'jev',
+    expect(readModes({ mode: 'judge', modes, conversationSwitch: true })).toEqual({
+      mode: 'judge',
       modes: [modes[0], modes[1], { id: 'ask', label: 'ask', description: 'Asks first' }],
       conversationSwitch: true,
     });
@@ -64,24 +64,24 @@ describe('permission modes', () => {
       { id: 'Full', label: 'y' },
       { id: '', label: 'z' },
     ];
-    expect(readModes({ mode: 'full', modes: hostile })?.modes.map((mode) => mode.id)).toEqual(['full', 'jev', 'ask']);
+    expect(readModes({ mode: 'full', modes: hostile })?.modes.map((mode) => mode.id)).toEqual(['full', 'judge', 'ask']);
     expect(readModes({ mode: 'full --here; /exit', modes: hostile })).toBeUndefined();
     expect(readModes({ mode: 'none', modes })).toBeUndefined();
     expect(readModes({ mode: 'full', modes: 'full' })).toBeUndefined();
   });
 
   it('sends only a word to mu as a mode', () => {
-    for (const id of ['full', 'jev', 'ask', 'read-only', 'a1']) expect(isModeId(id)).toBe(true);
+    for (const id of ['full', 'judge', 'ask', 'read-only', 'a1']) expect(isModeId(id)).toBe(true);
     for (const id of ['', 'Full', '1full', 'full ask', 'full\n/exit', '-x', 'a'.repeat(33)])
       expect(isModeId(id)).toBe(false);
   });
 
   it('offers the modes as the send box’s permission picker', () => {
-    const option = modeOption({ mode: 'jev', modes, conversationSwitch: true });
-    expect(option).toMatchObject({ id: 'mode', category: 'mode', type: 'select', currentValue: 'jev' });
+    const option = modeOption({ mode: 'judge', modes, conversationSwitch: true });
+    expect(option).toMatchObject({ id: 'mode', category: 'mode', type: 'select', currentValue: 'judge' });
     expect(option.type === 'select' && option.options).toEqual([
       { value: 'full', name: 'Full access', description: 'Everything runs' },
-      { value: 'jev', name: 'Jev approves' },
+      { value: 'judge', name: 'Judge mode' },
       { value: 'ask', name: '', description: 'Asks first' },
     ]);
   });
