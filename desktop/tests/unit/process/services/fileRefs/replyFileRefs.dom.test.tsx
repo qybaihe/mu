@@ -258,4 +258,26 @@ describe('ordinary code', () => {
     }
     expect(screen.getAllByRole('button')).toHaveLength(1);
   });
+
+  it('does not wake settled blocks through context when a streamed chunk adds no new file reference', async () => {
+    const first = `First paragraph with \`${OWNER_IMAGES[0]}\`.\n\nSecond paragraph starts`;
+    const { rerender } = render(
+      <ReplyFileRefs markdown={first} cwd={CWD}>
+        <MarkdownView>{first}</MarkdownView>
+      </ReplyFileRefs>
+    );
+    await screen.findByRole('button', { name: `messages.fileRef.preview:${OWNER_IMAGES[0]}` });
+    expect(mocks.resolve).toHaveBeenCalledTimes(1);
+
+    const buttonBefore = screen.getByRole('button', { name: `messages.fileRef.preview:${OWNER_IMAGES[0]}` });
+    const next = `${first} streaming more plain prose without new paths.`;
+    rerender(
+      <ReplyFileRefs markdown={next} cwd={CWD}>
+        <MarkdownView>{next}</MarkdownView>
+      </ReplyFileRefs>
+    );
+
+    expect(screen.getByRole('button', { name: `messages.fileRef.preview:${OWNER_IMAGES[0]}` })).toBe(buttonBefore);
+    expect(mocks.resolve).toHaveBeenCalledTimes(1);
+  });
 });

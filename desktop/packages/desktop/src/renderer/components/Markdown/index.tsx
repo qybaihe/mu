@@ -74,12 +74,24 @@ type MarkdownViewProps = {
 const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
   ({ hiddenCodeCopyButton, codeStyle, className, onRef, onLocalFileLink, allowHtml, children: childrenProp }) => {
     const { t } = useTranslation();
+    const tRef = useRef(t);
+    tRef.current = t;
     // The preview panel changes whenever a tab opens, loads or updates, and every message in the conversation reads
     // this context. A link only needs the panel at the moment it is clicked, so the handler reads the latest one from
     // a ref: the markdown below is not parsed and its code highlighted again for a change in the panel.
     const preview = useOptionalPreviewContext();
     const previewRef = useRef(preview);
     previewRef.current = preview;
+    const onLocalFileLinkRef = useRef(onLocalFileLink);
+    onLocalFileLinkRef.current = onLocalFileLink;
+    const canOpenLocalFile = Boolean(onLocalFileLink);
+    const openLocalFile = useMemo(
+      () =>
+        canOpenLocalFile
+          ? (path: string, reference?: LocalFileLinkReference) => onLocalFileLinkRef.current?.(path, reference)
+          : undefined,
+      [canOpenLocalFile]
+    );
     // A reply draws the file links it can check its own way (renderer/components/media/FileRefs/).
     const fileSlots = useContext(MarkdownFileSlotsContext);
 
@@ -92,29 +104,26 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
       return childrenProp;
     }, [childrenProp]);
 
-    const handleLinkClick = useCallback(
-      (e: React.MouseEvent<HTMLAnchorElement>, rawHref: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // The address as written, never the anchor's resolved `href`: resolved against the app's own page, a
-        // relative or fragment link IS the app, and the app must not open inside its own browser tab (no desktop
-        // bridge there, so it shows the web sign-in) nor in the system browser.
-        const href = resolveWebLinkHref(rawHref);
-        if (!href) return;
-        // Prefer the built-in browser tab for http(s) links; fall back to the
-        // system browser for other schemes or when no Preview panel is available.
-        const httpUrl = parseHttpUrl(href);
-        const panel = previewRef.current;
-        if (httpUrl && panel) {
-          panel.openBrowserTab(httpUrl);
-          return;
-        }
-        openExternalUrl(href).catch((error: unknown) => {
-          console.error(t('messages.openLinkFailed'), error);
-        });
-      },
-      [t]
-    );
+    const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, rawHref: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // The address as written, never the anchor's resolved `href`: resolved against the app's own page, a
+      // relative or fragment link IS the app, and the app must not open inside its own browser tab (no desktop
+      // bridge there, so it shows the web sign-in) nor in the system browser.
+      const href = resolveWebLinkHref(rawHref);
+      if (!href) return;
+      // Prefer the built-in browser tab for http(s) links; fall back to the
+      // system browser for other schemes or when no Preview panel is available.
+      const httpUrl = parseHttpUrl(href);
+      const panel = previewRef.current;
+      if (httpUrl && panel) {
+        panel.openBrowserTab(httpUrl);
+        return;
+      }
+      openExternalUrl(href).catch((error: unknown) => {
+        console.error(tRef.current('messages.openLinkFailed'), error);
+      });
+    }, []);
 
     // Memoize components so React preserves component identity across re-renders.
     // Without this, every streaming update creates new function references → React
@@ -142,7 +151,7 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
             resolveLocalFileLinkReference(rawHref) ?? resolveRelativeFileLinkReference(rawHref);
           if (localFileReference) {
             const link = (
-              <LocalFileLink reference={localFileReference} onOpen={onLocalFileLink}>
+              <LocalFileLink reference={localFileReference} onOpen={openLocalFile}>
                 {anchorProps.children}
               </LocalFileLink>
             );
@@ -175,7 +184,7 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
           return <img {...imgProps} alt={imgProps.alt || ''} />;
         },
       }),
-      [codeStyle, hiddenCodeCopyButton, handleLinkClick, onLocalFileLink, fileSlots]
+      [codeStyle, hiddenCodeCopyButton, handleLinkClick, openLocalFile, fileSlots]
     );
 
     const rehypePlugins = useMemo(() => (allowHtml ? [rehypeRaw, rehypeKatex] : [rehypeKatex]), [allowHtml]);

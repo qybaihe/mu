@@ -1,21 +1,25 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Each highlighting the code block asks for: the language it passes and the code.
-const highlighted = vi.hoisted(() => [] as { language: string; code: string; wrapLines?: boolean }[]);
+const highlighted = vi.hoisted(
+  () => [] as { language: string; code: string; wrapLines?: boolean; style?: Record<string, unknown> }[]
+);
 
 vi.mock('react-syntax-highlighter', () => {
   const Highlighter = ({
     children,
     language,
     wrapLines,
+    style,
   }: {
     children: string;
     language: string;
     wrapLines?: boolean;
+    style?: Record<string, unknown>;
   }) => {
-    highlighted.push({ language, code: children, wrapLines });
+    highlighted.push({ language, code: children, wrapLines, style });
     return <div data-testid='highlighted'>{children}</div>;
   };
   return { default: Object.assign(Highlighter, { supportedLanguages: ['typescript', 'diff', 'json', 'plaintext'] }) };
@@ -85,5 +89,34 @@ describe('a code block while its reply streams', () => {
     );
     expect(highlighted).toHaveLength(2);
     expect(highlighted[1].code).toContain('export const c = 3;');
+  });
+
+  it('attaches no MutationObserver for inline code spans and shares one observer across fenced blocks', async () => {
+    const observeSpy = vi.spyOn(MutationObserver.prototype, 'observe');
+    const { unmount } = render(
+      <>
+        <CodeBlock>inlineOne</CodeBlock>
+        <CodeBlock>inlineTwo</CodeBlock>
+        <CodeBlock>inlineThree</CodeBlock>
+      </>
+    );
+    expect(observeSpy).not.toHaveBeenCalled();
+    unmount();
+
+    const fenced = render(
+      <>
+        <CodeBlock className='language-ts'>{code}</CodeBlock>
+        <CodeBlock className='language-ts'>{'const x = 1;\nconst y = 2;\n'}</CodeBlock>
+      </>
+    );
+    expect(observeSpy).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    });
+    expect(highlighted).toHaveLength(4);
+    fenced.unmount();
+    document.documentElement.removeAttribute('data-theme');
+    observeSpy.mockRestore();
   });
 });

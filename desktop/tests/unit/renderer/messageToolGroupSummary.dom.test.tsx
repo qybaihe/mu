@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ipcBridge } from '@/common';
 import type { TMessage } from '@/common/chat/chatLib';
-import type { ToolMessage } from '@/common/chat/normalizeToolCall';
+import { normalizeToolMessages, type ToolMessage } from '@/common/chat/normalizeToolCall';
 import MessageToolGroupSummary from '@/renderer/pages/conversation/Messages/components/MessageToolGroupSummary';
 import { shortPath } from '@/renderer/pages/conversation/Messages/components/toolActivity';
 import * as browserStore from '@/renderer/pages/conversation/Preview/browser/browserStore';
@@ -567,5 +567,18 @@ describe('a call still marked running', () => {
     expect(diffView).toHaveTextContent('- const b = 2;');
     expect(diffView).toHaveTextContent('+ const b = 3;');
     expect(diffView).toHaveTextContent('+ const c = 4;');
+  });
+
+  it('reuses normalized tool calls for completed siblings while a running tool streams output', () => {
+    const finished = tool('read', 'completed', { path: 'src/app.ts' }, 'const app = 1;');
+    const stepOne = tool('bash', 'running', { command: 'npm test' }, 'line 1');
+    const stepTwo = { ...stepOne, content: { ...stepOne.content, output: 'line 1\nline 2' } } as ToolMessage;
+
+    const first = normalizeToolMessages([finished, stepOne]);
+    const second = normalizeToolMessages([finished, stepTwo]);
+
+    expect(second[0]).toBe(first[0]);
+    expect(second[1]).not.toBe(first[1]);
+    expect(second[1].output).toBe('line 1\nline 2');
   });
 });
