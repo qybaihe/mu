@@ -1555,6 +1555,16 @@ const SendBox: React.FC<{
     [activeAtFileTokenKey, atFileMenuActiveIndex, insertSelectedAtFile, isAtFileMenuOpen, visibleAtFileMenuItems]
   );
 
+  // Clicking send or stop swaps that button for the other, and the clicked one takes focus with it: give it back to the
+  // text, so the next message can be typed at once.
+  const refocusInput = () => {
+    if (isMobile) return;
+    requestAnimationFrame(() => {
+      const textarea = getTextareaElement();
+      if (textarea && document.activeElement !== textarea) textarea.focus();
+    });
+  };
+
   const sendMessageHandler = () => {
     if (isUploading) return;
     if (enableBtw && btwQuestion !== null) {
@@ -1636,6 +1646,7 @@ const SendBox: React.FC<{
     setInput('');
     clearDomSnippets();
     setReplyQuote(null);
+    refocusInput();
 
     (snippetImages.length ? onSend(finalMessage, { images: snippetImages }) : onSend(finalMessage))
       .then((result) => {
@@ -1655,10 +1666,21 @@ const SendBox: React.FC<{
       await onStop();
     } finally {
       setIsLoading(false);
+      refocusInput();
     }
   };
 
   const hasDraftToSend = input.trim().length > 0 || domSnippets.length > 0;
+
+  // Esc stops a run, as the stop button does, once nothing nearer wants it: the menus and history are asked first, and
+  // a draft keeps Esc for itself so a half-written message is never lost to a stray key.
+  const handleStopShortcut = (event: React.KeyboardEvent): boolean => {
+    if (event.key !== 'Escape' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return false;
+    if (!onStop || !(isLoading || loading) || hasDraftToSend) return false;
+    event.preventDefault();
+    void stopHandler();
+    return true;
+  };
 
   const addToDraftLabel = t('conversation.commandQueue.addToQueue', { defaultValue: 'Save to Draft box' });
   const sendNowLabel = t('conversation.commandQueue.sendNow', { defaultValue: 'Send now' });
@@ -1769,12 +1791,17 @@ const SendBox: React.FC<{
 
   const renderActionButtons = () => {
     if (allowSendWhileLoading && (isLoading || loading)) {
-      // Keep a single action slot while processing: show stop when the draft is empty,
-      // and only switch back to send once the user has prepared a queued message.
+      // While processing, stop stays: a message written meanwhile adds send beside it rather than taking its place, so
+      // the run can be stopped without clearing the draft. A compact box keeps a single slot.
       if (compactActions || !hasDraftToSend || disabled || isUploading) {
         return stopButton;
       }
-      return primaryActionButton;
+      return (
+        <>
+          {stopButton}
+          {primaryActionButton}
+        </>
+      );
     }
 
     if (isLoading || loading) {
@@ -2181,7 +2208,8 @@ const SendBox: React.FC<{
                   handleAtSessionMenuKeyDown(event) ||
                   handleAtFileMenuKeyDown(event) ||
                   handleOverlayKeyDown(event) ||
-                  handleHistoryKeyDown(event)
+                  handleHistoryKeyDown(event) ||
+                  handleStopShortcut(event)
                 );
               })}
             ></Input.TextArea>

@@ -421,3 +421,49 @@ describe('the native send box', () => {
     expect(status()).toBeEmptyDOMElement();
   });
 });
+
+describe('focus around a dialog', () => {
+  it('goes back to the text once the last dialog is answered', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    await mount(host);
+    act(() => {
+      host.play('c1', [
+        { type: 'extension_ui_request', id: 'd1', method: 'select', title: 'Pick one', options: ['a', 'b'] },
+      ]);
+    });
+    const option = screen.getAllByTestId('native-dialog-option')[0];
+    option.focus();
+    expect(option).toHaveFocus();
+
+    await act(async () => {
+      fireEvent.click(option);
+    });
+    await waitFor(() => expect(screen.queryByTestId('native-dialog')).toBeNull());
+    expect(input()).toHaveFocus();
+  });
+
+  it('leaves focus where the person put it while the dialog was open', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    const elsewhere = document.createElement('input');
+    document.body.appendChild(elsewhere);
+    try {
+      await mount(host);
+      act(() => {
+        host.play('c1', [
+          { type: 'extension_ui_request', id: 'd1', method: 'select', title: 'Pick one', options: ['a', 'b'] },
+        ]);
+      });
+      const option = screen.getAllByTestId('native-dialog-option')[0];
+      await act(async () => {
+        fireEvent.click(option);
+        elsewhere.focus();
+      });
+      await waitFor(() => expect(screen.queryByTestId('native-dialog')).toBeNull());
+      expect(elsewhere).toHaveFocus();
+    } finally {
+      elsewhere.remove();
+    }
+  });
+});

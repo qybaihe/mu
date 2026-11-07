@@ -54,14 +54,20 @@ export type RowProps = {
   /** It wanted its person (a run ended, a question) while another conversation was on screen, and was not opened since. */
   unread: boolean;
   menuOpen: boolean;
-  onOpen: () => void;
-  onMenu: (open: boolean) => void;
-  onPin: () => void;
-  onToggleUnread: () => void;
-  onArchive: () => void;
-  onRestore: () => void;
-  onRename: () => void;
-  onDelete: () => void;
+  /** What the row asks of the list, the same for every row and every render: so a row redraws only when it changes. */
+  actions: RowActions;
+};
+
+/** The list's answers to a row, each told which conversation asks. */
+export type RowActions = {
+  open: (conversation: NativeConversation) => void;
+  menu: (conversation: NativeConversation, open: boolean) => void;
+  pin: (conversation: NativeConversation) => void;
+  toggleUnread: (conversation: NativeConversation) => void;
+  archive: (conversation: NativeConversation) => void;
+  restore: (conversation: NativeConversation) => void;
+  rename: (conversation: NativeConversation) => void;
+  remove: (conversation: NativeConversation) => void;
 };
 
 const SiderRow: React.FC<RowProps> = ({
@@ -75,16 +81,11 @@ const SiderRow: React.FC<RowProps> = ({
   archived,
   unread,
   menuOpen,
-  onOpen,
-  onMenu,
-  onPin,
-  onToggleUnread,
-  onArchive,
-  onRestore,
-  onRename,
-  onDelete,
+  actions,
 }) => {
   const { t } = useTranslation();
+  const onOpen = () => actions.open(conversation);
+  const onMenu = (open: boolean) => actions.menu(conversation, open);
   const title = conversation.title || t('mu.native.untitled');
   // What the row's end says: a run in progress, else that it wanted its person, else that its host runs.
   const mark = conversation.running
@@ -185,12 +186,12 @@ const SiderRow: React.FC<RowProps> = ({
               <Menu
                 onClickMenuItem={(key) => {
                   onMenu(false);
-                  if (key === 'pin') onPin();
-                  if (key === 'unread') onToggleUnread();
-                  if (key === 'rename') onRename();
-                  if (key === 'archive') onArchive();
-                  if (key === 'restore') onRestore();
-                  if (key === 'delete') onDelete();
+                  if (key === 'pin') actions.pin(conversation);
+                  if (key === 'unread') actions.toggleUnread(conversation);
+                  if (key === 'rename') actions.rename(conversation);
+                  if (key === 'archive') actions.archive(conversation);
+                  if (key === 'restore') actions.restore(conversation);
+                  if (key === 'delete') actions.remove(conversation);
                 }}
               >
                 {/* A conversation that has no session file yet has no id to keep: its id changes when pi names it. */}
@@ -261,4 +262,4 @@ const SiderRow: React.FC<RowProps> = ({
   );
 };
 
-export default SiderRow;
+export default React.memo(SiderRow);

@@ -160,6 +160,19 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   // then. One sent while a message is on its way waits its turn (`waiting`); a compaction takes none.
   const held = Boolean(outgoing) || view.live.compacting;
   const dialogs = view.dialogs.filter((dialog) => !closed.has(dialog.id));
+  // An answered dialog leaves with the control that had focus: once none is left, focus goes back to the text, unless
+  // the person has already put it somewhere else.
+  const zone = useRef<HTMLDivElement>(null);
+  const dialogShown = dialogs.length > 0;
+  const hadDialog = useRef(dialogShown);
+  useEffect(() => {
+    const closedNow = hadDialog.current && !dialogShown;
+    hadDialog.current = dialogShown;
+    if (!closedNow || isMobile) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && !zone.current?.contains(active)) return;
+    zone.current?.querySelector('textarea')?.focus();
+  }, [dialogShown, isMobile]);
   const { steering, followUp } = view.host.queue;
   const context = useMemo(() => ({ conversation_id: id, workspace: cwd, type: 'acp' as const }), [cwd, id]);
   // The view changes with every token of a reply; the send box only needs new rows when their words change.
@@ -297,6 +310,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   return (
     // `data-composer-zone`: the work panel, floating in a narrow window, stops above this.
     <div
+      ref={zone}
       data-composer-zone
       className={`${getChatSurfaceWidthClass()} flex flex-col mt-auto mb-16px`}
       onDropCapture={onDropCapture}

@@ -90,6 +90,7 @@ const ChoiceDialog: React.FC<{ dialog: ViewDialog; answer: Answer }> = ({ dialog
             key={choice.id}
             size='small'
             type={index === 0 ? 'primary' : 'secondary'}
+            autoFocus={index === 0}
             loading={busy === choice.id}
             disabled={busy !== undefined}
             data-testid='native-dialog-option'
@@ -137,6 +138,7 @@ const TextDialog: React.FC<{ dialog: ViewDialog; answer: Answer }> = ({ dialog, 
           value={text}
           onChange={setText}
           autoSize={{ minRows: 4, maxRows: 14 }}
+          autoFocus
           disabled={busy}
           data-testid='native-dialog-input'
         />

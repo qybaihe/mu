@@ -115,6 +115,8 @@ const SendBoxHarness = ({
   initialValue = '',
   onSend = vi.fn().mockResolvedValue(undefined),
   onAddToDraft,
+  onStop,
+  loading,
 }: {
   active?: boolean;
   onFocused?: () => void;
@@ -122,6 +124,8 @@ const SendBoxHarness = ({
   initialValue?: string;
   onSend?: (message: string) => Promise<void | false>;
   onAddToDraft?: () => void;
+  onStop?: () => Promise<void>;
+  loading?: boolean;
 }) => {
   const [value, setValue] = useState(initialValue);
   return (
@@ -133,9 +137,70 @@ const SendBoxHarness = ({
       onFocused={onFocused}
       disabled={disabled}
       onAddToDraft={onAddToDraft}
+      onStop={onStop}
+      loading={loading}
+      allowSendWhileLoading={loading}
+      compactActions={false}
     />
   );
 };
+
+describe('SendBox while a run is going', () => {
+  it('keeps stop beside send once a message is written, so the run can be stopped without losing it', () => {
+    layoutState.isMobile = false;
+    const { rerender } = render(<SendBoxHarness loading onStop={vi.fn().mockResolvedValue(undefined)} />);
+    expect(screen.getByTestId('sendbox-stop-btn')).toBeInTheDocument();
+    expect(screen.queryByTestId('sendbox-send-btn')).toBeNull();
+
+    rerender(<SendBoxHarness loading initialValue='steer this' onStop={vi.fn().mockResolvedValue(undefined)} />);
+    fireEvent.change(screen.getByTestId('sendbox-input'), { target: { value: 'steer this' } });
+    expect(screen.getByTestId('sendbox-stop-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('sendbox-send-btn')).toBeInTheDocument();
+  });
+
+  it('stops on Esc when the box is empty, and keeps Esc for a written message', () => {
+    layoutState.isMobile = false;
+    const onStop = vi.fn().mockResolvedValue(undefined);
+    render(<SendBoxHarness loading onStop={onStop} />);
+    const textarea = screen.getByTestId('sendbox-input');
+
+    fireEvent.change(textarea, { target: { value: 'half written' } });
+    fireEvent.keyDown(textarea, { key: 'Escape', code: 'Escape' });
+    expect(onStop).not.toHaveBeenCalled();
+
+    fireEvent.change(textarea, { target: { value: '' } });
+    fireEvent.keyDown(textarea, { key: 'Escape', code: 'Escape' });
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing on Esc when nothing is running', () => {
+    layoutState.isMobile = false;
+    const onStop = vi.fn().mockResolvedValue(undefined);
+    render(<SendBoxHarness onStop={onStop} />);
+    fireEvent.keyDown(screen.getByTestId('sendbox-input'), { key: 'Escape', code: 'Escape' });
+    expect(onStop).not.toHaveBeenCalled();
+  });
+
+  it('gives focus back to the text after stop is clicked', async () => {
+    layoutState.isMobile = false;
+    render(<SendBoxHarness loading active={false} onStop={vi.fn().mockResolvedValue(undefined)} />);
+    const stop = screen.getByTestId('sendbox-stop-btn');
+    stop.focus();
+    await act(async () => {
+      fireEvent.click(stop);
+    });
+    await waitFor(() => expect(screen.getByTestId('sendbox-input')).toHaveFocus());
+  });
+
+  it('gives focus back to the text after a message is sent with the button', async () => {
+    layoutState.isMobile = false;
+    render(<SendBoxHarness active={false} initialValue='hello' />);
+    const send = screen.getByTestId('sendbox-send-btn');
+    send.focus();
+    fireEvent.click(send);
+    await waitFor(() => expect(screen.getByTestId('sendbox-input')).toHaveFocus());
+  });
+});
 
 describe('SendBox active-controlled focus', () => {
   it('keeps Enter mapped to Send while Draft box has its own icon action', async () => {

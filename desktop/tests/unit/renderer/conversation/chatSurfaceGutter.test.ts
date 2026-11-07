@@ -61,4 +61,14 @@ describe('gutter threshold', () => {
     expect(rule).toMatch(/width:\s*calc\(100%\s*-\s*clamp\(/);
     expect(rule).toMatch(/clamp\(\s*\d+px\s*,[^,]+,\s*\d+px\s*\)/);
   });
+
+  it('stops at a reading width on a wide window, centred', () => {
+    // A line of 1200px is hard to follow back to its start; the transcript and the composer share this cap.
+    const rule = containerQuery?.[2] ?? '';
+    const cap = Number(rule.match(/max-width:\s*(\d+)px/)?.[1]);
+    expect(cap).toBeGreaterThanOrEqual(680);
+    expect(cap).toBeLessThanOrEqual(900);
+    expect(rule).toMatch(/margin-inline-start:\s*auto/);
+    expect(rule).toMatch(/margin-inline-end:\s*auto/);
+  });
 });
