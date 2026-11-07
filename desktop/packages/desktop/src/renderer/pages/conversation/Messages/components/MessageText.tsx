@@ -84,6 +84,8 @@ export const parseTeamContextResetNotice = (content: string): TeamContextResetNo
 
 const useFormatContent = (content: string) => {
   return useMemo(() => {
+    // Only an object or a list is shown as JSON; anything else is not worth a parse that throws on each chunk of a reply.
+    if (!/^\s*[[{]/.test(content)) return { data: content };
     try {
       const json = JSON.parse(content);
       const isJson = typeof json === 'object';

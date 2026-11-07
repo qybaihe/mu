@@ -112,3 +112,22 @@ describe('MarkdownView and the preview panel', () => {
     expect(after).toHaveBeenCalledWith('https://example.com/docs');
   });
 });
+
+describe('MarkdownView while a reply grows', () => {
+  beforeEach(() => {
+    codeRenders.count = 0;
+  });
+
+  it('does not draw again a code block the reply has already written past', () => {
+    const head = ['Here is the change:', '', '```ts', 'const a = 1;', '```', '', 'And then'].join('\n');
+    const { rerender } = render(<MarkdownView>{head}</MarkdownView>);
+    const drawn = codeRenders.count;
+    expect(drawn).toBeGreaterThan(0);
+
+    rerender(<MarkdownView>{`${head} the rest`}</MarkdownView>);
+    rerender(<MarkdownView>{`${head} the rest of the reply.`}</MarkdownView>);
+
+    expect(codeRenders.count).toBe(drawn);
+    expect(screen.getByText('And then the rest of the reply.')).toBeInTheDocument();
+  });
+});

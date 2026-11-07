@@ -350,3 +350,57 @@ export const getSvgIntrinsicSize = (svg: string): DiagramSize | null => {
   }
   return null;
 };
+
+/**
+ * A reply is drawn again each time it grows, and parsing its Markdown costs as much as the reply is long: drawing a
+ * long reply as it streams in was quadratic, and the last paragraphs of a long answer stuttered. Cut into its top-level
+ * blocks, only the block still being written is parsed again; the blocks before it are the same text, and are kept.
+ *
+ * A cut is made only where it cannot change what the Markdown means: at a blank line, outside a code fence or a `$$`
+ * block, before a line that starts a block of its own (not an indented continuation, not the next item of a list,
+ * which a blank line makes loose). Text with link or footnote definitions, which reach across the whole text, is not
+ * cut at all.
+ */
+
+const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+const MATH_FENCE = /^ {0,3}\$\$/;
+const LIST_ITEM = /^ {0,3}(?:[-*+]|\d{1,9}[.)])(?:\s|$)/;
+const DEFINITION = /^ {0,3}\[[^\]]+\]:/m;
+
+/** The text cut into blocks that each parse as they would in the whole; the whole as one block where none can be cut. */
+export function splitMarkdownBlocks(text: string): string[] {
+  if (!text.includes('\n\n') || DEFINITION.test(text) || text.includes('<!--')) return [text];
+  const lines = text.split('\n');
+  const blocks: string[] = [];
+  let start = 0;
+  let fence: string | undefined;
+  let math = false;
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    const opener = FENCE.exec(line);
+    if (opener) {
+      const marker = opener[1];
+      if (fence === undefined) fence = marker[0].repeat(marker.length);
+      else if (marker[0] === fence[0] && marker.length >= fence.length) fence = undefined;
+      continue;
+    }
+    if (fence !== undefined) continue;
+    if (MATH_FENCE.test(line)) {
+      // A one-line `$$ x $$` opens and closes at once.
+      if (!/\$\$.*\$\$/.test(line.trim())) math = !math;
+      continue;
+    }
+    if (math || line.trim() !== '') continue;
+    // A blank line: cut before the next line that is not blank, if it starts a block of its own.
+    let next = index + 1;
+    while (next < lines.length && lines[next].trim() === '') next++;
+    if (next >= lines.length) break;
+    const following = lines[next];
+    if (/^\s/.test(following) || LIST_ITEM.test(following)) continue;
+    blocks.push(lines.slice(start, next).join('\n'));
+    start = next;
+    index = next - 1;
+  }
+  blocks.push(lines.slice(start).join('\n'));
+  return blocks;
+}

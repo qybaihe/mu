@@ -1781,7 +1781,7 @@ const SendBox: React.FC<{
     <Button
       shape='circle'
       type='secondary'
-      className='bg-animate sendbox-stop-button'
+      className='sendbox-stop-button'
       icon={<div className='mx-auto size-10px sendbox-stop-square'></div>}
       onClick={stopHandler}
       data-testid={testIds?.stop ?? 'sendbox-stop-btn'}

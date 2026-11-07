@@ -182,7 +182,7 @@ const MessageThinking: React.FC<MessageThinkingProps> = ({ message, active, expa
         onClick={toggleExpanded}
       >
         <span className={styles.headerIcon}>{isActive ? <Spin size={12} /> : <Brain theme='outline' size='14' />}</span>
-        <span className={`${styles.summary} ${isActive ? styles.summaryActive : ''}`}>{summaryText}</span>
+        <span className={styles.summary}>{summaryText}</span>
         <span className={`${styles.arrow} ${isExpanded ? styles.arrowExpanded : ''}`}>
           <Right theme='outline' size='12' />
         </span>

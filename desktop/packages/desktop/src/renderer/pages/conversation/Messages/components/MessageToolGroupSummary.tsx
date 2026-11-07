@@ -242,7 +242,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
         className={item.status === 'running' ? styles.breathing : undefined}
       />
       <ToolKindIcon name={displayItem.name} />
-      <span className={`${styles.callName} ${item.status === 'running' ? styles.runningText : ''}`}>{label.verb}</span>
+      <span className={styles.callName}>{label.verb}</span>
       <CallTarget label={label} onOpen={openTarget} />
       {diffSummary && (diffSummary.additions > 0 || diffSummary.deletions > 0) && (
         <span className={styles.diffStats} data-testid='tool-call-diff-stats' aria-hidden='true'>
@@ -449,9 +449,7 @@ const ToolActivityGroup: React.FC<{ tools: NormalizedToolCall[]; language?: stri
           status={summary.status === 'running' ? 'processing' : summary.failed > 0 ? 'error' : 'default'}
           className={summary.status === 'running' ? styles.breathing : undefined}
         />
-        <span className={`${styles.activitySummary} ${summary.status === 'running' ? styles.runningText : ''}`}>
-          {headline}
-        </span>
+        <span className={styles.activitySummary}>{headline}</span>
         <span className={`${styles.chevron} ${expanded ? styles.chevronExpanded : ''}`}>
           <Right size={12} />
         </span>
