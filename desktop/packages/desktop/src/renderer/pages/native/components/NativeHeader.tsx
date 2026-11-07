@@ -156,7 +156,14 @@ const NativeHeader: React.FC<{
           data-testid='native-header-phase'
           data-phase={host.phase}
         >
-          <span className='size-6px rd-full' style={{ background: DOT[host.phase] }} aria-hidden='true' />
+          <span
+            className='size-6px rd-full'
+            style={{
+              background: DOT[host.phase],
+              ...(host.phase === 'starting' ? { animation: 'jump-pill-pulse 1.4s ease-in-out infinite' } : {}),
+            }}
+            aria-hidden='true'
+          />
           {t(PHASE_KEY[host.phase])}
         </span>
       </div>

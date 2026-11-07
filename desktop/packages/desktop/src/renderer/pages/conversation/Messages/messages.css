@@ -26,6 +26,55 @@
   mask-image: linear-gradient(to bottom, transparent, black 12px);
 }
 
+/* Subtle settle-in for rows appended at the end of the transcript (user bubbles, thoughts, tool groups, replies).
+   Only the trailing rows match, so opening a conversation or loading earlier rows does not fade the whole history. */
+.message-list-content > .message-item:nth-last-child(-n + 3) {
+  animation: messageRowSettle 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jump-to-latest-pill {
+  animation: jumpPillEnter 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes messageRowSettle {
+  from {
+    opacity: 0.01;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes jumpPillEnter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes jump-pill-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message-list-content > .message-item:nth-last-child(-n + 3),
+  .jump-to-latest-pill {
+    animation: none;
+  }
+}
+
 /* Mobile typography tuning: conversation readability */
 @media (max-width: 767px) {
   /* Message body — keep body type compact so messages don't dominate the screen */

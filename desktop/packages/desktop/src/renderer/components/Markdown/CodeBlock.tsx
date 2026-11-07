@@ -17,7 +17,7 @@ import MermaidBlock from './MermaidBlock';
 import WavedromBlock from './WavedromBlock';
 import { formatCode, getDiffLineStyle } from './markdownUtils';
 
-const PREVIEW_LINES = 3;
+const PREVIEW_LINES = 18;
 // code span: font-size 13px, line-height 20px (per ShadowView injection)
 const CODE_LINE_HEIGHT = 20;
 // SyntaxHighlighter pre padding: 0.5em top + 0.5em bottom ≈ 13px each side
@@ -66,7 +66,7 @@ const HighlightedCode = React.memo(function HighlightedCode({ code, language, ap
       }
       customStyle={{
         margin: 0,
-        padding: '0 12px 8px',
+        padding: '10px 12px',
         borderRadius: 0,
         border: 'none',
         background: 'transparent',
@@ -149,7 +149,7 @@ function CodeBlock(props: CodeBlockProps) {
   // Inline code (single line)
   if (!String(children).includes('\n')) {
     return (
-      <code {...rest} className={className} style={{ fontWeight: 'bold' }}>
+      <code {...rest} className={className}>
         {children}
       </code>
     );
@@ -191,17 +191,32 @@ function CodeBlock(props: CodeBlockProps) {
       style={{ width: '100%', minWidth: 0, maxWidth: '100%', ...props.codeStyle }}
       className='group'
     >
-      <div style={{ backgroundColor: bgColor, borderRadius: '8px', overflow: 'hidden' }}>
+      <div
+        style={{
+          backgroundColor: bgColor,
+          borderRadius: '10px',
+          border: `1px solid ${borderColor}`,
+          overflow: 'hidden',
+        }}
+      >
         {/* Header */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '8px 12px',
+            padding: '7px 12px',
+            borderBottom: `1px solid ${borderColor}`,
           }}
         >
-          <span style={{ color: footerTextColor, fontSize: '12px', lineHeight: '16px' }}>
+          <span
+            style={{
+              color: footerTextColor,
+              fontSize: '11.5px',
+              lineHeight: '16px',
+              fontFamily: 'var(--font-mono, monospace)',
+            }}
+          >
             {language.toLocaleLowerCase()}
           </span>
           {/* Buttons: always visible on touch devices, hover-only on pointer devices */}
@@ -248,6 +263,10 @@ function CodeBlock(props: CodeBlockProps) {
             maxHeight: canCollapse && !expanded ? `${COLLAPSED_HEIGHT}px` : 'none',
             overflowY: 'hidden',
             overflowX: 'visible',
+            WebkitMaskImage:
+              canCollapse && !expanded ? 'linear-gradient(to bottom, black calc(100% - 36px), transparent)' : undefined,
+            maskImage:
+              canCollapse && !expanded ? 'linear-gradient(to bottom, black calc(100% - 36px), transparent)' : undefined,
           }}
         >
           <HighlightedCode code={formattedContent} language={codeLanguage(language)} appearance={currentTheme} />

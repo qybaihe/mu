@@ -10,16 +10,21 @@
   align-items: center;
   gap: 6px;
   height: auto;
-  padding: 0;
+  padding: 4px 8px;
+  margin-inline-start: -8px;
+  border-radius: 6px;
   font-size: 13px;
   color: var(--aou-6);
-  line-height: 1;
+  line-height: 1.2;
   background-color: transparent;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
 }
 
 .header:global(.arco-btn):not(:disabled):hover {
   color: var(--aou-7);
-  background-color: transparent;
+  background-color: var(--color-fill-2);
 }
 
 .headerIcon {
@@ -30,6 +35,7 @@
   width: 14px;
   height: 14px;
   color: var(--aou-5);
+  transition: color 160ms ease;
 }
 
 .header:hover .headerIcon {
@@ -41,7 +47,7 @@
   align-items: center;
   flex-shrink: 0;
   color: var(--aou-4);
-  transition: transform 0.2s ease;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .arrowExpanded {
@@ -55,26 +61,55 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   height: 2.8em;
-  margin-top: 2px;
-  margin-inline-start: 20px;
+  margin-top: 4px;
+  margin-inline-start: 6px;
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--color-border-2);
   overflow: hidden;
   color: var(--color-text-3);
   font-size: 12px;
   line-height: 1.4;
   overflow-wrap: anywhere;
+  animation: thinkingReveal 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .body {
   color: var(--color-text-3);
   font-size: 13px;
   line-height: 1.7;
-  padding: 2px 0;
+  padding: 4px 0 4px 12px;
   margin-top: 4px;
-  margin-inline-start: 20px;
+  margin-inline-start: 6px;
+  border-inline-start: 2px solid var(--color-border-2);
   max-height: 420px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
+  animation: thinkingReveal 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes thinkingReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow,
+  .header:global(.arco-btn),
+  .headerIcon {
+    transition: none;
+  }
+  .stream,
+  .body,
+  .summaryActive {
+    animation: none;
+  }
 }
 
 .historyEntry + .historyEntry {
@@ -91,6 +126,20 @@
 
 .summary {
   white-space: nowrap;
+}
+
+.summaryActive {
+  animation: thinkingTextPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes thinkingTextPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.62;
+  }
 }
 
 @media (max-width: 767px) {

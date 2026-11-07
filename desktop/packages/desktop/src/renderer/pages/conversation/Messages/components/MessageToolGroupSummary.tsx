@@ -6,7 +6,7 @@
 
 import type { BadgeProps } from '@arco-design/web-react';
 import { Badge, Button, Message, Tooltip } from '@arco-design/web-react';
-import { Down, Download, Right } from '@icon-park/react';
+import { Download, Right } from '@icon-park/react';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
@@ -23,13 +23,16 @@ import styles from './MessageToolGroupSummary.module.css';
 import ToolKindIcon from './ToolKindIcon';
 import {
   clipOutput,
+  runningToolLiveTail,
   shouldFoldActivity,
   summarizeToolActivity,
   toolActivityDenied,
   toolActivityErrors,
   toolActivityParts,
+  toolDiffSummary,
   toolErrorLine,
   toolLabel,
+  toolLiveTail,
   shortPath,
   type ToolLabel,
 } from './toolActivity';
@@ -107,6 +110,15 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
   const statusKey = statusLabelKey(item.status, item.denied);
   // A refused call's output is mu's refusal, written for the model: the row says what happened instead.
   const output = item.denied ? undefined : displayItem.output;
+  const renderedOutput = useMemo(
+    () => (output ? swarmProgressText(t, displayItem.swarmProgress, output) : undefined),
+    [displayItem.swarmProgress, output, t]
+  );
+  const liveTail = useMemo(
+    () => (item.status === 'running' && !expanded && !displayItem.hive ? toolLiveTail(renderedOutput) : undefined),
+    [displayItem.hive, expanded, item.status, renderedOutput]
+  );
+  const diffSummary = useMemo(() => toolDiffSummary(displayItem), [displayItem]);
   const hasDetail = Boolean(displayItem.input || output || item.truncated || item.imagePath);
   const [messageApi, messageContext] = Message.useMessage();
   const handleDownloadImage = useCallback(
@@ -153,8 +165,14 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
         className={item.status === 'running' ? styles.breathing : undefined}
       />
       <ToolKindIcon name={displayItem.name} />
-      <span className={styles.callName}>{label.verb}</span>
+      <span className={`${styles.callName} ${item.status === 'running' ? styles.runningText : ''}`}>{label.verb}</span>
       <CallTarget label={label} />
+      {diffSummary && (diffSummary.additions > 0 || diffSummary.deletions > 0) && (
+        <span className={styles.diffStats} data-testid='tool-call-diff-stats' aria-hidden='true'>
+          {diffSummary.additions > 0 && <span className={styles.diffAdd}>+{diffSummary.additions}</span>}
+          {diffSummary.deletions > 0 && <span className={styles.diffDel}>-{diffSummary.deletions}</span>}
+        </span>
+      )}
     </>
   );
 
@@ -196,10 +214,17 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
           onClick={toggleExpanded}
         >
           {line}
-          {expanded ? <Down size={12} /> : <Right size={12} />}
+          <span className={`${styles.chevron} ${expanded ? styles.chevronExpanded : ''}`}>
+            <Right size={12} />
+          </span>
         </Button>
       ) : (
         <div className={styles.callStatic}>{line}</div>
+      )}
+      {liveTail && (
+        <pre className={styles.liveTail} data-testid='tool-live-tail' aria-hidden='true'>
+          {liveTail}
+        </pre>
       )}
       {/* A failure says what went wrong without asking for a click; a refused call, quietly, that it did not run. */}
       {item.denied && (
@@ -221,16 +246,36 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
               </Button>
             </div>
           )}
+          {diffSummary && diffSummary.lines.length > 0 && (
+            <div className={styles.diffView} data-testid='tool-call-diff-view'>
+              {diffSummary.lines.map((diffLine, index) => (
+                <div
+                  key={index}
+                  className={
+                    diffLine.kind === 'add'
+                      ? styles.diffLineAdd
+                      : diffLine.kind === 'del'
+                        ? styles.diffLineDel
+                        : diffLine.kind === 'hunk'
+                          ? styles.diffLineHunk
+                          : styles.diffLineCtx
+                  }
+                >
+                  {diffLine.text}
+                </div>
+              ))}
+            </div>
+          )}
           {displayItem.input && (
             <div className={styles.detailSection}>
               <div className={styles.detailLabel}>{t('tools.execution.input')}</div>
               <ClippedOutput text={displayItem.input} />
             </div>
           )}
-          {output && (
+          {renderedOutput && (
             <div className={styles.detailSection}>
               <div className={styles.detailLabel}>{t('tools.execution.output')}</div>
-              <ClippedOutput text={swarmProgressText(t, displayItem.swarmProgress, output)} />
+              <ClippedOutput text={renderedOutput} />
             </div>
           )}
         </div>
@@ -281,6 +326,7 @@ const ToolActivityGroup: React.FC<{ tools: NormalizedToolCall[]; language?: stri
   const summary = useMemo(() => summarizeToolActivity(tools), [tools]);
   const errors = useMemo(() => toolActivityErrors(tools), [tools]);
   const refused = useMemo(() => toolActivityDenied(tools), [tools]);
+  const liveTail = useMemo(() => (!expanded ? runningToolLiveTail(tools) : undefined), [expanded, tools]);
   const steps = formatNumber(summary.steps, language);
   // What the stretch did, by kind: "read 3 files · ran 1 command".
   const done = toolActivityParts(tools)
@@ -306,9 +352,18 @@ const ToolActivityGroup: React.FC<{ tools: NormalizedToolCall[]; language?: stri
           status={summary.status === 'running' ? 'processing' : summary.failed > 0 ? 'error' : 'default'}
           className={summary.status === 'running' ? styles.breathing : undefined}
         />
-        <span className={styles.activitySummary}>{headline}</span>
-        {expanded ? <Down size={12} /> : <Right size={12} />}
+        <span className={`${styles.activitySummary} ${summary.status === 'running' ? styles.runningText : ''}`}>
+          {headline}
+        </span>
+        <span className={`${styles.chevron} ${expanded ? styles.chevronExpanded : ''}`}>
+          <Right size={12} />
+        </span>
       </Button>
+      {liveTail && (
+        <pre className={styles.liveTail} data-testid='tool-live-tail' aria-hidden='true'>
+          {liveTail}
+        </pre>
+      )}
       {!expanded &&
         errors.map((error) => (
           <div key={error.key} className={styles.activityError} data-testid='tool-activity-error'>

@@ -187,14 +187,15 @@ export const permissionCommand = (mode: string): string => `/permissions ${mode}
 
 /**
  * The conversation as the shared send box reads it (the text rows of mu's other conversations): the person's messages
- * without their files, for ↑/↓ history, and the replies' text, for `/copy`. A failed attempt pi retried is left out.
+ * without their files, for ↑/↓ history, and the settled replies' text, for `/copy`. A failed attempt pi retried or a
+ * reply still streaming is left out so the send box is not redrawn on every token delta.
  */
 export function sendBoxMessages(messages: readonly ViewMessage[], conversationId: string): IMessageText[] {
   const rows: IMessageText[] = [];
   for (const message of messages) {
     let text = '';
     if (message.role === 'user') text = parseFileMarker(message.text, true).text;
-    else if (message.role === 'assistant' && !message.retried)
+    else if (message.role === 'assistant' && !message.retried && !message.streaming)
       text = message.blocks.flatMap((block) => (block.type === 'text' ? [block.text] : [])).join('\n\n');
     if (!text.trim()) continue;
     rows.push({
@@ -207,3 +208,14 @@ export function sendBoxMessages(messages: readonly ViewMessage[], conversationId
   }
   return rows;
 }
+
+/** Whether two readings of the send box's rows say the same: the same rows, in order, with the same words. */
+export const sameSendBoxMessages = (a: readonly IMessageText[], b: readonly IMessageText[]): boolean =>
+  a.length === b.length &&
+  a.every(
+    (row, index) =>
+      row.id === b[index].id &&
+      row.conversation_id === b[index].conversation_id &&
+      row.position === b[index].position &&
+      row.content.content === b[index].content.content
+  );

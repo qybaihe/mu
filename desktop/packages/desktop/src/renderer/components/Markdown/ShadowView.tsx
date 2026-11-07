@@ -136,16 +136,37 @@ export const createInitStyle = (
     color: var(--text-primary);
   }
   h1{
-    font-size: 24px;
-    line-height: 32px;
-    font-weight: bold;
-  }
-  h2,h3,h4,h5,h6{
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: bold;
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
     margin-top: 20px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+  }
+  h2{
+    font-size: 17px;
+    line-height: 25px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    margin-top: 18px;
+    margin-bottom: 8px;
+  }
+  h3{
+    font-size: 15.5px;
+    line-height: 23px;
+    font-weight: 600;
+    margin-top: 16px;
+    margin-bottom: 6px;
+  }
+  h4,h5,h6{
+    font-size: 14.5px;
+    line-height: 22px;
+    font-weight: 600;
+    margin-top: 14px;
+    margin-bottom: 6px;
+  }
+  .markdown-shadow-body>:is(h1,h2,h3,h4,h5,h6):first-child{
+    margin-top: 0px;
   }
   code span{
     font-size:var(--code-font-size, 13px);
@@ -181,19 +202,20 @@ export const createInitStyle = (
     font-weight: inherit;
   }
   .markdown-shadow-body code:not(pre code) {
-    background: var(--bg-3);
+    background: var(--bg-2);
     color: var(--text-primary);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.875em;
+    border: 1px solid var(--bg-3);
+    padding: 1.5px 5.5px;
+    border-radius: 5px;
+    font-size: 0.86em;
     font-family: var(--font-mono);
-    font-weight: var(--font-mono-weight);
+    font-weight: var(--font-mono-weight, 450);
   }
   blockquote {
-    border-left: 3px solid var(--bg-3);
+    border-left: 2px solid var(--bg-3);
     padding-left: 12px;
-    color: var(--text-primary);
-    margin: 16px 0;
+    color: var(--text-secondary);
+    margin: 14px 0;
   }
   pre {
     max-width: 100%;

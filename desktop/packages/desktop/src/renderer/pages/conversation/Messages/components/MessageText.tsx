@@ -331,16 +331,21 @@ const MessageText: React.FC<{
         {!images || renderedText.trim() ? (
           <div
             className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
-              'bg-aou-2 p-6px md:p-8px': isUserMessage || cronMeta,
-              'bg-3 p-6px md:p-8px': isTeammateMessage,
+              'bg-aou-2 px-14px py-8px': isUserMessage || cronMeta,
+              'bg-3 px-12px py-8px': isTeammateMessage,
               'w-full': !(isUserMessage || cronMeta || isTeammateMessage),
             })}
             style={{
               ...(isUserMessage || cronMeta
-                ? { borderRadius: '8px 0 8px 8px', color: 'var(--text-primary)' }
+                ? {
+                    borderRadius: '14px',
+                    border: '1px solid var(--color-border-2)',
+                    color: 'var(--text-primary)',
+                    maxWidth: '88%',
+                  }
                 : isTeammateMessage
                   ? {
-                      borderRadius: '0 8px 8px 8px',
+                      borderRadius: '4px 12px 12px 12px',
                       ...(teammateColor ? { borderLeft: `3px solid ${teammateColor}` } : {}),
                     }
                   : undefined),

@@ -119,11 +119,16 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
     if (start > 0 && pinned < 0) setPin({ epoch, id: rows[start].id });
   }, [epoch, pinned, rows, start]);
   // A step up shows the rows before the window; the list asks when the reader reaches its top, one step at a time.
+  // Kept stable via a ref so streaming updates to `rows` do not recreate `loadEarlier` and `run` on every token delta,
+  // which would invalidate `MessageListRunContext` and force every memoised `MessageItem` to re-render.
+  const windowStateRef = useRef({ epoch, rows, start });
+  windowStateRef.current = { epoch, rows, start };
   const loadEarlier = useCallback((): boolean => {
-    if (start <= 0) return false;
-    setPin({ epoch, id: rows[windowStart(rows, ROW_WINDOW, start)].id });
+    const { epoch: currentEpoch, rows: currentRows, start: currentStart } = windowStateRef.current;
+    if (currentStart <= 0) return false;
+    setPin({ epoch: currentEpoch, id: currentRows[windowStart(currentRows, ROW_WINDOW, currentStart)].id });
     return true;
-  }, [epoch, rows, start]);
+  }, []);
   const setPagination = useUpdateMessagePaginationState();
   const hasEarlier = start > 0;
   useLayoutEffect(() => {
