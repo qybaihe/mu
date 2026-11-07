@@ -6,7 +6,7 @@ import { durable, reduceAll, type NativeView, type PiRecord } from '@/common/uti
 import { stageFirstMessage, useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext, type NativeClient } from '@/renderer/pages/native/utils/nativeClient';
 import { createFakeHost, type FakeHost } from './fakeClient';
-import { ended, findRecord, frame, recorded, reply, text, user } from './records';
+import { delta, ended, findRecord, frame, recorded, reply, text, user } from './records';
 
 /** The native conversation hook against an in-memory host: snapshot, records, commands, dialogs, ids. */
 
@@ -462,5 +462,59 @@ describe('useNativeConversation', () => {
     const { result } = mount(host, 'nowhere');
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.failure).toMatchObject({ kind: 'unknown-conversation' });
+  });
+});
+
+describe('a reply streamed into the view', () => {
+  it('draws its deltas once a frame, folded in order, and draws anything else at once', async () => {
+    const frames: FrameRequestCallback[] = [];
+    const realRaf = globalThis.requestAnimationFrame;
+    const realCancel = globalThis.cancelAnimationFrame;
+    globalThis.requestAnimationFrame = (callback) => frames.push(callback);
+    globalThis.cancelAnimationFrame = (handle) => {
+      frames[handle - 1] = () => {};
+    };
+    try {
+      const host = createFakeHost();
+      host.add({ id: 'c1' });
+      const { result } = mount(host);
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      act(() =>
+        host.play('c1', [
+          { type: 'agent_start' },
+          ended(user('go')),
+          { type: 'message_start', message: { role: 'assistant', content: [], timestamp: 2 } },
+          delta({ type: 'text_start', contentIndex: 0 }),
+        ])
+      );
+      const drawn = result.current;
+      const shown = () => {
+        const last = result.current.view.messages.at(-1);
+        return last?.role === 'assistant' && last.blocks[0]?.type === 'text' ? last.blocks[0].text : undefined;
+      };
+
+      act(() => {
+        host.push('c1', delta({ type: 'text_delta', contentIndex: 0, delta: 'Hel' }));
+        host.push('c1', delta({ type: 'text_delta', contentIndex: 0, delta: 'lo' }));
+      });
+      // Not drawn yet: the frame has not come.
+      expect(result.current).toBe(drawn);
+      act(() => {
+        for (const callback of frames.splice(0)) callback(0);
+      });
+      expect(shown()).toBe('Hello');
+      expect(result.current.seq).toBe(drawn.seq + 2);
+
+      // Growth waits again, then a block's end lands at once and takes the waiting growth with it.
+      act(() => {
+        host.push('c1', delta({ type: 'text_delta', contentIndex: 0, delta: ', wor' }));
+        host.push('c1', delta({ type: 'text_end', contentIndex: 0, content: 'Hello, world' }));
+      });
+      expect(shown()).toBe('Hello, world');
+      expect(result.current.seq).toBe(drawn.seq + 4);
+    } finally {
+      globalThis.requestAnimationFrame = realRaf;
+      globalThis.cancelAnimationFrame = realCancel;
+    }
   });
 });

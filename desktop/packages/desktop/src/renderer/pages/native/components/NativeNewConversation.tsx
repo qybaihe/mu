@@ -63,7 +63,7 @@ const NativeNewConversation: React.FC<{ recent: string[]; onCreated: (conversati
               className='w-full flex items-baseline gap-8px px-8px py-4px rd-6px border-none bg-transparent cursor-pointer text-start hover:bg-fill-3'
               onClick={() => void start(cwd)}
             >
-              <span className='shrink-0 text-13px text-t-primary'>{folderName(cwd)}</span>
+              <span className='min-w-0 max-w-[60%] shrink-0 truncate text-13px text-t-primary'>{folderName(cwd)}</span>
               <span className='min-w-0 truncate text-12px text-t-tertiary'>{cwd}</span>
             </button>
           ))}

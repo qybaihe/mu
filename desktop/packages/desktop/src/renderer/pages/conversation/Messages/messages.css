@@ -10,10 +10,11 @@
   max-width: 100%;
 }
 
+/* Past the gutter, the column stops at a reading width: a line much longer than this is hard to follow back. */
 @container (min-width: 720px) {
   .chat-surface-fluid {
     width: calc(100% - clamp(80px, 10cqw, 240px));
-    max-width: none;
+    max-width: 800px;
     margin-inline-start: auto;
     margin-inline-end: auto;
   }

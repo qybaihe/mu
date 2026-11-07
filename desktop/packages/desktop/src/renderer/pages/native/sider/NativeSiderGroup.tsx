@@ -11,7 +11,7 @@
 import { Button, Input, Message, Modal, Spin } from '@arco-design/web-react';
 import { FolderPlus, Right } from '@icon-park/react';
 import classNames from 'classnames';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { NativeConversation, NativeFailure, NativeResult } from '@/common/kyrn/nativeBridge';
@@ -27,7 +27,7 @@ import { folderName, nativeConversationPath } from '../utils/paths';
 import { publishNativeSiderOrder } from './jump';
 import ProjectGroup, { shownRows } from './ProjectGroup';
 import { folderKey, groupProjects, type Project } from './projects';
-import SiderRow from './SiderRow';
+import SiderRow, { type RowActions } from './SiderRow';
 import { addProject, forgetProject, useAddedProjects, useFoldedProjects, useRepoRoots } from './useProjects';
 
 type Translate = ReturnType<typeof useTranslation>['t'];
@@ -257,6 +257,24 @@ const Group: React.FC<{ onSessionClick?: () => void }> = ({ onSessionClick }) =>
     if (pathname === nativeConversationPath(target.id)) void navigate('/guid');
   };
 
+  // The rows' actions read the list as it is now, through a ref, so they stay the same object: a row then redraws only
+  // when what it shows changes (a run starting in one conversation redrew every row, with its menu).
+  const latestActions = useRef({ open, archiveRow, restoreRow, togglePin });
+  latestActions.current = { open, archiveRow, restoreRow, togglePin };
+  const rowActions = useMemo<RowActions>(
+    () => ({
+      open: (conversation) => latestActions.current.open(conversation.id),
+      menu: (conversation, visible) => setMenuFor(visible ? conversation.id : undefined),
+      pin: (conversation) => latestActions.current.togglePin(conversation.id),
+      toggleUnread: (conversation) => toggleNativeUnread(conversation.id),
+      archive: (conversation) => latestActions.current.archiveRow(conversation.id),
+      restore: (conversation) => latestActions.current.restoreRow(conversation.id),
+      rename: (conversation) => setRenaming({ id: conversation.id, name: conversation.title }),
+      remove: (conversation) => setDeleting(conversation),
+    }),
+    []
+  );
+
   const row = (
     conversation: NativeConversation,
     { folder, indented = false, shelf = false }: { folder?: string; indented?: boolean; shelf?: boolean } = {}
@@ -273,14 +291,7 @@ const Group: React.FC<{ onSessionClick?: () => void }> = ({ onSessionClick }) =>
       archived={shelf}
       unread={!shelf && unread.has(conversation.id)}
       menuOpen={menuFor === conversation.id}
-      onOpen={() => open(conversation.id)}
-      onMenu={(visible) => setMenuFor(visible ? conversation.id : undefined)}
-      onPin={() => togglePin(conversation.id)}
-      onToggleUnread={() => toggleNativeUnread(conversation.id)}
-      onArchive={() => archiveRow(conversation.id)}
-      onRestore={() => restoreRow(conversation.id)}
-      onRename={() => setRenaming({ id: conversation.id, name: conversation.title })}
-      onDelete={() => setDeleting(conversation)}
+      actions={rowActions}
     />
   );
 

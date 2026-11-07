@@ -182,6 +182,14 @@ describe('other native dialogs', () => {
     expect(answered[0].answer).toEqual({ value: 'step 1\nstep 2' });
   });
 
+  it('takes focus where it can be answered at once: the first choice, or the text to edit', () => {
+    const { unmount } = show({ id: 'd6', method: 'select', title: 'Pick a model', options: ['a', 'b'], inRun: false });
+    expect(options()[0]).toHaveFocus();
+    unmount();
+    show({ id: 'd7', method: 'editor', title: 'The plan', prefill: 'step 1', inRun: false });
+    expect(screen.getByTestId('native-dialog-input')).toHaveFocus();
+  });
+
   it('counts down a dialog with a time limit and closes it when pi stops waiting', () => {
     vi.useFakeTimers();
     const dialog: ViewDialog = { id: 'd6', method: 'confirm', title: 'Quick?', timeout: 3000, inRun: true };

@@ -22,12 +22,15 @@ import type {
   NativeResult,
 } from '@/common/kyrn/nativeBridge';
 import {
+  asObject,
+  asText,
   emptyView,
   reduce,
   type DialogAnswer,
   type NativeView,
   type PiCommand,
   type PiImage,
+  type PiRecord,
   type SessionSettings,
 } from '@/common/utils/nativeHost';
 import { useNativeClient } from '../utils/nativeClient';
@@ -190,6 +193,15 @@ function settleOutgoing(state: NativeConversationState): NativeConversationState
 let sent = 0;
 
 /**
+ * Whether a record only grows what is already on screen, a reply's text or thought or a running tool's output: drawn
+ * once a frame. A block that starts or ends, a tool call, a status, anything else, is drawn at once.
+ */
+const STREAM_DELTAS = new Set(['text_delta', 'thinking_delta']);
+const growsOnly = (record: PiRecord): boolean =>
+  record.type === 'tool_execution_update' ||
+  (record.type === 'message_update' && STREAM_DELTAS.has(asText(asObject(record.assistantMessageEvent).type)));
+
+/**
  * What a screen holds of the conversation it shows: the id it opened it by (`first`), the ids that are that conversation
  * now (`ids`), and how many conversations the screen has shown (`n`), which makes opening an id it left behind another
  * one.
@@ -218,12 +230,47 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
   const reopen = useRef<(() => Promise<void>) | undefined>(undefined);
   // Sends a first message the home page staged, once the conversation is open (set below, after `send`).
   const firstRef = useRef<((first: FirstMessage) => Promise<void>) | undefined>(undefined);
+  // A frame's pending draw of growth, if one is waiting (see `commitGrowth`).
+  const frame = useRef<number | null>(null);
   const commit = useCallback((change: (old: NativeConversationState) => NativeConversationState) => {
     const next = change(latest.current);
     if (next === latest.current) return;
     latest.current = next;
+    if (frame.current !== null) {
+      cancelAnimationFrame(frame.current);
+      frame.current = null;
+    }
     setState(next);
   }, []);
+  // A reply grows a few characters per record, each in a task of its own, so React draws every one, and the whole screen
+  // with it (header, composer, status, rail). Growth waits for the next frame and takes every record after it along;
+  // the view still folds each record at once (`latest`), so order and the sequence check are exact. Anything else lands
+  // at once, and with it whatever growth was waiting.
+  const commitGrowth = useCallback(
+    (change: (old: NativeConversationState) => NativeConversationState) => {
+      const old = latest.current;
+      const next = change(old);
+      if (next === old) return;
+      // A delta that changes how the run stands (a thought with no start) is no mere growth.
+      if (next.view.status !== old.view.status) {
+        commit(() => next);
+        return;
+      }
+      latest.current = next;
+      if (frame.current !== null) return;
+      frame.current = requestAnimationFrame(() => {
+        frame.current = null;
+        setState(latest.current);
+      });
+    },
+    [commit]
+  );
+  useEffect(
+    () => () => {
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+    },
+    []
+  );
 
   useEffect(() => {
     const mine = followed.current;
@@ -283,7 +330,8 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
         void open();
         return;
       }
-      commit((current) => settleOutgoing({ ...current, view: reduce(current.view, event.record), seq: event.seq }));
+      const apply = growsOnly(event.record) ? commitGrowth : commit;
+      apply((current) => settleOutgoing({ ...current, view: reduce(current.view, event.record), seq: event.seq }));
     };
 
     const stops = [
@@ -335,7 +383,7 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
       reopen.current = undefined;
       for (const stop of stops) stop();
     };
-  }, [client, commit, key]);
+  }, [client, commit, commitGrowth, key]);
 
   const retry = useCallback(() => {
     const open = reopen.current;
