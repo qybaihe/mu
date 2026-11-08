@@ -4,7 +4,7 @@
 
 ## [0.3.9] - 2026-11-08
 
-**0.3.9 adds `ask_user` and `/answer` for questions with options, `/plan` for planning without changing files or breaking the prompt cache, `present` for handing over finished files, mid-session skill refresh (`skills.refresh`), and `feature:<name>` catalog entries so the model can offer features that are off by default.**
+**0.3.9 adds `ask_user` and `/answer` for questions with options, `/plan` for planning without changing files or breaking the prompt cache, `present` for handing over finished files, mid-session skill refresh (`skills.refresh`) and `feature:<name>` catalog entries so the model can offer features that are off by default.**
 
 ### Added
 
@@ -12,7 +12,7 @@
 - **`plan`** (`features.plan`, on): `/plan [task]`, `/plan off` and `/plan approve`. Keeps plan mode in the session (`kyrn.plan`) without changing the tool list or the system prompt, so the prompt cache holds across switching plan mode on and off. While plan mode is on, a final `tool_call` handler before the permission gate refuses every call that `permissionNeed()` marks as needing permission in any mode (file edits, non-read-only shell and background commands, subagents, MCP and browser tools), while reading, read-only commands, `lsp`, `web_fetch`, `recall`, `todo` and `ask_user` go through. When a reply in plan mode ends with a `# Plan` heading (`## Plan: …`, `# 计划`, `# 方案`), mu asks the user with `askQuestions` whether to approve and start (putting the top-level items on the task checklist and turning plan mode off), keep planning, or answer in their own words.
 - **`present` tool** (`features.present`, on): `present({ files, note? })` checks one to eight regular files (absolute or relative to `cwd`) and returns their absolute paths, names and byte sizes in `details.files` along with `note`, without reading or copying file contents. Adds system-prompt guidelines to use `present` for deliverable files and to format source file references as markdown links with `#L<line>` or `#L<start>-L<end>`.
 - **`skills.refresh`** (`features.skills.refresh`, on): before each user message, rescans the skill directories pi loads from and appends one `kyrn.skills-changed` message naming any skills added or removed since the session started, without modifying the system prompt. Reading a skill's file also records a `kyrn.skill-read` entry linking the read to how the skill was disclosed and the first `skills.disclosure` verdict.
-- **Feature offers in the capability catalog** (`feature:<name>`): off-by-default features that are supported on the current machine (`compaction`, `interrupt`, and `confine` on macOS or Linux with `bwrap`) appear in `find_capability`. Opening one asks the user via `askQuestions` whether to enable it in `mu.json` (after backing up the config file) for future conversations; `/capabilities open feature:<name>` enables it directly when the user asks. Recorded as `kyrn.feature-offer`.
+- **Feature offers in the capability catalog** (`feature:<name>`): off-by-default features that are supported on the current machine (`compaction`, `interrupt` and `confine` on macOS or Linux with `bwrap`) appear in `find_capability`. Opening one asks the user via `askQuestions` whether to enable it in `mu.json` (after backing up the config file) from the next session; `/capabilities open feature:<name>` enables it directly when the user asks. Recorded as `kyrn.feature-offer`.
 
 ### Changed
 
