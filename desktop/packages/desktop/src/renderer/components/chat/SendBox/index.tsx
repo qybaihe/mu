@@ -1944,7 +1944,7 @@ const SendBox: React.FC<{
       )}
       <div
         ref={containerRef}
-        className={`sendbox-panel relative p-16px rd-20px flex flex-col ${isOverlayOpen ? 'overflow-visible' : 'overflow-hidden'} ${isInputActive ? 'sendbox-panel--active' : ''} ${isFileDragging ? 'sendbox-panel--dragging' : ''}`}
+        className={`sendbox-panel relative pt-12px pb-10px px-14px rd-18px flex flex-col ${isOverlayOpen ? 'overflow-visible' : 'overflow-hidden'} ${isInputActive ? 'sendbox-panel--active' : ''} ${isFileDragging ? 'sendbox-panel--dragging' : ''}`}
         {...dragHandlers}
       >
         <BtwOverlay
@@ -2140,8 +2140,8 @@ const SendBox: React.FC<{
               flex: isSingleLine ? 1 : 'none',
               minWidth: 0,
               maxWidth: '100%',
-              marginBottom: isSingleLine ? 0 : '8px',
-              minHeight: isSingleLine ? '20px' : '40px',
+              marginBottom: isSingleLine ? 0 : '6px',
+              minHeight: isSingleLine ? '20px' : '36px',
             }}
           >
             <div
@@ -2176,7 +2176,7 @@ const SendBox: React.FC<{
                 marginRight: 0,
                 marginBottom: 0,
                 height: isSingleLine ? (isMobile ? '22px' : '20px') : 'auto',
-                minHeight: isSingleLine ? (isMobile ? '22px' : '20px') : '40px',
+                minHeight: isSingleLine ? (isMobile ? '22px' : '20px') : '36px',
                 overflowY: isSingleLine ? 'hidden' : 'auto',
                 overflowX: 'hidden',
                 whiteSpace: isSingleLine ? 'nowrap' : 'pre-wrap',

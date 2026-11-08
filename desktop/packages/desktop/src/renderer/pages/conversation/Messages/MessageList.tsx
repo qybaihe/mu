@@ -357,12 +357,45 @@ const MessageListSkeleton: React.FC<{ rowWidthClass: string }> = ({ rowWidthClas
   );
 };
 
+const isPseudoProcessedItem = (item: IProcessedItem): item is Exclude<IProcessedItem, TMessage> =>
+  'type' in item &&
+  (item.type === 'file_summary' ||
+    item.type === 'tool_summary' ||
+    item.type === 'thinking_history' ||
+    item.type === 'artifact');
+
+const hasRenderedCopyRow = (item: IProcessedItem, aiCopyRowTextIds: ReadonlySet<string>): boolean => {
+  if (isPseudoProcessedItem(item) || item.type !== 'text') return false;
+  return item.position !== 'left' || aiCopyRowTextIds.has(item.id);
+};
+
+/**
+ * Computes top margin per row so intra-turn AI steps (thoughts, tool runs, consecutive paragraphs)
+ * group tightly while turn boundaries maintain a consistent ~20–32px separation regardless of
+ * whether the preceding item rendered a 26px hover action bar.
+ */
+const getRowTopMarginClass = (
+  index: number,
+  item: IProcessedItem,
+  prevItem: IProcessedItem | undefined,
+  aiCopyRowTextIds: ReadonlySet<string>
+): string => {
+  if (index === 0 || !prevItem) return 'm-t-10px';
+  const prevHasCopyRow = hasRenderedCopyRow(prevItem, aiCopyRowTextIds);
+  const isUserRow = !isPseudoProcessedItem(item) && item.position === 'right';
+  if (isUserRow) {
+    return prevHasCopyRow ? 'm-t-8px' : 'm-t-20px';
+  }
+  return 'm-t-6px';
+};
+
 type ThoughtExpandedChange = (messageId: string, expanded: boolean) => void;
 
 const MessageItem: React.FC<{
   message: TMessage;
   highlighted?: boolean;
   rowWidthClass: string;
+  topMarginClass?: string;
   showCopyRow?: boolean;
   isLastMessage?: boolean;
   hasForkAnchor?: boolean;
@@ -372,10 +405,16 @@ const MessageItem: React.FC<{
   onThinkingExpandedChange?: ThoughtExpandedChange;
 }> = React.memo(
   HOC((props) => {
-    const { message, highlighted, rowWidthClass } = props as {
+    const {
+      message,
+      highlighted,
+      rowWidthClass,
+      topMarginClass = 'm-t-10px',
+    } = props as {
       message: TMessage;
       highlighted?: boolean;
       rowWidthClass: string;
+      topMarginClass?: string;
     };
     const native = useMessageListRun() !== undefined;
     return (
@@ -385,7 +424,7 @@ const MessageItem: React.FC<{
         data-message-type={message.type}
         data-message-position={message.position}
         className={classNames(
-          `${rowWidthClass} min-w-0 flex items-start message-item [&>div]:max-w-full px-8px m-t-10px`,
+          `${rowWidthClass} min-w-0 flex items-start message-item [&>div]:max-w-full px-8px ${topMarginClass}`,
           message.type,
           {
             'justify-center': message.position === 'center',
@@ -412,6 +451,7 @@ const MessageItem: React.FC<{
       message: TMessage;
       highlighted?: boolean;
       rowWidthClass: string;
+      topMarginClass?: string;
       showCopyRow?: boolean;
       isLastMessage?: boolean;
       hasForkAnchor?: boolean;
@@ -485,6 +525,7 @@ const MessageItem: React.FC<{
     prev.message.type === next.message.type &&
     prev.highlighted === next.highlighted &&
     prev.rowWidthClass === next.rowWidthClass &&
+    prev.topMarginClass === next.topMarginClass &&
     prev.showCopyRow === next.showCopyRow &&
     prev.isLastMessage === next.isLastMessage &&
     prev.hasForkAnchor === next.hasForkAnchor &&
@@ -1046,8 +1087,9 @@ const MessageList: React.FC<{
     scrollToBottom('smooth');
   };
 
-  const renderItem = (_index: number, item: (typeof processedList)[0]) => {
+  const renderItem = (index: number, item: (typeof processedList)[0]) => {
     const highlighted = matchesTargetMessage(item, highlightedMessageId);
+    const topMarginClass = getRowTopMarginClass(index, item, processedList[index - 1], aiCopyRowTextIds);
     if ('type' in item && item.type === 'artifact') {
       return (
         <div
@@ -1055,7 +1097,7 @@ const MessageList: React.FC<{
           id={`message-${getProcessedItemAnchorId(item)}`}
           data-conversation-artifact-kind={item.artifact.kind}
           data-testid={`conversation-artifact-${item.artifact.kind}`}
-          className={`${rowWidthClass} min-w-0 message-item px-8px m-t-10px`}
+          className={`${rowWidthClass} min-w-0 message-item px-8px ${topMarginClass}`}
           style={highlighted ? highlightStyle : undefined}
         >
           {item.artifact.kind === 'cron_trigger' ? (
@@ -1071,7 +1113,7 @@ const MessageList: React.FC<{
         <div
           key={item.id}
           id={`message-${getProcessedItemAnchorId(item)}`}
-          className={`${rowWidthClass} min-w-0 message-item px-8px m-t-10px thinking_history`}
+          className={`${rowWidthClass} min-w-0 message-item px-8px ${topMarginClass} thinking_history`}
           style={highlighted ? highlightStyle : undefined}
         >
           <ThoughtHistoryRow messages={item.messages} />
@@ -1083,7 +1125,7 @@ const MessageList: React.FC<{
         <div
           key={item.id}
           id={`message-${getProcessedItemAnchorId(item)}`}
-          className={`${rowWidthClass} min-w-0 message-item px-8px m-t-10px ${item.type}`}
+          className={`${rowWidthClass} min-w-0 message-item px-8px ${topMarginClass} ${item.type}`}
           style={highlighted ? highlightStyle : undefined}
         >
           {item.type === 'file_summary' && <FileChangesRow diffsChanges={item.diffs} />}
@@ -1107,6 +1149,7 @@ const MessageList: React.FC<{
         key={message.id}
         highlighted={highlighted}
         rowWidthClass={rowWidthClass}
+        topMarginClass={topMarginClass}
         showCopyRow={showCopyRow}
         isLastMessage={message.id === lastMessageId}
         hasForkAnchor={forkAnchoredIds.has(message.id)}

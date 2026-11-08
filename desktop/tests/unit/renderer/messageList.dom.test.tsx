@@ -423,6 +423,44 @@ describe('MessageList', () => {
     expect(messageRow.className).not.toContain('pt-10px');
   });
 
+  it('tightens intra-turn AI spacing while keeping turn boundaries separated', () => {
+    const messages = [
+      createThinkingMessage('thought-1', 'plan', 'done', 1),
+      createAcpToolCall({ id: 'tool-1' }),
+      {
+        id: 'ai-text-1',
+        msg_id: 'ai-text-1',
+        conversation_id: 'conversation-1',
+        type: 'text',
+        position: 'left',
+        created_at: 3,
+        content: { content: 'done' },
+      },
+      createUserMessage('user-1', 4),
+      { ...createAcpToolCall({ id: 'tool-2' }), created_at: 5 },
+      createUserMessage('user-2', 6),
+    ] as TMessage[];
+
+    render(<MessageList />, {
+      wrapper: ({ children }) => <Wrapper messages={messages}>{children}</Wrapper>,
+    });
+
+    const content = screen.getByTestId('message-list-content');
+    const rows = [...content.querySelectorAll('.message-item')];
+    expect(rows).toHaveLength(6);
+    // Row 0 (thinking_history): initial top spacing
+    expect(rows[0]?.className).toContain('m-t-10px');
+    // Row 1 (tool_summary) & Row 2 (AI text): tight intra-turn spacing (6px)
+    expect(rows[1]?.className).toContain('m-t-6px');
+    expect(rows[2]?.className).toContain('m-t-6px');
+    // Row 3 (user-1 after AI text with copy row): 8px + 24px copy row
+    expect(rows[3]?.className).toContain('m-t-8px');
+    // Row 4 (tool-2 after user-1 with copy row): 6px + 24px copy row
+    expect(rows[4]?.className).toContain('m-t-6px');
+    // Row 5 (user-2 after tool-2 which has no copy row): 20px turn separation
+    expect(rows[5]?.className).toContain('m-t-20px');
+  });
+
   it('uses container-responsive fluid width for standalone message rows', () => {
     render(<MessageList />, {
       wrapper: ({ children }) => <Wrapper>{children}</Wrapper>,

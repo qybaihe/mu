@@ -1,6 +1,6 @@
 .container {
   width: 100%;
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 /* The header is an Arco text button: match Arco's own selectors so its size, colour and hover
@@ -63,7 +63,7 @@
   height: 2.8em;
   margin-top: 4px;
   margin-inline-start: 6px;
-  padding-inline-start: 12px;
+  padding-inline-start: 14px;
   border-inline-start: 2px solid var(--color-border-2);
   overflow: hidden;
   color: var(--color-text-3);
@@ -76,8 +76,8 @@
 .body {
   color: var(--color-text-3);
   font-size: 13px;
-  line-height: 1.7;
-  padding: 4px 0 4px 12px;
+  line-height: 1.65;
+  padding: 4px 0 4px 14px;
   margin-top: 4px;
   margin-inline-start: 6px;
   border-inline-start: 2px solid var(--color-border-2);

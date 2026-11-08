@@ -41,10 +41,10 @@ const initStyleCss = (
     : '';
 
   const lineHeight = isMobile ? '19.6px' : '24px';
-  const fontSize = isMobile ? 'var(--chat-font-size, 14px)' : 'var(--chat-font-size, 16px)';
-  // Desktop paragraph spacing trimmed from 16px to 12px (~0.85em) for a more
-  // compact reply; mobile spacing is left untouched (tuned separately).
-  const paragraphMargin = isMobile ? '16px' : '12px';
+  const fontSize = isMobile ? 'var(--chat-font-size, 14px)' : 'var(--chat-font-size, 15px)';
+  // Desktop paragraph spacing tuned to 10px (~0.67em at 15px/24px) for balanced
+  // density; mobile spacing is tuned separately.
+  const paragraphMargin = isMobile ? '14px' : '10px';
 
   return `
   /* Shadow DOM CSS variable definitions */
@@ -77,8 +77,8 @@ const initStyleCss = (
     margin-block-end: ${paragraphMargin};
   }
   .markdown-shadow-body li {
-    margin-block-start: 6px;
-    margin-block-end: 6px;
+    margin-block-start: 4px;
+    margin-block-end: 4px;
   }
   a{
     color:var(--primary);
@@ -227,29 +227,29 @@ const initStyleCss = (
     font-weight: 650;
     letter-spacing: -0.01em;
     margin-top: 20px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   h2{
     font-size: 17px;
     line-height: 25px;
     font-weight: 650;
     letter-spacing: -0.01em;
-    margin-top: 18px;
-    margin-bottom: 8px;
-  }
-  h3{
-    font-size: 15.5px;
-    line-height: 23px;
-    font-weight: 600;
     margin-top: 16px;
     margin-bottom: 6px;
   }
-  h4,h5,h6{
-    font-size: 14.5px;
+  h3{
+    font-size: 15px;
     line-height: 22px;
     font-weight: 600;
     margin-top: 14px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+  }
+  h4,h5,h6{
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    margin-top: 12px;
+    margin-bottom: 4px;
   }
   .markdown-shadow-body>:is(h1,h2,h3,h4,h5,h6):first-child{
     margin-top: 0px;
@@ -293,7 +293,7 @@ const initStyleCss = (
     border: 1px solid var(--bg-3);
     padding: 1.5px 5.5px;
     border-radius: 5px;
-    font-size: 0.86em;
+    font-size: 0.88em;
     font-family: var(--font-mono);
     font-weight: var(--font-mono-weight, 450);
   }
