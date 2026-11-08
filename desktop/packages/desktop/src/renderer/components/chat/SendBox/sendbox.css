@@ -8,8 +8,8 @@
   border: 1px solid var(--mu-input-border, var(--color-border-2));
   box-shadow: var(--mu-shadow-1, none);
   transition:
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .sendbox-panel--active {

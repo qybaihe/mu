@@ -350,13 +350,13 @@ const MessageText: React.FC<{
         {!images || renderedText.trim() ? (
           <div
             className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
-              'message-user-bubble bg-aou-2 px-10px py-6px md:px-12px md:py-8px': isUserMessage || cronMeta,
+              'message-user-bubble bg-aou-2 px-12px py-8px md:px-16px md:py-10px': isUserMessage || cronMeta,
               'bg-3 p-6px md:p-8px': isTeammateMessage,
               'w-full': !(isUserMessage || cronMeta || isTeammateMessage),
             })}
             style={{
               ...(isUserMessage || cronMeta
-                ? { borderRadius: '12px 12px 4px 12px', color: 'var(--text-primary)' }
+                ? { borderRadius: '16px', color: 'var(--text-primary)' }
                 : isTeammateMessage
                   ? {
                       borderRadius: '4px 12px 12px 12px',
@@ -402,7 +402,7 @@ const MessageText: React.FC<{
             of the turn shows this row (showCopyRow); user messages always do. */}
         {!isMobile && showCopyRow && (
           <div
-            className={classNames('h-32px flex items-center mt-4px gap-8px', {
+            className={classNames('h-24px flex items-center mt-2px gap-8px', {
               'flex-row-reverse': isUserMessage,
             })}
           >
