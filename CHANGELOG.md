@@ -4,6 +4,28 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-11-08
+
+**In 0.3.9 the model can ask you questions with options (`ask_user`), `/plan` lets it plan a task without changing anything until you approve, and `present` hands you the files a task produced as a card in the conversation. In the desktop app, streamed replies and long tool runs are much smoother.** Skills installed mid-session reach the model on your next message, and the model can offer features that are off by default when a task needs one. The desktop app carries mu-agent 0.3.9.
+
+### Questions, plans and deliverables
+
+- **Questions with options (`ask_user` and `/answer`).** When a choice is yours to make and the prompt doesn't settle it (which database, which of two layouts), the model can ask one to four questions with options and descriptions, plus a choice for your own words. In the desktop app each question shows as a card in the conversation. If nobody answers in two minutes (`features.askUser.waitMs`), the model carries on with what doesn't depend on the answer instead of stalling the run; a line above the send box says "mu has a question waiting for you." with an **Answer** button (or `/answer` in the terminal) to answer when you're back.
+- **Plan mode (`/plan`).** `/plan` (or `/plan <task>`) switches the conversation into plan mode. While it's on, the model can read files, run read-only commands, use `lsp`, search the web and ask you questions with `ask_user`, and every call that would edit a file, run a non-read-only command, start a subagent or call an MCP or browser tool is refused. The tool list and system prompt stay as they are, so switching plan mode on or off doesn't break the provider's prompt cache. When a reply ends with a `# Plan` heading, mu asks whether to approve and start, keep planning, or reply in your own words; approving turns plan mode off, puts the plan's steps on the task checklist and starts the work.
+- **Files for you (`present`) and line links.** When a task produces files for you (a report, a slide deck, a build), `present` hands them over as a **Files for you** card in the conversation, with each file's name, folder and size; clicking one opens it in the preview panel. When the model names a source file in a reply, it links to the line (`#L24` or `#L24-L30`) so clicking it opens the file there.
+- **Skills installed mid-session reach the model.** Installing or removing a skill during a conversation (`/skills accept`, or writing a `SKILL.md`) tells the model on your next message, without touching the cached system prompt (`features.skills.refresh`).
+- **The model can offer a feature that is off by default.** Summary-free compaction, mid-stream correction and the write sandbox appear in `find_capability` when they are off and supported on your machine. Opening one asks you whether to turn it on for future conversations; only your yes writes it to `mu.json`.
+
+### Smoother streaming in the desktop app
+
+- **One draw per frame, parsed block by block.** Streamed replies coalesce updates to one render per animation frame and parse markdown one top-level block at a time, so finished paragraphs and highlighted code blocks stay untouched while the last paragraph grows. Message shadow roots share one stylesheet instead of cloning `<style>` tags into every message.
+- **Calm tool and thinking rows.** A live thought streams its newest words in a fixed two-line window under the header and folds to "Thought for 12s" when the reply begins. A running command previews its latest five lines of stdout inside the tool card, and file edits show inline `+N / -M` line counts and a compact diff preview. Completed blocks and folded tool groups stay idle while later blocks stream.
+
+### Fixed
+
+- **Windows:** stopping a background job started through Git Bash (including `npm run` from the Run button or `bg_start`) now stops `npm`, `cmd.exe` and the script it started together, and detects processes a finished command left running.
+- Documentation pages on usemu.dev include an "Edit this page on GitHub" link ([#384](https://github.com/qybaihe/mu/pull/384) by [@imsurya26](https://github.com/imsurya26)), and `mu --help`, the npm README and the site list `mu ledger --timeline` and `mu auth enable`.
+
 ## [0.3.8] - 2026-11-05
 
 **In 0.3.8 the judge reads the whole call it approves, and your keys stay out of the agent's commands and MCP servers. You can also choose which of an account's models the model menus show.** A session reopened after an interruption says which calls may already have run, a reply you stop keeps its text for the model, and the agent gets a language-server tool and a way to read back output mu shortened. An experimental write sandbox can keep the agent's commands to the project. The desktop app carries mu-agent 0.3.8.
