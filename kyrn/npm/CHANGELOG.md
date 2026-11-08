@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-11-08
+
+**0.3.9 adds `ask_user` and `/answer` for questions with options, `/plan` for planning without changing files or breaking the prompt cache, `present` for handing over finished files, mid-session skill refresh (`skills.refresh`), and `feature:<name>` catalog entries so the model can offer features that are off by default.**
+
+### Added
+
+- **`askUser`** (`features.askUser`, on): `ask_user({ questions })` asks one to four questions, each with two to six options (`label`, `description`) and optional `multiSelect`, plus an option for the user's own words. Each question waits `features.askUser.waitMs` (120,000 ms; `0` waits until answered). On timeout the call returns that the questions are pending so the model can continue with work that does not depend on them, and `/answer` asks them again (or the user's next message settles them). Emits `question.asked` and `question.resolved` presentation frames and records `kyrn.question` entries. Excluded from subagents and unattended runs, and listed as read-only for permission modes, checkpoints, the credential guard and the board.
+- **`plan`** (`features.plan`, on): `/plan [task]`, `/plan off` and `/plan approve`. Keeps plan mode in the session (`kyrn.plan`) without changing the tool list or the system prompt, so the prompt cache holds across switching plan mode on and off. While plan mode is on, a final `tool_call` handler before the permission gate refuses every call that `permissionNeed()` marks as needing permission in any mode (file edits, non-read-only shell and background commands, subagents, MCP and browser tools), while reading, read-only commands, `lsp`, `web_fetch`, `recall`, `todo` and `ask_user` go through. When a reply in plan mode ends with a `# Plan` heading (`## Plan: …`, `# 计划`, `# 方案`), mu asks the user with `askQuestions` whether to approve and start (putting the top-level items on the task checklist and turning plan mode off), keep planning, or answer in their own words.
+- **`present` tool** (`features.present`, on): `present({ files, note? })` checks one to eight regular files (absolute or relative to `cwd`) and returns their absolute paths, names and byte sizes in `details.files` along with `note`, without reading or copying file contents. Adds system-prompt guidelines to use `present` for deliverable files and to format source file references as markdown links with `#L<line>` or `#L<start>-L<end>`.
+- **`skills.refresh`** (`features.skills.refresh`, on): before each user message, rescans the skill directories pi loads from and appends one `kyrn.skills-changed` message naming any skills added or removed since the session started, without modifying the system prompt. Reading a skill's file also records a `kyrn.skill-read` entry linking the read to how the skill was disclosed and the first `skills.disclosure` verdict.
+- **Feature offers in the capability catalog** (`feature:<name>`): off-by-default features that are supported on the current machine (`compaction`, `interrupt`, and `confine` on macOS or Linux with `bwrap`) appear in `find_capability`. Opening one asks the user via `askQuestions` whether to enable it in `mu.json` (after backing up the config file) for future conversations; `/capabilities open feature:<name>` enables it directly when the user asks. Recorded as `kyrn.feature-offer`.
+
+### Changed
+
+- **`turn.continue`**: while `ask_user` questions are open (`pending`), a `go_ahead` verdict ends the turn as it is instead of nudging the model to proceed without the user's answer. A `promised` verdict still nudges.
+
+### Fixed
+
+- **Windows (`bg_start`):** through Git Bash (MSYS), the job's shell writes its MSYS process group pid on start, and stopping the job or shutting down the session kills every Windows pid in that group with `taskkill /T /F` (reaching `npm`, `cmd.exe` and the script it started) and detects lingering background processes when the shell exits.
+- `mu --help` and the npm README list `mu ledger --timeline` and `mu auth enable`.
+
 ## [0.3.8] - 2026-11-05
 
 **0.3.8: the judge approves the call that runs (`tool.approval` v3), credentials stay out of the agent's commands and MCP servers and a call that carries one asks, and `enabledModels` is chosen one provider at a time. New features: `recovery`, `interrupted`, `recall` and `prefix` (on), `confine` (experimental, off), the `lsp` navigation tool and `inherit.folders`.**
