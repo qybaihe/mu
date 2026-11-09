@@ -72,4 +72,12 @@ describe('ChatTitleEditor with a named conversation', () => {
     fireEvent.click(screen.getByTestId('chat-title-editor-trigger'));
     expect(setEditingTitle).toHaveBeenCalledWith(true);
   });
+
+  it('uses compact 14px semibold header typography without shifting title text to accent blue on hover', () => {
+    renderEditor({ title: '每日 AI 论文简报' });
+    const titleSpan = screen.getByText('每日 AI 论文简报');
+    expect(titleSpan.className).toContain('text-14px');
+    expect(titleSpan.className).toContain('font-600');
+    expect(titleSpan.className).not.toContain('group-hover:text-[rgb(var(--primary-6))]');
+  });
 });

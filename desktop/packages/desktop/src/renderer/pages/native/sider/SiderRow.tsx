@@ -109,7 +109,7 @@ const SiderRow: React.FC<RowProps> = ({
       data-running={conversation.running ? 'true' : undefined}
       data-unread={unread ? 'true' : undefined}
       className={classNames(
-        'group h-34px rd-8px flex items-center gap-8px pe-6px cursor-pointer min-w-0 shrink-0 transition-colors',
+        'group h-30px rd-6px flex items-center gap-8px pe-6px cursor-pointer min-w-0 shrink-0 transition-colors',
         indented ? 'ps-40px' : 'ps-12px',
         active ? '!bg-fill-3' : 'hover:bg-fill-3',
         archived && 'opacity-70'
@@ -133,7 +133,16 @@ const SiderRow: React.FC<RowProps> = ({
       {/* The title comes first: it takes the room it needs, and the folder gives up its own before the title does,
           down to its first few letters (3em, or all of a shorter name), so a long folder name never leaves the title
           at two words. */}
-      <span className='min-w-0 flex-auto truncate text-14px font-[500] lh-24px text-t-primary'>{title}</span>
+      <span
+        className={classNames(
+          'min-w-0 flex-auto truncate text-13px lh-20px transition-colors',
+          active || (unread && !archived)
+            ? 'font-[500] text-t-primary'
+            : 'font-[400] text-t-secondary group-hover:text-t-primary'
+        )}
+      >
+        {title}
+      </span>
       {folder ? (
         <span
           className='shrink-[100] min-w-[calc-size(max-content,min(size,3em))] max-w-40% truncate text-12px text-t-tertiary'

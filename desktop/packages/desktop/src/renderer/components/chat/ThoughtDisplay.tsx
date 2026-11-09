@@ -128,7 +128,7 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
   if (!thought?.subject && (running || statusText)) {
     return (
       <div
-        className='relative z-1 mb--20px pb-30px px-10px py-10px rd-t-20px text-14px lh-20px text-t-primary flex items-center gap-8px'
+        className='relative z-1 mb--14px pb-22px px-12px py-7px rd-t-14px text-13px lh-18px text-t-primary flex items-center gap-8px'
         style={containerStyle}
       >
         {running && <Spin size={14} />}
@@ -154,7 +154,7 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
 
   return (
     <div
-      className='relative z-1 mb--20px pb-30px px-10px py-10px rd-t-20px text-14px lh-20px text-t-primary'
+      className='relative z-1 mb--14px pb-22px px-12px py-7px rd-t-14px text-13px lh-18px text-t-primary'
       style={containerStyle}
     >
       <div className='flex items-center gap-8px'>

@@ -65,21 +65,21 @@ const SiderToolbar: React.FC<SiderToolbarProps> = ({
           data-testid='sider-new-chat'
           className={classNames(
             styles.newChatTrigger,
-            'h-34px flex-1 flex items-center justify-start gap-8px ps-10px pe-8px rd-0.5rem cursor-pointer group transition-all bg-transparent text-t-primary hover:bg-fill-3 active:bg-fill-4',
+            'h-30px flex-1 flex items-center justify-start gap-8px ps-10px pe-8px rd-6px cursor-pointer group transition-all bg-transparent text-t-primary hover:bg-fill-3 active:bg-fill-4',
             isMobile && 'sider-action-btn-mobile'
           )}
           {...rowButtonProps(onNewChat)}
         >
-          <span className='size-22px rd-6px bg-aou-2 border border-solid border-[var(--color-border-2)] group-hover:bg-fill-3 group-hover:border-transparent flex items-center justify-center shrink-0 transition-colors'>
+          <span className='size-20px rd-5px bg-aou-2 border border-solid border-[var(--color-border-2)] group-hover:bg-fill-3 group-hover:border-transparent flex items-center justify-center shrink-0 transition-colors'>
             <Plus
               theme='outline'
-              size='14'
+              size='13'
               fill='currentColor'
               className={classNames('block leading-none', styles.newChatIcon)}
               style={{ lineHeight: 0 }}
             />
           </span>
-          <span className='collapsed-hidden text-t-primary text-14px font-[500] leading-24px'>
+          <span className='collapsed-hidden text-t-primary text-13px font-[500] leading-20px'>
             {t('conversation.welcome.newConversation')}
           </span>
         </div>

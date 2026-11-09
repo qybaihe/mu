@@ -56,21 +56,21 @@ const SiderSearchEntry: React.FC<SiderSearchEntryProps> = ({ isMobile, collapsed
       <div
         data-testid='sider-search'
         className={classNames(
-          'box-border group h-34px w-full flex items-center justify-start gap-8px ps-10px pe-8px rd-0.5rem cursor-pointer shrink-0 transition-all text-t-primary hover:bg-fill-3 active:bg-fill-4',
+          'box-border group h-30px w-full flex items-center justify-start gap-8px ps-10px pe-8px rd-6px cursor-pointer shrink-0 transition-all text-t-secondary hover:text-t-primary hover:bg-fill-3 active:bg-fill-4',
           isMobile && 'sider-action-btn-mobile'
         )}
         {...rowButtonProps(toggleCommandPalette)}
       >
-        <span className='size-22px flex items-center justify-center shrink-0 text-t-primary'>
+        <span className='size-22px flex items-center justify-center shrink-0'>
           <Search
             theme='outline'
-            size='16'
+            size='15'
             fill='currentColor'
             className='block leading-none'
             style={{ lineHeight: 0 }}
           />
         </span>
-        <span className='collapsed-hidden text-t-primary text-14px font-[500] leading-24px'>{label}</span>
+        <span className='collapsed-hidden text-t-primary text-13px font-[500] leading-20px'>{label}</span>
         <span className='collapsed-hidden ms-auto text-12px text-t-tertiary'>{shortcut}</span>
       </div>
     </Tooltip>
