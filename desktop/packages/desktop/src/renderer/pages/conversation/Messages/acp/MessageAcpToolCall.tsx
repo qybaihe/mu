@@ -137,7 +137,7 @@ const MessageAcpToolCall: React.FC<{ message: IMessageAcpToolCall }> = ({ messag
 
   if (hasOnlyDiffs) {
     return (
-      <div className='w-full mb-2 flex flex-col gap-8px'>
+      <div className='w-full flex flex-col gap-6px'>
         {diffContent.map((contentItem, index) => (
           <ContentView key={`${contentItem.path || 'diff'}-${index}`} content={contentItem} />
         ))}

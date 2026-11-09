@@ -171,6 +171,21 @@ describe('a conversation without an avatar in the sidebar', () => {
     expect(container.querySelector('.i-icon-robot')).toBeNull();
     expect(row(container).className).toContain('ps-10px');
   });
+
+  it('uses regular weight at rest and medium primary weight when selected or unread', () => {
+    const { container, rerender } = renderRow({ selected: false, hasUnread: false });
+    const titleBox = () => container.querySelector('.chat-history__item-name') as HTMLElement;
+    expect(titleBox().className).toContain('font-[400]');
+    expect(titleBox().className).toContain('text-t-secondary');
+
+    rerender(<ConversationRow {...baseProps} selected />);
+    expect(titleBox().className).toContain('font-[500]');
+    expect(titleBox().className).toContain('text-t-primary');
+
+    rerender(<ConversationRow {...baseProps} selected={false} hasUnread />);
+    expect(titleBox().className).toContain('font-[500]');
+    expect(titleBox().className).toContain('text-t-primary');
+  });
 });
 
 describe('a conversation with a mark in the sidebar', () => {

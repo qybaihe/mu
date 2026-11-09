@@ -138,4 +138,11 @@ describe('ConversationPlanBar', () => {
     expect(screen.queryByText('read the readme')).toBeNull();
     expect(screen.getByText('conversation.planBar.progress:1/3')).toBeTruthy();
   });
+
+  it('distinguishes completed, in_progress, and pending step typography', () => {
+    setup({ plan: plan('turn-id-1'), isProcessing: true, activeTurnId: 'turn-id-1' });
+    expect(screen.getByText('read the readme').className).toContain('text-t-tertiary');
+    expect(screen.getByText('count the files').className).toContain('text-t-primary');
+    expect(screen.getByText('count the files').className).toContain('font-medium');
+  });
 });

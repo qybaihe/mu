@@ -301,7 +301,7 @@ const initStyleCss = (
     border-left: 2px solid var(--bg-3);
     padding-left: 12px;
     color: var(--text-secondary);
-    margin: 14px 0;
+    margin: 10px 0;
   }
   pre {
     max-width: 100%;
@@ -342,11 +342,16 @@ const initStyleCss = (
    /* Table border styles */
   table {
     border-collapse: collapse;
+    width: 100%;
+    font-size: 13.5px;
+    line-height: 20px;
     th{
-      padding: 8px;
-      border: 1px solid var(--bg-3);
-      background-color: var(--bg-1);
-      font-weight: bold;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--bg-3);
+      background-color: var(--bg-2);
+      color: var(--text-secondary);
+      font-size: 12.5px;
+      font-weight: 600;
       /* Without this the UA default (text-align: center) applies and the header
          row is centred while every body row is start-aligned. GFM alignment
          markers (:---, :---:, ---:) still win: remark-gfm emits them as an
@@ -354,9 +359,10 @@ const initStyleCss = (
       text-align: start;
     }
     td{
-        padding: 8px;
-        border: 1px solid var(--bg-3);
-        min-width: 120px;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--bg-3);
+      font-size: 13.5px;
+      line-height: 20px;
     }
   }
   /* Inline code should wrap on small screens to avoid horizontal overflow */

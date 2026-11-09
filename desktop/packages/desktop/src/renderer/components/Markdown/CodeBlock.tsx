@@ -198,7 +198,7 @@ function FencedCodeBlock(props: CodeBlockProps & { language: string }) {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '7px 12px',
+            padding: '5px 8px 5px 12px',
             borderBottom: `1px solid ${borderColor}`,
           }}
         >
@@ -215,37 +215,45 @@ function FencedCodeBlock(props: CodeBlockProps & { language: string }) {
           {/* Buttons: always visible on touch devices, hover-only on pointer devices */}
           <div
             className='opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity'
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
           >
             {canCollapse && (
-              <span title={expanded ? t('common.collapse') : t('common.expand')} style={{ display: 'flex' }}>
+              <span
+                title={expanded ? t('common.collapse') : t('common.expand')}
+                className='hover:bg-fill-3 transition-colors'
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                }}
+                onClick={toggleExpanded}
+              >
                 {expanded ? (
-                  <Up
-                    theme='outline'
-                    size='14'
-                    style={{ cursor: 'pointer', display: 'block' }}
-                    fill={iconFill}
-                    onClick={toggleExpanded}
-                  />
+                  <Up theme='outline' size='14' style={{ display: 'block' }} fill={iconFill} />
                 ) : (
-                  <Down
-                    theme='outline'
-                    size='14'
-                    style={{ cursor: 'pointer', display: 'block' }}
-                    fill={iconFill}
-                    onClick={toggleExpanded}
-                  />
+                  <Down theme='outline' size='14' style={{ display: 'block' }} fill={iconFill} />
                 )}
               </span>
             )}
-            <span title={t('common.copy')} style={{ display: 'flex' }}>
-              <Copy
-                theme='outline'
-                size='14'
-                style={{ cursor: 'pointer', display: 'block' }}
-                fill={iconFill}
-                onClick={handleCopy}
-              />
+            <span
+              title={t('common.copy')}
+              className='hover:bg-fill-3 transition-colors'
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '22px',
+                height: '22px',
+                borderRadius: '5px',
+                cursor: 'pointer',
+              }}
+              onClick={handleCopy}
+            >
+              <Copy theme='outline' size='14' style={{ display: 'block' }} fill={iconFill} />
             </span>
           </div>
         </div>
