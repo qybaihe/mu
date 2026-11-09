@@ -51,22 +51,20 @@ const ChatTitleEditor: React.FC<ChatTitleEditorProps> = ({
   return (
     <div
       className={classNames(
-        'group flex min-w-0 max-w-full items-center rounded-12px border border-solid border-transparent transition-all duration-180',
-        editingTitle
-          ? 'bg-fill-2 border-[var(--color-fill-3)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]'
-          : 'hover:bg-fill-2 hover:border-[var(--color-fill-3)] hover:shadow-[0_1px_2px_rgba(15,23,42,0.06)] focus-within:bg-fill-2 focus-within:border-[var(--color-fill-3)] focus-within:shadow-[0_1px_2px_rgba(15,23,42,0.06)]'
+        'group flex min-w-0 max-w-full items-center rounded-8px border border-solid border-transparent transition-colors duration-150',
+        editingTitle ? 'bg-fill-2 border-[var(--color-border-2)]' : 'hover:bg-fill-2 focus-within:bg-fill-2'
       )}
       style={{ width: '100%', maxWidth: `${titleAreaMaxWidth}px` }}
     >
       {/* `empty:hidden`: an agent without a logo renders no icon, and its empty slot must not indent the title. */}
       {leading && <div className='shrink-0 flex items-center ps-8px empty:hidden'>{leading}</div>}
       {editingTitle && canRenameTitle ? (
-        <div className='min-w-0 flex-1 px-8px py-5px'>
+        <div className='min-w-0 flex-1 px-8px py-4px'>
           <Input
             autoFocus
             value={titleDraft}
             disabled={renameLoading}
-            className='w-full min-w-0 max-w-full border-none bg-transparent shadow-none [&_.arco-input-inner-wrapper]:border-none [&_.arco-input-inner-wrapper]:bg-transparent [&_.arco-input-inner-wrapper]:shadow-none [&_.arco-input]:bg-transparent [&_.arco-input]:px-0 [&_.arco-input]:text-16px [&_.arco-input]:font-700 [&_.arco-input]:leading-24px [&_.arco-input]:text-[var(--color-text-1)]'
+            className='w-full min-w-0 max-w-full border-none bg-transparent shadow-none [&_.arco-input-inner-wrapper]:border-none [&_.arco-input-inner-wrapper]:bg-transparent [&_.arco-input-inner-wrapper]:shadow-none [&_.arco-input]:bg-transparent [&_.arco-input]:px-0 [&_.arco-input]:text-14px [&_.arco-input]:font-600 [&_.arco-input]:leading-20px [&_.arco-input]:text-[var(--color-text-1)]'
             style={{
               width: '100%',
               maxWidth: '100%',
@@ -94,16 +92,16 @@ const ChatTitleEditor: React.FC<ChatTitleEditorProps> = ({
         </div>
       ) : (
         // The whole padded region is the rename trigger: an empty title leaves
-        // the text span with no box to hit, and the padding alone is only 10px
+        // the text span with no box to hit, and the padding alone is only 8px
         // tall. `min-h-24px` sits below the natural height of a rendered title
-        // (~29px), so it never affects layout — it only guarantees a usable hit
+        // (~28px), so it never affects layout — it only guarantees a usable hit
         // area if the title text is ever absent.
         <div
           data-testid='chat-title-editor-trigger'
           role={canRenameTitle ? 'button' : undefined}
           tabIndex={canRenameTitle ? 0 : undefined}
           className={classNames(
-            'min-w-0 flex-1 px-8px py-5px min-h-24px',
+            'min-w-0 flex-1 px-8px py-4px min-h-24px',
             canRenameTitle && 'cursor-text focus:outline-none'
           )}
           onClick={startEditing}
@@ -117,10 +115,8 @@ const ChatTitleEditor: React.FC<ChatTitleEditorProps> = ({
         >
           <span
             className={classNames(
-              'block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-16px font-bold transition-colors duration-150',
-              isTitleBlank ? 'text-t-tertiary' : 'text-t-primary',
-              canRenameTitle &&
-                'group-hover:text-[rgb(var(--primary-6))] group-focus-within:text-[rgb(var(--primary-6))]'
+              'block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-14px font-600 leading-20px transition-colors duration-150',
+              isTitleBlank ? 'text-t-tertiary' : 'text-t-primary'
             )}
           >
             {displayTitle}

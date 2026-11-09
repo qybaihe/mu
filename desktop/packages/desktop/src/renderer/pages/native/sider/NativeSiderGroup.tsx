@@ -54,7 +54,7 @@ const Label: React.FC<{
   end?: React.ReactNode;
 }> = ({ title, folded, onToggle, testId, end }) => (
   <div
-    className='group/label sider-section-label flex items-center px-12px h-28px select-none sticky top-0 z-10 mt-8px cursor-pointer'
+    className='group/label sider-section-label flex items-center px-12px h-24px select-none sticky top-0 z-10 mt-8px cursor-pointer'
     role='button'
     tabIndex={0}
     aria-expanded={!folded}
@@ -67,7 +67,7 @@ const Label: React.FC<{
       onToggle();
     }}
   >
-    <span className='text-14px text-t-tertiary sider-section-title group-hover/label:text-t-primary transition-colors font-[500] leading-none'>
+    <span className='text-12px text-t-tertiary sider-section-title group-hover/label:text-t-secondary transition-colors font-[500] leading-none'>
       {title}
     </span>
     <span className='ms-2px flex items-center justify-center opacity-0 group-hover/label:opacity-100 transition-opacity text-t-tertiary shrink-0'>

@@ -81,9 +81,9 @@ const ProjectGroup: React.FC<Props> = ({
         expanded={!folded}
         onToggle={onToggle}
         stickyHeader
-        stickyTop={28}
+        stickyTop={24}
         header={
-          <span className='text-14px font-[500] truncate flex-1 text-t-primary min-w-0' title={project.folder}>
+          <span className='text-13px font-[500] truncate flex-1 text-t-primary min-w-0' title={project.folder}>
             {folderName(project.folder)}
           </span>
         }

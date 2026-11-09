@@ -65,15 +65,18 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
   const open = useOptionalLocalFilePreview(conversation?.workspace ?? run?.workspace);
   return (
     <div
-      className='rd-12px border border-solid border-[var(--color-border-2)] bg-1 p-12px flex flex-col gap-8px max-w-560px'
+      className='rd-10px border border-solid border-[var(--color-border-2)] bg-fill-1 p-10px flex flex-col gap-6px max-w-560px'
       data-testid='message-deliverables'
     >
-      <div className='flex items-center gap-6px text-13px font-500 text-t-primary'>
-        <FileSuccess theme='outline' size='16' aria-hidden='true' />
+      <div className='flex items-center gap-6px px-4px text-12.5px font-500 text-t-secondary'>
+        <FileSuccess theme='outline' size='14' aria-hidden='true' />
         <span>{t('messages.deliverables.title', { count: delivered.files.length })}</span>
       </div>
       {delivered.note ? (
-        <div className='text-13px leading-20px text-t-secondary whitespace-pre-wrap [word-break:break-word]' dir='auto'>
+        <div
+          className='px-4px text-13px leading-20px text-t-secondary whitespace-pre-wrap [word-break:break-word]'
+          dir='auto'
+        >
           {delivered.note}
         </div>
       ) : null}
@@ -82,7 +85,7 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
           <Button
             key={file.path}
             type='text'
-            className='!h-auto !px-8px !py-6px !text-left !justify-start'
+            className='!h-auto !px-8px !py-5px !rd-6px hover:!bg-fill-2 !text-left !justify-start transition-colors'
             disabled={!open}
             title={file.path}
             aria-label={t('messages.deliverables.open', { name: file.name })}
@@ -91,9 +94,9 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
             onClick={() => void open?.(file.path)}
           >
             <span className='flex w-full items-baseline gap-8px min-w-0'>
-              <span className='text-13px text-t-primary truncate'>{file.name}</span>
+              <span className='text-13px font-500 text-t-primary truncate'>{file.name}</span>
               <span className='text-12px text-t-tertiary truncate flex-1 min-w-0'>{folderOf(file.path)}</span>
-              <span className='text-12px text-t-tertiary flex-none'>{fileSize(file.bytes)}</span>
+              <span className='text-11.5px font-mono text-t-tertiary flex-none'>{fileSize(file.bytes)}</span>
             </span>
           </Button>
         ))}

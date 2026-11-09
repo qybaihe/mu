@@ -1,10 +1,10 @@
 .card {
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   overflow: hidden;
   border: 1px solid var(--color-border-2);
   border-radius: 10px;
-  background: var(--color-bg-2);
+  background: var(--color-fill-1);
   container-type: inline-size;
 }
 
@@ -36,7 +36,8 @@
   flex: 1;
   overflow-wrap: anywhere;
   color: var(--color-text-1);
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.45;
 }
 
@@ -68,10 +69,10 @@
   min-width: 0;
   align-items: baseline;
   gap: 8px;
-  padding: 7px 9px;
+  padding: 7px 10px;
   border: 1px solid var(--color-border-2);
   border-radius: 7px;
-  background: var(--color-fill-1);
+  background: var(--bg-1);
 }
 
 .detailLabel {
@@ -91,7 +92,7 @@
   background: transparent;
   font-family: var(--font-mono);
   font-weight: var(--font-mono-weight);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
@@ -123,6 +124,7 @@
   overflow: hidden;
   border: 1px solid var(--color-border-2);
   border-radius: 8px;
+  background: var(--bg-1);
 }
 
 /* Reset the Arco Button chrome so each option reads as a full-width list row. */
@@ -134,7 +136,7 @@
   margin: 0;
   align-items: center;
   justify-content: flex-start;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -147,7 +149,7 @@
 }
 
 .optionButton:global(.arco-btn):not(:disabled):hover {
-  background: var(--color-fill-1);
+  background: var(--color-fill-2);
 }
 
 .optionButton:global(.arco-btn):focus-visible {
@@ -167,7 +169,7 @@
   min-width: 0;
   flex: 1;
   color: var(--color-text-1);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   line-height: 1.4;
   overflow-wrap: anywhere;

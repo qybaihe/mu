@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useThemeContext } from '@/renderer/hooks/context/ThemeContext';
 import { Down, Up } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -16,12 +15,10 @@ import { useTranslation } from 'react-i18next';
 const MASK_GRADIENT =
   'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 60%, rgba(0, 0, 0, 0.4) 90%, rgba(0, 0, 0, 0) 100%)';
 
-// 背景渐变模式：使用固定颜色遮罩，适用于普通场景
-// Background gradient mode: use fixed color mask, suitable for normal scenarios
-const BG_GRADIENT_DARK =
-  'linear-gradient(to bottom, rgba(30, 30, 30, 0) 0%, rgba(30, 30, 30, 0.6) 40%, rgba(30, 30, 30, 0.95) 80%, rgba(30, 30, 30, 1) 100%)';
-const BG_GRADIENT_LIGHT =
-  'linear-gradient(to bottom, rgba(247, 248, 250, 0) 0%, rgba(247, 248, 250, 0.6) 40%, rgba(247, 248, 250, 0.95) 80%, rgba(247, 248, 250, 1) 100%)';
+// 背景渐变模式：使用语义背景色变量遮罩，随主题自动切换
+// Background gradient mode: use semantic --bg-1 token mask, adapts automatically across themes
+const BG_GRADIENT =
+  'linear-gradient(to bottom, color-mix(in srgb, var(--bg-1) 0%, transparent) 0%, color-mix(in srgb, var(--bg-1) 60%, transparent) 40%, color-mix(in srgb, var(--bg-1) 95%, transparent) 80%, var(--bg-1) 100%)';
 
 interface CollapsibleContentProps {
   children: React.ReactNode;
@@ -86,7 +83,6 @@ export const CollapsibleContent: React.FC<CollapsibleContentProps> = ({
   allowHorizontalScroll = false,
 }) => {
   const { t } = useTranslation(); // 国际化 i18n
-  const { theme } = useThemeContext(); // 主题上下文（亮色/暗色）Theme context (light/dark)
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed); // 折叠状态 Collapse state
   const [needsCollapse, setNeedsCollapse] = useState(false); // 是否需要折叠功能 Whether collapse feature is needed
   const contentRef = useRef<HTMLDivElement>(null); // 内容容器引用 Content container ref
@@ -173,11 +169,6 @@ export const CollapsibleContent: React.FC<CollapsibleContentProps> = ({
     return style;
   }, [allowHorizontalScroll, isCollapsed, maxHeight, useMask]);
 
-  // 计算背景渐变颜色 Calculate background gradient color
-  const bgGradient = useMemo(() => {
-    return theme === 'dark' ? BG_GRADIENT_DARK : BG_GRADIENT_LIGHT;
-  }, [theme]);
-
   return (
     <div className={classNames('relative', className)}>
       {/* 内容区域 Content area */}
@@ -201,31 +192,31 @@ export const CollapsibleContent: React.FC<CollapsibleContentProps> = ({
         <div
           className='absolute bottom-0 start-0 end-0 pointer-events-none'
           style={{
-            height: '80px',
-            background: bgGradient,
+            height: '64px',
+            background: BG_GRADIENT,
           }}
         />
       )}
 
       {/* 展开/折叠按钮 Expand/Collapse button */}
       {needsCollapse && (
-        <div className='flex justify-center relative z-10'>
+        <div className='flex justify-center relative z-10 pt-2px'>
           <button
             onClick={toggleCollapse}
-            className='flex items-center gap-1 px-3 py-1.5 text-sm text-t-primary hover:text-primary transition-colors cursor-pointer border-none bg-transparent font-medium [&_svg]:transition-colors [&_svg]:inline-block [&_svg]:align-middle'
+            className='flex items-center gap-4px px-8px py-3px rd-6px text-12px leading-16px text-t-secondary hover:text-t-primary hover:bg-fill-2 transition-colors cursor-pointer border-none bg-transparent font-medium [&_svg]:transition-colors [&_svg]:inline-block [&_svg]:align-middle'
             type='button'
           >
             {isCollapsed ? (
               <>
                 {/* 展开更多 Expand more */}
                 <span className='leading-none'>{t('common.expandMore')}</span>
-                <Down theme='outline' size='14' fill='currentColor' className='inline-block' />
+                <Down theme='outline' size='12' fill='currentColor' className='inline-block' />
               </>
             ) : (
               <>
                 {/* 收起 Collapse */}
                 <span className='leading-none'>{t('common.collapse')}</span>
-                <Up theme='outline' size='14' fill='currentColor' className='inline-block' />
+                <Up theme='outline' size='12' fill='currentColor' className='inline-block' />
               </>
             )}
           </button>

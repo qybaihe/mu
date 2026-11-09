@@ -65,7 +65,7 @@ const WorkspaceCollapse: React.FC<WorkspaceCollapseProps> = ({
           {/* A button for the keyboard too: Tab reaches the header, Enter or Space folds or unfolds the project. Keys
               pressed on the buttons at its end bubble up here and are theirs. */}
           <div
-            className='flex items-center gap-8px h-34px ps-10px pe-8px cursor-pointer hover:bg-fill-3 rd-8px transition-colors min-w-0 group'
+            className='flex items-center gap-8px h-30px ps-10px pe-8px cursor-pointer hover:bg-fill-3 rd-6px transition-colors min-w-0 group'
             role='button'
             tabIndex={tabIndex}
             data-roving-row={rowKey}
@@ -78,11 +78,11 @@ const WorkspaceCollapse: React.FC<WorkspaceCollapseProps> = ({
               onToggle();
             }}
           >
-            <span className='size-22px flex items-center justify-center shrink-0 text-t-primary'>
+            <span className='size-22px flex items-center justify-center shrink-0 text-t-secondary group-hover:text-t-primary transition-colors'>
               {expanded ? (
-                <FolderOpen theme='outline' size={16} fill='currentColor' className='line-height-0' />
+                <FolderOpen theme='outline' size={15} fill='currentColor' className='line-height-0' />
               ) : (
-                <FolderClose theme='outline' size={16} fill='currentColor' className='line-height-0' />
+                <FolderClose theme='outline' size={15} fill='currentColor' className='line-height-0' />
               )}
             </span>
 
