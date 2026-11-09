@@ -73,6 +73,7 @@ describe('chat surface (ShadowView) table header alignment', () => {
     expect(th?.style.getPropertyValue('text-align')).toBe('start');
     // `td` deliberately stays untouched: its UA default is already `start`.
     expect(td?.style.getPropertyValue('text-align')).toBe('');
+    expect(td?.style.getPropertyValue('min-width')).toBe('');
   });
 });
 

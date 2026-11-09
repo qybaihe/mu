@@ -70,42 +70,42 @@ const FileChangesPanel: React.FC<FileChangesPanelProps> = ({
     return (
       <div
         className={classNames(
-          'w-full box-border rounded-8px overflow-hidden border border-solid border-[var(--aou-2)]',
+          'w-full box-border rounded-8px overflow-hidden border border-solid border-[var(--color-border-2)]',
           className
         )}
         style={{ width: '100%' }}
       >
-        <div className='group flex items-center justify-between px-16px py-12px hover:bg-3 transition-colors'>
+        <div className='group flex items-center justify-between px-12px py-7px hover:bg-fill-2 transition-colors'>
           <div className='flex items-center min-w-0 gap-8px'>
-            <span className='w-8px h-8px rounded-full shrink-0' style={{ backgroundColor: diffColors.addition }} />
-            <span className='text-14px text-t-primary font-medium truncate'>{file.file_name}</span>
+            <span className='w-6px h-6px rounded-full shrink-0' style={{ backgroundColor: diffColors.addition }} />
+            <span className='text-12.5px text-t-primary font-mono font-medium truncate'>{file.file_name}</span>
           </div>
-          <div className='flex items-center gap-8px shrink-0'>
+          <div className='flex items-center gap-6px shrink-0'>
             {(file.insertions > 0 || file.deletions > 0) && (
               <span
                 className={classNames(
-                  'flex items-center gap-4px rd-4px px-4px py-2px',
-                  onDiffClick && 'cursor-pointer hover:bg-4 transition-colors'
+                  'flex items-center gap-4px rd-4px px-4px py-1px font-mono',
+                  onDiffClick && 'cursor-pointer hover:bg-fill-3 transition-colors'
                 )}
                 onClick={() => onDiffClick?.(file)}
               >
                 {file.insertions > 0 && (
-                  <span className='text-14px font-medium' style={{ color: diffColors.addition }}>
+                  <span className='text-12px font-medium' style={{ color: diffColors.addition }}>
                     +{file.insertions}
                   </span>
                 )}
                 {file.deletions > 0 && (
-                  <span className='text-14px font-medium' style={{ color: diffColors.deletion }}>
+                  <span className='text-12px font-medium' style={{ color: diffColors.deletion }}>
                     -{file.deletions}
                   </span>
                 )}
               </span>
             )}
             <span
-              className='flex items-center gap-4px text-12px text-t-secondary cursor-pointer rd-4px px-4px py-2px hover:bg-4'
+              className='opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center gap-4px text-12px text-t-secondary hover:text-t-primary cursor-pointer rd-4px px-4px py-1px hover:bg-fill-3'
               onClick={() => onFileClick?.(file)}
             >
-              <PreviewOpen className='line-height-8px' theme='outline' size='14' fill={iconColors.secondary} />
+              <PreviewOpen className='line-height-8px' theme='outline' size='13' fill={iconColors.secondary} />
               {t('preview.preview')}
             </span>
           </div>
@@ -117,26 +117,26 @@ const FileChangesPanel: React.FC<FileChangesPanelProps> = ({
   return (
     <div
       className={classNames(
-        'w-full box-border rounded-8px overflow-hidden border border-solid border-[var(--aou-2)]',
+        'w-full box-border rounded-8px overflow-hidden border border-solid border-[var(--color-border-2)]',
         className
       )}
       style={{ width: '100%' }}
     >
       {/* 标题栏 / Header */}
       <div
-        className='flex items-center justify-between px-16px py-12px cursor-pointer select-none'
+        className='flex items-center justify-between px-12px py-8px cursor-pointer select-none hover:bg-fill-2 transition-colors'
         onClick={() => setExpanded(!expanded)}
       >
         <div className='flex items-center gap-8px'>
           {/* 绿色圆点 / Green dot */}
-          <span className='w-8px h-8px rounded-full shrink-0' style={{ backgroundColor: diffColors.addition }}></span>
+          <span className='w-6px h-6px rounded-full shrink-0' style={{ backgroundColor: diffColors.addition }}></span>
           {/* 标题 / Title */}
-          <span className='text-14px text-t-primary font-medium'>{title}</span>
+          <span className='text-13px text-t-primary font-medium'>{title}</span>
         </div>
         {/* 展开/收起箭头 / Expand/collapse arrow */}
         <Down
           theme='outline'
-          size='16'
+          size='14'
           fill={iconColors.secondary}
           className={classNames('transition-transform duration-200', expanded && 'rotate-180')}
         />
@@ -149,21 +149,21 @@ const FileChangesPanel: React.FC<FileChangesPanelProps> = ({
             <div
               key={`${file.fullPath}-${index}`}
               className={classNames(
-                'group flex items-center justify-between px-16px py-12px hover:bg-3 transition-colors'
+                'group flex items-center justify-between px-12px py-6px border-t border-solid border-[var(--color-border-1)] hover:bg-fill-2 transition-colors'
               )}
             >
               {/* 文件名 / File name */}
               <div className='flex items-center min-w-0'>
-                <span className='text-14px text-t-primary truncate'>{file.file_name}</span>
+                <span className='text-12.5px text-t-primary font-mono truncate'>{file.file_name}</span>
               </div>
               {/* 变更统计 + 预览按钮 / Change statistics + Preview button */}
-              <div className='flex items-center gap-8px shrink-0'>
+              <div className='flex items-center gap-6px shrink-0'>
                 {/* 变更统计 - 点击打开 diff 对比 / Change stats - click to open diff view */}
                 {(file.insertions > 0 || file.deletions > 0) && (
                   <span
                     className={classNames(
-                      'flex items-center gap-4px rd-4px px-4px py-2px',
-                      onDiffClick && 'cursor-pointer hover:bg-4 transition-colors'
+                      'flex items-center gap-4px rd-4px px-4px py-1px font-mono',
+                      onDiffClick && 'cursor-pointer hover:bg-fill-3 transition-colors'
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -171,12 +171,12 @@ const FileChangesPanel: React.FC<FileChangesPanelProps> = ({
                     }}
                   >
                     {file.insertions > 0 && (
-                      <span className='text-14px font-medium' style={{ color: diffColors.addition }}>
+                      <span className='text-12px font-medium' style={{ color: diffColors.addition }}>
                         +{file.insertions}
                       </span>
                     )}
                     {file.deletions > 0 && (
-                      <span className='text-14px font-medium' style={{ color: diffColors.deletion }}>
+                      <span className='text-12px font-medium' style={{ color: diffColors.deletion }}>
                         -{file.deletions}
                       </span>
                     )}
@@ -184,13 +184,13 @@ const FileChangesPanel: React.FC<FileChangesPanelProps> = ({
                 )}
                 {/* 预览按钮 - 点击打开文件预览 / Preview button - click to open file preview */}
                 <span
-                  className='group-hover:opacity-100 transition-opacity shrink-0 ms-4px flex items-center gap-4px text-12px text-t-secondary cursor-pointer rd-4px px-4px py-2px hover:bg-4'
+                  className='opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0 ms-4px flex items-center gap-4px text-12px text-t-secondary hover:text-t-primary cursor-pointer rd-4px px-4px py-1px hover:bg-fill-3'
                   onClick={(e) => {
                     e.stopPropagation();
                     onFileClick?.(file);
                   }}
                 >
-                  <PreviewOpen className='line-height-8px' theme='outline' size='14' fill={iconColors.secondary} />
+                  <PreviewOpen className='line-height-8px' theme='outline' size='13' fill={iconColors.secondary} />
                   {t('preview.preview')}
                 </span>
               </div>

@@ -120,26 +120,26 @@
   width: 6px;
   height: 2px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-text-3) 72%, transparent);
+  background: color-mix(in srgb, var(--color-text-3) 56%, transparent);
   transition:
-    width 120ms ease,
-    background-color 120ms ease;
+    width 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 140ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Distance-based falloff: the hovered tick is unmistakably the selection, the
    two ticks either side hint at the neighbourhood being scrubbed. */
 .tickActive {
-  width: 26px;
+  width: 22px;
   background: var(--color-text-1);
 }
 
 .tickNear {
-  width: 18px;
+  width: 16px;
   background: color-mix(in srgb, var(--color-text-2) 78%, transparent);
 }
 
 .tickFar {
-  width: 12px;
+  width: 11px;
   background: color-mix(in srgb, var(--color-text-3) 62%, transparent);
 }
 

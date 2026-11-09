@@ -61,14 +61,13 @@ export const MarkdownFileSlotsContext = React.createContext<MarkdownFileSlots | 
 
 /** Table override shared by the chat and preview renderers: horizontal scroll + collapsed borders. */
 export const MarkdownTable = ({ node: _node, ...rest }: Record<string, unknown>) => (
-  <div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+  <div style={{ overflowX: 'auto', maxWidth: '100%', margin: '12px 0' }}>
     <table
       {...(rest as React.TableHTMLAttributes<HTMLTableElement>)}
       style={{
         ...(rest as { style?: React.CSSProperties }).style,
         borderCollapse: 'collapse',
-        border: '1px solid var(--bg-3)',
-        minWidth: '100%',
+        width: '100%',
       }}
     />
   </div>
@@ -80,9 +79,8 @@ export const MarkdownTd = ({ node: _node, ...rest }: Record<string, unknown>) =>
     {...(rest as React.TdHTMLAttributes<HTMLTableCellElement>)}
     style={{
       ...(rest as { style?: React.CSSProperties }).style,
-      padding: '8px',
-      border: '1px solid var(--bg-3)',
-      minWidth: '120px',
+      padding: '6px 10px',
+      borderBottom: '1px solid var(--bg-3)',
     }}
   />
 );

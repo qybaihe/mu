@@ -51,47 +51,63 @@ const ConversationPlanBar: React.FC<{ conversation_id: string }> = ({ conversati
       // 663px against the send box group's 647px, i.e. the bar overhung it by
       // exactly 2x8px. The inset lives on the children instead, which is also
       // how CommandQueuePanel and ThoughtDisplay do it in this same stack.
-      className={`${getChatSurfaceWidthClass()} shrink-0 border-t border-solid border-3 border-s-0 border-e-0 border-b-0 py-6px`}
+      className={`${getChatSurfaceWidthClass()} shrink-0 pb-6px`}
     >
-      <div
-        className='flex items-center gap-8px px-8px cursor-pointer text-t-secondary select-none'
-        role='button'
-        tabIndex={0}
-        aria-expanded={expanded}
-        aria-label={expanded ? t('conversation.planBar.collapse') : t('conversation.planBar.expand')}
-        onClick={toggle}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            toggle();
-          }
-        }}
-      >
-        {expanded ? <Down size={14} /> : <Right size={14} />}
-        <Badge status='default' text={t('conversation.planBar.title')} />
-        <span className='text-12px'>{t('conversation.planBar.progress', { completed, total: entries.length })}</span>
-      </div>
-      {expanded && (
+      <div className='rounded-10px bg-fill-1 border border-solid border-[var(--color-border-2)] py-6px'>
         <div
-          className='flex flex-col gap-6px pt-6px pl-30px pr-8px overflow-y-auto overscroll-contain'
-          // Viewport-relative, matching CommandQueuePanel's cap in this same
-          // stack. The zone above the send box can hold the queue, the thought
-          // bar and a multi-line input at once; a FIXED cap here eats a large
-          // share of a short window and squeezes the message list.
-          style={{ maxHeight: 'min(22vh, 180px)' }}
+          className='flex items-center gap-8px px-10px cursor-pointer text-t-secondary select-none'
+          role='button'
+          tabIndex={0}
+          aria-expanded={expanded}
+          aria-label={expanded ? t('conversation.planBar.collapse') : t('conversation.planBar.expand')}
+          onClick={toggle}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              toggle();
+            }
+          }}
         >
-          {entries.map((entry, index) => (
-            <div key={`${index}-${entry.content}`} className='flex items-center gap-8px text-t-secondary text-13px'>
-              {entry.status === 'completed' ? (
-                <CheckOne size={16} theme='filled' className='flex text-success shrink-0' />
-              ) : (
-                <div className='size-14px rd-full b-2px b-solid border-3 shrink-0' />
-              )}
-              <span className={entry.status === 'in_progress' ? 'text-t-primary' : undefined}>{entry.content}</span>
-            </div>
-          ))}
+          {expanded ? <Down size={13} /> : <Right size={13} />}
+          <Badge status='default' text={t('conversation.planBar.title')} />
+          <span className='text-12px font-mono'>
+            {t('conversation.planBar.progress', { completed, total: entries.length })}
+          </span>
         </div>
-      )}
+        {expanded && (
+          <div
+            className='flex flex-col gap-5px pt-6px pl-30px pr-10px overflow-y-auto overscroll-contain'
+            // Viewport-relative, matching CommandQueuePanel's cap in this same
+            // stack. The zone above the send box can hold the queue, the thought
+            // bar and a multi-line input at once; a FIXED cap here eats a large
+            // share of a short window and squeezes the message list.
+            style={{ maxHeight: 'min(22vh, 180px)' }}
+          >
+            {entries.map((entry, index) => (
+              <div key={`${index}-${entry.content}`} className='flex items-center gap-8px text-t-secondary text-13px'>
+                {entry.status === 'completed' ? (
+                  <CheckOne size={15} theme='filled' className='flex text-success shrink-0' />
+                ) : entry.status === 'in_progress' ? (
+                  <div className='size-14px rd-full b-2px b-solid border-[rgb(var(--primary-6))] bg-[rgba(var(--primary-6),0.14)] shrink-0' />
+                ) : (
+                  <div className='size-14px rd-full b-1.5px b-solid border-[var(--color-border-3)] shrink-0' />
+                )}
+                <span
+                  className={
+                    entry.status === 'in_progress'
+                      ? 'text-t-primary font-medium'
+                      : entry.status === 'completed'
+                        ? 'text-t-tertiary'
+                        : undefined
+                  }
+                >
+                  {entry.content}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

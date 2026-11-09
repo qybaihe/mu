@@ -218,7 +218,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
       <div
         id={'c-' + conversation.id}
         className={classNames(
-          'chat-history__item h-34px rd-8px flex items-center group cursor-pointer relative overflow-hidden shrink-0 conversation-item [&.conversation-item+&.conversation-item]:mt-2px min-w-0 transition-colors',
+          'chat-history__item h-30px rd-6px flex items-center group cursor-pointer relative overflow-hidden shrink-0 conversation-item [&.conversation-item+&.conversation-item]:mt-2px min-w-0 transition-colors',
           collapsed ? 'justify-center px-0' : 'justify-start gap-8px',
           !collapsed && (trailing !== 'none' ? (trailingBesideMenu ? 'pe-56px' : 'pe-32px') : 'pe-16px'),
           // dimIcon means this row sits inside a project/cron parent — visually indent the row content while keeping the bg full-width.
@@ -272,7 +272,7 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
               ))}
           </span>
         )}
-        <FlexFullContainer className='h-24px min-w-0 flex-1 collapsed-hidden'>
+        <FlexFullContainer className='h-20px min-w-0 flex-1 collapsed-hidden'>
           <Tooltip
             content={conversation.name}
             disabled={!inlineNameTooltipEnabled}
@@ -282,7 +282,14 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
             popupHoverStay={false}
             position='top'
           >
-            <div className='chat-history__item-name overflow-hidden text-ellipsis flex items-center gap-4px w-full text-14px font-[500] lh-24px whitespace-nowrap min-w-0 text-t-primary'>
+            <div
+              className={classNames(
+                'chat-history__item-name overflow-hidden text-ellipsis flex items-center gap-4px w-full text-13px lh-20px whitespace-nowrap min-w-0 transition-colors',
+                selected || showsUnreadDot
+                  ? 'font-[500] text-t-primary'
+                  : 'font-[400] text-t-secondary group-hover:text-t-primary'
+              )}
+            >
               <span className='block overflow-hidden text-ellipsis whitespace-nowrap min-w-0'>{displayName}</span>
               {forkLineage && (
                 <Tooltip
