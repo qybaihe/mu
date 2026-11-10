@@ -32,6 +32,8 @@ import { clip, failOpen, judgedText, type KyrnRuntime, recentTurnDigests, textOf
 export const FRAME_ENTRY = "kyrn.frame";
 /** Custom message: the note the main model gets when the version changed. */
 export const FRAME_MESSAGE = "kyrn.frame";
+/** The footer's line about the checklist, while the task has one. */
+export const CHECKLIST_STATUS = "mu.checklist";
 
 /** One user message on its way into the frame. */
 interface Ask {
@@ -164,8 +166,29 @@ export function registerFrame(runtime: KyrnRuntime): void {
 		present(reason, ask?.turn);
 	};
 
+	/** The footer's line as it was last written, so it is written only when it changes. */
+	let footer: string | undefined;
+	/**
+	 * How much of the checklist is done, in the footer while the task has one: where the work stands is a glance away,
+	 * and nobody has to ask the agent or wait for the run to end.
+	 */
+	const showChecklist = (frame: Frame | undefined): void => {
+		const ctx = runtime.ctx;
+		if (!ctx?.hasUI) return;
+		const list = frame?.acceptance ?? [];
+		const done = list.filter((item) => item.done).length;
+		const text =
+			list.length > 0
+				? say({ zh: `清单 ${done}/${list.length}`, en: `Checklist ${done}/${list.length}` })
+				: undefined;
+		if (text === footer) return;
+		footer = text;
+		ctx.ui.setStatus(CHECKLIST_STATUS, text);
+	};
+
 	const present = (reason: FrameEntryData["reason"] | "restored", turn = runtime.userTurns) => {
 		const current = state();
+		showChecklist(current.frame);
 		if (!current.frame) return;
 		// The user's own words and the model's one-line evidence: nothing here is a secret or a raw judge input.
 		runtime.present(
@@ -291,6 +314,7 @@ export function registerFrame(runtime: KyrnRuntime): void {
 	};
 
 	const restore = (ctx: ExtensionContext) => {
+		runtime.touch(ctx);
 		epoch++;
 		chain = Promise.resolve();
 		asks = [];
