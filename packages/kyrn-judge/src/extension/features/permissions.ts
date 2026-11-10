@@ -292,7 +292,9 @@ function projectSettings(cwd: string): string[] {
  * is told it is pending and carries on with what does not depend on it, and
  * `/approve` asks again. What the user allows there holds for that same call,
  * made again. While nobody has answered, later questions wait with the first
- * at once: a person who is away is not waited for a second time.
+ * at once: a person who is away is not waited for a second time. Away is one
+ * thing for these questions and ask_user's (`runtime.userAway`): a question of
+ * the model's that nobody answered sets these aside at once too.
  *
  * The risk guard's rules are part of this: in judge mode a flagged command runs
  * only when the judge is sure the user asked for it; in the other modes the flag is
@@ -323,8 +325,6 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	let waiting: Question[] = [];
 	/** Calls the user allowed with /approve (`callKey`): each runs once when the model makes it again. */
 	let allowedLate = new Set<string>();
-	/** Nobody answered the last question: the next ones wait with it, until the user writes or answers something. */
-	let away = false;
 	runtime.permissionMode = () => mode;
 
 	/** The two status lines about permission questions as they stand, so each is written only when it changes. */
@@ -359,7 +359,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		grants = new Set();
 		allowedLate = new Set();
 		waiting = [];
-		away = false;
+		runtime.userAway = false;
 		showWaiting(ctx);
 	};
 
@@ -411,7 +411,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	pi.on(
 		"input",
 		failOpen((event) => {
-			if (event.source !== "extension" && event.text.trim()) away = false;
+			if (event.source !== "extension" && event.text.trim()) runtime.userAway = false;
 			return undefined;
 		}),
 	);
@@ -659,7 +659,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	/** Nobody answered: the call does not run, and its question waits for /approve. */
 	const setAside = (question: Question, ctx: ExtensionContext): ToolCallEventResult => {
 		record(question, "timeout");
-		away = true;
+		runtime.userAway = true;
 		waiting.push(question);
 		runtime.present("permissions.resolved", {
 			id: question.id,
@@ -717,18 +717,18 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const at = waiting.findIndex((each) => each.key === asking.key);
 		if (at >= 0) {
 			// The same call again while nobody has answered about it: the answer is the same, with no second wait.
-			if (away) return { block: true, reason: pendingReason(need) };
+			if (runtime.userAway) return { block: true, reason: pendingReason(need) };
 			// The user is back: this call asks them now, in place of /approve.
 			waiting.splice(at, 1);
 		}
 		const question: Question = { ...asking, id: `permission-${++asked}` };
-		if (away && waitMs > 0) {
+		if (runtime.userAway && waitMs > 0) {
 			announce(question);
 			return setAside(question, ctx);
 		}
 		const answer = await pick(question, ctx, ctx.signal, waitMs);
 		if (answer === "timeout") return setAside(question, ctx);
-		away = false;
+		runtime.userAway = false;
 		if (settle(question, answer)) return undefined;
 		return {
 			block: true,
@@ -918,7 +918,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		}),
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
-			away = false;
+			runtime.userAway = false;
 			if (waiting.length === 0) {
 				ctx.ui.notify(say({ zh: "没有等你授权的步骤。", en: "No steps are waiting for your permission." }), "info");
 				return;
@@ -930,7 +930,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				const answer = await pick(question, ctx, undefined, waitMs);
 				// Nobody answered this time either: it waits on, with the ones after it.
 				if (answer === "timeout") {
-					away = true;
+					runtime.userAway = true;
 					break;
 				}
 				waiting.shift();

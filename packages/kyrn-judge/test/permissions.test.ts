@@ -834,6 +834,8 @@ describe("permission modes in a session", () => {
 		waitMs?: number;
 		/** Features besides preflight, frame and permissions. */
 		also?: FeatureName[];
+		/** `askUser.waitMs`, for a test that has that feature too. */
+		askWaitMs?: number;
 	}
 
 	/** What `pick` returns to let the picker wait out its time, as it does when nobody is there. */
@@ -869,6 +871,7 @@ describe("permission modes in a session", () => {
 								...(setup.readOnlyChains === undefined ? {} : { readOnlyChains: setup.readOnlyChains }),
 								...(setup.waitMs === undefined ? {} : { waitMs: setup.waitMs }),
 							},
+							...(setup.askWaitMs === undefined ? {} : { askUser: { waitMs: setup.askWaitMs } }),
 						},
 					}),
 					only: ["preflight", "frame", "permissions", ...(setup.also ?? [])],
@@ -1842,6 +1845,50 @@ describe("permission modes in a session", () => {
 				{ id: "permission-2", toolCallId: "call-b", answer: "pending" },
 			]);
 			expect(waitingStatus.at(-1)).toBe("2 steps are waiting for your permission: type /approve");
+		});
+
+		it("away is one thing for these questions and the model's own: neither kind waits a second time", async () => {
+			const question = (id: string) =>
+				fauxAssistantMessage(
+					[
+						fauxToolCall(
+							"ask_user",
+							{
+								questions: [{ question: "Tabs or spaces?", options: [{ label: "Tabs" }, { label: "Spaces" }] }],
+							},
+							{ id },
+						),
+					],
+					{ stopReason: "toolUse" },
+				);
+			const away = { mode: "ask", waitMs: 40, askWaitMs: 40, pick: () => WAIT, also: ["askUser" as const] };
+
+			// Nobody answers the permission question: the model's question after it is pending at once, with no dialog.
+			const first = await start(() => ({}), away);
+			first.harness.setResponses([
+				call("bash", install, "call-install"),
+				question("call-ask"),
+				fauxAssistantMessage("The rest is done."),
+			]);
+			await first.harness.session.prompt("Add left-pad");
+			expect(first.asked.map((each) => each.title.split("\n")[0])).toEqual(["mu wants to run a command"]);
+			expect(results(first.harness)[1]).toContain("The user has not answered yet:");
+
+			// The other way round: nobody answers the model's question, and the permission question is set aside at once.
+			const second = await start(() => ({}), away);
+			second.harness.setResponses([
+				question("call-ask"),
+				call("bash", install, "call-install"),
+				fauxAssistantMessage("The rest is done."),
+			]);
+			await second.harness.session.prompt("Add left-pad");
+			expect(second.asked.map((each) => each.title)).toEqual(["Tabs or spaces?"]);
+			expect(second.ran).toEqual([]);
+			expect(results(second.harness)[1]).toContain("This is pending: not permission, and not a refusal.");
+			expect(second.of("permissions.resolved")).toEqual([
+				{ id: "permission-1", toolCallId: "call-install", answer: "pending" },
+			]);
+			expect(second.waitingStatus).toEqual(["1 step is waiting for your permission: type /approve"]);
 		});
 
 		it("a new message of the user's ends the waiting: the call asks them now", async () => {

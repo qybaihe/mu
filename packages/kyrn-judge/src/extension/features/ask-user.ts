@@ -261,7 +261,9 @@ export async function askQuestions(
  *
  * Asking does not hold the run for long. Each question waits `waitMs` (0: until answered); when nobody answers in that
  * time the call returns that the questions are pending, the model carries on with what does not depend on them, and
- * `/answer` asks them again. That answer comes back as a message of the user's, steered into the run if one is going.
+ * `/answer` asks them again. A person who did not answer is not waited for a second time: until they write or answer,
+ * the questions that follow are pending at once, with no dialog, and so are permission questions, which share the same
+ * "away" (`runtime.userAway`, features/permissions.ts). That answer comes back as a message of the user's, steered into the run if one is going.
  * Esc skips the question and the ones after it; the model is told not to ask them again and not to take that as
  * permission, and a second ask_user in the same turn after a skip is answered with that at once.
  *
@@ -377,7 +379,14 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 			}
 			const run = queue.then(async () => {
 				const askedAt = Date.now();
-				const { answers, ended } = await askEach(toolCallId, questions, [], ctx, signal ?? ctx.signal);
+				// Nobody answered the question before this one, of the model's or about a permission: this one waits for
+				// /answer at once, where waiting again would hold the run for someone who is not there.
+				const { answers, ended } =
+					runtime.userAway && waitMs > 0
+						? { answers: [], ended: "timeout" as const }
+						: await askEach(toolCallId, questions, [], ctx, signal ?? ctx.signal);
+				if (ended === "timeout") runtime.userAway = true;
+				else if (ended !== "stopped") runtime.userAway = false;
 				observe(questions, answers, 0, ended);
 				const outcome: QuestionOutcome =
 					ended === "answered"
@@ -416,6 +425,8 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 		}),
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
+			// They typed /answer: they are here.
+			runtime.userAway = false;
 			const asking = open.shift();
 			runtime.questionsOpen = open.length;
 			if (!asking) {
@@ -426,6 +437,7 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 			// One that runs out of time again was counted as unanswered when it first did.
 			observe(asking.questions, answers, asking.answers.length, ended === "timeout" ? "answered" : ended);
 			if (ended === "timeout") {
+				runtime.userAway = true;
 				open.unshift({ ...asking, answers });
 				runtime.questionsOpen = open.length;
 				showOpen(ctx);
@@ -458,6 +470,14 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 		},
 	});
 
+	// The user is here: a message of theirs, typed mid-run or not, ends the waiting that began when nobody answered.
+	pi.on(
+		"input",
+		failOpen((event) => {
+			if (event.source !== "extension" && event.text.trim()) runtime.userAway = false;
+			return undefined;
+		}),
+	);
 	// The user wrote to the agent: what they say now is their answer, and what was still open is no longer waited on.
 	// Not when the message is an answer /answer sent: the other open questions still wait for theirs.
 	pi.on(
@@ -474,6 +494,7 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 		"session_shutdown",
 		failOpen(() => {
 			settleOpen();
+			runtime.userAway = false;
 			return undefined;
 		}),
 	);

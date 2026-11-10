@@ -95,13 +95,14 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 5. `memory`
 6. `evolve`
 7. `permissions`
-8. `monitor`
-9. `ttsr` (off by default)
-10. `watchdog`
-11. `lsp`
-12. `goal`
-13. `checkpoint`
-14. `warming`
+8. `askUser`
+9. `monitor`
+10. `ttsr` (off by default)
+11. `watchdog`
+12. `lsp`
+13. `goal`
+14. `checkpoint`
+15. `warming`
 
 ### `message_end`
 
@@ -365,3 +366,4 @@ is marked: two features that set it in the same turn decide between them by the 
 | `standingRules` | `extension/features/memory.ts` | `extension/features/constraints.ts`, `extension/features/evolve.ts`, `extension/features/memory.ts` |
 | `stateDir` | `extension/kyrn-judge.ts` | `extension/features/tool-descriptions.ts` |
 | `toolCalls` | `extension/features/preflight.ts` | `extension/features/preflight.ts` |
+| `userAway` (set in more than one file) | `extension/features/ask-user.ts`, `extension/features/permissions.ts` | `extension/features/ask-user.ts`, `extension/features/permissions.ts` |

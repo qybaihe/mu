@@ -243,6 +243,34 @@ describe("ask_user", () => {
 		]);
 	});
 
+	it("does not wait a second time for someone who did not answer, until they write again", async () => {
+		const { harness, dialogs } = await start({
+			steps: ["wait", choiceText(DATABASE.options[0])],
+			features: { askUser: { waitMs: 60 } },
+		});
+		harness.setResponses([
+			ask([DATABASE], "call-first"),
+			ask([PARTS], "call-second"),
+			fauxAssistantMessage("Laid out the routes while you decide."),
+		]);
+		const startedAt = Date.now();
+		await harness.session.prompt("Start the app's backend.");
+		// One dialog and one wait: the second set of questions is pending at once.
+		expect(dialogs).toHaveLength(1);
+		expect(Date.now() - startedAt).toBeLessThan(110);
+		expect(lastResult(harness).text).toContain("The user has not answered yet:\n- Which parts should I set up now?");
+		expect(records(harness)).toEqual([
+			expect.objectContaining({ toolCallId: "call-first", outcome: "pending" }),
+			expect.objectContaining({ toolCallId: "call-second", outcome: "pending", waitedMs: 0 }),
+		]);
+
+		// They wrote: they are here, and the next question is asked.
+		harness.setResponses([ask([DATABASE], "call-third"), fauxAssistantMessage("SQLite it is.")]);
+		await harness.session.prompt("I'm back. Go on.");
+		expect(dialogs).toHaveLength(2);
+		expect(lastResult(harness).text).toContain("→ SQLite (Recommended)");
+	});
+
 	it("the user's next message settles what was still open", async () => {
 		const { harness, status } = await start({ steps: ["wait"], features: { askUser: { waitMs: 30 } } });
 		harness.setResponses([
