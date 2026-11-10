@@ -1057,6 +1057,10 @@
       "waiting": "mu からの質問が回答を待っています。",
       "answer": "回答する"
     },
+    "permission": {
+      "waiting": "あなたの許可を待っているステップがあります。",
+      "review": "確認する"
+    },
     "host": {
       "output": "mu の最後の出力",
       "restartHint": "メッセージを送ると mu がもう一度起動します。"

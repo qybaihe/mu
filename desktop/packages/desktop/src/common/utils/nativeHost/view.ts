@@ -304,6 +304,11 @@ export type ViewHost = {
    * again. Gone once they are answered, or the person writes to the agent.
    */
   questionsOpen?: true;
+  /**
+   * mu waits on permission questions that nobody answered in time (its `mu.approve.pending` status): the calls did not
+   * run, and `/approve` asks about them again. Gone once they are answered, or the person writes to the agent.
+   */
+  permissionsWaiting?: true;
 };
 
 /**

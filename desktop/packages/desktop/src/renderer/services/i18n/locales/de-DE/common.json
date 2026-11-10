@@ -1427,12 +1427,14 @@
         "answers": {
           "once": "Du hast es einmal erlaubt",
           "session": "Für diese Unterhaltung erlaubt",
-          "deny": "Du hast es nicht erlaubt"
+          "deny": "Du hast es nicht erlaubt",
+          "pending": "Keine Antwort in der Zeit, es wartet auf dich"
         },
         "about": "{{answer}}: {{summary}}",
         "approved": {
           "judge": "Der Judge hat es ohne Rückfrage durchgelassen: {{summary}}",
-          "grant": "Ohne Rückfrage, weil für diese Unterhaltung erlaubt: {{summary}}"
+          "grant": "Ohne Rückfrage, weil für diese Unterhaltung erlaubt: {{summary}}",
+          "user": "Ausgeführt, weil du es nachträglich erlaubt hast: {{summary}}"
         }
       },
       "board": {

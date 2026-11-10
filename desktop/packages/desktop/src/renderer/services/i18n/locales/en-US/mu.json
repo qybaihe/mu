@@ -1063,6 +1063,10 @@
       "waiting": "mu has a question waiting for you.",
       "answer": "Answer"
     },
+    "permission": {
+      "waiting": "Steps are waiting for your permission.",
+      "review": "Review"
+    },
     "host": {
       "output": "mu's last output",
       "restartHint": "Send a message to start mu again."

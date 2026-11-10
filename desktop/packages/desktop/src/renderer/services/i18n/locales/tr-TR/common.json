@@ -1427,12 +1427,14 @@
         "answers": {
           "once": "Bir kez izin verdiniz",
           "session": "Bu konuşma için izin verildi",
-          "deny": "İzin vermediniz"
+          "deny": "İzin vermediniz",
+          "pending": "Zamanında yanıt gelmedi, sizi bekliyor"
         },
         "about": "{{answer}}: {{summary}}",
         "approved": {
           "judge": "Hakem size sormadan geçirdi: {{summary}}",
-          "grant": "Bu konuşma için izin verildiğinden sormadan çalıştı: {{summary}}"
+          "grant": "Bu konuşma için izin verildiğinden sormadan çalıştı: {{summary}}",
+          "user": "Sonradan izin verdiğiniz için çalıştı: {{summary}}"
         }
       },
       "board": {

@@ -8,6 +8,7 @@ import {
   fromEntries,
   OUTCOME_ENTRY,
   PRESENTATION_STATUS_KEY,
+  PERMISSIONS_WAITING_STATUS,
   QUESTIONS_OPEN_STATUS,
   readPresentation,
   reduce,
@@ -825,5 +826,25 @@ describe('a question of mu’s ask_user', () => {
     expect(reduceAll([status()], waiting).host.questionsOpen).toBeUndefined();
     // Not in the session file: a reloaded conversation has no live host.
     expect(durable(waiting).host.questionsOpen).toBeUndefined();
+  });
+
+  it('says calls wait for a permission nobody gave in time, until mu clears its status', () => {
+    const status = (words?: string): PiRecord => ({
+      type: 'extension_ui_request',
+      id: 'st',
+      method: 'setStatus',
+      statusKey: PERMISSIONS_WAITING_STATUS,
+      ...(words ? { statusText: words } : {}),
+    });
+    const waiting = reduceAll([status('1 step is waiting for your permission: type /approve')]);
+    expect(waiting.host.permissionsWaiting).toBe(true);
+    // The line of the open picker has another key, and says nothing about what waits.
+    const asking: PiRecord = {
+      ...status('Waiting for your permission: npm test'),
+      statusKey: 'mu.permissions.pending',
+    };
+    expect(reduceAll([asking]).host.permissionsWaiting).toBeUndefined();
+    expect(reduceAll([status()], waiting).host.permissionsWaiting).toBeUndefined();
+    expect(durable(waiting).host.permissionsWaiting).toBeUndefined();
   });
 });

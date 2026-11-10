@@ -1427,12 +1427,14 @@
         "answers": {
           "once": "Vous l’avez autorisé une fois",
           "session": "Autorisé pour cette conversation",
-          "deny": "Vous ne l’avez pas autorisé"
+          "deny": "Vous ne l’avez pas autorisé",
+          "pending": "Pas de réponse à temps, en attente de vous"
         },
         "about": "{{answer}} : {{summary}}",
         "approved": {
           "judge": "Le juge l’a laissé passer sans vous demander : {{summary}}",
-          "grant": "Exécuté sans demander, car autorisé pour cette conversation : {{summary}}"
+          "grant": "Exécuté sans demander, car autorisé pour cette conversation : {{summary}}",
+          "user": "Exécuté, car vous l’avez autorisé après coup : {{summary}}"
         }
       },
       "board": {

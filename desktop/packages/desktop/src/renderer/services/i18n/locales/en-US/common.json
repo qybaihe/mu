@@ -1427,12 +1427,14 @@
         "answers": {
           "once": "You allowed it once",
           "session": "Allowed for this conversation",
-          "deny": "You didn't allow it"
+          "deny": "You didn't allow it",
+          "pending": "No answer in time, so it waits for you"
         },
         "about": "{{answer}}: {{summary}}",
         "approved": {
           "judge": "The judge let it run without asking you: {{summary}}",
-          "grant": "Ran without asking, as allowed for this conversation: {{summary}}"
+          "grant": "Ran without asking, as allowed for this conversation: {{summary}}",
+          "user": "Ran, as you allowed it after it had waited: {{summary}}"
         }
       },
       "board": {

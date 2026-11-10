@@ -88,6 +88,13 @@ const GOAL_STATUSES: ReadonlySet<string> = new Set(['active', 'paused', 'met', '
 export const QUESTIONS_OPEN_STATUS = 'mu.ask.pending';
 /** The command that asks them again. */
 export const ANSWER_COMMAND = '/answer';
+/**
+ * The status mu shows while permission questions nobody answered in time wait for `/approve`
+ * (packages/kyrn-judge/src/extension/features/permissions.ts `WAITING_STATUS`).
+ */
+export const PERMISSIONS_WAITING_STATUS = 'mu.approve.pending';
+/** The command that asks them again. */
+export const APPROVE_COMMAND = '/approve';
 
 /** A goal as a `kyrn.goal` entry or a `goal.state` frame says it, or undefined when it says nothing usable. */
 export function readGoal(data: unknown): ViewGoal | undefined {
@@ -562,6 +569,10 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
   if (method === 'setStatus' && record.statusKey === QUESTIONS_OPEN_STATUS) {
     const { questionsOpen: _was, ...host } = view.host;
     return { ...view, host: asText(record.statusText) ? { ...host, questionsOpen: true } : host };
+  }
+  if (method === 'setStatus' && record.statusKey === PERMISSIONS_WAITING_STATUS) {
+    const { permissionsWaiting: _was, ...host } = view.host;
+    return { ...view, host: asText(record.statusText) ? { ...host, permissionsWaiting: true } : host };
   }
   const frame = readPresentation(record);
   if (!frame || frame.version !== 1) return view;

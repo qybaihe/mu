@@ -19,6 +19,7 @@ import {
 	APPROVED_MESSAGE,
 	OUTCOME_ENTRY,
 	type PermissionOutcome,
+	WAITING_STATUS,
 } from "../src/extension/features/permissions.ts";
 import { permissionEnv } from "../src/extension/features/swarm.ts";
 import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
@@ -880,6 +881,8 @@ describe("permission modes in a session", () => {
 		harnesses.push(harness);
 		const asked: { title: string; options: string[]; initialIndex?: number; timeout?: number }[] = [];
 		const status: (string | undefined)[] = [];
+		/** The line about questions that wait for /approve, which has a status key of its own. */
+		const waitingStatus: (string | undefined)[] = [];
 		const notes: string[] = [];
 		if (setup.pick) {
 			const pick = setup.pick;
@@ -899,6 +902,7 @@ describe("permission modes in a session", () => {
 				},
 				setStatus: (key: string, text: string | undefined) => {
 					if (key === "mu.permissions.pending") status.push(text);
+					if (key === WAITING_STATUS) waitingStatus.push(text);
 				},
 				notify: (message: string) => notes.push(message),
 			};
@@ -908,7 +912,7 @@ describe("permission modes in a session", () => {
 			await harness.session.bindExtensions({ uiContext: ui, mode: "rpc" });
 		}
 		const of = (kind: string) => events.filter((event) => event.kind === kind).map((event) => event.payload);
-		return { harness, ran, asked, status, notes, of };
+		return { harness, ran, asked, status, waitingStatus, notes, of };
 	}
 
 	const call = (name: string, args: Record<string, string>, id?: string) =>
@@ -1767,7 +1771,7 @@ describe("permission modes in a session", () => {
 
 		it("the call does not run and the model carries on; /approve lets that same call run, once", async () => {
 			const picks = [WAIT, "Allow once", "Don't allow"];
-			const { harness, ran, asked, status, of } = await start(() => ({}), {
+			const { harness, ran, asked, status, waitingStatus, of } = await start(() => ({}), {
 				mode: "ask",
 				waitMs: 40,
 				pick: () => picks.shift(),
@@ -1780,10 +1784,9 @@ describe("permission modes in a session", () => {
 			expect(results(harness)[0]).toContain(
 				"The user has not answered yet whether to allow this (npm install left-pad). This is pending: not permission, and not a refusal.",
 			);
-			expect(status).toEqual([
-				"Waiting for your permission: npm install left-pad",
-				"1 step is waiting for your permission: type /approve",
-			]);
+			// The picker's line goes with the picker; the line about what waits has a key of its own (`mu.approve.pending`).
+			expect(status).toEqual(["Waiting for your permission: npm install left-pad", undefined]);
+			expect(waitingStatus).toEqual(["1 step is waiting for your permission: type /approve"]);
 			expect(of("permissions.resolved")).toEqual([
 				{ id: "permission-1", toolCallId: "call-install", answer: "pending" },
 			]);
@@ -1812,10 +1815,11 @@ describe("permission modes in a session", () => {
 				{ answer: "deny", late: undefined },
 			]);
 			expect(status.at(-1)).toBeUndefined();
+			expect(waitingStatus.at(-1)).toBeUndefined();
 		});
 
 		it("while nobody has answered, the next question waits with it at once, and the same call is not asked twice", async () => {
-			const { harness, ran, asked, status, of } = await start(() => ({}), {
+			const { harness, ran, asked, waitingStatus, of } = await start(() => ({}), {
 				mode: "ask",
 				waitMs: 40,
 				pick: () => WAIT,
@@ -1837,25 +1841,25 @@ describe("permission modes in a session", () => {
 				{ id: "permission-1", toolCallId: "call-a", answer: "pending" },
 				{ id: "permission-2", toolCallId: "call-b", answer: "pending" },
 			]);
-			expect(status.at(-1)).toBe("2 steps are waiting for your permission: type /approve");
+			expect(waitingStatus.at(-1)).toBe("2 steps are waiting for your permission: type /approve");
 		});
 
 		it("a new message of the user's ends the waiting: the call asks them now", async () => {
 			const picks = [WAIT, "Allow once"];
-			const { harness, ran, asked, status } = await start(() => ({}), {
+			const { harness, ran, asked, waitingStatus } = await start(() => ({}), {
 				mode: "ask",
 				waitMs: 40,
 				pick: () => picks.shift(),
 			});
 			harness.setResponses([call("bash", install), fauxAssistantMessage("Waiting on the install.")]);
 			await harness.session.prompt("Add left-pad");
-			expect(status.at(-1)).toBe("1 step is waiting for your permission: type /approve");
+			expect(waitingStatus.at(-1)).toBe("1 step is waiting for your permission: type /approve");
 
 			harness.setResponses([call("bash", install), fauxAssistantMessage("Installed.")]);
 			await harness.session.prompt("Go on, install it.");
 			expect(asked).toHaveLength(2);
 			expect(ran).toEqual(["bash npm install left-pad"]);
-			expect(status.at(-1)).toBeUndefined();
+			expect(waitingStatus.at(-1)).toBeUndefined();
 		});
 
 		it("/approve with a refusal tells the model and starts no run; with nothing waiting it says so", async () => {
