@@ -7,7 +7,7 @@ import { createTestExtensionsResult, createTestResourceLoader } from "../../codi
 import { parseConfig } from "../src/config.ts";
 import type { DecisionMode } from "../src/decision.ts";
 import { registerForgetting } from "../src/extension/features/forgetting.ts";
-import { FRAME_ENTRY, FRAME_MESSAGE, registerFrame } from "../src/extension/features/frame.ts";
+import { CHECKLIST_STATUS, FRAME_ENTRY, FRAME_MESSAGE, registerFrame } from "../src/extension/features/frame.ts";
 import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
 import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
 import { KyrnRuntime } from "../src/extension/runtime.ts";
@@ -84,10 +84,15 @@ describe("task frame feature", () => {
 		});
 		harnesses.push(harness);
 		const told: string[] = [];
+		/** The footer's line about the checklist, each time it was written; null when it was taken down. */
+		const footer: (string | null)[] = [];
 		if (extra.ui) {
 			const ui = createTestUiContext({
 				notify: (message) => {
 					if (message.startsWith("mu: this task's checklist")) told.push(message);
+				},
+				setStatus: (key, text) => {
+					if (key === CHECKLIST_STATUS) footer.push(text ?? null);
 				},
 			});
 			await harness.session.bindExtensions({ uiContext: ui, mode: "rpc" });
@@ -96,6 +101,7 @@ describe("task frame feature", () => {
 		return {
 			harness,
 			told,
+			footer,
 			provider,
 			updates,
 			/** The frame as the desktop was last told. */
@@ -427,7 +433,7 @@ describe("task frame feature", () => {
 			fauxAssistantMessage([fauxToolCall("todo", params)], { stopReason: "toolUse" });
 
 		it("tells the user where the checklist stands, once for each change of it", async () => {
-			const { harness, told } = await start(verdicts(), { ui: true });
+			const { harness, told, footer } = await start(verdicts(), { ui: true });
 			harness.setResponses([
 				call({ action: "add", text: "the cursor survives a deleted row" }),
 				call({ action: "add", text: "limit is capped at 100" }),
@@ -443,10 +449,14 @@ describe("task frame feature", () => {
 				].join("\n"),
 			]);
 
+			// While the run went, the footer had the count at each step: written when it changed, and only then.
+			expect(footer).toEqual(["Checklist 0/1", "Checklist 0/2", "Checklist 1/2"]);
+
 			// A run that changes nothing on the list says nothing more about it.
 			harness.setResponses([fauxAssistantMessage("Yes, by id.")]);
 			await harness.session.prompt("Is the cursor ordered by id?");
 			expect(told).toHaveLength(1);
+			expect(footer).toHaveLength(3);
 
 			harness.setResponses([
 				call({ action: "done", id: "a2", evidence: "limit=500 returns 100 rows" }),
@@ -466,6 +476,7 @@ describe("task frame feature", () => {
 			bare.harness.setResponses([fauxAssistantMessage("Done.")]);
 			await bare.harness.session.prompt(GOAL);
 			expect(bare.told).toEqual([]);
+			expect(bare.footer).toEqual([]);
 
 			const off = await start(verdicts(), { ui: true, features: { frame: { report: false } } });
 			off.harness.setResponses([
