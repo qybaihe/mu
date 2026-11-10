@@ -209,7 +209,16 @@ async function stubModel() {
         messages = JSON.parse(body).messages ?? [];
       } catch {}
       const last = messages.at(-1) ?? {};
-      const said = JSON.stringify([...messages].reverse().find((message) => message.role === 'user')?.content ?? '');
+      // What the user said this turn. mu puts messages of its own after it (the workspace snapshot on a first turn,
+      // a lesson, the task frame), and they reach the model as user messages too: every user message since the
+      // model or a tool last spoke is read, not only the last one.
+      const spoke = messages.findLastIndex((message) => message.role === 'assistant' || message.role === 'tool');
+      const said = JSON.stringify(
+        messages
+          .slice(spoke + 1)
+          .filter((message) => message.role === 'user')
+          .map((message) => message.content)
+      );
       const file = /PERMISSION_CHECK (\S+?\.txt)/.exec(said)?.[1];
       const chunk = (delta, finish = null) =>
         `data: ${JSON.stringify({ id: 'stub', object: 'chat.completion.chunk', created: 0, model: 'stub', choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`;

@@ -42,14 +42,21 @@ export interface StoredLesson extends Lesson {
 	readonly status: LessonStatus;
 	/** The lesson this one replaced. */
 	readonly supersedes?: string;
+	/**
+	 * A standing rule: the user's own word that recalling was not enough for (they had to say it again, or it was
+	 * recalled and never followed). The constraint gate holds calls that change something against it.
+	 */
+	readonly standing?: true;
 	readonly uses: LessonUses;
 	readonly created: string;
 	/** When it was written, confirmed again or changed status. Use accounting does not touch it. */
 	readonly updated: string;
 }
 
-/** One line of the file: a whole lesson, or the fields of one that changed. */
-export type LessonLine = { readonly id: string } & Partial<Omit<StoredLesson, "id">>;
+/** One line of the file: a whole lesson, or the fields of one that changed. `standing: false` takes a rule's standing away. */
+export type LessonLine = { readonly id: string } & Partial<Omit<StoredLesson, "id" | "standing">> & {
+		readonly standing?: boolean;
+	};
 
 /** The well-formed fields of one line. `cwd` is where the first version kept the project. */
 interface Draft {
@@ -62,6 +69,7 @@ interface Draft {
 	source?: LessonSource;
 	status?: LessonStatus;
 	supersedes?: string;
+	standing?: boolean;
 	uses?: LessonUses;
 	created?: string;
 	updated?: string;
@@ -98,6 +106,7 @@ function draftOf(value: unknown): Draft | undefined {
 		}
 	}
 	if (isText(value.supersedes)) draft.supersedes = value.supersedes;
+	if (typeof value.standing === "boolean") draft.standing = value.standing;
 	if (isRecord(value.uses) && isCount(value.uses.recalled) && isCount(value.uses.applied)) {
 		draft.uses = {
 			recalled: value.uses.recalled,
@@ -123,6 +132,7 @@ function complete(draft: Draft): StoredLesson | undefined {
 		source: draft.source ?? { origin: "user" },
 		status: draft.status ?? "active",
 		...(draft.supersedes ? { supersedes: draft.supersedes } : {}),
+		...(draft.standing ? { standing: true as const } : {}),
 		uses: draft.uses ?? { recalled: 0, applied: 0 },
 		created,
 		updated: draft.updated ?? created,
@@ -275,6 +285,18 @@ export class LessonStore {
 		if (this.path) writeLesson(this.path, line);
 		else this.memory.push(line);
 	}
+}
+
+/** Whether a lesson is the user's own word (a correction, a rule, `/remember`), not something the agent concluded. */
+export function isUsersWord(lesson: Pick<StoredLesson, "source">): boolean {
+	return lesson.source.origin === "user" || lesson.source.origin === "command";
+}
+
+/** The standing rules that hold in `cwd`, the most recently confirmed first. */
+export function standingRules(lessons: readonly StoredLesson[], cwd: string): StoredLesson[] {
+	return lessons
+		.filter((lesson) => lesson.status === "active" && lesson.standing === true && inScope(lesson, cwd))
+		.sort((a, b) => b.updated.localeCompare(a.updated));
 }
 
 /** Lessons that apply in `cwd`: its own, and those that apply everywhere. */

@@ -1287,12 +1287,12 @@ describe("permission modes in a session", () => {
 		]);
 		// /ledger puts the answer after the verdict it labels.
 		await harness.session.prompt("/ledger");
-		expect(notes.at(-1)).toMatch(/tool\.approval v3 .*"unsure" -> you: session/);
-		expect(notes.at(-1)).toMatch(/tool\.approval v3 .*"beyond" -> you: deny/);
+		expect(notes.at(-1)).toMatch(/tool\.approval v4 .*"unsure" -> you: session/);
+		expect(notes.at(-1)).toMatch(/tool\.approval v4 .*"beyond" -> you: deny/);
 
 		// The user marks a verdict wrong by the id /ledger shows; the app sends the whole id.
 		const short = String(records[1].id).replace(/-/g, "").slice(0, 8);
-		expect(notes.at(-1)).toContain(`#${short} tool.approval v3`);
+		expect(notes.at(-1)).toContain(`#${short} tool.approval v4`);
 		await harness.session.prompt(`/ledger wrong #${short} publishing is what I asked for`);
 		expect(notes.at(-1)).toBe(`Marked #${short} (tool.approval) as wrong.`);
 		await harness.session.prompt(`/ledger wrong ${records[1].id}`);
@@ -1303,7 +1303,7 @@ describe("permission modes in a session", () => {
 			kind: "mark",
 			ledgerId: records[1].id,
 			specId: "tool.approval",
-			specVersion: 3,
+			specVersion: 4,
 			judged: "beyond",
 			mark: "wrong",
 			note: "publishing is what I asked for",

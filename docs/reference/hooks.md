@@ -7,7 +7,7 @@ order of the table in `packages/kyrn-judge/src/extension/kyrn-judge.ts`, and pi 
 order they were registered, except that `tool_call` handlers registered as final run after all the others. So
 the order under each event is the order its handlers run in. `kernel` is what mu registers around the features.
 
-The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `plan`, `permissions`, `admission`, `forgetting`, `recall`, `askUser`, `present`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `featureOffers`, `recovery`.
+The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `evolve`, `snapshot`, `preload`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `plan`, `permissions`, `admission`, `forgetting`, `recall`, `askUser`, `present`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `featureOffers`, `recovery`.
 
 ## Events
 
@@ -18,15 +18,17 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 3. `frame`
 4. `memory`
 5. `procedures`
-6. `plan`
-7. `monitor`
-8. `deadline`
-9. `lsp`
-10. `goal`
-11. `completion`
-12. `continuation`
-13. `board`
-14. `checkpoint`
+6. `evolve`
+7. `preload`
+8. `plan`
+9. `monitor`
+10. `deadline`
+11. `lsp`
+12. `goal`
+13. `completion`
+14. `continuation`
+15. `board`
+16. `checkpoint`
 
 ### `agent_settled`
 
@@ -52,17 +54,19 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 2. `preflight`
 3. `frame`
 4. `memory`
-5. `skills` ×2
-6. `catalog`
-7. `injection`
-8. `plan`
-9. `askUser`
-10. `monitor`
-11. `notify`
-12. `hive`
-13. `inherit`
-14. `mcp`
-15. `packs`
+5. `snapshot`
+6. `preload`
+7. `skills` ×2
+8. `catalog`
+9. `injection`
+10. `plan`
+11. `askUser`
+12. `monitor`
+13. `notify`
+14. `hive`
+15. `inherit`
+16. `mcp`
+17. `packs`
 
 ### `before_provider_request`
 
@@ -85,12 +89,14 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 3. `preflight`
 4. `frame`
 5. `memory`
-6. `monitor`
-7. `ttsr` (off by default)
-8. `watchdog`
-9. `lsp`
-10. `goal`
-11. `checkpoint`
+6. `evolve`
+7. `monitor`
+8. `ttsr` (off by default)
+9. `watchdog`
+10. `lsp`
+11. `goal`
+12. `checkpoint`
+13. `warming`
 
 ### `message_end`
 
@@ -152,25 +158,28 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 1. `kernel` ×2
 2. `frame`
-3. `plan`
-4. `permissions`
-5. `admission`
-6. `forgetting`
-7. `compaction` (off by default)
-8. `lsp`
-9. `goal`
-10. `board`
-11. `checkpoint`
-12. `warmup`
-13. `swarm`
-14. `inherit`
-15. `mcp`
-16. `confine` (off by default)
-17. `sandbox` (off by default)
-18. `packs`
-19. `googleLogin`
-20. `featureOffers`
-21. `recovery`
+3. `evolve`
+4. `snapshot`
+5. `preload`
+6. `plan`
+7. `permissions`
+8. `admission`
+9. `forgetting`
+10. `compaction` (off by default)
+11. `lsp`
+12. `goal`
+13. `board`
+14. `checkpoint`
+15. `warmup`
+16. `swarm`
+17. `inherit`
+18. `mcp`
+19. `confine` (off by default)
+20. `sandbox` (off by default)
+21. `packs`
+22. `googleLogin`
+23. `featureOffers`
+24. `recovery`
 
 ### `session_tree`
 
@@ -211,14 +220,16 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 1. `preflight`
 2. `memory`
 3. `procedures`
-4. `skills`
-5. `injection` ×2
-6. `admission`
-7. `monitor`
-8. `lsp`
-9. `completion`
-10. `inherit`
-11. `mcp`
+4. `evolve`
+5. `preload`
+6. `skills`
+7. `injection` ×2
+8. `admission`
+9. `monitor`
+10. `lsp`
+11. `completion`
+12. `inherit`
+13. `mcp`
 
 ### `turn_end`
 
@@ -271,6 +282,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 | `/lessons` | `memory` |
 | `/forget` | `memory` |
 | `/skills` | `procedures` |
+| `/evolve` | `evolve` |
 | `/capabilities` | `catalog` |
 | `/plan` | `plan` |
 | `/permissions` | `permissions` |
@@ -323,6 +335,7 @@ is marked: two features that set it in the same turn decide between them by the 
 | `capabilitiesOpen` | `extension/features/catalog.ts` | `extension/features/swarm.ts` |
 | `deadlineAt` | `extension/features/deadline.ts` | `extension/features/deadline.ts`, `extension/features/watchdog.ts` |
 | `enabled` | `extension/kyrn-judge.ts` | `extension/features/commands.ts`, `extension/features/welcome.ts`, `extension/runtime.ts` |
+| `evolve` | `extension/features/evolve.ts` | `extension/features/commands.ts`, `extension/features/permissions.ts`, `extension/features/preload.ts`, `extension/features/snapshot.ts` |
 | `floor` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/packs/debugger.ts` |
 | `floorExit` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/permissions.ts` |
 | `frameState` | `extension/features/frame.ts` | `extension/features/frame.ts`, `extension/runtime.ts` |
@@ -342,5 +355,6 @@ is marked: two features that set it in the same turn decide between them by the 
 | `planMode` | `extension/features/plan.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/plan.ts` |
 | `questionsOpen` | `extension/features/ask-user.ts` | `extension/features/continuation.ts` |
 | `skillsHidden` | `extension/features/skills.ts` | `extension/features/swarm.ts` |
+| `standingRules` | `extension/features/memory.ts` | `extension/features/constraints.ts`, `extension/features/evolve.ts`, `extension/features/memory.ts` |
 | `stateDir` | `extension/kyrn-judge.ts` | `extension/features/tool-descriptions.ts` |
 | `toolCalls` | `extension/features/preflight.ts` | `extension/features/preflight.ts` |

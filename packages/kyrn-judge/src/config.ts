@@ -181,6 +181,9 @@ export const DEFAULT_CONFIG: KyrnConfig = {
 		// as sent without one. A built-in "active" here would keep it acting under a default of shadow.
 		// Its steers were mostly wrong where it flagged anything at all, so it only records until it is reworked.
 		"turn.drift": "shadow",
+		// New, and unmeasured: it records which files it would have brought in, and the opening's own reads say what
+		// that was worth, until the numbers say it should act.
+		"context.preload": "shadow",
 	},
 	routes: {},
 	features: {},

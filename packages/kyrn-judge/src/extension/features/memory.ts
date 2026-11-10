@@ -19,6 +19,7 @@ import { say } from "../../language.ts";
 import { lessonLinesOf, lessonText, parsePhrase, turnDigest } from "../../memory/phrasing.ts";
 import {
 	inScope,
+	isUsersWord,
 	type LessonKind,
 	type LessonOrigin,
 	type LessonStatus,
@@ -27,6 +28,7 @@ import {
 	rankForRecall,
 	type StoredLesson,
 	sameText,
+	standingRules,
 } from "../../memory/store.ts";
 import type { LlmCompletion } from "../../providers/llm.ts";
 import { clip, failOpen, type KyrnRuntime, textOf, userWords, within } from "../runtime.ts";
@@ -117,6 +119,11 @@ function reportsOf(event: { content: unknown; details?: unknown }): string[] {
  * of a turn the judge says whether the lessons brought into it were followed, and one recalled many
  * times and never followed is retired.
  *
+ * The user's own word is not retired for being ignored. A correction or a rule the user had to say a second time, or
+ * one recalled that often and never followed, becomes a standing rule (`standing`): recalling it was not enough, so
+ * the constraint gate holds every call that changes something against it, as against a constraint of the task
+ * (`runtime.standingRules`, features/constraints.ts). `/forget` takes it away like any lesson.
+ *
  * The judge never writes: the configured writer model phrases a correction (without one the user's
  * own words are kept), and a way out is phrased by the writer or the conversation's model.
  *
@@ -140,6 +147,8 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		outcome: true,
 		/** Ask at the end of a turn whether the lessons brought into it were followed. */
 		applied: true,
+		/** Make the user's word a standing rule when recalling it was not enough: said twice, or never followed. */
+		standing: true,
 		/** Learn from corrections, ways out and sub-agents' reports in a `mu --print` or json run too. */
 		unattendedWrites: false,
 	});
@@ -164,6 +173,18 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		setStatus(id, "retired");
 		runtime.present("memory.retired", { id, reason }, turn);
 	};
+	/**
+	 * The user's word becomes a standing rule: `repeated` when they said it again, `ignored` when it was recalled
+	 * `retireAfter` times and never followed. What the agent, the model or a subagent concluded never does.
+	 */
+	const makeStanding = (lesson: StoredLesson, reason: "repeated" | "ignored", turn: number): boolean => {
+		if (!options.standing || lesson.standing || lesson.status !== "active" || !isUsersWord(lesson)) return false;
+		store.write({ id: lesson.id, standing: true, updated: now() });
+		runtime.present("memory.standing", { id: lesson.id, reason }, turn);
+		return true;
+	};
+	runtime.standingRules = (cwd) =>
+		standingRules(store.all(), cwd).map((lesson) => ({ id: lesson.id, text: lesson.lesson }));
 	/** Use accounting reads the lessons as they are now: another session may have counted since the turn began. */
 	const countUses = (ids: readonly string[], change: (uses: StoredLesson["uses"]) => StoredLesson["uses"]) => {
 		const current = new Map(store.all().map((lesson) => [lesson.id, lesson]));
@@ -185,6 +206,10 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		const confirm = (existing: StoredLesson): Kept => {
 			store.write({ id: existing.id, updated: now() });
 			runtime.present("memory.merged", { id, into: existing.id, how: "same" }, place.turn);
+			// The user said it once and is saying it again: recalling it did not hold.
+			if (candidate.origin === "user" || candidate.origin === "command") {
+				makeStanding(existing, "repeated", place.turn);
+			}
 			return { kind: "same", existing };
 		};
 		// A rule first: a lesson kept word for word needs no judge.
@@ -354,6 +379,8 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 						lesson.uses.applied === 0 &&
 						lesson.uses.recalled >= options.retireAfter
 					) {
+						// Unless the user said it: then the agent ignoring it is the problem, and the rule is kept for it.
+						if (lesson.standing || makeStanding(lesson, "ignored", turn)) continue;
 						retire(id, "unused", turn);
 					}
 				}
@@ -628,6 +655,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	const describe = (lesson: StoredLesson): string => {
 		const marks = [
 			...(lesson.status === "active" ? [] : [say(STATUS_WORDS[lesson.status])]),
+			...(lesson.standing && lesson.status === "active" ? [say({ zh: "常驻规则", en: "standing rule" })] : []),
 			...(lesson.scope.cwd === undefined ? [say({ zh: "到处适用", en: "global" })] : []),
 		];
 		const said = `${lesson.id.slice(0, 8)} · ${say(KIND_WORDS[lesson.kind])} · ${lesson.uses.recalled}/${lesson.uses.applied} · ${lesson.lesson}`;
@@ -680,8 +708,15 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				);
 				return;
 			}
+			// Said again: `keep` made it a standing rule, unless it was one already or that is switched off.
+			const promoted = !kept.existing.standing && store.get(kept.existing.id)?.standing === true;
 			ctx.ui.notify(
-				say({ zh: `已经记着了：${kept.existing.lesson}`, en: `Already saved: ${kept.existing.lesson}` }),
+				promoted
+					? say({
+							zh: `已经记着了，这是你第二次说：升为常驻规则，以后每次改动前都对照。${kept.existing.lesson}`,
+							en: `Already saved, and that's twice: it's now a standing rule, checked before every change. ${kept.existing.lesson}`,
+						})
+					: say({ zh: `已经记着了：${kept.existing.lesson}`, en: `Already saved: ${kept.existing.lesson}` }),
 				"info",
 			);
 		},

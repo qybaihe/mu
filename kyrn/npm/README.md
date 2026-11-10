@@ -1,6 +1,6 @@
 # mu
 
-**Most of what a coding agent decides isn't code.** Does this output matter? Is this command safe? Is the work really done? mu hands these yes/no calls to a small judge model at 40 decision points, so fewer tokens go to waste, fewer approvals get clicked through unread, and fewer runs stop halfway.
+**Most of what a coding agent decides isn't code.** Does this output matter? Is this command safe? Is the work really done? mu hands these yes/no calls to a small judge model at 41 decision points, so fewer tokens go to waste, fewer approvals get clicked through unread, and fewer runs stop halfway.
 
 > Source, docs and the desktop app: [github.com/qybaihe/mu](https://github.com/qybaihe/mu).
 
@@ -37,7 +37,7 @@ Out of the box, the judge is Jev 1.13, TypeSafe's hosted judge model, free on Op
 - **Other decision models from Hugging Face** (local, a Mac with Apple silicon): `mu judge model add <link>` adds one that is packaged like mude 1.0 and makes it the judge. Laya is no longer included: a `mu.json` that still names it gets mude 1.0 in its place when mude is set up, otherwise the remaining judges or Jev, and mu says so once.
 - **Any model you already use:** `/mu judge llm:<provider>/<model>`.
 
-34 of the 40 decision points act on their verdicts from the start (`active`). To only record what the judge would do, run `/mu mode default shadow`, or put `"modes": { "default": "shadow" }` in `~/.mu/agent/mu.json`.
+34 of the 41 decision points act on their verdicts from the start (`active`). To only record what the judge would do, run `/mu mode default shadow`, or put `"modes": { "default": "shadow" }` in `~/.mu/agent/mu.json`.
 
 ## Commands
 

@@ -159,3 +159,14 @@
 | | 三次失败靠改代码通过，办法没变 | `skip` | 254 / 393 |
 
 结论：题面不用改。§10 第一条的单元测试在 `test/memory.test.ts`（28 个）。还没跑的是整条链在真实会话里的样子（纠正 → 存 → 改口 → 退役 → 召回），等用户用新内核跑几轮后看台账。
+
+## 13. 常驻规则（2026-11-10）
+
+第 6 节的退役规则不分来源：召回 8 次从未照做就退役，用户自己说的也一样。可是用户的话被召回了却没被照做，问题多半在代理，不在这条经验。所以对用户的话（`source.origin` 为 `user` 或 `command`）改成升级，不再退役：
+
+- **说了第二遍**：新经验和已有的一条被判成 `same`（或逐字相同），已有的那条记 `standing: true`，展示 `memory.standing`（`reason: "repeated"`）。`/remember` 会告诉用户它升成了常驻规则。
+- **召回够数却从没被照做**：到了 `retireAfter` 次，记 `standing: true`（`reason: "ignored"`），不退役。
+
+常驻规则由硬约束把关（`tool.constraint`，`features/constraints.ts`）在每次改动前逐条对照，和任务帧里的约束排在一起，每次最多 `constraints.maxStanding` 条（默认 4，取最近确认的）。被拦下的调用会看到用户的原句和经验 id，用户用 `/forget <id>` 去掉。代理、模型、子代理自己得出的经验不会升级，照旧退役。`memory.standing: false` 关掉升级，恢复原来的退役。
+
+文件格式只多一个可选字段 `standing`；追加一行 `{ id, standing: false }` 可以把常驻取消。整体设计见 [self-evolution.md](self-evolution.md) 第 3 节。

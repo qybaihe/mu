@@ -194,7 +194,7 @@ function turn(c) {
       fill: c.faint,
     })
   );
-  out.push(text(0, H - 6, '18 of the 40 decision points. Each one is active, shadow (asked and logged only) or off.', { size: 12, fill: c.faint }));
+  out.push(text(0, H - 6, '18 of the 41 decision points. Each one is active, shadow (asked and logged only) or off.', { size: 12, fill: c.faint }));
   const points = STAGES.map((stage) => `${stage.name}, ${stage.when}: ${stage.points.map(([id, q]) => `${id} (${q})`).join(', ')}.`);
   return svg(
     {

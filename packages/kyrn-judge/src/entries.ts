@@ -109,7 +109,10 @@ const DecisionSchema = Type.Object({
 
 const PermissionModeSchema = Type.Union([Type.Literal("full"), Type.Literal("judge"), Type.Literal("ask")]);
 
-/** `PermissionOutcome` and `JudgmentMark` in permissions.ts, and `NudgeFollowed` in nudge-outcome.ts. */
+/**
+ * `PermissionOutcome` and `JudgmentMark` in permissions.ts, `NudgeFollowed` in nudge-outcome.ts, `Refetched` in
+ * recall.ts, `Returned` in warming.ts and `PreloadRead` in preload.ts.
+ */
 const OutcomeSchema = Type.Union([
 	Type.Object({
 		kind: Type.Literal("permission"),
@@ -146,6 +149,30 @@ const OutcomeSchema = Type.Union([
 		judged: Type.Optional(Type.Unknown()),
 		followed: Type.Union([Type.Literal("acted"), Type.Literal("ended")]),
 		calls: Type.Number(),
+	}),
+	Type.Object({
+		kind: Type.Literal("refetch"),
+		source: Type.Union([Type.Literal("archive"), Type.Literal("page"), Type.Literal("session")]),
+		tool: Type.String(),
+		ledgerId: Type.Optional(Type.String()),
+		specId: Type.Optional(Type.String()),
+		chars: Type.Number(),
+	}),
+	Type.Object({
+		kind: Type.Literal("returned"),
+		ledgerId: Type.String(),
+		specId: Type.String(),
+		judged: Type.Optional(Type.Unknown()),
+		afterMs: Type.Number(),
+	}),
+	Type.Object({
+		kind: Type.Literal("preload"),
+		ledgerId: Type.String(),
+		specId: Type.String(),
+		predicted: Type.Number(),
+		given: Type.Number(),
+		read: Type.Number(),
+		hits: Type.Number(),
 	}),
 ]);
 
@@ -228,11 +255,18 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 	{
 		type: "kyrn.outcome",
 		kind: "entry",
-		version: 2,
-		writers: [features("permissions"), features("commands"), features("nudge-outcome")],
+		version: 3,
+		writers: [
+			features("permissions"),
+			features("commands"),
+			features("nudge-outcome"),
+			features("recall"),
+			features("warming"),
+			features("preload"),
+		],
 		readers: [DESKTOP_REDUCER, LEDGER_CLI, `/ledger: ${features("commands")}`],
 		summary:
-			"What became of a judgment: the user's answer to the question it sent them, their mark that it was wrong, or what the agent did with the nudge it sent.",
+			"What became of a judgment: the user's answer to the question it sent them, their mark that it was wrong, what the agent did with the nudge it sent, a left-out part the model read back, when the user returned after a warming verdict, or what a conversation's opening read against what was forecast.",
 		schema: OutcomeSchema,
 	},
 	{
@@ -547,6 +581,22 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 		writers: [features("notify")],
 		readers: [],
 		summary: "An event the notify feature passes on to the model, now or with the next turn.",
+	},
+	{
+		type: "kyrn.snapshot",
+		kind: "message",
+		version: 1,
+		writers: [features("snapshot")],
+		readers: [],
+		summary: "The folder, git's state and the machine as a conversation starts, given once with its first message.",
+	},
+	{
+		type: "kyrn.preload",
+		kind: "message",
+		version: 1,
+		writers: [features("preload")],
+		readers: [],
+		summary: "Files the judge was sure the task needs, given with the first message of a conversation.",
 	},
 	{
 		type: "kyrn.hint",

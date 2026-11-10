@@ -164,6 +164,23 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: {"errors":"hold","warnings":"drop"} (fallback)
 - the judge failed: {"errors":"hold","warnings":"drop"} (fallback)
 
+## context.preload v1
+
+- `file_0` (boolean), the others high:
+  - p(true): 0.01–0.75 → {"read":[{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.95}]}; 0.8 → {"read":[{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.95},{"path":"src/parse.ts","probability":0.8}]}; 0.85 → {"read":[{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.95},{"path":"src/parse.ts","probability":0.85}]}; 0.9 → {"read":[{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.95},{"path":"src/parse.ts","probability":0.9}]}; 0.95 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.95}]}; 0.99 → {"read":[{"path":"src/parse.ts","probability":0.99},{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.95}]}
+- `file_0` (boolean), the others low:
+  - p(true): 0.01–0.75 → {"read":[]}; 0.8 → {"read":[{"path":"src/parse.ts","probability":0.8}]}; 0.85 → {"read":[{"path":"src/parse.ts","probability":0.85}]}; 0.9 → {"read":[{"path":"src/parse.ts","probability":0.9}]}; 0.95 → {"read":[{"path":"src/parse.ts","probability":0.95}]}; 0.99 → {"read":[{"path":"src/parse.ts","probability":0.99}]}
+- `file_1` (boolean), the others high:
+  - p(true): 0.01–0.75 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"README.md","probability":0.95}]}; 0.8 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"README.md","probability":0.95},{"path":"test/parse.test.ts","probability":0.8}]}; 0.85 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"README.md","probability":0.95},{"path":"test/parse.test.ts","probability":0.85}]}; 0.9 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"README.md","probability":0.95},{"path":"test/parse.test.ts","probability":0.9}]}; 0.95 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.95}]}; 0.99 → {"read":[{"path":"test/parse.test.ts","probability":0.99},{"path":"src/parse.ts","probability":0.95},{"path":"README.md","probability":0.95}]}
+- `file_1` (boolean), the others low:
+  - p(true): 0.01–0.75 → {"read":[]}; 0.8 → {"read":[{"path":"test/parse.test.ts","probability":0.8}]}; 0.85 → {"read":[{"path":"test/parse.test.ts","probability":0.85}]}; 0.9 → {"read":[{"path":"test/parse.test.ts","probability":0.9}]}; 0.95 → {"read":[{"path":"test/parse.test.ts","probability":0.95}]}; 0.99 → {"read":[{"path":"test/parse.test.ts","probability":0.99}]}
+- `file_2` (boolean), the others high:
+  - p(true): 0.01–0.75 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"test/parse.test.ts","probability":0.95}]}; 0.8 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.8}]}; 0.85 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.85}]}; 0.9 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.9}]}; 0.95 → {"read":[{"path":"src/parse.ts","probability":0.95},{"path":"test/parse.test.ts","probability":0.95},{"path":"README.md","probability":0.95}]}; 0.99 → {"read":[{"path":"README.md","probability":0.99},{"path":"src/parse.ts","probability":0.95},{"path":"test/parse.test.ts","probability":0.95}]}
+- `file_2` (boolean), the others low:
+  - p(true): 0.01–0.75 → {"read":[]}; 0.8 → {"read":[{"path":"README.md","probability":0.8}]}; 0.85 → {"read":[{"path":"README.md","probability":0.85}]}; 0.9 → {"read":[{"path":"README.md","probability":0.9}]}; 0.95 → {"read":[{"path":"README.md","probability":0.95}]}; 0.99 → {"read":[{"path":"README.md","probability":0.99}]}
+- no answer: {"read":[]}
+- the judge failed: {"read":[]} (fallback)
+
 ## files.locate v1
 
 - `path_0` (boolean), the others high:
@@ -605,7 +622,7 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: {"omit":[]}
 - the judge failed: {"omit":[]} (fallback)
 
-## tool.approval v3
+## tool.approval v4
 
 - `verdict` (choice):
   - needed: 0.3–0.75 → "unsure"; 0.8–0.99 → "approve"; without p → "approve"
@@ -730,7 +747,7 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: "continue" (fallback)
 - the judge failed: "continue" (fallback)
 
-## tool.approval v3
+## tool.approval v4
 
 - `verdict` (choice):
   - needed: 0.3–0.65 → "unsure"; 0.7–0.99 → "approve"; without p → "approve"

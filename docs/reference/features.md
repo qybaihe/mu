@@ -97,6 +97,7 @@ On by default: yes. Decision points: `memory.recall`, `memory.capture`, `memory.
 | `mergeNeighbours` | `6` | Compare with this many similar lessons. Chosen by shared words and judged in one request; 0 saves without merging. Range 0 to 16. |
 | `outcome` | `true` | Learn from the agent getting unstuck. Needs the writer model or the main model to word the lesson. |
 | `applied` | `true` | Check at the end of a turn whether lessons were followed. |
+| `standing` | `true` | Make a rule standing when recalling it wasn't enough. Only for your own words (a correction, a rule, /remember): when you say one a second time, or it's recalled many times and never followed, it becomes a standing rule that the constraint check holds every change against. Off: a lesson that's never followed is retired, as before. /forget removes one. |
 | `unattendedWrites` | `false` | Also learn new lessons in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: kept lessons are still read, but nothing is learned from corrections, ways out or subagent reports. The capability catalog leaves out the remember tool. |
 
 ## procedures
@@ -144,6 +145,7 @@ On by default: yes. Decision points: `tool.constraint`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `maxConstraints` | `6` | Max constraints checked per call. The newest ones are used. Range 1 to 20. |
+| `maxStanding` | `4` | Max standing rules checked per call. Standing rules come from your lessons: a rule you said twice, or one that was recalled and never followed. The most recently confirmed are used; 0 checks none. Range 0 to 20. |
 | `waitMs` | `5000` ms | Wait at most `5000` ms. Range 500 to 30000. |
 | `skipReadOnly` | `true` | Skip read-only commands. Read-only shell commands (ls, git status, cat … \| grep …, and chains of them) aren't checked against your constraints, just like the read and grep tools. |
 
@@ -464,6 +466,49 @@ On by default: yes. Decision points: `hive.publish`, `hive.deliver`, `hive.relat
 | `publishToolOutputs` | `false` | Consider tool output for the board too. By default only what a bee says is considered. |
 | `verifyConflicts` | `1` | Max verifier bees for unsettled disputes. 0 adds none; both sides stay in the report. Range 0 to 3. |
 | `verifyAfterSeconds` | `60` | Seconds before a verifier joins an open dispute. Range 0 to 600. |
+
+## evolve
+
+**Adapting to you.** Keeps what mu observes: your answers to approval questions, programs missing on this machine, the files a project's sessions open with and how long you stay away. From these it makes suggestions you accept with /evolve accept: for now, lowering a project's approval line to where you allowed every call anyway. Only a command you type loosens anything; marking an approval wrong (/ledger wrong) takes it back at once. The data stays in your agent folder (mu/evolve.jsonl) and holds no commands, messages or file contents.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `minAnswers` | `12` | Answers needed before a lower approval line is suggested. Among the calls the judge read as needed but wasn't sure enough of, this many answers above the new line, all of them allowed and at least half given after reading the question. Range 4 to 200. |
+| `floor` | `0.6` | Lowest approval line. No suggested line goes below this. The decision point itself takes none below 0.6. Range 0.6 to 0.8. |
+| `consideredMs` | `1500` ms | How long an answer waits to count as read. An answer faster than this was probably given without reading; such answers alone don't lower a line. Range 0 to 60000. |
+| `commands` | `true` | Learn which programs are missing on this machine. When a command fails with "command not found" and then works with one word changed, mu keeps which program was missing and what stood in for it. The opening snapshot tells later sessions, until the program is installed. |
+| `unattended` | `false` | Also observe in unattended runs. Unattended means a one-shot mu --print or json-mode run. By default such a run uses what you accepted and observes nothing new. |
+
+## snapshot
+
+**Opening snapshot.** Gives the model a snapshot of the workspace with a conversation's first message: what the folder holds (or that it's empty), git's branch and changed files, the system, and where commands written for Linux go wrong on this machine (macOS has no timeout, for example). The first steps no longer go to looking these up. It's a message beside yours, not part of the system prompt, so the prompt cache is unaffected. No judge is asked.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `maxEntries` | `60` | Folder entries listed. A folder with more is cut to this many, and the snapshot says so. Range 0 to 500. |
+| `git` | `true` | Include git's branch and changed files. |
+| `machine` | `true` | Include the system and where commands differ. The system, the shell, the project's package manager, missing programs and BSD tools that differ. Only the PATH is read; nothing is run. |
+| `waitMs` | `1500` ms | Wait for git at most `1500` ms. After this, the snapshot goes without its git line. Range 100 to 10000. |
+
+## preload
+
+**Opening preload.** When a conversation opens, gives the model the files the task is sure to need with the first message. Candidates come from rules: paths your message names, files this project's earlier sessions opened with, and tracked files whose path shares a word with the message. The decision point context.preload judges each one. It ships in shadow mode: it records which files it would bring in and compares them with what the opening reads, changing nothing. Secret files (.env, private keys) are never preloaded.
+
+On by default: yes. Decision points: `context.preload`.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `candidates` | `24` | Candidate files put to the judge. Range 1 to 100. |
+| `maxFiles` | `4` | Files given at most `4`. Range 0 to 20. |
+| `fileChars` | `12000` chars | Characters given per file. A longer file is given from its start, and says which lines it holds. Range 500 to 100000. |
+| `maxChars` | `24000` chars | Characters given in all. Range 500 to 200000. |
+| `waitMs` | `2000` ms | Wait at most `2000` ms. Counted from when your message arrives. After this the turn starts without a preload; shadow mode never waits. Range 100 to 30000. |
+| `steps` | `8` | Tool calls that count as the opening. The files read in this many tool calls are held against the verdict, and kept as candidates for the next opening. Range 1 to 50. |
+| `unattended` | `false` | Also ask in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: there a shadow verdict is a judge call nobody reads. |
 
 ## locate
 

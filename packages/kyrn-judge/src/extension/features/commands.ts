@@ -478,11 +478,13 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 					...(note ? { note: note.slice(0, 500) } : {}),
 				};
 				pi.appendEntry(OUTCOME_ENTRY, mark);
+				// Tightening needs nobody's yes: a line the user had lowered for this decision goes back up at once.
+				const undone = runtime.evolve?.markedWrong(record.specId, ctx.cwd);
 				ctx.ui.notify(
-					say({
+					`${say({
 						zh: `已把 #${shortId(record.id)}（${record.specId}）标为判错了。`,
 						en: `Marked #${shortId(record.id)} (${record.specId}) as wrong.`,
-					}),
+					})}${undone ? `\n${undone}` : ""}`,
 					"info",
 				);
 				return;

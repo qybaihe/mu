@@ -6,6 +6,7 @@ import { cacheWarming } from "../../src/decisions/cache-warming.ts";
 import { capabilityDisclosure } from "../../src/decisions/capability-disclosure.ts";
 import { contextCompact } from "../../src/decisions/context-compact.ts";
 import { contextForget } from "../../src/decisions/context-forget.ts";
+import { contextPreload } from "../../src/decisions/context-preload.ts";
 import { diagnosticsDelivery } from "../../src/decisions/diagnostics-delivery.ts";
 import { fileLocate } from "../../src/decisions/file-locate.ts";
 import { goalMet } from "../../src/decisions/goal-met.ts";
@@ -148,6 +149,10 @@ export const GOLDEN_CASES: readonly GoldenCase[] = [
 		editedFile: "src/parse.ts",
 		filesEditedThisTurn: 1,
 		sameFileEditedRepeatedly: true,
+	}),
+	golden(contextPreload, {
+		task: "The parseDuration test fails for 1h30m, can you fix it?",
+		paths: ["src/parse.ts", "test/parse.test.ts", "README.md"],
 	}),
 	golden(fileLocate, {
 		query: "where strings like 1h30m are turned into seconds",

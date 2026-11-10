@@ -98,6 +98,11 @@ interface JudgeSaid {
 	readonly ledgerId?: string;
 	readonly specId: string;
 	readonly judged?: JsonValue;
+	/**
+	 * For a command in the project the approval judge read as needed: the probability it gave, and whether the command
+	 * was a check. The user's answer to such a call is what a project's approval line is read from (features/evolve.ts).
+	 */
+	readonly needed?: { readonly probability: number; readonly check: boolean };
 }
 const MODE_STATUS = "mu.permissions";
 const PENDING_STATUS = "mu.permissions.pending";
@@ -364,6 +369,9 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			!leaving &&
 			need.kind === "shell" &&
 			isCheckChain(String(input.command ?? ""), powershell, ctx.cwd, shellStart(event.toolName, input, ctx.cwd));
+		// A line the user accepted holds for what it was read from: commands run in the project, inside the sandbox.
+		const inProject = !leaving && (need.kind === "shell" || need.kind === "run");
+		const approveAt = inProject ? runtime.evolve?.approvalLine(ctx.cwd) : undefined;
 		const decision = await runtime.engine.decide(
 			toolApproval,
 			{
@@ -383,11 +391,17 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 								? "subagents working on the project"
 								: "an action outside this computer or program, such as a web page or a connected service",
 				check,
+				...(approveAt !== undefined ? { approveAt } : {}),
 			},
 			{ signal: ctx.signal },
 		);
 		const verdict = decision.judged ?? decision.outcome;
-		const said = saidBy(decision, toolApproval.id);
+		const read = decision.answers?.verdict;
+		const probability = read?.type === "choice" && read.choice === "needed" ? read.probabilities?.needed : undefined;
+		const said: JudgeSaid = {
+			...saidBy(decision, toolApproval.id),
+			...(inProject && probability !== undefined ? { needed: { probability, check } } : {}),
+		};
 		// A judge with a bounded window that cut the state did not read the whole call either.
 		if (verdict === "approve")
 			return readWhole(decision) || !readAll
@@ -423,6 +437,10 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				...(leaving ? { outsideFloor: true as const } : {}),
 			};
 			pi.appendEntry(OUTCOME_ENTRY, outcome);
+			// Needed, the judge read, but not surely enough: the user's answer says where the line could be.
+			if (reason === "unsure" && said?.needed && (answer === "once" || answer === "session" || answer === "deny")) {
+				runtime.evolve?.approvalAnswered({ cwd: ctx.cwd, ...said.needed, answer, waitedMs: outcome.waitedMs });
+			}
 		};
 		const why =
 			reason === "flagged"

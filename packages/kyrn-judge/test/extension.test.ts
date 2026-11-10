@@ -7,6 +7,7 @@ import { parseConfig } from "../src/config.ts";
 import { inputPreflight } from "../src/decisions/input-preflight.ts";
 import { JudgeError } from "../src/errors.ts";
 import { PREFLIGHT_HINTS } from "../src/extension/features/preflight.ts";
+import { SNAPSHOT_MESSAGE } from "../src/extension/features/snapshot.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { userWords } from "../src/extension/runtime.ts";
 import type { LedgerRecord } from "../src/ledger.ts";
@@ -51,6 +52,13 @@ function preflightRecords(harness: Harness): LedgerRecord[] {
 	return ledgerRecords(harness).filter((record) => record.specId === inputPreflight.id);
 }
 
+/** The roles of what the model was sent, without the opening snapshot: the one message mu adds to every first turn. */
+function rolesSent(harness: Harness): string[] {
+	return harness.session.messages
+		.filter((message) => !(message.role === "custom" && message.customType === SNAPSHOT_MESSAGE))
+		.map((message) => message.role);
+}
+
 describe("kyrn judge extension", () => {
 	const harnesses: Harness[] = [];
 
@@ -89,7 +97,7 @@ describe("kyrn judge extension", () => {
 			user_message: "By the way, what does the refreshToken helper do?",
 		});
 		// Ledger entries live in the session file but never reach the model.
-		expect(harness.session.messages.map((message) => message.role)).toEqual(["system", "user", "assistant"]);
+		expect(rolesSent(harness)).toEqual(["system", "user", "assistant"]);
 	});
 
 	it("passes recent turns to the judge as short digests", async () => {
@@ -351,6 +359,6 @@ describe("kyrn judge extension", () => {
 		for (const record of ledgerRecords(harness)) {
 			expect(record).toMatchObject({ source: "fallback", reason: "error:payment_required" });
 		}
-		expect(harness.session.messages.map((message) => message.role)).toEqual(["system", "user", "assistant"]);
+		expect(rolesSent(harness)).toEqual(["system", "user", "assistant"]);
 	});
 });

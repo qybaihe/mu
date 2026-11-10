@@ -8,6 +8,7 @@ import { UNTRUSTED as BACKGROUND_UNTRUSTED } from "./background.ts";
 import { UNTRUSTED } from "./browser.ts";
 import { MCP_LABEL } from "./mcp.ts";
 import { UNTRUSTED as DEBUGGER_UNTRUSTED } from "./packs/debugger.ts";
+import { OUTCOME_ENTRY } from "./permissions.ts";
 import { SEARCH_UNTRUSTED } from "./web.ts";
 
 /** Where the text came from: the file admission archived, the page web_fetch kept, or the result as the session has it. */
@@ -23,6 +24,22 @@ export interface RecallDetails {
 	readonly total: number;
 	/** Text from outside this machine that no screening has read yet: the injection screen reads it now. */
 	readonly unscreened: boolean;
+}
+
+/**
+ * The model read back a part mu had left out of a result: a `kyrn.outcome` entry. For output admission archived on a
+ * judge's verdict, `ledgerId` is that verdict's record, and this is its label: the judge dropped something that was
+ * needed after all. No text is kept, only what was read back and how much.
+ */
+export interface Refetched {
+	readonly kind: "refetch";
+	/** `archive`: left out by admission. `session`: shrunk by forgetting. `page`: the rest of a fetched page. */
+	readonly source: RecallSource;
+	/** The tool whose result it was. */
+	readonly tool: string;
+	readonly ledgerId?: string;
+	readonly specId?: string;
+	readonly chars: number;
 }
 
 /** A tool result of this conversation, the call that produced it, and the file that has its full text, if one does. */
@@ -166,6 +183,13 @@ export function registerRecall(runtime: KyrnRuntime): void {
 				total,
 				unscreened: source === "page",
 			};
+			pi.appendEntry<Refetched>(OUTCOME_ENTRY, {
+				kind: "refetch",
+				source,
+				tool: found.tool,
+				...(source === "archive" ? (runtime.judgedOutputs.get(params.id) ?? {}) : {}),
+				chars: end - offset,
+			});
 			return {
 				content: [{ type: "text", text: before ? `${head}\n${before}\n\n${piece}` : `${head}\n\n${piece}` }],
 				details,
