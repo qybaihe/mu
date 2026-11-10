@@ -376,6 +376,10 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 						? `answering in ${probe.latencyMs} ms`
 						: `not answering (${probe.error}); decision points use their fallbacks`,
 					...problems.map((problem) => `problem: ${problem}`),
+					say({
+						zh: "只在这次会话里生效。要一直用它：在终端里运行 mu judge。",
+						en: "For this session only. To keep it, run mu judge in a terminal.",
+					}),
 				].join("\n"),
 				probe.ok ? "info" : "warning",
 			);
@@ -407,7 +411,11 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 			en: "Show mu's status. Also: /mu judge <judges> | /mu route <point> <judge|default> | /mu mode <point|default> <off|shadow|active>",
 		}),
 		getArgumentCompletions: (prefix) => {
-			const options = ["judge jev", "judge mude", "judge mude,jev", "mode default active", "mode default shadow"];
+			const options = [
+				...["jev", "mude", "mude,jev", "openai", "nemotron", "jev-opencode-free"].map((judge) => `judge ${judge}`),
+				"mode default active",
+				"mode default shadow",
+			];
 			const matches = options.filter((option) => option.startsWith(prefix));
 			return matches.length > 0 ? matches.map((value) => ({ value, label: value })) : null;
 		},

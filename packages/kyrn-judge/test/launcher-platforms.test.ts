@@ -908,6 +908,15 @@ describe("Laya, no longer built in", () => {
 		expect(planJudge({ argv: ["frob"] })).toMatchObject({ kind: "unknown", code: 2 });
 		expect(usage("darwin")).not.toContain("Laya");
 	});
+
+	it("mu judge on its own asks which judge to use in a terminal, and prints its usage anywhere else", () => {
+		expect(planJudge({ argv: [], interactive: true })).toEqual({ kind: "choose", code: 0, setup: ["--judge-only"] });
+		expect(planJudge({ argv: [], interactive: false })).toMatchObject({ kind: "usage", code: 0 });
+		// A word after it is a command, in a terminal too.
+		expect(planJudge({ argv: ["help"], interactive: true })).toMatchObject({ kind: "usage", code: 0 });
+		expect(planJudge({ argv: [] }).text).toContain("mu judge                choose the judge");
+		expect(usage("darwin")).toContain("mu judge                 choose the judge");
+	});
 });
 
 describe("mu import", () => {

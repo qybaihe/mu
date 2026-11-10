@@ -926,6 +926,52 @@ describe("mu setup, asking in a terminal", () => {
 		expect(run.at("ask", "Start mu now?")).toBeGreaterThan(-1);
 	});
 
+	it("mu judge asks the judge alone: the model stays as it is, and what is picked takes the place of the judges before it", async () => {
+		const home = temp();
+		mkdirSync(join(home, "agent"));
+		writeFileSync(
+			join(home, "agent", "mu.json"),
+			JSON.stringify({ tiers: ["mude", "jev"], routes: { "tool.approval": "jev" } }),
+		);
+		// Judge: the free Jev, the first offer.
+		const run = await wizard({ home, argv: ["--judge-only"], answers: ["1"] });
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect(run.said[0]).toContain("Judge now: mude, jev (");
+		expect(run.printed).toContain("A judge is a small, fast model");
+		// Nothing about a model, a sign-in or a session: only the judge was asked about.
+		expect(run.at("ask", "How should mu connect to a model?")).toBe(-1);
+		expect(run.at("ask", "Start mu now?")).toBe(-1);
+		expect(run.printed).not.toContain("/login");
+		expect(run.printed).not.toContain("The model you just set up");
+		expect(run.json("mu.json")).toEqual({ tiers: ["jev"], routes: { "tool.approval": "jev" } });
+		expect(run.read("settings.json")).toBeUndefined();
+		expect(run.read("auth.json")).toBeUndefined();
+		expect(run.printed).toContain("It takes effect in the next session you start");
+	});
+
+	it("mu judge turns the judge off and on again, and says when MU_JUDGE decides instead", async () => {
+		const home = temp();
+		// Judge: not now (free Jev, Jev, OpenAI, then not now).
+		const off = await wizard({ home, argv: ["--judge-only"], answers: ["4"] });
+		expect(off.said[0]).toContain("Judge now: jev (");
+		expect(off.json("mu.json")).toEqual({ modes: { default: "off" } });
+		const on = await wizard({ home, argv: ["--judge-only"], answers: ["1"], env: { MU_JUDGE: "openai" } });
+		expect(on.said[0]).toBe("Judge now: none (turned off).");
+		expect(on.said[1]).toContain("MU_JUDGE=openai is set in your environment and takes precedence over mu.json");
+		expect(on.json("mu.json")).toEqual({});
+	});
+
+	it("mu judge installs mude 1.0 when it is picked, and asks nothing where there is no terminal", async () => {
+		// Judge: the default, mude 1.0.
+		const run = await wizard({ argv: ["--judge-only"], answers: [""], mude: 0 });
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect(run.mudeInstalls).toBe(1);
+		const script = await wizard({ argv: ["--judge-only"], interactive: false });
+		expect(script.code).toBe(SETUP_EXIT.usage);
+		expect(script.warned.join("\n")).toContain("mu judge asks in a terminal");
+		expect(script.at("ask", "Choose")).toBe(-1);
+	});
+
 	it("after a subscription, starts the session on /login", async () => {
 		const yes = await wizard({ answers: ["3", "4", "y"] });
 		expect(yes.code).toBe(SETUP_EXIT.signIn);

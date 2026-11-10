@@ -103,6 +103,7 @@ export function usage(platform) {
 		"  mu -c | -r               continue the last session | pick a session to resume",
 		"  mu setup                 connect a model (paste an API key or pick a service) and choose",
 		"                           a judge (mu setup --help)",
+		"  mu judge                 choose the judge: the small model that answers mu's judgment calls",
 		"  mu judge mude install    install mude 1.0, mu's own decision model for coding, and make it",
 		"                           the judge on this Mac (Apple silicon, 1.8 GB)",
 		"                           enable | disable | start | stop | status | uninstall (mu judge mude help)",
@@ -822,24 +823,27 @@ export function planAuth({ platform, env, argv, root, home, execPath, fs, canExe
 
 /** `mu judge help`. `mu judge mude …` and `mu judge model …` have their own (packages/kyrn-judge/src/mude). */
 export const JUDGE_USAGE = [
-	"mu judge: the decision model that answers mu's judgment calls on this machine.",
+	"mu judge: the small model that answers mu's judgment calls.",
 	"",
+	"  mu judge                choose the judge, in a terminal; your model stays as it is",
 	"  mu judge mude <cmd>     mude 1.0, mu's own decision model for coding (a Mac with Apple silicon):",
 	"                          install | enable | disable | start | stop | status | uninstall (mu judge mude help)",
 	"  mu judge model <cmd>    other decision models from Hugging Face: add <link> | list | use | remove (mu judge model help)",
 	"",
-	"Hosted judges (Jev and others) are set with mu setup, or in ~/.mu/agent/mu.json.",
+	"In a script, set \"tiers\" in ~/.mu/agent/mu.json, or MU_JUDGE=<judge> for one run.",
 ].join("\n");
 
 /** The commands that ran Laya's sidecar until mu 0.2.4. */
 const LAYA_COMMANDS = ["setup", "start", "stop", "status", "run"];
 
 /**
- * What `mu judge <cmd>` does, besides `mude` and `model`: its usage, or a plain explanation. Laya, which `mu judge
+ * What `mu judge <cmd>` does, besides `mude` and `model`: on its own in a terminal (`interactive`) it asks which judge to
+ * use, the judge step of `mu setup` alone; otherwise its usage, or a plain explanation. Laya, which `mu judge
  * setup | start | stop | status | run` ran, is no longer built into mu.
  */
-export function planJudge({ argv }) {
+export function planJudge({ argv, interactive = false }) {
 	const [command] = argv;
+	if (command === undefined && interactive) return { kind: "choose", code: 0, setup: ["--judge-only"] };
 	if (command === undefined || command === "help" || command === "--help" || command === "-h") return { kind: "usage", code: 0, text: JUDGE_USAGE };
 	if (LAYA_COMMANDS.includes(command)) {
 		return {
@@ -1660,7 +1664,25 @@ export async function main(argv = process.argv.slice(2)) {
 		return handOver({ command: plan.command, args: plan.args, env: plan.env, strategy: "spawn" });
 	}
 	if (command === "judge") {
-		const plan = planJudge({ argv: rest });
+		const plan = planJudge({ argv: rest, interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY) });
+		if (plan.kind === "choose") {
+			const setup = planSetup({
+				platform,
+				env,
+				argv: plan.setup,
+				root,
+				home,
+				execPath: process.execPath,
+				stripsTypes: Boolean(process.features.typescript),
+				fs: { exists: existsSync, isDir, readFile: readText },
+			});
+			if (setup.error) {
+				err(setup.error);
+				return setup.code ?? 1;
+			}
+			mkdirSync(setup.agentDir, { recursive: true });
+			return handOver(setup);
+		}
 		if (plan.code === 0) out(plan.text);
 		else err(plan.text);
 		return plan.code;

@@ -246,7 +246,10 @@ describe("judge configuration", () => {
 		expect(withoutHost.judge.id).toBe("mock");
 		expect(withoutHost.problems).toHaveLength(2);
 		expect(withHost.judge.id).toBe("cascade(mock>llm:openai-codex/gpt-5.6-luna)");
-		expect(withHost.problems).toEqual(['unknown judge "nope"']);
+		// The problem names what could have been typed, mu.json's own judges and mu's, and never the test judge.
+		expect(withHost.problems).toHaveLength(1);
+		expect(withHost.problems[0]).toMatch(/^unknown judge "nope"\. Judges mu knows: .*\bjev\b.*\bmude\b.*; or llm:</);
+		expect(withHost.problems[0]).not.toMatch(/\bmock\b/);
 	});
 
 	it("lets the environment pick the tiers, the default mode, or switch the kernel off", () => {

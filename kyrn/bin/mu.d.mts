@@ -206,7 +206,14 @@ export interface JudgePlan {
 	code: 0 | 1 | 2;
 	text: string;
 }
-export function planJudge(input: { argv: readonly string[] }): JudgePlan;
+/** `mu judge` on its own in a terminal: it asks which judge to use, with the wizard of `mu setup` started on `setup`. */
+export interface JudgeChoosePlan {
+	kind: "choose";
+	code: 0;
+	setup: readonly string[];
+}
+export function planJudge(input: { argv: readonly string[]; interactive?: false }): JudgePlan;
+export function planJudge(input: { argv: readonly string[]; interactive: boolean }): JudgePlan | JudgeChoosePlan;
 
 export function planImport(input: {
 	platform: Platform;
