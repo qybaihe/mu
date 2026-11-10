@@ -36,6 +36,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 2. `ttsr` (off by default)
 3. `watchdog`
 4. `hive`
+5. `featureOffers`
 
 ### `agent_start`
 

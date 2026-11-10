@@ -507,11 +507,11 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 	{
 		type: "kyrn.feature-offer",
 		kind: "entry",
-		version: 1,
+		version: 2,
 		writers: [features("feature-offers")],
 		readers: [],
 		summary:
-			"The user's answer to turning on a feature that is off by default: on, declined or unanswered (kyrn/docs/features/feature-offers.md).",
+			"What became of a feature that is off by default, in this conversation: the user was told of it when a run ended (offered), or turned it on (kyrn/docs/features/feature-offers.md).",
 	},
 	{
 		type: "kyrn.question",

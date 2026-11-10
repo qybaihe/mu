@@ -7,12 +7,9 @@ import { MANIFEST } from "../../manifest.ts";
 import { CONFIG_FILE, LEGACY_CONFIG_FILE } from "../../naming.ts";
 import { Backups, readJsonFile, writeFileAtomic } from "../../setup/files.ts";
 import { failOpen, type KyrnRuntime } from "../runtime.ts";
-import { askQuestions, type Question } from "./ask-user.ts";
 import { isUnattended } from "./unattended.ts";
 
 export const FEATURE_OFFER_ENTRY = "kyrn.feature-offer";
-/** How long the question waits, as ask_user's does: then the feature stays off. */
-const WAIT_MS = 120_000;
 
 /**
  * mu's features that are off by default and do something once turned on. Not the Nebius sandbox: it needs an account
@@ -22,8 +19,8 @@ export const OFFERED_FEATURES: readonly string[] = ["compaction", "ttsr", "confi
 
 export interface FeatureOfferRecord {
 	readonly feature: string;
-	/** `on`: written to the config file. `declined`: the user said not now. `unanswered`: nobody answered in time. */
-	readonly answer: "on" | "declined" | "unanswered";
+	/** `on`: written to the config file. `offered`: the user was told of it when the run ended, and it stays off. */
+	readonly answer: "on" | "offered";
 	/** `model`: the model offered it (find_capability). `user`: the user asked for it (/capabilities open). */
 	readonly by: "model" | "user";
 }
@@ -85,23 +82,26 @@ const titleOf = (name: string) => MANIFEST.features.find((feature) => feature.na
 
 /**
  * Offers mu's features that are off by default, when a task would use one. Each one that is off and works on this
- * machine is in the capability catalog as `feature:<name>`, with its summary, so `find_capability` lists it. Opening
- * one there does not turn it on: mu asks the user with ask_user's dialog (a card in the desktop app) whether to turn it
- * on, and only their yes writes it to the config file loadConfig reads. It takes effect from the next conversation,
- * since features are set up when a session starts; the model is told so, and that turning it on allows nothing beyond
- * that feature.
+ * machine is in the capability catalog as `feature:<name>`, with its summary, so `find_capability` lists it.
  *
- * Only the user decides: the capability judge never opens a feature (features/catalog.ts), an unattended run writes
- * nothing, and a sub-agent has no offers. A feature the user declined is not offered again in that conversation: a
- * `kyrn.feature-offer` entry records each answer and is read back when the session is opened again. `/capabilities open
- * feature:<name>` is the user asking for it, and turns it on without the question.
+ * Opening one there turns nothing on and asks nobody. Features are set up when a session starts, so the answer could
+ * not change the run that is going: a question in the middle of it would hold the work up for nothing. The model is
+ * told at once to carry on without the feature, and once the run has settled mu tells the user of it in one notice, with
+ * the command that turns it on. `/capabilities open feature:<name>` is the user asking for it: it writes the feature to
+ * the config file loadConfig reads, for the next conversation.
+ *
+ * Only the user decides: the capability judge never opens a feature (features/catalog.ts), an unattended run says and
+ * writes nothing, and a sub-agent has no offers. A feature is offered once in a conversation: a `kyrn.feature-offer`
+ * entry records that the user was told of it, or turned it on, and is read back when the session is opened again.
  */
 export function registerFeatureOffers(runtime: KyrnRuntime, configDir: string | undefined): void {
 	const options = runtime.options("featureOffers", { enabled: true });
 	if (!options.enabled || process.env.KYRN_SWARM_DEPTH || !configDir) return;
 	const { pi } = runtime;
-	/** Answered in this conversation: declined, or turned on (which needs the next conversation to show). */
+	/** What became of a feature in this conversation: the user was told of it, or turned it on. */
 	const answered = new Map<string, FeatureOfferRecord["answer"]>();
+	/** The features the model offered in the run that is going, oldest first: the user is told of them when it ends. */
+	const waiting: string[] = [];
 
 	for (const name of OFFERED_FEATURES) {
 		const feature = titleOf(name);
@@ -111,7 +111,7 @@ export function registerFeatureOffers(runtime: KyrnRuntime, configDir: string | 
 			id: `feature:${name}`,
 			kind: "feature",
 			title: feature.title.en,
-			description: `${feature.summary.en} Off now: opening it asks the user whether to turn it on, from the next conversation.`,
+			description: `${feature.summary.en} Off now, and only the user turns it on, from the next conversation: opening it tells them of it when this run ends.`,
 			tools: [],
 			exposure: "judged",
 		});
@@ -132,7 +132,7 @@ export function registerFeatureOffers(runtime: KyrnRuntime, configDir: string | 
 		return `The user turned on ${title} (features.${name} in ${result.file}). It takes effect from the next conversation; this one goes on without it. Turning it on allows nothing beyond that feature.`;
 	};
 
-	runtime.offerFeature = async (id, ctx, by) => {
+	runtime.offerFeature = (id, ctx, by) => {
 		runtime.touch(ctx);
 		const name = id.replace(/^feature:/, "");
 		const feature = titleOf(name);
@@ -141,54 +141,52 @@ export function registerFeatureOffers(runtime: KyrnRuntime, configDir: string | 
 		const before = answered.get(name);
 		if (before === "on") return `${title} is already turned on for the next conversation.`;
 		if (by === "user") return write(name, title, by);
-		if (before === "declined") {
-			return `The user declined ${title} earlier in this conversation. Do not offer it again; carry on without it.`;
+		if (before === "offered" || waiting.includes(name)) {
+			return `${title} was already offered to the user in this conversation, and it is still off. Do not offer it again; carry on without it.`;
 		}
 		if (!ctx.hasUI || isUnattended(ctx)) {
-			return `${title} is off, and only the user can turn it on; nobody can be asked in this session. Carry on without it.`;
+			return `${title} is off, and only the user can turn it on; nobody can be told of it in this session. Carry on without it.`;
 		}
-		const words = { title: say(feature.title), summary: say(feature.summary) };
-		const question: Question = {
-			question: say({ zh: `打开「${words.title}」吗？`, en: `Turn on ${words.title}?` }),
-			header: say({ zh: "功能", en: "Feature" }),
-			options: [
-				{
-					label: say({ zh: "打开", en: "Turn it on" }),
-					description: say({
-						zh: `下一个会话起生效：${words.summary}`,
-						en: `From the next session: ${words.summary}`,
-					}),
-				},
-				{
-					label: say({ zh: "先不用", en: "Not now" }),
-					description: say({
-						zh: "保持关闭；这次对话里不会再提",
-						en: "It stays off, and mu won't offer it again in this session",
-					}),
-				},
-			],
-		};
-		const { answers, ended } = await askQuestions(runtime, ctx, [question], { waitMs: WAIT_MS, signal: ctx.signal });
-		const answer = answers[0];
-		if (answer?.selected[0] === question.options[0].label) return write(name, title, "model");
-		if (ended === "timeout") {
-			record({ feature: name, answer: "unanswered", by: "model" });
-			return `The user did not answer whether to turn on ${title}, so it stays off. Carry on without it; do not ask again unless they bring it up.`;
-		}
-		record({ feature: name, answer: "declined", by: "model" });
-		const said = answer?.custom ? ` They said: ${JSON.stringify(answer.custom)}` : "";
-		return `The user declined ${title}, so it stays off.${said} Do not offer it again in this conversation; carry on without it.`;
+		waiting.push(name);
+		return `${title} is off, and turning it on takes effect only from the next conversation, so nothing changes in this run. mu tells the user of it when this run ends, and they decide. Carry on without it, and do not offer it again.`;
 	};
+
+	// Once the run has settled, not at `agent_end`: a check may still send the agent back to work from there, and the
+	// notice belongs under the answer the user reads when they come back.
+	pi.on(
+		"agent_settled",
+		failOpen((_event, ctx: ExtensionContext) => {
+			runtime.touch(ctx);
+			// One the user turned on themselves while the run went on needs no telling.
+			const offered = waiting.splice(0).filter((name) => !answered.has(name));
+			if (offered.length === 0 || !ctx.hasUI) return undefined;
+			for (const name of offered) {
+				const feature = titleOf(name);
+				if (!feature) continue;
+				const words = { title: say(feature.title), summary: say(feature.summary) };
+				ctx.ui.notify(
+					say({
+						zh: `mu：模型建议为这类任务打开「${words.title}」，它现在是关的。${words.summary}\n/capabilities open feature:${name} 打开它，下一个会话起生效。不用理会就保持关闭，这次对话里不会再提。`,
+						en: `mu: the model suggests ${words.title} for work like this. It's off now. ${words.summary}\n/capabilities open feature:${name} turns it on, from the next session. Leave it and it stays off; mu won't bring it up again in this session.`,
+					}),
+					"info",
+				);
+				record({ feature: name, answer: "offered", by: "model" });
+			}
+			return undefined;
+		}),
+	);
 
 	pi.on(
 		"session_start",
 		failOpen((_event, ctx: ExtensionContext) => {
 			runtime.touch(ctx);
 			answered.clear();
+			waiting.length = 0;
 			for (const entry of ctx.sessionManager.getBranch()) {
 				if (entry.type !== "custom" || entry.customType !== FEATURE_OFFER_ENTRY) continue;
 				const data = entry.data as Partial<FeatureOfferRecord> | undefined;
-				if (typeof data?.feature === "string" && (data.answer === "on" || data.answer === "declined")) {
+				if (typeof data?.feature === "string" && (data.answer === "on" || data.answer === "offered")) {
 					answered.set(data.feature, data.answer);
 					if (data.answer === "on") runtime.featuresTurnedOn.add(`feature:${data.feature}`);
 				}
