@@ -81,6 +81,7 @@ On by default: yes. Decision points: `task.frame`.
 | `waitMs` | `3000` ms | Wait for the task frame at most `3000` ms. Counted from when the message arrives. A late update isn't dropped: the turn starts with the previous version plus the raw message, and the update applies when it's ready. Range 0 to 30000. |
 | `writerTimeoutMs` | `20000` ms | Time limit for writing a frame. On a timeout or malformed reply, the last version stays and is marked stale, goal-based filtering holds back, and the next message tries again. Range 1000 to 120000. |
 | `show` | `true` | Show frame updates in the conversation. |
+| `report` | `true` | Say where the checklist stands when a run ends and the list changed. |
 
 ## memory
 

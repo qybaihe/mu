@@ -1,6 +1,6 @@
 # 任务帧与待办清单
 
-更新日期：2026-09-22。对应 PRD `06-harness-prd.md` 的 FR-02（P0）。代码在 `packages/kyrn-judge`：纯模型 `src/frame/`，决策 `src/decisions/task-frame.ts`，功能 `src/extension/features/frame.ts`，接缝在 `src/extension/runtime.ts`。
+更新日期：2026-11-10（一轮结束时的清单通知，第 8 节；其余为 2026-09-22 的记录）。对应 PRD `06-harness-prd.md` 的 FR-02（P0）。代码在 `packages/kyrn-judge`：纯模型 `src/frame/`，决策 `src/decisions/task-frame.ts`，功能 `src/extension/features/frame.ts`，接缝在 `src/extension/runtime.ts`。
 
 ## 1. 它解决什么
 
@@ -83,6 +83,25 @@ pi 对同一事件的处理函数按注册顺序**串行** await。预判在 `in
 
 完成核对（`turn.completion`，升到 v2，问题没改，只改了策略）：模型的收尾消息说“做完了”而验收条件还有未勾的，本回合唯一的一次提醒会**点名这些条目**；即使本回合没改文件也会提醒。原有的“改了文件但没跑过任何东西”的提醒照旧，两者可以出现在同一条提醒里。
 
+### 一轮结束时告诉用户清单的进度
+
+问题：没盯着运行的人回来，要读完模型的收尾消息才知道要的东西做完没有，而清单和每项的证据就在帧里。例子：
+
+```
+mu: this task's checklist, 1 of 2 done (the evidence is the agent's own):
+  [x] the cursor survives a deleted row · users.test.ts: 14 passed
+  [ ] limit is capped at 100
+```
+
+一轮运行完全停下来以后（`agent_settled`，这时不会再有核对把模型叫回去），清单非空、并且和上次告诉用户时不一样（有新增或勾选），mu 发一条通知：完成了几项，每项是什么，勾掉的项后面是模型当时给的那一行证据。通知不占输入框，桌面端显示成对话里的一行。
+
+- 每次变化只说一次。清单没变的一轮什么都不说；重新打开的会话以当时的清单为准，不重说。
+- 证据是模型自己写的，mu 没有验证过，所以标题里写明“依据是代理自己给的”。一项都没勾时不提证据。
+- 不说的情况：用户停掉的一轮、被 harness 截断后重跑的一轮（等重跑的那一轮结束再说）、计划模式（计划批准前清单只是步骤）、没有界面的运行（`mu --print`、json）、子代理（它的清单由父代理读）。
+- `features.frame.report: false` 关掉。
+
+没有清单就没有这条通知：会话的第一条消息不调 writer，清单是空的，除非模型自己用 `todo add` 记了条目，或用户批准了一份计划。没有测量过：真实任务里有多大比例在结束时有清单。
+
 ## 9. 三种模式下的含义
 
 | 模式 | 裁判 | 帧 |
@@ -99,6 +118,7 @@ pi 对同一事件的处理函数按注册顺序**串行** await。预判在 `in
 | `waitMs` | `3000` | 回合最多等任务帧多久，从消息到达算起 |
 | `writerTimeoutMs` | `20000` | 写一版帧的时限 |
 | `show` | `true` | 帧更新说明是否也显示在对话里 |
+| `report` | `true` | 一轮结束、清单有变化时，是否告诉用户清单的进度（第 8 节） |
 
 命令 `/frame`：版本、目标、每条约束及出处、子目标、验收条件及证据、未决问题、是否过期、上次失败原因。展示事件 `frame.updated`（载荷：原因 `created`/`updated`/`progress`/`stale`/`restored`、是否过期、完整的帧、未并入的原话），桌面端以后可以据此画任务帧条。载荷里只有用户自己的话和模型的一行证据，没有裁判原始输入。
 

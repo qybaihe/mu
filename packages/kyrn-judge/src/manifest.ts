@@ -800,6 +800,15 @@ const DESCRIBED: HarnessManifest = {
 					default: true,
 					label: { zh: "在对话里显示任务帧更新", en: "Show frame updates in the conversation" },
 				},
+				{
+					key: "report",
+					kind: "boolean",
+					default: true,
+					label: {
+						zh: "一轮结束、清单有变化时，告诉你清单的进度",
+						en: "Say where the checklist stands when a run ends and the list changed",
+					},
+				},
 			],
 		},
 		{
