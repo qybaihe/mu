@@ -706,8 +706,8 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("asks whose key it is when two vendors share its shape, and sends it to that one only", async () => {
 		const run = await wizard({
-			// Paste a key; it is Qwen's; no judge for now; no session now.
-			answers: ["1", "2", "5", "n"],
+			// Paste a key; it is Qwen's; no judge for now (the free Jev, more judges, not now); no session now.
+			answers: ["1", "2", "3", "n"],
 			secrets: [KEYS.hex32],
 			respond: (url) =>
 				url.startsWith("https://dashscope.aliyuncs.com/")
@@ -744,7 +744,8 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("tries a Kimi key at .cn, then at .ai, and at no other vendor", async () => {
 		const run = await wizard({
-			answers: ["1", "4", "n"],
+			// Paste a key; judge: the model, the third under More judges; no session.
+			answers: ["1", "2", "3", "n"],
 			secrets: [KEYS.kimi],
 			respond: (url) => {
 				if (url === "https://api.moonshot.cn/v1/models") {
@@ -770,8 +771,8 @@ describe("mu setup, asking in a terminal", () => {
 	it("says what went wrong, takes another key, and starts mu when asked to", async () => {
 		const good = `sk-${"fedcba9876543210".repeat(2)}`;
 		const run = await wizard({
-			// Paste; DeepSeek; (401) paste another; judge: the model; start mu now.
-			answers: ["1", "1", "1", "4", "y"],
+			// Paste; DeepSeek; (401) paste another; judge: the model, under More judges; start mu now.
+			answers: ["1", "1", "1", "2", "3", "y"],
 			secrets: [KEYS.hex32, good],
 			respond: (_url, headers) =>
 				headers.authorization === `Bearer ${good}`
@@ -798,8 +799,8 @@ describe("mu setup, asking in a terminal", () => {
 		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["clm"], modes: { default: "active" } }));
 		const run = await wizard({
 			home,
-			// The second "2": Jev with a key of one's own (the free Jev is offered first while no key is set).
-			answers: ["1", "2", "n"],
+			// "2", "1": More judges, then Jev with a key of one's own, the first one there.
+			answers: ["1", "2", "1", "n"],
 			secrets: [KEYS.anthropic, KEYS.jev],
 			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }, { id: "claude-sonnet-5" }] }),
 		});
@@ -817,7 +818,7 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("does not take the model's key, nor another vendor's without a yes, as the Jev key", async () => {
 		const run = await wizard({
-			answers: ["1", "2", "n", "n"],
+			answers: ["1", "2", "1", "n", "n"],
 			secrets: [KEYS.anthropic, KEYS.anthropic, KEYS.openaiProject, KEYS.jev],
 			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }] }),
 		});
@@ -828,14 +829,65 @@ describe("mu setup, asking in a terminal", () => {
 	});
 
 	it("points a subscription to /login inside mu, and still offers the judge", async () => {
-		// Subscription; judge: not now (free Jev, Jev, OpenAI or nothing: there is no model to judge with); no session.
-		const run = await wizard({ answers: ["3", "4", "n"] });
+		// Subscription; judge: not now (the free Jev, more judges or nothing); no session.
+		const run = await wizard({ answers: ["3", "3", "n"] });
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.printed).toContain("When setup starts mu, /login is already open.");
 		expect(run.said).toContain("Next, sign in with /login in mu.");
 		expect(run.calls).toEqual([]);
 		expect(run.read("auth.json")).toBeUndefined();
 		expect(run.json("mu.json")).toEqual({ modes: { default: "off" } });
+	});
+
+	it("lists the judges that are ready to use, and keeps the rest one step away, under More judges", async () => {
+		/** The lines a question listed: its numbered options, from the question on. */
+		const listed = (run: Awaited<ReturnType<typeof wizard>>, question: string, from = 0) => {
+			const at = run.said.indexOf(question, from);
+			const options: string[] = [];
+			for (const line of run.said.slice(at + 1)) {
+				if (!/^ {2}\d+\) /.test(line)) break;
+				options.push(line.trim());
+			}
+			return options;
+		};
+		const QUESTION = "Which judge should answer mu's small decisions?";
+
+		// Subscription, no key anywhere: three lines, and More judges names what it holds.
+		const plain = await wizard({ answers: ["3", "", "n"] });
+		expect(listed(plain, QUESTION)).toEqual([
+			"1) Free Jev on OpenCode Zen (recommended): no key needed, free for a limited time; a key you add later takes over",
+			"2) More judges: Jev with your own key, OpenAI's decision model",
+			"3) Not now: no judge is asked and nothing is sent to one; mu uses its fallbacks",
+		]);
+
+		// A model was just set up: it can be its own judge, which is slower, so it is under More judges too.
+		// More judges, then Enter alone, which goes back, then More judges again and the model.
+		const model = await wizard({
+			answers: ["1", "2", "", "2", "3", "n"],
+			secrets: [KEYS.anthropic],
+			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }] }),
+		});
+		expect(listed(model, QUESTION)[1]).toBe(
+			"2) More judges: Jev with your own key, OpenAI's decision model, the model you just set up",
+		);
+		expect(listed(model, "More judges:")).toEqual([
+			"1) Jev with your own key: about 0.3 s per question, billed per call. Get a key from TypeSafe: https://typesafe.ai",
+			"2) OpenAI's decision model, gpt-6-luna, with an OpenAI API key, billed per input token: https://platform.openai.com/api-keys",
+			"3) The model you just set up (anthropic/claude-opus-4-8): slower, and every verdict costs tokens",
+			"4) Back",
+		]);
+		// Back is what Enter takes there, and it shows the first list again, as it was.
+		expect(model.at("ask", "Choose 1-4 [4]: ")).toBeGreaterThan(-1);
+		expect(model.said.filter((line) => line === QUESTION)).toHaveLength(2);
+		expect(model.json("mu.json")).toEqual({ tiers: ["llm:anthropic/claude-opus-4-8"] });
+
+		// A Jev key is set already: that Jev is the first offer, and a new key or the free Jev are under More judges.
+		const keyed = await wizard({ answers: ["3", "", "n"], env: { TYPESAFE_API_KEY: KEYS.jev } });
+		expect(listed(keyed, QUESTION)).toEqual([
+			"1) Jev with the key that's already set (recommended): TYPESAFE_API_KEY in your environment",
+			"2) More judges: Jev with a new key, the free Jev, OpenAI's decision model",
+			"3) Not now: no judge is asked and nothing is sent to one; mu uses its fallbacks",
+		]);
 	});
 
 	it("turns the judge off for Not now, and on again when a judge is picked later", async () => {
@@ -846,7 +898,7 @@ describe("mu setup, asking in a terminal", () => {
 			JSON.stringify({ tiers: ["clm"], modes: { "turn.drift": "active" } }),
 		);
 		// Subscription; judge: not now; no session.
-		const off = await wizard({ home, answers: ["3", "4", "n"] });
+		const off = await wizard({ home, answers: ["3", "3", "n"] });
 		expect(off.json("mu.json")).toEqual({ tiers: ["clm"], modes: { default: "off", "turn.drift": "active" } });
 		expect(off.printed).toContain("judge: off");
 		// Again, with the free Jev: the "off" goes, a point's own mode stays.
@@ -855,14 +907,14 @@ describe("mu setup, asking in a terminal", () => {
 	});
 
 	it("offers OpenAI's decision model, asks its key when mu has none, and keeps it where the launcher reads it", async () => {
-		// Subscription; judge: OpenAI (free Jev, Jev, then OpenAI); an Anthropic key is turned down first; no session.
+		// Subscription; judge: OpenAI, the second under More judges; an Anthropic key is turned down first; no session.
 		const run = await wizard({
-			answers: ["3", "3", "n", "n"],
+			answers: ["3", "2", "2", "n", "n"],
 			secrets: [KEYS.anthropic, KEYS.openaiProject],
 		});
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.printed).toContain(
-			"  3) OpenAI's decision model, gpt-6-luna, with an OpenAI API key, billed per input token: https://platform.openai.com/api-keys",
+			"  2) OpenAI's decision model, gpt-6-luna, with an OpenAI API key, billed per input token: https://platform.openai.com/api-keys",
 		);
 		expect(run.at("secret", "Paste the OpenAI API key (MU_JUDGE_OPENAI_KEY; it won't be shown)")).toBeGreaterThan(-1);
 		expect(
@@ -877,15 +929,15 @@ describe("mu setup, asking in a terminal", () => {
 	});
 
 	it("gives OpenAI's decision model the OpenAI key just set up, without asking for another", async () => {
-		// Paste an OpenAI key; judge: OpenAI; no session.
+		// Paste an OpenAI key; judge: OpenAI, ready with that key, so it is on the first list; no session.
 		const run = await wizard({
-			answers: ["1", "3", "n"],
+			answers: ["1", "2", "n"],
 			secrets: [KEYS.openaiProject],
 			respond: () => listing("gpt-6.1-sol"),
 		});
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.printed).toContain(
-			"  3) OpenAI's decision model, gpt-6-luna, with your OpenAI key, billed per input token",
+			"  2) OpenAI's decision model, gpt-6-luna, with your OpenAI key, billed per input token",
 		);
 		expect(run.events.filter((event) => event.kind === "secret")).toHaveLength(1);
 		expect((run.pi as FakePi).stored).toEqual([{ provider: "openai", key: KEYS.openaiProject }]);
@@ -951,8 +1003,8 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("mu judge turns the judge off and on again, and says when MU_JUDGE decides instead", async () => {
 		const home = temp();
-		// Judge: not now (free Jev, Jev, OpenAI, then not now).
-		const off = await wizard({ home, argv: ["--judge-only"], answers: ["4"] });
+		// Judge: not now (the free Jev, more judges, then not now).
+		const off = await wizard({ home, argv: ["--judge-only"], answers: ["3"] });
 		expect(off.said[0]).toContain("Judge now: jev (");
 		expect(off.json("mu.json")).toEqual({ modes: { default: "off" } });
 		const on = await wizard({ home, argv: ["--judge-only"], answers: ["1"], env: { MU_JUDGE: "openai" } });
@@ -973,10 +1025,10 @@ describe("mu setup, asking in a terminal", () => {
 	});
 
 	it("after a subscription, starts the session on /login", async () => {
-		const yes = await wizard({ answers: ["3", "4", "y"] });
+		const yes = await wizard({ answers: ["3", "3", "y"] });
 		expect(yes.code).toBe(SETUP_EXIT.signIn);
 		// On a first start the launcher goes on into the session anyway, opening /login.
-		const first = await wizard({ argv: ["--first-run"], answers: ["", "3", "4"] });
+		const first = await wizard({ argv: ["--first-run"], answers: ["", "3", "3"] });
 		expect(first.code).toBe(SETUP_EXIT.signIn);
 		expect(first.at("ask", "Start mu now?")).toBe(-1);
 	});
@@ -984,7 +1036,8 @@ describe("mu setup, asking in a terminal", () => {
 	it("asks which service a key of another shape is for, before sending it anywhere", async () => {
 		const run = await wizard({
 			// From the list: DeepSeek (7th in English); the pasted key looks like Anthropic's: it is Anthropic's.
-			answers: ["2", "7", "2", "4", "n"],
+			// Judge: the model, under More judges.
+			answers: ["2", "7", "2", "2", "3", "n"],
 			secrets: [KEYS.anthropic],
 			respond: (url) => (url.startsWith("https://api.anthropic.com/") ? answer(200, { data: [] }) : new Error(url)),
 		});
@@ -1005,8 +1058,8 @@ describe("mu setup, asking in a terminal", () => {
 		const empty = await wizard({ answers: ["2", "15", "3"], respond: () => listing() });
 		expect(empty.said).toContain("Ollama isn't ready yet. Start it with `ollama serve`, then pull a model.");
 		const up = await wizard({
-			// From the list: Ollama; its first chat model; no judge; no session.
-			answers: ["2", "15", "", "4", "n"],
+			// From the list: Ollama; its first chat model; judge: that model, under More judges; no session.
+			answers: ["2", "15", "", "2", "3", "n"],
 			respond: () => listing("nomic-embed-text:latest", "qwen2.5-coder:7b"),
 		});
 		expect(up.code).toBe(SETUP_EXIT.done);
@@ -1027,7 +1080,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("takes an address of one's own, asks its key after it, finds its /v1, and names it", async () => {
 		const run = await wizard({
 			// From the list: other; its address; OpenAI-compatible; its name; (no key); its model; no judge; no session.
-			answers: ["2", "16", "http://127.0.0.1:8080", "1", "box", "", "5", "n"],
+			answers: ["2", "16", "http://127.0.0.1:8080", "1", "box", "", "3", "n"],
 			secrets: [""],
 			respond: (url) => (url === "http://127.0.0.1:8080/v1/models" ? listing("local-coder") : answer(404, "no")),
 		});
@@ -1049,7 +1102,7 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("takes a number past the list as a slip, and a typed name as a model", async () => {
 		const run = await wizard({
-			answers: ["2", "15", "7", "my-model", "4", "n"],
+			answers: ["2", "15", "7", "my-model", "2", "3", "n"],
 			respond: () => listing("a-coder", "b-coder"),
 		});
 		expect(run.said).toContain("Type a number from 1 to 2, or a model name.");
@@ -1063,7 +1116,7 @@ describe("mu setup, asking in a terminal", () => {
 		expect(no.printed).toContain("mu won't ask again");
 		const yes = await wizard({
 			argv: ["--first-run"],
-			answers: ["", "1", "4"],
+			answers: ["", "1", "2", "3"],
 			secrets: [KEYS.xai],
 			respond: () => listing("grok-4.7", "grok-3"),
 		});
@@ -1085,7 +1138,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("speaks Chinese", async () => {
 		const run = await wizard({
 			language: "zh",
-			answers: ["1", "1", "5", "n"],
+			answers: ["1", "1", "3", "n"],
 			secrets: [KEYS.hex32],
 			respond: () => listing("deepseek-v4-pro"),
 		});

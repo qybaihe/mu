@@ -6,6 +6,8 @@ A judge answers the bounded questions asked at mu's decision points: yes or no, 
 
 To choose the judge without editing a file, run `mu judge` in a terminal. It shows the judge in use, asks the judge question of `mu setup` alone and leaves your model as it is. The judge you pick replaces the ones `mu.json` names, and takes effect in the next session you start.
 
+The question lists the judges that are ready to use as things stand: mude 1.0 on a Mac that can run it, Jev with the key you have or the free Jev, and OpenAI's or Nebius's model when mu already has that key. The rest are under **More judges**, which names them: Jev with a key of your own, OpenAI's decision model when it still needs a key, and the model you just set up as its own judge.
+
 `tiers` in `~/.mu/agent/mu.json` (or `MU_JUDGE` for one run) lists the judges in order. Each later judge only sees the questions the earlier ones left uncertain, so a fast local judge can go first and a hosted one can catch the rest:
 
 ```json

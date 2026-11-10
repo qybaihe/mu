@@ -407,6 +407,14 @@ interface Choice<T> {
 	readonly value: T;
 }
 
+/** What the judge question can be answered with: a judge, or `more`, which opens the judges it does not list. */
+type JudgePick = JudgeChoice["kind"] | "more";
+
+/** A judge behind "More judges", with the few words that line names it by. */
+interface MoreJudge extends Choice<JudgePick> {
+	readonly name: string;
+}
+
 /** Ends the run where it is: a cancelled question, or a script that cannot go on (the reason is out already). */
 class Stop extends Error {
 	readonly code: number;
@@ -501,13 +509,16 @@ class Setup {
 		}
 	}
 
-	private async choose<T>(question: string, choices: readonly Choice<T>[]): Promise<T> {
+	/** Asks which of `choices` it is, by number. Enter alone takes the one at `preset`: the first, unless said. */
+	private async choose<T>(question: string, choices: readonly Choice<T>[], preset = 0): Promise<T> {
 		this.io.say(question);
 		for (const [index, choice] of choices.entries()) this.io.say(`  ${index + 1}) ${choice.label}`);
 		const range = `1-${choices.length}`;
 		for (;;) {
-			const answer = await this.ask(this.t({ zh: `请选择 ${range} [1]：`, en: `Choose ${range} [1]: ` }));
-			if (answer === "") return choices[0].value;
+			const answer = await this.ask(
+				this.t({ zh: `请选择 ${range} [${preset + 1}]：`, en: `Choose ${range} [${preset + 1}]: ` }),
+			);
+			if (answer === "") return choices[preset].value;
 			const number = Number(answer);
 			if (Number.isInteger(number) && number >= 1 && number <= choices.length) return choices[number - 1].value;
 			this.io.say(this.t({ zh: `请输入 ${range} 之间的数字。`, en: `Type a number from 1 to ${choices.length}.` }));
@@ -1172,9 +1183,11 @@ class Setup {
 						en: `${existing.name} in ${this.path(paths.envFile)}`,
 					})
 			: undefined;
-		const choices: Choice<
-			"keep" | "jev" | "opencode" | "free" | "nemotron" | "openai" | "model" | "mude" | "none"
-		>[] = [];
+		// The question lists the judges that are ready to use as things stand: nothing more to paste, nothing slower than
+		// it has to be. The rest (a key to get first, the main model as its own judge) are one step away, behind "More
+		// judges", which names them. A first-time user reads three or four lines where there were up to eight.
+		const choices: Choice<JudgePick>[] = [];
+		const more: MoreJudge[] = [];
 		// On a Mac that can run it, mu's own model is the first offer, and the Jev that would have been first follows it.
 		const mude = this.deps.mude !== undefined;
 		if (mude) {
@@ -1230,7 +1243,10 @@ class Setup {
 				value: "keep",
 			});
 		}
-		choices.push({
+		more.push({
+			name: where
+				? this.t({ zh: "Jev 换新密钥", en: "Jev with a new key" })
+				: this.t({ zh: "Jev 用自己的密钥", en: "Jev with your own key" }),
 			label: where
 				? this.t({ zh: "Jev，换一个新密钥", en: "Jev with a new key" })
 				: opencode
@@ -1245,7 +1261,8 @@ class Setup {
 			value: "jev",
 		});
 		if (!keyless) {
-			choices.push({
+			more.push({
+				name: this.t({ zh: "Jev 免费版", en: "the free Jev" }),
 				label: this.t({
 					zh: "Jev 免费版，在 OpenCode Zen 上：不用密钥，限时免费",
 					en: "Free Jev on OpenCode Zen: no key needed, free for a limited time",
@@ -1262,20 +1279,28 @@ class Setup {
 				value: "nemotron",
 			});
 		}
-		choices.push({
-			label: openai
-				? this.t({
-						zh: "OpenAI 的决策模型 gpt-6-luna，用你的 OpenAI 密钥，按输入 token 计费",
-						en: "OpenAI's decision model, gpt-6-luna, with your OpenAI key, billed per input token",
-					})
-				: this.t({
-						zh: `OpenAI 的决策模型 gpt-6-luna，用 OpenAI 的 API 密钥，按输入 token 计费：${OPENAI_KEY_PAGE}`,
-						en: `OpenAI's decision model, gpt-6-luna, with an OpenAI API key, billed per input token: ${OPENAI_KEY_PAGE}`,
-					}),
-			value: "openai",
-		});
-		if (model) {
+		// With a key mu has already, OpenAI's decision model is ready to use; without one it takes a key first.
+		if (openai) {
 			choices.push({
+				label: this.t({
+					zh: "OpenAI 的决策模型 gpt-6-luna，用你的 OpenAI 密钥，按输入 token 计费",
+					en: "OpenAI's decision model, gpt-6-luna, with your OpenAI key, billed per input token",
+				}),
+				value: "openai",
+			});
+		} else {
+			more.push({
+				name: this.t({ zh: "OpenAI 的决策模型", en: "OpenAI's decision model" }),
+				label: this.t({
+					zh: `OpenAI 的决策模型 gpt-6-luna，用 OpenAI 的 API 密钥，按输入 token 计费：${OPENAI_KEY_PAGE}`,
+					en: `OpenAI's decision model, gpt-6-luna, with an OpenAI API key, billed per input token: ${OPENAI_KEY_PAGE}`,
+				}),
+				value: "openai",
+			});
+		}
+		if (model) {
+			more.push({
+				name: this.t({ zh: "刚设置的模型", en: "the model you just set up" }),
 				label: this.t({
 					zh: `刚设置的模型（${model.provider}/${model.model}）：更慢，而且每次判断都要花 token`,
 					en: `The model you just set up (${model.provider}/${model.model}): slower, and every verdict costs tokens`,
@@ -1283,26 +1308,45 @@ class Setup {
 				value: "model",
 			});
 		}
-		choices.push({
-			label: this.t({
-				zh: "暂时不要：不问判定器，什么都不发给它，mu 按默认规则工作",
-				en: "Not now: no judge is asked and nothing is sent to one; mu uses its fallbacks",
-			}),
-			value: "none",
-		});
+		choices.push(
+			{
+				label: this.t({
+					zh: `更多判定器：${more.map((judge) => judge.name).join("、")}`,
+					en: `More judges: ${more.map((judge) => judge.name).join(", ")}`,
+				}),
+				value: "more",
+			},
+			{
+				label: this.t({
+					zh: "暂时不要：不问判定器，什么都不发给它，mu 按默认规则工作",
+					en: "Not now: no judge is asked and nothing is sent to one; mu uses its fallbacks",
+				}),
+				value: "none",
+			},
+		);
 		this.io.say(
 			this.t({
 				zh: "判定器是一个又小又快的模型，在 mu 干活时回答一个个小问题：这条命令安全吗，这段输出要不要留，活干完了吗。以后随时可以换：mu judge。",
 				en: "A judge is a small, fast model that answers mu's small questions as it works: is this command safe, is this output worth keeping, is the work done. You can change it any time with mu judge.",
 			}),
 		);
-		const picked = await this.choose(
-			this.t({
-				zh: "mu 工作中的小判断交给哪个判定器？",
-				en: "Which judge should answer mu's small decisions?",
-			}),
-			choices,
-		);
+		let picked: JudgePick | "back" = "more";
+		while (picked === "more" || picked === "back") {
+			picked = await this.choose(
+				this.t({
+					zh: "mu 工作中的小判断交给哪个判定器？",
+					en: "Which judge should answer mu's small decisions?",
+				}),
+				choices,
+			);
+			if (picked !== "more") break;
+			// Enter alone goes back: the first judge here would ask for a key at once.
+			picked = await this.choose<JudgePick | "back">(
+				this.t({ zh: "更多判定器：", en: "More judges:" }),
+				[...more, { label: this.t({ zh: "返回", en: "Back" }), value: "back" }],
+				more.length,
+			);
+		}
 		if (picked === "jev") return { kind: "jev", key: await this.jevKey() };
 		if (picked === "openai") return openai ? { kind: "openai" } : { kind: "openai", key: await this.openaiKey() };
 		return { kind: picked };
