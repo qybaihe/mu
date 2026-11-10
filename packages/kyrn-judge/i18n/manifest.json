@@ -1582,6 +1582,20 @@
 			"tr-TR": "Çerçeve güncellemelerini sohbette göster",
 			"fa-IR": "نمایش به‌روزرسانی‌های چارچوب در گفتگو"
 		},
+		"features[name=frame].options[key=report].label": {
+			"en": "Say where the checklist stands when a run ends and the list changed",
+			"zh-TW": "一輪結束、清單有變化時，告訴你清單的進度",
+			"ja-JP": "実行が終わり、チェックリストに変化があったとき、その進み具合を知らせる",
+			"ko-KR": "실행이 끝나고 체크리스트가 바뀌었을 때 진행 상황 알리기",
+			"de-DE": "Den Stand der Checkliste melden, wenn ein Lauf endet und sie sich geändert hat",
+			"fr-FR": "Indiquer où en est la liste de contrôle quand une exécution se termine et que la liste a changé",
+			"es-ES": "Indicar cómo va la lista de comprobación cuando termina una ejecución y la lista ha cambiado",
+			"pt-BR": "Dizer em que ponto está a lista de verificação quando uma execução termina e a lista mudou",
+			"ru-RU": "Сообщать о состоянии чек-листа, когда запуск завершён и список изменился",
+			"uk-UA": "Повідомляти про стан чек-листа, коли запуск завершено і список змінився",
+			"tr-TR": "Bir çalışma bittiğinde ve liste değiştiyse kontrol listesinin durumunu bildir",
+			"fa-IR": "اعلام وضعیت چک‌لیست وقتی اجرا تمام می‌شود و فهرست تغییر کرده است"
+		},
 		"features[name=memory].title": {
 			"en": "Lessons",
 			"zh-TW": "經驗庫",

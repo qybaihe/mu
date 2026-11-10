@@ -102,6 +102,8 @@ export function registerFrame(runtime: KyrnRuntime): void {
 		writerTimeoutMs: 20_000,
 		/** Show the note about a new version in the chat, not only to the model. */
 		show: true,
+		/** Tell the user where the checklist stands when a run has ended and the list changed in it. */
+		report: true,
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
@@ -117,6 +119,11 @@ export function registerFrame(runtime: KyrnRuntime): void {
 	/** The version the main model was last told about. */
 	let notedVersion: number | undefined;
 	let lastFailure: string | undefined;
+	/** The checklist as the user was last told of it (`marks`): an end of run with the same list says nothing. */
+	let reported = "";
+	/** Which items a checklist has and which of them are done. */
+	const marks = (frame: Frame | undefined): string =>
+		(frame?.acceptance ?? []).map((item) => `${item.id}${item.done ? "x" : " "}`).join();
 
 	const state = (): FrameState => runtime.frameState ?? EMPTY_STATE;
 	const failedOf = (current: FrameState) => current.unmerged.filter((said) => said.reason === "failed");
@@ -315,6 +322,8 @@ export function registerFrame(runtime: KyrnRuntime): void {
 			noted = restored.frame.version;
 		runtime.frameState = restored;
 		notedVersion = noted;
+		// A session that is opened again has its list as it was left: nothing new to report.
+		reported = marks(restored.frame);
 		present("restored");
 	};
 	// A rewind or a fork brings back the frame of that branch: entries follow the tree.
@@ -533,6 +542,38 @@ export function registerFrame(runtime: KyrnRuntime): void {
 		tools: ["todo"],
 		exposure: "always",
 	});
+
+	// The user who did not watch the run learns what it settled without reading it: each thing that had to be true, and
+	// what showed it. Once the run is at rest, so under the answer; a run the user stopped, or one the harness cut and
+	// starts again, is not at an end. A sub-agent's list is its parent's to read.
+	pi.on(
+		"agent_settled",
+		failOpen((event, ctx) => {
+			runtime.touch(ctx);
+			const list = state().frame?.acceptance ?? [];
+			const now = marks(state().frame);
+			if (!options.report || event.aborted || runtime.planMode || list.length === 0 || now === reported) {
+				return undefined;
+			}
+			if (!ctx.hasUI || process.env.KYRN_SWARM_DEPTH) return undefined;
+			reported = now;
+			const done = list.filter((item) => item.done).length;
+			ctx.ui.notify(
+				[
+					say({
+						zh: `mu：这个任务的清单，${list.length} 项完成 ${done} 项${done > 0 ? "（依据是代理自己给的）" : ""}：`,
+						en: `mu: this task's checklist, ${done} of ${list.length} done${done > 0 ? " (the evidence is the agent's own)" : ""}:`,
+					}),
+					...list.map(
+						(item) =>
+							`  [${item.done ? "x" : " "}] ${clip(item.text, 100)}${item.done && item.evidence ? ` · ${clip(item.evidence, 100)}` : ""}`,
+					),
+				].join("\n"),
+				"info",
+			);
+			return undefined;
+		}),
+	);
 
 	pi.registerCommand("frame", {
 		description: say({

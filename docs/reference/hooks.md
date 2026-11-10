@@ -32,12 +32,13 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 ### `agent_settled`
 
-1. `evolve`
-2. `plan`
-3. `ttsr` (off by default)
-4. `watchdog`
-5. `hive`
-6. `featureOffers`
+1. `frame`
+2. `evolve`
+3. `plan`
+4. `ttsr` (off by default)
+5. `watchdog`
+6. `hive`
+7. `featureOffers`
 
 ### `agent_start`
 
@@ -365,7 +366,7 @@ is marked: two features that set it in the same turn decide between them by the 
 | `onTurnBegin` | `extension/features/frame.ts` | `extension/runtime.ts` |
 | `permissionMode` | `extension/features/permissions.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/evolve.ts`, `extension/features/guard.ts`, `extension/features/swarm.ts` |
 | `permissionsWaiting` | `extension/features/permissions.ts` | `extension/features/continuation.ts`, `extension/features/interjection.ts` |
-| `planMode` | `extension/features/plan.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/plan.ts` |
+| `planMode` | `extension/features/plan.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/frame.ts`, `extension/features/plan.ts` |
 | `questionsOpen` | `extension/features/ask-user.ts` | `extension/features/continuation.ts`, `extension/features/interjection.ts` |
 | `skillsHidden` | `extension/features/skills.ts` | `extension/features/swarm.ts` |
 | `standingRules` | `extension/features/memory.ts` | `extension/features/constraints.ts`, `extension/features/evolve.ts`, `extension/features/memory.ts` |

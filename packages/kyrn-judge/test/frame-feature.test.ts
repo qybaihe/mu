@@ -2,7 +2,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxText, fauxToolCall, type Message } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
+import { createHarness, createTestUiContext, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { createTestExtensionsResult, createTestResourceLoader } from "../../coding-agent/test/utilities.ts";
 import { parseConfig } from "../src/config.ts";
 import type { DecisionMode } from "../src/decision.ts";
@@ -64,6 +64,8 @@ describe("task frame feature", () => {
 			only?: FeatureName[];
 			features?: Record<string, unknown>;
 			tools?: AgentTool[];
+			/** Someone is at the session: what mu tells them of the checklist is kept in `told`. */
+			ui?: boolean;
 		} = {},
 	) {
 		const provider = new MockJudgeProvider(responder);
@@ -81,9 +83,19 @@ describe("task frame feature", () => {
 			],
 		});
 		harnesses.push(harness);
+		const told: string[] = [];
+		if (extra.ui) {
+			const ui = createTestUiContext({
+				notify: (message) => {
+					if (message.startsWith("mu: this task's checklist")) told.push(message);
+				},
+			});
+			await harness.session.bindExtensions({ uiContext: ui, mode: "rpc" });
+		}
 		const updates = () => events.filter((event) => event.kind === "frame.updated");
 		return {
 			harness,
+			told,
 			provider,
 			updates,
 			/** The frame as the desktop was last told. */
@@ -408,6 +420,71 @@ describe("task frame feature", () => {
 		// Stored like a version, so a reload or a rewind has the same list: created, two adds, one tick. Refusals store nothing.
 		expect(entries().map((entry) => entry.reason)).toEqual(["created", "progress", "progress", "progress"]);
 		expect(entries().every((entry) => entry.frame.version === 1)).toBe(true);
+	});
+
+	describe("when a run has ended", () => {
+		const call = (params: Record<string, string>) =>
+			fauxAssistantMessage([fauxToolCall("todo", params)], { stopReason: "toolUse" });
+
+		it("tells the user where the checklist stands, once for each change of it", async () => {
+			const { harness, told } = await start(verdicts(), { ui: true });
+			harness.setResponses([
+				call({ action: "add", text: "the cursor survives a deleted row" }),
+				call({ action: "add", text: "limit is capped at 100" }),
+				call({ action: "done", id: "a1", evidence: "users.test.ts: 14 passed" }),
+				fauxAssistantMessage("The cursor is in. The cap comes next."),
+			]);
+			await harness.session.prompt(GOAL);
+			expect(told).toEqual([
+				[
+					"mu: this task's checklist, 1 of 2 done (the evidence is the agent's own):",
+					"  [x] the cursor survives a deleted row · users.test.ts: 14 passed",
+					"  [ ] limit is capped at 100",
+				].join("\n"),
+			]);
+
+			// A run that changes nothing on the list says nothing more about it.
+			harness.setResponses([fauxAssistantMessage("Yes, by id.")]);
+			await harness.session.prompt("Is the cursor ordered by id?");
+			expect(told).toHaveLength(1);
+
+			harness.setResponses([
+				call({ action: "done", id: "a2", evidence: "limit=500 returns 100 rows" }),
+				fauxAssistantMessage("Capped."),
+			]);
+			await harness.session.prompt("Go on with the cap.");
+			expect(told).toHaveLength(2);
+			expect(told[1].split("\n")).toEqual([
+				"mu: this task's checklist, 2 of 2 done (the evidence is the agent's own):",
+				"  [x] the cursor survives a deleted row · users.test.ts: 14 passed",
+				"  [x] limit is capped at 100 · limit=500 returns 100 rows",
+			]);
+		});
+
+		it("says nothing of a task without a checklist, nor with `report` off", async () => {
+			const bare = await start(verdicts(), { ui: true });
+			bare.harness.setResponses([fauxAssistantMessage("Done.")]);
+			await bare.harness.session.prompt(GOAL);
+			expect(bare.told).toEqual([]);
+
+			const off = await start(verdicts(), { ui: true, features: { frame: { report: false } } });
+			off.harness.setResponses([
+				call({ action: "add", text: "limit is capped at 100" }),
+				fauxAssistantMessage("Noted."),
+			]);
+			await off.harness.session.prompt(GOAL);
+			expect(off.told).toEqual([]);
+		});
+
+		it("with nothing ticked, lists what is open and claims no evidence", async () => {
+			const { harness, told } = await start(verdicts(), { ui: true });
+			harness.setResponses([
+				call({ action: "add", text: "limit is capped at 100" }),
+				fauxAssistantMessage("That is what is left to do."),
+			]);
+			await harness.session.prompt(GOAL);
+			expect(told).toEqual(["mu: this task's checklist, 0 of 1 done:\n  [ ] limit is capped at 100"]);
+		});
 	});
 
 	it("completion: 'done' with an acceptance item open earns the one nudge, and it names the item", async () => {
