@@ -14,7 +14,7 @@ without one.
 | `kyrn.deadline` | message | src/extension/features/deadline.ts | - | How much of the run's time budget is left. |
 | `kyrn.decision` | entry | src/extension/runtime.ts | desktop: nativeHost/reducer.ts; mu ledger: kyrn/bin/kyrn-ledger; /ledger: src/extension/features/commands.ts; replay: src/providers/replay.ts | One record of the judge's ledger: what a decision asked, the answers, what mu acted on. |
 | `kyrn.diagnostics` | message | src/extension/features/lsp.ts | - | Errors the language servers found in what the agent changed. |
-| `kyrn.feature-offer` | entry | src/extension/features/feature-offers.ts | - | The user's answer to turning on a feature that is off by default: on, declined or unanswered (kyrn/docs/features/feature-offers.md). |
+| `kyrn.feature-offer` | entry | src/extension/features/feature-offers.ts | - | What became of a feature that is off by default, in this conversation: the user was told of it when a run ended (offered), or turned it on (kyrn/docs/features/feature-offers.md). |
 | `kyrn.forgetting.state` | entry | src/extension/features/forgetting.ts | - | Which tool outputs the model no longer reads, so a reopened session forgets the same ones. |
 | `kyrn.frame` | entry | src/extension/features/frame.ts | - | The task frame: the goal, the user's constraints and the checklist. |
 | `kyrn.frame` | message | src/extension/features/frame.ts | - | The task frame as the model reads it. |
@@ -472,7 +472,7 @@ A entry, read by another program:
 
 A message. No schema: no other program reads it.
 
-## kyrn.feature-offer v1
+## kyrn.feature-offer v2
 
 A entry. No schema: no other program reads it.
 

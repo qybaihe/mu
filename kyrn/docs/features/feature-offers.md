@@ -1,6 +1,6 @@
 # Offers to turn features on
 
-Some of mu's features are off by default, and someone who has never opened the settings does not know they are there. When a task would use one, the model can offer it, and the user turns it on with one answer.
+Some of mu's features are off by default, and someone who has never opened the settings does not know they are there. When a task would use one, the model can offer it. The offer does not hold up the run: mu tells the user of the feature when the run ends, and they turn it on with one command.
 
 Code: `packages/kyrn-judge/src/extension/features/feature-offers.ts`. Option: `features.featureOffers` (`enabled`).
 
@@ -18,18 +18,31 @@ The Nebius sandbox is not offered: it needs an account and a key, which no answe
 
 ## How it is offered
 
-Each feature is a `feature:<name>` entry of the capability catalog, with its summary and "Off now: opening it asks the user whether to turn it on, from the next conversation." `find_capability` lists it with the other hidden capabilities, and its description names it among what is installed.
+Each feature is a `feature:<name>` entry of the capability catalog, with its summary and "Off now, and only the user turns it on, from the next conversation: opening it tells them of it when this run ends." `find_capability` lists it with the other hidden capabilities, and its description names it among what is installed.
 
-`find_capability({ open: "feature:ttsr" })` does not open anything in the session. mu asks the user with ask_user's dialog, `askQuestions`, so the desktop app shows the question card: "Turn on Mid-stream correction?", with "Turn it on" (and the feature's summary) or "Not now". The question waits 2 minutes.
+`find_capability({ open: "feature:ttsr" })` does not open anything in the session, and asks nobody. Features are set up when a session starts, so no answer could change the run that is going: a question in the middle of it would hold the work up for an answer that matters only to the next conversation.
+
+The call returns at once:
+
+> Mid-stream correction is off, and turning it on takes effect only from the next conversation, so nothing changes in this run. mu tells the user of it when this run ends, and they decide. Carry on without it, and do not offer it again.
+
+When the run has settled (`agent_settled`: no check sends the agent back any more), mu says one notice for each feature offered in it, under the answer the user reads when they come back:
+
+```text
+mu: the model suggests Mid-stream correction for work like this. It's off now. The judge, not a regular expression, notices when output goes astray, …
+/capabilities open feature:ttsr turns it on, from the next session. Leave it and it stays off; mu won't bring it up again in this session.
+```
+
+A notice takes no answer and no key press: it does not take the editor, so a message the user is typing is not interrupted. The desktop app shows it as a line in the conversation.
 
 What the model is told:
 
-| answer | the result says |
+| case | the result says |
 | --- | --- |
-| Turn it on | `The user turned on Mid-stream correction (features.ttsr in /Users/me/.mu/agent/mu.json). It takes effect from the next conversation; this one goes on without it. Turning it on allows nothing beyond that feature.` |
-| Not now, Esc, or their own words | that the user declined it, so it stays off, their words if any, and not to offer it again in this conversation |
-| no answer in time | it stays off; carry on without it, and do not ask again unless they bring it up |
-| a second offer after a decline | at once, with no question: declined earlier in this conversation, do not offer it again |
+| the first offer of a feature | it is off, takes effect only from the next conversation, the user is told when the run ends; carry on without it, and do not offer it again |
+| a second offer in the conversation | at once: already offered, still off, do not offer it again |
+| the user turned it on meanwhile | that it is already turned on for the next conversation |
+| nobody to tell (no UI, an unattended run) | it is off, only the user can turn it on, nobody can be told of it in this session |
 
 Features are set up when a session starts, so a feature turned on now works from the next conversation.
 
@@ -38,9 +51,9 @@ Features are set up when a session starts, so a feature turned on now works from
 Only the user:
 
 - The capability judge (`capability.disclosure`) never sees a feature entry. Its candidates leave them out, so it cannot open one, and a session where only features are hidden asks it nothing.
-- Where nobody can be asked (no UI, or an unattended run), nothing is written, and the model is told that only the user can turn it on.
+- Where nobody can be told (no UI, or an unattended run), nothing is said or written, and the model is told that only the user can turn it on.
 - A sub-agent has no offers.
-- `/capabilities open feature:<name>` is the user asking for it. It turns the feature on with no question. `/capabilities` lists feature entries as `off`, or `on next conv.` once turned on.
+- `/capabilities open feature:<name>` is the user asking for it. It turns the feature on with no question. `/capabilities` lists feature entries as `off`, or `on next conv.` once turned on. A feature the user turns on this way while the run is still going gets no notice at its end.
 
 ## What is written
 
@@ -52,12 +65,11 @@ mu writes the file `loadConfig` reads, in the agent directory (`~/.mu/agent`). T
 
 ## The entry
 
-A `kyrn.feature-offer` entry for each answer, kept in the session and never sent to the model:
+A `kyrn.feature-offer` entry, kept in the session and never sent to the model:
 
 ```jsonc
-{ "feature": "ttsr", "answer": "on", "by": "model" }
-{ "feature": "compaction", "answer": "declined", "by": "model" }
+{ "feature": "ttsr", "answer": "offered", "by": "model" }
 { "feature": "compaction", "answer": "on", "by": "user" }
 ```
 
-`answer` is `on`, `declined` or `unanswered`. `by` is `model` for an offer and `user` for `/capabilities open`. When the session opens again, `on` and `declined` are read back, so a declined feature is still not offered.
+`answer` is `offered` (the user was told of it when a run ended, and it stays off) or `on` (they turned it on, which `/capabilities open` does: `by` is `user`). When the session opens again both are read back, so a feature is offered once in a conversation.

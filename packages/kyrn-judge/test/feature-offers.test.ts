@@ -52,14 +52,7 @@ describe("offers of features that are off", () => {
 	}
 
 	async function start(
-		setup: {
-			/** What the user picks in each select, by the start of the option; undefined for Esc. */
-			picks?: (string | undefined)[];
-			features?: Record<string, unknown>;
-			only?: FeatureName[];
-			noUi?: boolean;
-			judged?: JudgeRequest[];
-		} = {},
+		setup: { features?: Record<string, unknown>; only?: FeatureName[]; noUi?: boolean; judged?: JudgeRequest[] } = {},
 	) {
 		const roots = home();
 		const events: KyrnPresentationEvent[] = [];
@@ -79,49 +72,59 @@ describe("offers of features that are off", () => {
 			],
 		});
 		harnesses.push(harness);
-		const picks = [...(setup.picks ?? [])];
 		const asked: { title: string; options: string[] }[] = [];
 		const notes: string[] = [];
+		/** For each notice, the text of the message the conversation ended on when it was said. */
+		const saidAfter: string[] = [];
 		if (!setup.noUi) {
 			const ui: ExtensionUIContext = createTestUiContext({
 				select: async (title, options) => {
 					asked.push({ title, options });
-					const start = picks.shift();
-					return start === undefined ? undefined : options.find((option) => option.startsWith(start));
+					return undefined;
 				},
-				input: async () => picks.shift(),
-				notify: (message) => notes.push(message),
+				notify: (message) => {
+					notes.push(message);
+					const last = harness.session.messages.at(-1);
+					saidAfter.push(
+						last?.role === "assistant"
+							? (last.content as { text?: string }[]).map((block) => block.text ?? "").join("")
+							: String(last?.role),
+					);
+				},
 			});
 			await harness.session.bindExtensions({ uiContext: ui, mode: "tui" });
 		}
-		return { harness, roots, asked, notes, events };
+		return { harness, roots, asked, notes, saidAfter, events };
 	}
 
-	it("lists a feature that is off, and asks the user before turning it on for the next conversation", async () => {
-		const { harness, roots, asked } = await start({
-			picks: ["Turn it on"],
-		});
+	it("lists a feature that is off, does not hold the run for it, and tells the user when the run has ended", async () => {
+		const { harness, roots, asked, notes, saidAfter } = await start();
 		harness.setResponses([
 			find({ query: "correction" }),
 			find({ open: "feature:ttsr" }),
-			fauxAssistantMessage("Turned on."),
+			fauxAssistantMessage("Done without it."),
 		]);
 		await harness.session.prompt("Stop the model when it writes something the rules forbid.");
 		const [listed, opened] = results(harness);
 		expect(listed).toContain("- feature:ttsr · Mid-stream correction:");
-		expect(listed).toContain("Off now: opening it asks the user whether to turn it on, from the next conversation.");
-		expect(asked).toEqual([expect.objectContaining({ title: "Feature: Turn on Mid-stream correction?" })]);
-		expect(opened).toBe(
-			`The user turned on Mid-stream correction (features.ttsr in ${join(roots.agentDir, "mu.json")}). It takes effect from the next conversation; this one goes on without it. Turning it on allows nothing beyond that feature.`,
+		expect(listed).toContain(
+			"Off now, and only the user turns it on, from the next conversation: opening it tells them of it when this run ends.",
 		);
-		expect(JSON.parse(readFileSync(join(roots.agentDir, "mu.json"), "utf8"))).toEqual({ features: { ttsr: true } });
-		expect(records(harness)).toEqual([{ feature: "ttsr", answer: "on", by: "model" }]);
+		expect(opened).toBe(
+			"Mid-stream correction is off, and turning it on takes effect only from the next conversation, so nothing changes in this run. mu tells the user of it when this run ends, and they decide. Carry on without it, and do not offer it again.",
+		);
+		// No question, in the run or after it: a notice takes no answer.
+		expect(asked).toEqual([]);
+		expect(notes).toHaveLength(1);
+		expect(notes[0]).toContain("mu: the model suggests Mid-stream correction for work like this. It's off now.");
+		expect(notes[0]).toContain("/capabilities open feature:ttsr turns it on, from the next session.");
+		expect(saidAfter).toEqual(["Done without it."]);
+		expect(existsSync(join(roots.agentDir, "mu.json"))).toBe(false);
+		expect(records(harness)).toEqual([{ feature: "ttsr", answer: "offered", by: "model" }]);
 	});
 
-	it("writes nothing on Not now, and does not offer it again in the conversation", async () => {
-		const { harness, roots, asked } = await start({
-			picks: ["Not now"],
-		});
+	it("offers a feature once in a conversation, and the command the notice names turns it on", async () => {
+		const { harness, roots, notes } = await start();
 		harness.setResponses([
 			find({ open: "feature:compaction" }),
 			find({ open: "feature:compaction" }, "call-again"),
@@ -129,12 +132,44 @@ describe("offers of features that are off", () => {
 		]);
 		await harness.session.prompt("The context keeps filling up.");
 		const [first, second] = results(harness);
-		expect(first).toContain("The user declined Summary-free compaction, so it stays off.");
-		expect(first).toContain("Do not offer it again in this conversation");
-		expect(second).toContain("declined Summary-free compaction earlier in this conversation");
-		expect(asked).toHaveLength(1);
+		expect(first).toContain("mu tells the user of it when this run ends");
+		expect(second).toBe(
+			"Summary-free compaction was already offered to the user in this conversation, and it is still off. Do not offer it again; carry on without it.",
+		);
+		expect(notes).toHaveLength(1);
+
+		// In a later run of the conversation: the same answer, and nothing more is said to the user.
+		harness.setResponses([find({ open: "feature:compaction" }, "call-later"), fauxAssistantMessage("OK.")]);
+		await harness.session.prompt("It filled up again.");
+		expect(results(harness)[2]).toContain("was already offered to the user in this conversation");
+		expect(notes).toHaveLength(1);
 		expect(existsSync(join(roots.agentDir, "mu.json"))).toBe(false);
-		expect(records(harness)).toEqual([{ feature: "compaction", answer: "declined", by: "model" }]);
+
+		await harness.session.prompt("/capabilities open feature:compaction");
+		expect(notes.at(-1)).toContain("The user turned on Summary-free compaction");
+		expect(JSON.parse(readFileSync(join(roots.agentDir, "mu.json"), "utf8"))).toEqual({
+			features: { compaction: true },
+		});
+		expect(records(harness)).toEqual([
+			{ feature: "compaction", answer: "offered", by: "model" },
+			{ feature: "compaction", answer: "on", by: "user" },
+		]);
+		harness.setResponses([find({ open: "feature:compaction" }, "call-on"), fauxAssistantMessage("OK.")]);
+		await harness.session.prompt("And now?");
+		expect(results(harness)[3]).toBe("Summary-free compaction is already turned on for the next conversation.");
+	});
+
+	it("says one notice for each feature offered in a run", async () => {
+		const { harness, notes, saidAfter } = await start();
+		harness.setResponses([
+			find({ open: "feature:compaction" }),
+			find({ open: "feature:ttsr" }, "call-second"),
+			fauxAssistantMessage("Both would help."),
+		]);
+		await harness.session.prompt("Long task, strict rules.");
+		expect(notes.map((note) => /feature:(\w+)/.exec(note)?.[1])).toEqual(["compaction", "ttsr"]);
+		expect(saidAfter).toEqual(["Both would help.", "Both would help."]);
+		expect(records(harness).map((record) => record.answer)).toEqual(["offered", "offered"]);
 	});
 
 	it("keeps the rest of the file the user has, kyrn.json included, and backs it up first", async () => {
@@ -181,12 +216,13 @@ describe("offers of features that are off", () => {
 		expect(notes.at(-1)).toMatch(/off\s+feature:ttsr/);
 	});
 
-	it("writes nothing where nobody can be asked", async () => {
+	it("says and writes nothing where nobody can be told", async () => {
 		const { harness, roots } = await start({ noUi: true });
 		harness.setResponses([find({ open: "feature:ttsr" }), fauxAssistantMessage("OK.")]);
 		await harness.session.prompt("Correct the model as it writes.");
-		expect(results(harness)[0]).toContain("only the user can turn it on; nobody can be asked in this session");
+		expect(results(harness)[0]).toContain("only the user can turn it on; nobody can be told of it in this session");
 		expect(existsSync(join(roots.agentDir, "mu.json"))).toBe(false);
+		expect(records(harness)).toEqual([]);
 	});
 
 	it("is never a candidate for the capability judge", async () => {

@@ -272,10 +272,10 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 						details: { opened: undefined, matches: [] } satisfies FindDetails as FindDetails,
 					};
 				}
-				// A feature that is off by default is not opened here: the user is asked whether to turn it on.
+				// A feature that is off by default is not opened here: the user is told of it when the run ends.
 				if (known.kind === "feature") {
 					const text =
-						(await runtime.offerFeature?.(params.open, ctx, "model")) ??
+						runtime.offerFeature?.(params.open, ctx, "model") ??
 						`${known.title} is off, and only the user can turn it on.`;
 					return {
 						content: [{ type: "text", text }],
@@ -338,7 +338,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 			runtime.touch(ctx);
 			const [verb, id] = args.trim().split(/\s+/);
 			if (verb === "open" && id && catalog.get(id)?.kind === "feature") {
-				const said = (await runtime.offerFeature?.(id, ctx, "user")) ?? `"${id}" cannot be turned on here.`;
+				const said = runtime.offerFeature?.(id, ctx, "user") ?? `"${id}" cannot be turned on here.`;
 				ctx.ui.notify(said, "info");
 				return;
 			}
