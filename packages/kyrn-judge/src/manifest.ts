@@ -2557,8 +2557,8 @@ const DESCRIBED: HarnessManifest = {
 			name: "evolve",
 			title: { zh: "自适应", en: "Adapting to you" },
 			summary: {
-				zh: "记下 mu 观察到的事实：你对审批提问的回答、这台机器上缺的程序、一个项目的会话开场读哪些文件、你离开多久。据此给出建议，由你用 /evolve accept 接受：目前是把一个项目的审批线降到你一直都允许的位置。放宽只能由你输入命令接受；把一次放行标成判错（/ledger wrong）会立刻撤销。数据在你的 agent 目录里（mu/evolve.jsonl），不含命令、消息和文件内容。",
-				en: "Keeps what mu observes: your answers to approval questions, programs missing on this machine, the files a project's sessions open with and how long you stay away. From these it makes suggestions you accept with /evolve accept: for now, lowering a project's approval line to where you allowed every call anyway. Only a command you type loosens anything; marking an approval wrong (/ledger wrong) takes it back at once. The data stays in your agent folder (mu/evolve.jsonl) and holds no commands, messages or file contents.",
+				zh: "记下 mu 观察到的事实：你对审批提问的回答、这台机器上缺的程序、一个项目的会话开场读哪些文件、你离开多久、每轮运行找了你几次。据此给出建议，由你用 /evolve accept 接受：目前是把一个项目的审批线降到你一直都允许的位置。放宽只能由你输入命令接受；把一次放行标成判错（/ledger wrong）会立刻撤销。数据在你的 agent 目录里（mu/evolve.jsonl），不含命令、消息和文件内容。",
+				en: "Keeps what mu observes: your answers to approval questions, programs missing on this machine, the files a project's sessions open with, how long you stay away and how often a run needed you. From these it makes suggestions you accept with /evolve accept: for now, lowering a project's approval line to where you allowed every call anyway. Only a command you type loosens anything; marking an approval wrong (/ledger wrong) takes it back at once. The data stays in your agent folder (mu/evolve.jsonl) and holds no commands, messages or file contents.",
 			},
 			defaultEnabled: true,
 			options: [

@@ -32,11 +32,12 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 ### `agent_settled`
 
-1. `plan`
-2. `ttsr` (off by default)
-3. `watchdog`
-4. `hive`
-5. `featureOffers`
+1. `evolve`
+2. `plan`
+3. `ttsr` (off by default)
+4. `watchdog`
+5. `hive`
+6. `featureOffers`
 
 ### `agent_start`
 
@@ -55,20 +56,21 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 2. `preflight`
 3. `frame`
 4. `memory`
-5. `snapshot`
-6. `preload`
-7. `skills` ×2
-8. `catalog`
-9. `injection`
-10. `plan`
-11. `permissions`
-12. `askUser`
-13. `monitor`
-14. `notify`
-15. `hive`
-16. `inherit`
-17. `mcp`
-18. `packs`
+5. `evolve`
+6. `snapshot`
+7. `preload`
+8. `skills` ×2
+9. `catalog`
+10. `injection`
+11. `plan`
+12. `permissions`
+13. `askUser`
+14. `monitor`
+15. `notify`
+16. `hive`
+17. `inherit`
+18. `mcp`
+19. `packs`
 
 ### `before_provider_request`
 
@@ -339,12 +341,12 @@ is marked: two features that set it in the same turn decide between them by the 
 | `capabilitiesOpen` | `extension/features/catalog.ts` | `extension/features/swarm.ts` |
 | `deadlineAt` | `extension/features/deadline.ts` | `extension/features/deadline.ts`, `extension/features/watchdog.ts` |
 | `enabled` | `extension/kyrn-judge.ts` | `extension/features/commands.ts`, `extension/features/welcome.ts`, `extension/runtime.ts` |
-| `evolve` | `extension/features/evolve.ts` | `extension/features/commands.ts`, `extension/features/permissions.ts`, `extension/features/preload.ts`, `extension/features/snapshot.ts` |
+| `evolve` | `extension/features/evolve.ts` | `extension/features/ask-user.ts`, `extension/features/commands.ts`, `extension/features/permissions.ts`, `extension/features/preload.ts`, `extension/features/snapshot.ts` |
 | `floor` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/packs/debugger.ts` |
 | `floorExit` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/permissions.ts` |
 | `frameState` | `extension/features/frame.ts` | `extension/features/frame.ts`, `extension/runtime.ts` |
 | `goalActive` | `extension/features/goal.ts` | `extension/features/board.ts`, `extension/features/completion.ts`, `extension/features/continuation.ts` |
-| `harnessAbort` (set in more than one file) | `extension/features/ttsr.ts`, `extension/features/watchdog.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/goal.ts`, `extension/features/interrupted.ts` |
+| `harnessAbort` (set in more than one file) | `extension/features/ttsr.ts`, `extension/features/watchdog.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/evolve.ts`, `extension/features/goal.ts`, `extension/features/interrupted.ts` |
 | `knownLessons` | `extension/features/memory.ts` | `extension/features/hive.ts`, `extension/features/swarm.ts` |
 | `lastAssistantText` | `extension/kyrn-judge.ts` | `extension/features/admission.ts`, `extension/features/interjection.ts`, `extension/features/lsp.ts`, `extension/features/memory.ts`, `extension/features/notify.ts`, `extension/features/warming.ts` |
 | `notify` | `extension/features/notify.ts` | `extension/features/background.ts` |

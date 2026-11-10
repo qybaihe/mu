@@ -548,6 +548,13 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			...(extra.late ? { late: true as const } : {}),
 		};
 		pi.appendEntry(OUTCOME_ENTRY, outcome);
+		// What the question took of the user, and whether asking changed what happened. `none`: nobody was asked.
+		if (answer !== "none") {
+			runtime.evolve?.asked(
+				"permission",
+				answer === "timeout" ? "unanswered" : answer === "once" || answer === "session" ? "same" : "changed",
+			);
+		}
 		// Needed, the judge read, but not surely enough: the user's answer says where the line could be.
 		if (reason === "unsure" && said?.needed && (answer === "once" || answer === "session" || answer === "deny")) {
 			runtime.evolve?.approvalAnswered({ cwd: question.cwd, ...said.needed, answer, waitedMs: outcome.waitedMs });
