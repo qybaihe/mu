@@ -67,6 +67,8 @@ const SETUP_FLAGS: Readonly<Record<string, string>> = {
 	"-y": "yes",
 	"--yes": "yes",
 	"--key-stdin": "keyStdin",
+	// What `mu judge` starts the wizard with: the judge step alone.
+	"--judge-only": "judgeOnly",
 };
 
 /** Where the `jev` judge finds its key, in the order it looks (registry.ts). */
@@ -174,6 +176,8 @@ export interface SetupArgs {
 	readonly firstRun: boolean;
 	readonly yes: boolean;
 	readonly keyStdin: boolean;
+	/** `mu judge`: choose the judge and leave the model as it is. */
+	readonly judgeOnly: boolean;
 	readonly service?: string;
 	readonly model?: string;
 	readonly baseUrl?: string;
@@ -235,6 +239,7 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 		firstRun: flags.has("firstRun"),
 		yes: flags.has("yes"),
 		keyStdin: flags.has("keyStdin"),
+		judgeOnly: flags.has("judgeOnly"),
 		service,
 		model: values.get("--model"),
 		baseUrl: values.get("--base-url"),
@@ -520,6 +525,7 @@ class Setup {
 
 	private async steps(): Promise<number> {
 		const { args, deps } = this;
+		if (args.judgeOnly) return this.judgeAlone();
 		if (args.firstRun && !(await this.firstStart())) return SETUP_EXIT.done;
 		let key = deps.givenKey ?? args.words[0];
 		if (args.keyStdin) {
@@ -568,6 +574,48 @@ class Setup {
 		if (code !== SETUP_EXIT.done) return code;
 		const installed = await this.installMude(judge);
 		return installed === SETUP_EXIT.done ? this.offerSession() : installed;
+	}
+
+	/**
+	 * `mu judge`: the judge step alone, for a mu that has its model already. What is picked takes the place of the judges
+	 * mu.json names, where a whole setup leaves judges it did not write as they are.
+	 */
+	private async judgeAlone(): Promise<number> {
+		if (this.scripted) {
+			throw this.fail(
+				{
+					zh: 'mu judge 要在终端里选。脚本里改 mu.json 的 "tiers"，或只为一次运行设 MU_JUDGE。',
+					en: 'mu judge asks in a terminal. In a script, set "tiers" in mu.json, or MU_JUDGE for one run.',
+				},
+				SETUP_EXIT.usage,
+			);
+		}
+		const { env, paths } = this.deps;
+		const configPath = judgeConfigPath(paths.agentDir);
+		const config = readJsonFile(configPath);
+		const current = config.state === "ok" ? config.value : undefined;
+		this.io.say(
+			judgeOff(current)
+				? this.t({ zh: "现在的判定器：没有（已关闭）。", en: "Judge now: none (turned off)." })
+				: this.t({
+						zh: `现在的判定器：${tiersOf(current).join("，")}（${this.path(configPath)}）。`,
+						en: `Judge now: ${tiersOf(current).join(", ")} (${this.path(configPath)}).`,
+					}),
+		);
+		const override = env.MU_JUDGE || env.KYRN_JUDGE;
+		if (override) {
+			this.io.say(
+				this.t({
+					zh: `环境变量 MU_JUDGE=${override} 比 mu.json 优先：它还在的时候，由它决定判定器。`,
+					en: `MU_JUDGE=${override} is set in your environment and takes precedence over mu.json while it's there.`,
+				}),
+			);
+		}
+		this.io.say("");
+		const judge = await this.judge(undefined);
+		const code = await this.write(undefined, undefined, judge);
+		if (code !== SETUP_EXIT.done) return code;
+		return this.installMude(judge);
 	}
 
 	/**
@@ -1242,6 +1290,12 @@ class Setup {
 			}),
 			value: "none",
 		});
+		this.io.say(
+			this.t({
+				zh: "判定器是一个又小又快的模型，在 mu 干活时回答一个个小问题：这条命令安全吗，这段输出要不要留，活干完了吗。以后随时可以换：mu judge。",
+				en: "A judge is a small, fast model that answers mu's small questions as it works: is this command safe, is this output worth keeping, is the work done. You can change it any time with mu judge.",
+			}),
+		);
 		const picked = await this.choose(
 			this.t({
 				zh: "mu 工作中的小判断交给哪个判定器？",
@@ -1620,7 +1674,10 @@ class Setup {
 		} else if (judge.kind === "opencode") tiers = ["jev-opencode"];
 		else if (judge.kind === "nemotron") tiers = ["nemotron"];
 		else if (judge.kind === "openai") tiers = ["openai"];
-		else if (judge.kind === "free" || judge.kind === "mude") {
+		else if (this.args.judgeOnly) {
+			// `mu judge` picks the judge: Jev alone, whatever was named before. mude goes in front of it when it is installed.
+			if (tiersOf(current).join() !== "jev") tiers = ["jev"];
+		} else if (judge.kind === "free" || judge.kind === "mude") {
 			// `jev` uses the free Jev while no key is set, and a key added later without another setup. mude goes in front
 			// of it when it is installed.
 			if (!tiersOf(current).some((tier) => tier === "jev" || tier === "jev-opencode-free")) tiers = ["jev"];
@@ -1720,7 +1777,14 @@ class Setup {
 											: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
 		this.io.say("");
 		this.io.say(`${done}${judged}`);
-		if (!target)
+		if (this.args.judgeOnly) {
+			this.io.say(
+				this.t({
+					zh: "从下一次启动的会话起生效；已经开着的会话还用它启动时的判定器。",
+					en: "It takes effect in the next session you start; a session that's open keeps the judge it started with.",
+				}),
+			);
+		} else if (!target)
 			this.io.say(this.t({ zh: "接下来在 mu 里用 /login 登录。", en: "Next, sign in with /login in mu." }));
 	}
 

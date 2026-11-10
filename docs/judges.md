@@ -4,6 +4,8 @@ A judge answers the bounded questions asked at mu's decision points: yes or no, 
 
 ## Which judge answers
 
+To choose the judge without editing a file, run `mu judge` in a terminal. It shows the judge in use, asks the judge question of `mu setup` alone and leaves your model as it is. The judge you pick replaces the ones `mu.json` names, and takes effect in the next session you start.
+
 `tiers` in `~/.mu/agent/mu.json` (or `MU_JUDGE` for one run) lists the judges in order. Each later judge only sees the questions the earlier ones left uncertain, so a fast local judge can go first and a hosted one can catch the rest:
 
 ```json

@@ -245,6 +245,15 @@ export interface BuiltJudge {
 }
 
 /** The configured tiers as one judge. Unknown or unavailable tiers are reported, not fatal. */
+/** The names a judge can be asked for by, for whoever typed one mu does not know: mu.json's own first, then mu's. */
+function knownJudges(config: KyrnConfig): string {
+	// `mock` answers tests, never a person.
+	const names = [...new Set([...Object.keys(config.judges), ...Object.keys(BUILT_IN_JUDGES)])].filter(
+		(name) => name !== "mock",
+	);
+	return `Judges mu knows: ${names.join(", ")}; or llm:<provider>/<model>, classifier:<provider>/<model>`;
+}
+
 export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge {
 	const tiers: CascadeTier[] = [];
 	const problems: string[] = [];
@@ -254,7 +263,7 @@ export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge
 			problems.push(
 				name === LAYA
 					? `"laya" is no longer built into mu: add a decision model from Hugging Face with mu judge model add <link>`
-					: `unknown judge "${name}"`,
+					: `unknown judge "${name}". ${knownJudges(config)}`,
 			);
 			continue;
 		}
