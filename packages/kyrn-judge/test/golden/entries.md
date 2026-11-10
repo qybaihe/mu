@@ -28,10 +28,11 @@ without one.
 | `kyrn.monitor` | entry | src/extension/features/monitor.ts | - | What the drift check or the loop rule said, or in shadow mode would have said: the record a shadow run is judged by. |
 | `kyrn.notice` | message | src/extension/features/notify.ts | - | An event the notify feature passes on to the model, now or with the next turn. |
 | `kyrn.nudge` | message | src/extension/features/continuation.ts; src/extension/features/completion.ts | - | Sends a run that stopped short, or left a change unverified, back to work. |
-| `kyrn.outcome` | entry | src/extension/features/permissions.ts; src/extension/features/commands.ts; src/extension/features/nudge-outcome.ts | desktop: nativeHost/reducer.ts; mu ledger: kyrn/bin/kyrn-ledger; /ledger: src/extension/features/commands.ts | What became of a judgment: the user's answer to the question it sent them, their mark that it was wrong, or what the agent did with the nudge it sent. |
+| `kyrn.outcome` | entry | src/extension/features/permissions.ts; src/extension/features/commands.ts; src/extension/features/nudge-outcome.ts; src/extension/features/recall.ts; src/extension/features/warming.ts; src/extension/features/preload.ts | desktop: nativeHost/reducer.ts; mu ledger: kyrn/bin/kyrn-ledger; /ledger: src/extension/features/commands.ts | What became of a judgment: the user's answer to the question it sent them, their mark that it was wrong, what the agent did with the nudge it sent, a left-out part the model read back, when the user returned after a warming verdict, or what a conversation's opening read against what was forecast. |
 | `kyrn.plan` | entry | src/extension/features/plan.ts | - | Plan mode turned on or off, or a plan the user approved, with how many of its steps went on the checklist (kyrn/docs/features/plan-mode.md). |
 | `kyrn.plan` | message | src/extension/features/plan.ts | - | What plan mode means, given to the model when it is turned on, and that it is off when it is left. |
 | `kyrn.prefix` | entry | src/extension/features/prefix.ts | - | A request to the model that no longer starts with the one before it: what changed, and what mu decided in between. |
+| `kyrn.preload` | message | src/extension/features/preload.ts | - | Files the judge was sure the task needs, given with the first message of a conversation. |
 | `kyrn.question` | entry | src/extension/features/ask-user.ts | - | How questions the model asked with ask_user ended: answered, skipped or pending, and a late answer (kyrn/docs/features/ask-user.md). |
 | `kyrn.recovery` | message | src/extension/features/recovery.ts | - | Which calls an interruption left without a result, and what to check before running them again. |
 | `kyrn.rewind` | message | src/extension/features/checkpoint.ts | - | The lesson of a rewind, for the model to start over with. |
@@ -39,6 +40,7 @@ without one.
 | `kyrn.skill-read` | entry | src/extension/features/skills.ts | - | The model read a skill's file: how mu had shown it that skill, and what the first skill-disclosure verdict said of it. A skill the judge kept out and the model read is a miss. |
 | `kyrn.skills` | message | src/extension/features/skills.ts | - | The skills that apply to the task. |
 | `kyrn.skills-changed` | message | src/extension/features/skills.ts | - | Skills installed or removed during the session, which the system prompt's list does not show. |
+| `kyrn.snapshot` | message | src/extension/features/snapshot.ts | - | The folder, git's state and the machine as a conversation starts, given once with its first message. |
 | `kyrn.steer` | message | src/extension/features/checkpoint.ts; src/extension/features/monitor.ts | - | A short correction while the agent works: it loops or drifts, its approach looks like a dead end, or the files are back at a checkpoint. |
 | `kyrn.subagent-session` | entry | src/extension/features/swarm.ts | - | Ties a sub-agent's own session file to the delegate or hive call that started it (kyrn/docs/features/subagent-sessions.md). |
 | `kyrn.swarm` | message | src/extension/features/swarm-child.ts | - | Asks a sub-agent to wrap up and report. |
@@ -668,7 +670,7 @@ A message. No schema: no other program reads it.
 
 A message. No schema: no other program reads it.
 
-## kyrn.outcome v2
+## kyrn.outcome v3
 
 A entry, read by another program:
 
@@ -869,6 +871,110 @@ A entry, read by another program:
 					"type": "number"
 				}
 			}
+		},
+		{
+			"type": "object",
+			"required": [
+				"kind",
+				"source",
+				"tool",
+				"chars"
+			],
+			"properties": {
+				"kind": {
+					"type": "string",
+					"const": "refetch"
+				},
+				"source": {
+					"anyOf": [
+						{
+							"type": "string",
+							"const": "archive"
+						},
+						{
+							"type": "string",
+							"const": "page"
+						},
+						{
+							"type": "string",
+							"const": "session"
+						}
+					]
+				},
+				"tool": {
+					"type": "string"
+				},
+				"ledgerId": {
+					"type": "string"
+				},
+				"specId": {
+					"type": "string"
+				},
+				"chars": {
+					"type": "number"
+				}
+			}
+		},
+		{
+			"type": "object",
+			"required": [
+				"kind",
+				"ledgerId",
+				"specId",
+				"afterMs"
+			],
+			"properties": {
+				"kind": {
+					"type": "string",
+					"const": "returned"
+				},
+				"ledgerId": {
+					"type": "string"
+				},
+				"specId": {
+					"type": "string"
+				},
+				"judged": {},
+				"afterMs": {
+					"type": "number"
+				}
+			}
+		},
+		{
+			"type": "object",
+			"required": [
+				"kind",
+				"ledgerId",
+				"specId",
+				"predicted",
+				"given",
+				"read",
+				"hits"
+			],
+			"properties": {
+				"kind": {
+					"type": "string",
+					"const": "preload"
+				},
+				"ledgerId": {
+					"type": "string"
+				},
+				"specId": {
+					"type": "string"
+				},
+				"predicted": {
+					"type": "number"
+				},
+				"given": {
+					"type": "number"
+				},
+				"read": {
+					"type": "number"
+				},
+				"hits": {
+					"type": "number"
+				}
+			}
 		}
 	]
 }
@@ -885,6 +991,10 @@ A message. No schema: no other program reads it.
 ## kyrn.prefix v1
 
 A entry. No schema: no other program reads it.
+
+## kyrn.preload v1
+
+A message. No schema: no other program reads it.
 
 ## kyrn.question v1
 
@@ -911,6 +1021,10 @@ A entry. No schema: no other program reads it.
 A message. No schema: no other program reads it.
 
 ## kyrn.skills-changed v1
+
+A message. No schema: no other program reads it.
+
+## kyrn.snapshot v1
 
 A message. No schema: no other program reads it.
 

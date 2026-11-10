@@ -102,5 +102,5 @@
 <text x="40" y="487" font-size="14.5" font-weight="600" fill="#f0f6fc">The judge</text>
 <text x="122" y="487" font-size="13" fill="#b7bdc8">Jev (hosted), mude 1.0 (local), a classifier or any LLM: one bounded question, about 0.3 s.</text>
 <text x="40" y="507" font-size="12.5" fill="#8b949e">Every verdict goes to the ledger with its probabilities. Without one, mu does what it would do without a judge.</text>
-<text x="0" y="554" font-size="12" fill="#8b949e">18 of the 40 decision points. Each one is active, shadow (asked and logged only) or off.</text>
+<text x="0" y="554" font-size="12" fill="#8b949e">18 of the 41 decision points. Each one is active, shadow (asked and logged only) or off.</text>
 </svg>

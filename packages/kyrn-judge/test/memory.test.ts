@@ -758,7 +758,51 @@ describe("the experience library in a session", () => {
 		await session.harness.session.prompt("/remember always run the linter before   committing.");
 		expect(session.stored()).toHaveLength(1);
 		expect(session.asked("merge_1")).toHaveLength(0);
+		// Said twice: recalling it was not enough, so it is checked before every change from now on.
+		expect(session.notes.at(-1)).toBe(
+			"Already saved, and that's twice: it's now a standing rule, checked before every change. Always run the linter before committing.",
+		);
+		expect(session.stored()[0]).toMatchObject({ standing: true, status: "active" });
+		expect(session.shown("memory.standing")).toEqual([{ id: session.stored()[0].id, reason: "repeated" }]);
+		// A third time changes nothing more.
+		await session.harness.session.prompt("/remember Always run the linter before committing.");
 		expect(session.notes.at(-1)).toBe("Already saved: Always run the linter before committing.");
+		expect(session.shown("memory.standing")).toHaveLength(1);
+	});
+
+	it("standing: the user's word that is recalled and never followed becomes a standing rule, not a retired lesson", async () => {
+		const responder = (request: JudgeRequest): Record<string, Answer> => {
+			if ("lesson_0" in request.questions) return { lesson_0: yes };
+			return "applied_1" in request.questions ? { applied_1: no } : {};
+		};
+		const ignored = (cwd: string) =>
+			lesson("ignored", {
+				scope: { cwd },
+				lesson: "Run ./test.sh, never npm test.",
+				uses: { recalled: 7, applied: 0 },
+			});
+
+		const session = await start(responder);
+		seed(session.path, [ignored(session.harness.tempDir)]);
+		session.harness.setResponses([fauxAssistantMessage("I ran npm test and it passes.")]);
+		await session.harness.session.prompt("Fix the login test.");
+		await vi.waitFor(() => expect(session.shown("memory.standing")).toHaveLength(1));
+		expect(session.stored()[0]).toMatchObject({
+			status: "active",
+			standing: true,
+			uses: { recalled: 8, applied: 0 },
+		});
+		expect(session.shown("memory.standing")).toEqual([{ id: "ignored", reason: "ignored" }]);
+		expect(session.shown("memory.retired")).toEqual([]);
+
+		// Switched off, the user's word retires like any lesson that is never followed.
+		const plain = await start(responder, { memory: { standing: false } });
+		seed(plain.path, [ignored(plain.harness.tempDir)]);
+		plain.harness.setResponses([fauxAssistantMessage("I ran npm test and it passes.")]);
+		await plain.harness.session.prompt("Fix the login test.");
+		await vi.waitFor(() => expect(plain.shown("memory.retired")).toHaveLength(1));
+		expect(plain.stored()[0]).toMatchObject({ status: "retired" });
+		expect(plain.stored()[0].standing).toBeUndefined();
 	});
 
 	describe("merging before a lesson is stored", () => {
@@ -790,7 +834,11 @@ describe("the experience library in a session", () => {
 			expect(session.shown("memory.merged")).toEqual([
 				{ id: expect.any(String), into: "tests-lesson", how: "same" },
 			]);
-			expect(session.notes.at(-1)).toBe("Already saved: Run the tests with npm test.");
+			// The kept lesson is the user's, and they are saying it a second time: it becomes a standing rule.
+			expect(session.notes.at(-1)).toBe(
+				"Already saved, and that's twice: it's now a standing rule, checked before every change. Run the tests with npm test.",
+			);
+			expect(kept.standing).toBe(true);
 			expect(session.asked("merge_1")[0].state).toEqual({
 				candidate: "When: Use npm test to run the tests.\nDo: Use npm test to run the tests.",
 				existing_1: "When: running the tests\nDo: Run the tests with npm test.",
@@ -926,7 +974,13 @@ describe("the experience library in a session", () => {
 		});
 		const cwd = session.harness.tempDir;
 		seed(session.path, [
-			lesson("unused", { scope: { cwd }, lesson: "Mention the changelog.", uses: { recalled: 7, applied: 0 } }),
+			// What the agent concluded for itself: ignored that often, it only holds a place.
+			lesson("unused", {
+				scope: { cwd },
+				lesson: "Mention the changelog.",
+				source: { origin: "model" },
+				uses: { recalled: 7, applied: 0 },
+			}),
 			lesson("useful", {
 				scope: { cwd },
 				lesson: "Run the login test with vitest --run.",

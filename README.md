@@ -2,7 +2,7 @@
   <img src="desktop/resources/app.png" width="96" alt="mu">
 </p>
 <h1 align="center">mu</h1>
-<p align="center">Most of what a coding agent decides isn't code. It's yes/no calls, and mu hands 40 kinds of them to a small model. Built on <a href="https://github.com/earendil-works/pi">pi</a>.</p>
+<p align="center">Most of what a coding agent decides isn't code. It's yes/no calls, and mu hands 41 kinds of them to a small model. Built on <a href="https://github.com/earendil-works/pi">pi</a>.</p>
 
 <p align="center"><b>Terminal-Bench 2.1, same model, same tasks:</b> mu passed 68.2% of attempts, pi 58.7% (+9.5 points, 95% interval +3.8 to +15.2). <a href="#measured">How it was measured</a></p>
 
@@ -34,7 +34,7 @@ Does this output matter? Is this command safe for the task? Is the work really d
 - **Commands approved on autopilot.** The agent asks before every step, so you click Allow without reading, or turn the prompts off. In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
 - **Runs that stop halfway.** "Next I'll run the tests," and the turn ends. The judge catches a run that stopped short, or a "done" that nothing verified, and sends the agent back to finish.
 
-Asking the main model each of these costs tokens and its attention, and fixed rules get them wrong too often. mu asks a **judge**: a small, fast model that answers one bounded question at a time, at 40 decision points in the agent loop. 34 of them act on their verdicts out of the box. Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab), and any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
+Asking the main model each of these costs tokens and its attention, and fixed rules get them wrong too often. mu asks a **judge**: a small, fast model that answers one bounded question at a time, at 41 decision points in the agent loop. 34 of them act on their verdicts out of the box. Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab), and any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
 
 mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: [mude 1.0](#mude-10-a-decision-model-optimized-for-coding), mu's own model, on your Mac; another decision model from Hugging Face; your own System One server; or any LLM.
 
@@ -52,7 +52,7 @@ mu setup            # connect a model
 mu                  # start a session in the current directory
 ```
 
-You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. Out of the box, 34 of the 40 decision points act on their verdicts, and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
+You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. Out of the box, 34 of the 41 decision points act on their verdicts, and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 
 ## How a turn works
 
@@ -67,10 +67,10 @@ You don't need a judge key to start: until you set one, the free Jev on OpenCode
 
 Each decision point is `active` (the default), `shadow` (asked and logged, but changes nothing; useful for comparing judges before you switch one on) or `off`. Each can also name its own judge: `jev`, `mude` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>` or a cascade such as `mude,jev`.
 
-The 40 points fall into five groups:
+The 41 points fall into five groups:
 
 - **Input** (3): what kind of message this is, whether it changes the task and whether it should interrupt the current step.
-- **Context** (14): what enters the prompt (skills, packs, lessons, chunks of tool output), what to drop as the context grows, which lessons and skills are worth keeping and when to keep the prompt cache warm.
+- **Context** (15): what enters the prompt (skills, packs, lessons, chunks of tool output, the files a task opens with), what to drop as the context grows, which lessons and skills are worth keeping and when to keep the prompt cache warm.
 - **Tools and safety** (10): whether a command or action should run, whether fetched content or an MCP tool description carries a prompt injection, and quick calls for file search, bulk yes/no questions, browser steps, review triage and diagnostics.
 - **Turn** (8): whether the work has drifted, hit a dead end, really finished or stopped short, whether a `/goal` condition is met and what the board and the model should hear.
 - **Teamwork** (5): which subagent gets a delegated task, whether its patch stayed in scope and which findings bees share.
@@ -87,7 +87,7 @@ The 40 points fall into five groups:
 </details>
 
 <details>
-<summary><b>Context</b>: 14 decision points</summary>
+<summary><b>Context</b>: 15 decision points</summary>
 
 | Decision point | Question | Effect |
 | --- | --- | --- |
@@ -105,6 +105,7 @@ The 40 points fall into five groups:
 | `memory.applied` | Were the recalled lessons followed this turn? | A lesson that's often recalled and never followed is retired |
 | `skill.capture` | A long run ended well: was it a procedure, the same steps for the next task of its kind? | It's drafted as a skill and waits for you; `/skills accept` installs it |
 | `cache.warming` | Will you be back before the prompt cache expires? | The cache is refreshed, or left to expire |
+| `context.preload` | A conversation opens: which files will the task need? | In shadow mode out of the box: the verdict is recorded and compared with what the opening reads. Active: those files go to the model with the first message |
 
 </details>
 

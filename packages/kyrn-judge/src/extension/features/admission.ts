@@ -166,14 +166,14 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		call: string,
 		middle: readonly string[],
 		signal: AbortSignal | undefined,
-	): Promise<readonly AdmissionOutcome[]> => {
+	): Promise<{ outcomes: readonly AdmissionOutcome[]; ledgerId?: string }> => {
 		if (!runtime.answersInBatches(toolAdmission.id, "screen")) {
 			const decisions = await runtime.engine.decideMany(
 				toolAdmission,
 				middle.map((chunk) => ({ call, chunk })),
 				{ signal, concurrency: options.concurrency },
 			);
-			return decisions.map((decision) => decision.outcome);
+			return { outcomes: decisions.map((decision) => decision.outcome), ledgerId: decisions[0]?.ledgerId };
 		}
 		const size = Math.max(1, Math.min(options.batchChunks, Math.floor(BATCH_STATE_CHARS / options.chunkChars)));
 		const batches: { call: string; chunks: string[] }[] = [];
@@ -184,7 +184,7 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			signal,
 			concurrency: options.concurrency,
 		});
-		return decisions.flatMap((decision) => decision.outcome);
+		return { outcomes: decisions.flatMap((decision) => decision.outcome), ledgerId: decisions[0]?.ledgerId };
 	};
 
 	pi.on(
@@ -242,14 +242,19 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			}
 			// Measured in real sessions before batching: up to 30 s in front of one result. Past the limit the output
 			// goes in whole; the verdicts still land in the ledger, where the wait they would have cost can be read.
-			const outcomes = await within(judgeChunks(call, middle, ctx.signal), options.waitMs);
-			if (!outcomes) return undefined;
+			const judged = await within(judgeChunks(call, middle, ctx.signal), options.waitMs);
+			if (!judged) return undefined;
+			const { outcomes } = judged;
 
 			const dropped = outcomes.map((outcome) => outcome.drop);
 			if (!dropped.some(Boolean)) return undefined;
 
 			writeArchive(archivePath, text);
 			archive();
+			// Whoever reads a left-out part back (`recall`) labels this verdict: the part was needed after all.
+			if (judged.ledgerId) {
+				runtime.judgedOutputs.set(event.toolCallId, { ledgerId: judged.ledgerId, specId: toolAdmission.id });
+			}
 
 			// Where each chunk starts in the archived text, so a note can send recall to the part it stands for.
 			const starts: number[] = [];

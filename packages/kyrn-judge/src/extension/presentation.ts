@@ -16,6 +16,7 @@ export interface KyrnPresentationEvent {
 		| "memory.applied"
 		| "memory.retired"
 		| "memory.merged"
+		| "memory.standing"
 		| "skill.drafted"
 		| "skill.installed"
 		| "frame.updated"

@@ -38,6 +38,7 @@ import { type ConfineDeps, registerConfine } from "./features/confine.ts";
 import { registerConstraints } from "./features/constraints.ts";
 import { registerContinuation } from "./features/continuation.ts";
 import { registerDeadline } from "./features/deadline.ts";
+import { registerEvolve } from "./features/evolve.ts";
 import { registerFeatureOffers } from "./features/feature-offers.ts";
 import { registerForgetting } from "./features/forgetting.ts";
 import { registerFrame } from "./features/frame.ts";
@@ -65,12 +66,14 @@ import { registerPermissions } from "./features/permissions.ts";
 import { registerPlan } from "./features/plan.ts";
 import { registerPrefix } from "./features/prefix.ts";
 import { registerPreflight } from "./features/preflight.ts";
+import { registerPreload } from "./features/preload.ts";
 import { registerPresent } from "./features/present.ts";
 import { registerProcedures } from "./features/procedures.ts";
 import { registerRecall } from "./features/recall.ts";
 import { registerRecovery } from "./features/recovery.ts";
 import { registerSandbox, type SandboxDeps } from "./features/sandbox.ts";
 import { registerSkills } from "./features/skills.ts";
+import { registerSnapshot } from "./features/snapshot.ts";
 import { registerSwarm, type SwarmRunner } from "./features/swarm.ts";
 import { registerSwarmChild } from "./features/swarm-child.ts";
 import { registerTools } from "./features/tools.ts";
@@ -169,7 +172,10 @@ export type FeatureName =
 	| "plan"
 	| "featureOffers"
 	| "interrupted"
-	| "prefix";
+	| "prefix"
+	| "evolve"
+	| "snapshot"
+	| "preload";
 
 export function createKyrnJudgeExtension(options: KyrnJudgeExtensionOptions = {}): (pi: ExtensionAPI) => void {
 	return (pi) => registerKyrn(pi, options);
@@ -262,6 +268,13 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["frame", registerFrame],
 		["memory", (shared) => registerMemory(shared, roots)],
 		["procedures", (shared) => registerProcedures(shared, roots)],
+		// Before the features that report to it and read from it (permissions, snapshot, preload), though they only do
+		// so once a session runs: it keeps what they observe.
+		["evolve", (shared) => registerEvolve(shared, roots)],
+		// After memory, whose lessons the model should read before a listing of the folder.
+		["snapshot", registerSnapshot],
+		// After the snapshot: the folder first, then the files of it the task needs.
+		["preload", registerPreload],
 		["skills", (shared) => registerSkills(shared, roots)],
 		// Registered before the features that add capabilities, and that is fine: it reads the catalog when a turn starts.
 		["catalog", registerCatalog],

@@ -2,7 +2,7 @@
 
 # Decision points
 
-Every decision point mu has, 40 in all, grouped as the desktop app's settings group them. Each is asked as a short question about a small state; [How mu works](../architecture.md) explains the engine and [Judges](../judges.md) who answers.
+Every decision point mu has, 41 in all, grouped as the desktop app's settings group them. Each is asked as a short question about a small state; [How mu works](../architecture.md) explains the engine and [Judges](../judges.md) who answers.
 
 Each point has a mode:
 
@@ -10,7 +10,7 @@ Each point has a mode:
 - `shadow`: Asked and logged, but changes nothing. Use it to see how well the judge does before relying on it.
 - `off`: Not asked; this decision point is off.
 
-The built-in default is `"modes": { "default": "active" }`. `context.compact` and `output.drift` belong to features that are off by default, so they don't run until you turn those features on. Out of the box, `notify.routing` and `turn.drift` are in `shadow` and `capability.disclosure` and `swarm.patch` are `off`. So 34 of the 40 points act on their verdicts from the start. Set `"default": "shadow"`, or a point's own mode, in `~/.mu/agent/mu.json` to only record verdicts; the desktop app's settings switch a point on or off; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).
+The built-in default is `"modes": { "default": "active" }`. `context.compact` and `output.drift` belong to features that are off by default, so they don't run until you turn those features on. Out of the box, `context.preload`, `notify.routing` and `turn.drift` are in `shadow` and `capability.disclosure` and `swarm.patch` are `off`. So 34 of the 41 points act on their verdicts from the start. Set `"default": "shadow"`, or a point's own mode, in `~/.mu/agent/mu.json` to only record verdicts; the desktop app's settings switch a point on or off; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).
 
 The feature column names the switch in `features` that turns the whole behavior off; its options are in [Features](features.md).
 
@@ -40,6 +40,7 @@ The feature column names the switch in `features` that turns the whole behavior 
 | `memory.applied` | Lesson followed | At the end of a turn, judges whether the lessons brought into it were followed. A lesson recalled many times and never followed is retired. | [`memory`](features.md#memory) |
 | `skill.capture` | Drafting a procedure as a skill | After a long, successful run that ran commands, judges whether it was a reusable procedure (the same steps would handle the next task of its kind), a one-off, or already covered by an installed skill. The writer model drafts a procedure as a skill, which waits until you install it with /skills accept. Asked at most once per turn, and never for an ordinary turn. | [`procedures`](features.md#procedures) |
 | `cache.warming` | Cache warming | Guesses whether you'll be back soon, to decide whether to refresh the prompt cache before it expires. Asked only while the agent is idle, so a run never loses its cache to it. | [`warming`](features.md#warming) |
+| `context.preload` | Opening preload | When a conversation opens, judges which files the task will need. The ones it is sure of go to the model with the first message, saving the steps that would have read them. The judge sees the task and the paths, never a file's contents. The files the opening then reads are recorded against the verdict. | [`preload`](features.md#preload) |
 
 ## Tools and safety
 

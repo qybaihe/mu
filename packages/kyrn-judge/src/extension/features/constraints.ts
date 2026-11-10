@@ -45,11 +45,17 @@ function readOnlyShell(toolName: string, input: Readonly<Record<string, unknown>
  * Keeps the user's hard constraints, not just shows them: a call that changes
  * something is checked against every constraint in the task frame before it
  * runs. The block reason is the user's own sentence.
+ *
+ * The standing rules of the project are checked the same way (`runtime.standingRules`): lessons in the user's word
+ * that recalling was not enough for. They come from earlier sessions, so a call stopped by one is told which lesson it
+ * was and how the user takes it away.
  */
 export function registerConstraints(runtime: KyrnRuntime): void {
 	const options = runtime.options("constraints", {
 		enabled: true,
 		maxConstraints: 6,
+		/** Standing rules checked beside the task's constraints, the most recently confirmed first. 0 checks none. */
+		maxStanding: 4,
 		waitMs: 5000,
 		/** Read-only shell commands are not checked, as reading tools are not. */
 		skipReadOnly: true,
@@ -63,9 +69,9 @@ export function registerConstraints(runtime: KyrnRuntime): void {
 			if (!MUTATING.has(event.toolName)) return undefined;
 			if (options.skipReadOnly && readOnlyShell(event.toolName, event.input, ctx.cwd)) return undefined;
 			// The newest constraints are the ones a user is most likely to see broken.
-			const constraints = (runtime.frame?.constraints ?? [])
-				.slice(-options.maxConstraints)
-				.map((entry) => entry.text);
+			const framed = (runtime.frame?.constraints ?? []).slice(-options.maxConstraints).map((entry) => entry.text);
+			const standing = (runtime.standingRules?.(ctx.cwd) ?? []).slice(0, Math.max(0, options.maxStanding));
+			const constraints = [...framed, ...standing.map((rule) => rule.text)];
 			const mode = runtime.mode(toolConstraint.id);
 			if (constraints.length === 0 || mode === "off") return undefined;
 			const input = { toolName: event.toolName, call: describeCall(event.toolName, event.input), constraints };
@@ -84,9 +90,15 @@ export function registerConstraints(runtime: KyrnRuntime): void {
 			const broken = decision.outcome.broken.map((index) => constraints[index]).filter(Boolean);
 			if (broken.length === 0) return undefined;
 			runtime.present("constraint.blocked", { toolName: event.toolName, constraints: broken });
+			// A rule from an earlier session is named, so the user can find it and take it away.
+			const rules = decision.outcome.broken.flatMap((index) => standing[index - framed.length] ?? []);
+			const kept =
+				rules.length > 0
+					? ` ${rules.length === 1 ? "It is a standing rule" : "These are standing rules"} from an earlier session (${rules.map((rule) => `lesson ${rule.id.slice(0, 8)}`).join(", ")}; the user removes one with /forget).`
+					: "";
 			return {
 				block: true,
-				reason: `mu: this call goes against what the user said: ${broken.map((text) => `"${clip(text, 200)}"`).join("; ")}. Do it another way, or ask the user whether the instruction still holds.`,
+				reason: `mu: this call goes against what the user said: ${broken.map((text) => `"${clip(text, 200)}"`).join("; ")}.${kept} Do it another way, or ask the user whether the instruction still holds.`,
 			};
 		}),
 		{ final: true },

@@ -332,6 +332,35 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 }
 ```
 
+## context.preload v1
+
+```json
+{
+	"state": {
+		"task": "The parseDuration test fails for 1h30m, can you fix it?"
+	},
+	"questions": {
+		"file_0": {
+			"type": "boolean",
+			"instructions": "Will the agent have to read this file to do `task`? src/parse.ts"
+		},
+		"file_1": {
+			"type": "boolean",
+			"instructions": "Will the agent have to read this file to do `task`? test/parse.test.ts"
+		},
+		"file_2": {
+			"type": "boolean",
+			"instructions": "Will the agent have to read this file to do `task`? README.md"
+		}
+	},
+	"capabilities": {
+		"file_0": "relate",
+		"file_1": "relate",
+		"file_2": "relate"
+	}
+}
+```
+
 ## files.locate v1
 
 ```json
@@ -1176,7 +1205,7 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 }
 ```
 
-## tool.approval v3
+## tool.approval v4
 
 ```json
 {

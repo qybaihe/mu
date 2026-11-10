@@ -16,6 +16,10 @@ import { isEscapeOption } from "../policy.ts";
  * Version 3: `call` is the whole call with its line breaks, and a tool other
  * than a shell shows its whole input. Version 2 read the first 400 characters
  * of a short description, run into one line.
+ *
+ * Version 4: the line a step has to reach can be the one the user accepted for
+ * the project (`approveAt`, from `/evolve accept`). It only ever lowers the
+ * built-in line, and never below `LOWEST_APPROVE_AT`.
  */
 export interface ToolApprovalInput {
 	/** The task as the frame has it: goal, and the current subgoal when there is one. */
@@ -27,6 +31,8 @@ export interface ToolApprovalInput {
 	readonly where: string;
 	/** The call runs a check in the project and otherwise only looks (`isCheckChain`). Not shown to the judge. */
 	readonly check?: boolean;
+	/** The line the user accepted for this project, in place of the built-in one. Not shown to the judge. */
+	readonly approveAt?: number;
 }
 
 export type ToolApprovalOutcome = "approve" | "beyond" | "unrelated" | "unsure";
@@ -39,10 +45,15 @@ export const APPROVE_AT = 0.8;
  * real requests none it put at 0.7 or more needed the user. A "beyond" or "unrelated" verdict still asks.
  */
 export const CHECK_APPROVE_AT = 0.7;
+/**
+ * The lowest line an accepted adaptation can set. Under it the judge's "needed" is closer to a guess than to a
+ * reading, whatever a user's answers so far say.
+ */
+export const LOWEST_APPROVE_AT = 0.6;
 
 export const toolApproval = defineDecision({
 	id: "tool.approval",
-	version: 3,
+	version: 4,
 	cacheImpact: "none",
 	latency: "inline",
 	capabilities: "relate",
@@ -67,7 +78,9 @@ export const toolApproval = defineDecision({
 		const { choice, probabilities } = answers.verdict;
 		if (isEscapeOption(choice)) return "unsure";
 		const p = probabilities?.[choice];
-		const line = input.check ? CHECK_APPROVE_AT : APPROVE_AT;
+		const builtIn = input.check ? CHECK_APPROVE_AT : APPROVE_AT;
+		const line =
+			input.approveAt === undefined ? builtIn : Math.min(builtIn, Math.max(LOWEST_APPROVE_AT, input.approveAt));
 		if (choice === "needed") return p === undefined || p >= line ? "approve" : "unsure";
 		return choice === "beyond" || choice === "unrelated" ? choice : "unsure";
 	},

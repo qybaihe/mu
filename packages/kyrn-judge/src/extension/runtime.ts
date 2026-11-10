@@ -9,6 +9,7 @@ import { type Decision, DecisionEngine, type DecisionMode } from "../decision.ts
 import type { PreflightOutcome, TaskFrame } from "../decisions/input-preflight.ts";
 import type { NotifyFn } from "../decisions/notify-routing.ts";
 import { JudgeError } from "../errors.ts";
+import type { EvolveLink } from "../evolve/store.ts";
 import { compactFrame, type Frame, type FrameState, isStale } from "../frame/frame.ts";
 import type { JudgeLike } from "../judge.ts";
 import { CompositeLedger, type LedgerRecord, type LedgerSink, MemoryLedger } from "../ledger.ts";
@@ -265,6 +266,23 @@ export class KyrnRuntime {
 	 * one line each, for the "known lessons" of its brief. Undefined while that feature is off.
 	 */
 	knownLessons?: (tasks: readonly string[], signal?: AbortSignal) => Promise<readonly (readonly string[])[]>;
+	/**
+	 * Set by the memory feature: the lessons of this project that became standing rules (the user had to repeat one,
+	 * or it was recalled and never followed). The constraint gate holds a call that changes something against them,
+	 * as against the task's own constraints. Undefined while that feature is off.
+	 */
+	standingRules?: (cwd: string) => readonly { readonly id: string; readonly text: string }[];
+	/**
+	 * Set by the evolve feature: what earlier sessions observed about this user and this machine, and the adaptations
+	 * the user accepted. The permission gate, the snapshot and the preload read it and report to it. Undefined while
+	 * that feature is off.
+	 */
+	evolve?: EvolveLink;
+	/**
+	 * The tool results admission left parts out of, by tool call id, each with the ledger record of the verdict that
+	 * did. Set by admission, read by `recall`: reading such a part back labels that verdict.
+	 */
+	readonly judgedOutputs = new Map<string, { readonly ledgerId: string; readonly specId: string }>();
 	/**
 	 * Set by the skills feature: the skills this session keeps out of the prompt, which a sub-agent takes instead of
 	 * asking again. Undefined while nothing is settled (the first verdict is still on its way, or the decision is off).
