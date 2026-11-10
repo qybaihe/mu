@@ -13,7 +13,7 @@ import { type PermissionMode, parseMode } from "../permissions/modes.ts";
  * of a command the user allowed (`npm test`) and numbers only.
  * It is the user's file, in their agent folder: a project cannot write it, and no tool the model has does.
  */
-export type EvolveRow = ApprovalRow | OpeningRow | CommandRow | GapRow | RunRow | GrantRow | AdaptationRow;
+export type EvolveRow = ApprovalRow | OpeningRow | CommandRow | GapRow | RunRow | GrantRow | SaidRow | AdaptationRow;
 
 /** The user's answer to a call the approval judge read as needed, but not surely enough to let it run. */
 export interface ApprovalRow {
@@ -96,6 +96,17 @@ export interface GrantRow {
 	/** The permission mode the question was asked in. */
 	readonly mode: PermissionMode;
 	readonly answer: "session" | "deny";
+}
+
+/**
+ * mu told the user of a suggestion, at the end of the run it became one in. It is said once: after that it waits in
+ * `/evolve`. `about` names the suggestion: `line:0.70`, `grant:ask:shell:npm test`.
+ */
+export interface SaidRow {
+	readonly type: "said";
+	readonly cwd: string;
+	readonly at: string;
+	readonly about: string;
 }
 
 interface AdaptationBase {
@@ -186,6 +197,10 @@ export function rowOf(value: unknown): EvolveRow | undefined {
 		if (!isText(value.cwd) || !isText(value.key) || !isText(value.label) || !mode) return undefined;
 		if (value.answer !== "session" && value.answer !== "deny") return undefined;
 		return { type: "grant", cwd: value.cwd, at, key: value.key, label: value.label, mode, answer: value.answer };
+	}
+	if (value.type === "said") {
+		if (!isText(value.cwd) || !isText(value.about)) return undefined;
+		return { type: "said", cwd: value.cwd, at, about: value.about };
 	}
 	if (value.type === "adaptation") {
 		if (!isText(value.id) || !isText(value.cwd)) return undefined;

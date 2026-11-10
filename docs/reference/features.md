@@ -470,7 +470,7 @@ On by default: yes. Decision points: `hive.publish`, `hive.deliver`, `hive.relat
 
 ## evolve
 
-**Adapting to you.** Keeps what mu observes: your answers to approval questions, programs missing on this machine, the files a project's sessions open with, how long you stay away and how often a run needed you. From these it makes suggestions you accept with /evolve accept: lowering a project's approval line to where you allowed every call anyway, or keeping a command allowed in a project when you allow it in every session. Only a command you type loosens anything; marking an approval wrong (/ledger wrong) takes it back at once. The data stays in your agent folder (mu/evolve.jsonl) and holds no commands, messages or file contents.
+**Adapting to you.** Keeps what mu observes: your answers to approval questions, programs missing on this machine, the files a project's sessions open with, how long you stay away and how often a run needed you. From these it makes suggestions you accept with /evolve accept: lowering a project's approval line to where you allowed every call anyway, or keeping a command allowed in a project when you allow it in every session. mu tells you of a new suggestion once, when the run ends. Only a command you type loosens anything; marking an approval wrong (/ledger wrong) takes it back at once. The data stays in your agent folder (mu/evolve.jsonl) and holds no commands, messages or file contents.
 
 On by default: yes.
 
