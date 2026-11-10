@@ -1,9 +1,19 @@
+import { appendFileSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it } from "vitest";
-import { createHarness, getMessageText, getUserTexts, type Harness } from "../../coding-agent/test/suite/harness.ts";
+import {
+	createHarness,
+	createTestUiContext,
+	getMessageText,
+	getUserTexts,
+	type Harness,
+} from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
+import { rowOf } from "../src/evolve/store.ts";
 import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
@@ -22,8 +32,10 @@ const IMAGE = { type: "image" as const, data: "iVBORw0KGgo=", mimeType: "image/p
 
 describe("interjection: mu decides when a message sent mid-run reaches the work", () => {
 	const harnesses: Harness[] = [];
+	const folders: string[] = [];
 	afterEach(() => {
 		while (harnesses.length > 0) harnesses.pop()?.cleanup();
+		while (folders.length > 0) rmSync(folders.pop() as string, { recursive: true, force: true });
 	});
 
 	/**
@@ -32,7 +44,15 @@ describe("interjection: mu decides when a message sent mid-run reaches the work"
 	 */
 	async function running(
 		verdicts: Record<string, Verdict>,
-		extra: { modes?: Record<string, string>; features?: Record<string, unknown>; only?: FeatureName[] } = {},
+		extra: {
+			modes?: Record<string, string>;
+			features?: Record<string, unknown>;
+			only?: FeatureName[];
+			/** Someone is at the session: what mu tells them is kept in `notes`. Without it the session has no UI. */
+			ui?: boolean;
+			/** mu's own folder, for a test that reads what the evolve feature kept there. */
+			agentDir?: string;
+		} = {},
 	) {
 		const asked: string[] = [];
 		/** What the judge was told the agent is doing, for each message it was asked about. */
@@ -72,10 +92,28 @@ describe("interjection: mu decides when a message sent mid-run reaches the work"
 						modes: extra.modes,
 						features: attended({ memory: false, permissions: { mode: "full" }, ...extra.features }),
 					}),
+					...(extra.agentDir ? { roots: { home: extra.agentDir, agentDir: extra.agentDir } } : {}),
 				}),
 			],
 		});
 		harnesses.push(harness);
+		/** Everything mu told the user, and among it its answers to a question about progress. */
+		const notes: string[] = [];
+		const answers: string[] = [];
+		if (extra.ui) {
+			const ui = createTestUiContext({
+				notify: (message) => {
+					notes.push(message);
+					if (message.startsWith("mu: the agent is still working")) answers.push(message);
+				},
+				// A question nobody answers: the dialog closes when its time is up.
+				select: async (_title, _options, dialog) => {
+					await sleep(dialog?.timeout ?? 0);
+					return undefined;
+				},
+			});
+			await harness.session.bindExtensions({ uiContext: ui, mode: "rpc" });
+		}
 		const started = new Promise<void>((resolve) => {
 			const stop = harness.session.subscribe((event) => {
 				if (event.type === "tool_execution_start" && event.toolName === "wait") {
@@ -90,7 +128,7 @@ describe("interjection: mu decides when a message sent mid-run reaches the work"
 			seen.push(context.messages.filter((message) => message.role === "user").map(getMessageText));
 			return fauxAssistantMessage(text);
 		};
-		return { harness, session: harness.session, asked, actions, release, started, seen, answer };
+		return { harness, session: harness.session, asked, actions, release, started, seen, answer, notes, answers };
 	}
 
 	/** How many times `text` reached the conversation as the person's message. */
@@ -317,6 +355,171 @@ describe("interjection: mu decides when a message sent mid-run reaches the work"
 		run.release();
 		await first;
 		expect(run.actions).toEqual(["Copying the rows into the new table first."]);
+	});
+
+	describe("a question about how far the work has got", () => {
+		const question = "How far along are you?";
+		const todo = (params: Record<string, string>) => fauxToolCall("todo", params);
+
+		it("is answered by mu from what it knows, and the agent is not sent it", async () => {
+			const run = await running({ [question]: { kind: "status" } }, { ui: true });
+			run.harness.setResponses([
+				fauxAssistantMessage(
+					[
+						todo({ action: "add", text: "The users table has the new columns" }),
+						todo({ action: "add", text: "Every row is copied" }),
+					],
+					{ stopReason: "toolUse" },
+				),
+				fauxAssistantMessage([todo({ action: "done", id: "a1", evidence: "the migration ran" })], {
+					stopReason: "toolUse",
+				}),
+				fauxAssistantMessage([fauxText("Copying the rows into the new table first."), fauxToolCall("wait", {})], {
+					stopReason: "toolUse",
+				}),
+				run.answer("Migrated."),
+			]);
+			const first = run.session.prompt(GOAL);
+			await run.started;
+
+			// Queued for after the run, as a question that can wait would be: it is answered now all the same.
+			await run.session.prompt(question, { streamingBehavior: "followUp" });
+			await sleep(20);
+			expect(run.session.getSteeringMessages()).toEqual([]);
+			expect(run.session.getFollowUpMessages()).toEqual([]);
+			expect(run.answers).toHaveLength(1);
+			expect(run.answers[0].split("\n")).toEqual([
+				"mu: the agent is still working and wasn't sent \"How far along are you?\". Here's where the run stands:",
+				expect.stringMatching(/^ {2}\d+ s into this run, 4 steps so far\.$/),
+				"  Checklist, 1 of 2 done:",
+				"    [x] The users table has the new columns",
+				"    [ ] Every row is copied",
+				expect.stringMatching(/^ {2}Running now: wait \(\d+ s\)$/),
+				'  It last said: "Copying the rows into the new table first."',
+				"To have the agent answer instead, send the same message again within a minute.",
+			]);
+
+			run.release();
+			await first;
+			expect(run.seen.flat()).not.toContain(question);
+			expect(times(run.harness, question)).toBe(0);
+		});
+
+		it("goes to the agent when the user sends it again right after mu's answer", async () => {
+			const run = await running({ [question]: { kind: "status" } }, { ui: true });
+			run.harness.setResponses([
+				fauxAssistantMessage([fauxToolCall("wait", {})], { stopReason: "toolUse" }),
+				run.answer("Half of the rows are copied."),
+				run.answer("Migrated."),
+			]);
+			const first = run.session.prompt(GOAL);
+			await run.started;
+
+			await run.session.prompt(question, { streamingBehavior: "steer" });
+			await run.session.prompt(question, { streamingBehavior: "steer" });
+			await sleep(20);
+			// The judge was asked once: the second time, the message was the agent's without a verdict.
+			expect(run.asked).toEqual([question]);
+			expect(run.answers).toHaveLength(1);
+			expect(run.session.getSteeringMessages()).toEqual([question]);
+
+			run.release();
+			await first;
+			expect(run.seen[0]).toContain(question);
+			expect(times(run.harness, question)).toBe(1);
+		});
+
+		it("is the agent's where nobody would read mu's answer, or with `answerStatus` off", async () => {
+			const unseen = await running({ [question]: { kind: "status" } });
+			const off = await running(
+				{ [question]: { kind: "status" } },
+				{ ui: true, features: { interjection: { answerStatus: false } } },
+			);
+			for (const run of [unseen, off]) {
+				run.harness.setResponses([
+					fauxAssistantMessage([fauxToolCall("wait", {})], { stopReason: "toolUse" }),
+					run.answer("Half of the rows are copied."),
+					run.answer("Migrated."),
+				]);
+				const first = run.session.prompt(GOAL);
+				await run.started;
+				await run.session.prompt(question, { streamingBehavior: "steer" });
+				await sleep(20);
+				expect(run.asked).toEqual([question]);
+				expect(run.answers).toEqual([]);
+				expect(run.session.getSteeringMessages()).toEqual([question]);
+				run.release();
+				await first;
+				expect(times(run.harness, question)).toBe(1);
+			}
+		});
+
+		it("says what waits for the user", async () => {
+			const run = await running(
+				{ [question]: { kind: "status" } },
+				{ ui: true, features: { askUser: { waitMs: 60 } } },
+			);
+			run.harness.setResponses([
+				fauxAssistantMessage(
+					[
+						fauxToolCall("ask_user", {
+							questions: [{ question: "Tabs or spaces?", options: [{ label: "Tabs" }, { label: "Spaces" }] }],
+						}),
+					],
+					{ stopReason: "toolUse" },
+				),
+				fauxAssistantMessage([fauxToolCall("wait", {})], { stopReason: "toolUse" }),
+				run.answer("Migrated."),
+			]);
+			const first = run.session.prompt(GOAL);
+			await run.started;
+			await run.session.prompt(question, { streamingBehavior: "steer" });
+			expect(run.answers[0]).toContain("\n  mu has a question for you: type /answer\n");
+			run.release();
+			await first;
+		});
+	});
+
+	// The evolve feature counts the messages a user writes into a run in its own `input` handler, which runs after
+	// this feature's and never sees a message this one takes.
+	it("tells the evolve feature of each message it takes: one it re-sends, and one it answers", async () => {
+		const agentDir = mkdtempSync(join(tmpdir(), "mu-interjection-agent-"));
+		folders.push(agentDir);
+		const extra = "Also add an index on email.";
+		const question = "How far along are you?";
+		const plain = "Hmm.";
+		const run = await running(
+			{ [extra]: { kind: "addition" }, [question]: { kind: "status" }, [plain]: { kind: "other" } },
+			{ ui: true, agentDir },
+		);
+		run.harness.setResponses([
+			fauxAssistantMessage([fauxToolCall("wait", {})], { stopReason: "toolUse" }),
+			run.answer("Migrated."),
+			run.answer("Index added."),
+		]);
+		const first = run.session.prompt(GOAL);
+		await run.started;
+		await run.session.prompt(extra, { streamingBehavior: "steer" });
+		await run.session.prompt(question, { streamingBehavior: "steer" });
+		await run.session.prompt(plain, { streamingBehavior: "steer" });
+		run.release();
+		await first;
+
+		const kept = join(agentDir, "mu", "evolve.jsonl");
+		const rows = readFileSync(kept, "utf8")
+			.split("\n")
+			.filter(Boolean)
+			.flatMap((line) => rowOf(JSON.parse(line)) ?? []);
+		const runs = rows.filter((row) => row.type === "run");
+		expect(runs).toEqual([expect.objectContaining({ messages: 3, status: 1, stopped: false })]);
+
+		// With enough runs to add up, /evolve says how many of the messages only asked how far the work was.
+		const quiet = { ...runs[0], messages: 0, status: 0 };
+		appendFileSync(kept, `${[quiet, quiet, quiet, quiet].map((row) => JSON.stringify(row)).join("\n")}\n`);
+		await run.session.prompt("/evolve");
+		expect(run.notes.at(-1)).toContain(
+			"  You wrote into a run 3 times, 1 of them to ask how far it was, which mu answered.",
+		);
 	});
 
 	it("with shadow as the default mode in mu.json, the message goes at once as sent and the verdict is only recorded", async () => {

@@ -315,6 +315,7 @@ describe("mu adapting to its user", () => {
 			questionsSame: 0,
 			unanswered: 0,
 			messages: 0,
+			status: 0,
 		};
 		expect(runs().map(({ type, cwd, at, ...taken }) => taken)).toEqual([
 			{ ...nothing, permissions: 1, permissionsSame: 1, stopped: false },

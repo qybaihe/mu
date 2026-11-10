@@ -72,6 +72,8 @@ export interface RunCounts {
 	readonly unanswered: number;
 	/** Messages the user sent while the run was going. */
 	readonly messages: number;
+	/** Of `messages`, the ones that asked how far the work had got, which mu answered in the agent's place. */
+	readonly status: number;
 }
 
 /** One run a message of the user's started, when it had settled: what it took of them, and whether they stopped it. */
@@ -189,6 +191,7 @@ export function rowOf(value: unknown): EvolveRow | undefined {
 			questionsSame: countOf(value.questionsSame),
 			unanswered: countOf(value.unanswered),
 			messages: countOf(value.messages),
+			status: countOf(value.status),
 			stopped: value.stopped === true,
 		};
 	}
@@ -408,6 +411,7 @@ export function attention(rows: readonly EvolveRow[], cwd: string, latest = 50, 
 		questionsSame: sum((run) => run.questionsSame),
 		unanswered: sum((run) => run.unanswered),
 		messages: sum((run) => run.messages),
+		status: sum((run) => run.status),
 	};
 }
 
@@ -422,6 +426,11 @@ export interface EvolveLink {
 	approvalAnswered(answer: Omit<ApprovalRow, "type" | "at">): void;
 	/** A question put to the user ended: a permission question, or one of ask_user's. */
 	asked(kind: "permission" | "question", ended: AskedEnd): void;
+	/**
+	 * The user wrote into the run that is going, and the interjection feature took the message before this feature
+	 * saw it: re-sent the other way (`message`), or a question about progress answered in the agent's place (`status`).
+	 */
+	wrote(what: "message" | "status"): void;
 	/** The user answered a permission question about a command with "for this session", or refused it. */
 	grantAnswered(answer: Omit<GrantRow, "type" | "at">): void;
 	/** Whether the user accepted a standing grant for this command, in this project and permission mode. */

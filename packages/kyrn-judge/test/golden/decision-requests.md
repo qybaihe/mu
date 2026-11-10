@@ -495,7 +495,7 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 }
 ```
 
-## input.interjection v1
+## input.interjection v2
 
 ```json
 {
@@ -511,6 +511,7 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 			"criteria": {
 				"correction": "It says the agent is doing something wrong or should stop",
 				"addition": "It adds more work to do after the current work",
+				"status": "It asks how far the agent has got with the current work",
 				"side_question": "It asks something unrelated to the current work",
 				"other": "Something else"
 			}

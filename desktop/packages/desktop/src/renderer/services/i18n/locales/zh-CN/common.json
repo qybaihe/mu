@@ -462,6 +462,7 @@
         "nudge": "提醒验证",
         "steer": "引导当前工作",
         "followUp": "排入后续",
+        "answer": "由 mu 直接回答",
         "warm": "继续保温",
         "stop": "停止保温",
         "default": "默认",
@@ -603,6 +604,7 @@
           "answers": {
             "correction": "纠正",
             "addition": "追加的后续工作",
+            "status": "关于进度的提问",
             "side_question": "无关的提问",
             "other": "其他情况"
           }

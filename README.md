@@ -82,7 +82,7 @@ The 41 points fall into five groups:
 | --- | --- | --- |
 | `input.preflight` | What kind of message is this, and how much thinking does it need? | A one-line hint to the model; optionally, the turn's thinking level |
 | `task.frame` | Is this a new task, a hard constraint, a correction, a subgoal or no change? | Only a change rewrites the task frame: the goal, your constraints verbatim with their source, and the acceptance criteria |
-| `input.interjection` | You send a message while the agent is working: interrupt now, or after this step? | The turn is cut short, or the message waits |
+| `input.interjection` | You send a message while the agent is working: interrupt now, after this step, or is it only asking how far along the work is? | The turn is cut short, or the message waits; a question about progress is answered by mu, and the agent isn't interrupted |
 
 </details>
 

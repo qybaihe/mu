@@ -462,6 +462,7 @@
         "nudge": "Recordar la verificación",
         "steer": "Reorientar el trabajo actual",
         "followUp": "Poner en cola como seguimiento",
+        "answer": "Respondido por mu",
         "warm": "Mantener caliente",
         "stop": "Dejar de calentar",
         "default": "Predeterminado",
@@ -603,6 +604,7 @@
           "answers": {
             "correction": "Una corrección",
             "addition": "Más trabajo para después",
+            "status": "Una pregunta sobre el avance",
             "side_question": "Una pregunta ajena",
             "other": "Otra cosa"
           }

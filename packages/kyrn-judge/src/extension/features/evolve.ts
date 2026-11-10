@@ -60,6 +60,7 @@ const NOTHING_TAKEN: RunCounts = {
 	questionsSame: 0,
 	unanswered: 0,
 	messages: 0,
+	status: 0,
 };
 
 /** A count with its noun: "1 run", "3 runs". */
@@ -88,8 +89,10 @@ const duration = (ms: number): string =>
  * - **What a project's sessions open with**, for the preload feature, and **how long the user stays away**.
  * - **What a run takes of the user.** For each run a message of theirs starts: the permission questions and the
  *   questions of ask_user they dealt with, how many of those changed nothing (they allowed the call, they took the
- *   option the model had put first), the messages they sent into the run, and whether they stopped it. `/evolve` adds
- *   them up. Nothing adapts to these counts yet: they are what asking less would be measured by.
+ *   option the model had put first), the messages they sent into the run, how many of those asked how far it was
+ *   (the interjection feature answers those and says so here, as it does for a message it re-sends: this feature's
+ *   own `input` handler never sees either), and whether they stopped it. `/evolve` adds them up. Nothing adapts to
+ *   these counts yet: they are what asking less would be measured by.
  *
  * A suggestion is said once, in a notice when the run it became one in has settled; after that it waits in `/evolve`.
  * A person who has never typed `/evolve` would otherwise never learn there is something to accept, and one who has
@@ -219,6 +222,10 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 					questionsSame: taken.questionsSame + (ended === "same" ? 1 : 0),
 				};
 			}
+		},
+		wrote: (what) => {
+			if (!learns(runtime.ctx)) return;
+			taken = { ...taken, messages: taken.messages + 1, status: taken.status + (what === "status" ? 1 : 0) };
 		},
 		approvalAnswered: (answer) => {
 			if (learns(runtime.ctx)) store.append({ type: "approval", at: now(), ...answer });
@@ -451,10 +458,15 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			}
 			if (sum.messages > 0) {
 				said.push(
-					say({
-						zh: `  运行途中你发了 ${sum.messages} 条消息。`,
-						en: `  You wrote into a run ${counted(sum.messages, "time")}.`,
-					}),
+					sum.status > 0
+						? say({
+								zh: `  运行途中你发了 ${sum.messages} 条消息，其中 ${sum.status} 条是问进度，mu 直接答了。`,
+								en: `  You wrote into a run ${counted(sum.messages, "time")}, ${sum.status} of them to ask how far it was, which mu answered.`,
+							})
+						: say({
+								zh: `  运行途中你发了 ${sum.messages} 条消息。`,
+								en: `  You wrote into a run ${counted(sum.messages, "time")}.`,
+							}),
 				);
 			}
 			if (sum.stopped > 0) {

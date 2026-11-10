@@ -462,6 +462,7 @@
         "nudge": "Lembrar de verificar",
         "steer": "Direcionar o trabalho atual",
         "followUp": "Enfileirar como acompanhamento",
+        "answer": "Respondido pelo mu",
         "warm": "Manter aquecido",
         "stop": "Parar de aquecer",
         "default": "Padrão",
@@ -603,6 +604,7 @@
           "answers": {
             "correction": "Uma correção",
             "addition": "Mais trabalho para depois",
+            "status": "Uma pergunta sobre o andamento",
             "side_question": "Uma pergunta sem relação",
             "other": "Outra coisa"
           }

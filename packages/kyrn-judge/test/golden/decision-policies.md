@@ -245,11 +245,12 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: {"relation":null,"score":0} (fallback)
 - the judge failed: {"relation":null,"score":0} (fallback)
 
-## input.interjection v1
+## input.interjection v2
 
 - `kind` (choice):
   - correction: 0.3–0.65 → "keep"; 0.7–0.99 → "steer"; without p → "steer"
   - addition: 0.3–0.65 → "keep"; 0.7–0.99 → "followUp"; without p → "followUp"
+  - status: 0.3–0.8 → "keep"; 0.85–0.99 → "answer"; without p → "answer"
   - side_question: 0.3–0.65 → "keep"; 0.7–0.99 → "followUp"; without p → "followUp"
   - other: 0.3–0.99 → "keep"; without p → "keep"
 - no answer: "keep" (fallback)

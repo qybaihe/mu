@@ -82,6 +82,7 @@ describe("the evolution store", () => {
 			questionsSame: 0,
 			unanswered: 0,
 			messages: 0,
+			status: 0,
 			stopped: true,
 		});
 		expect(rowOf({ type: "run", at })).toBeUndefined();
@@ -233,12 +234,13 @@ describe("the evolution store", () => {
 			questionsSame: 0,
 			unanswered: 0,
 			messages: 0,
+			status: 0,
 			stopped: false,
 			...taken,
 		});
 		const runs = [
 			run({ permissions: 3, permissionsSame: 2 }),
-			run({ questions: 2, questionsSame: 1, messages: 1 }),
+			run({ questions: 2, questionsSame: 1, messages: 3, status: 2 }),
 			run(),
 			// A question nobody answered took nothing of the user: the run counts as a quiet one.
 			run({ unanswered: 2 }),
@@ -254,7 +256,8 @@ describe("the evolution store", () => {
 			questions: 2,
 			questionsSame: 1,
 			unanswered: 2,
-			messages: 1,
+			messages: 3,
+			status: 2,
 		});
 		expect(attention(runs, "/work/other")).toBeUndefined();
 		// Only the latest runs count: the first one, with its three questions, is out of the last four.

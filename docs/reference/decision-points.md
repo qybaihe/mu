@@ -20,7 +20,7 @@ The feature column names the switch in `features` that turns the whole behavior 
 | --- | --- | --- | --- |
 | `input.preflight` | Message preflight | Classifies each message and how much thinking it needs, then gives the model a one-line hint; it can also set the turn's thinking level. | [`preflight`](features.md#preflight) |
 | `task.frame` | Task frame update | Classifies each message as a new task, a new hard constraint, a correction, a new subgoal or no change. Only a change makes a model rewrite the task frame. | [`frame`](features.md#frame) |
-| `input.interjection` | Mid-run messages | For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it. | [`interjection`](features.md#interjection) |
+| `input.interjection` | Mid-run messages | For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. A message that asks how far the work has got is answered by mu and not sent to the agent. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it. | [`interjection`](features.md#interjection) |
 
 ## Context
 

@@ -11,11 +11,18 @@ export interface InterjectionInput {
 	readonly currentAction: string;
 }
 
-export type InterjectionOutcome = "steer" | "followUp" | "keep";
+/**
+ * `steer` and `followUp`: when the message reaches the agent. `answer`: it asks how far the work has got, which the
+ * harness says itself, without the agent. `keep`: as it was sent.
+ */
+export type InterjectionOutcome = "steer" | "followUp" | "answer" | "keep";
+
+/** Answering in the agent's place keeps the message from it: that takes a surer reading than moving it in the queue. */
+const STATUS_SURE = 0.85;
 
 export const inputInterjection = defineDecision({
 	id: "input.interjection",
-	version: 1,
+	version: 2,
 	cacheImpact: "append-only",
 	latency: "inline",
 	capabilities: "relate",
@@ -26,6 +33,7 @@ export const inputInterjection = defineDecision({
 			criteria: {
 				correction: "It says the agent is doing something wrong or should stop",
 				addition: "It adds more work to do after the current work",
+				status: "It asks how far the agent has got with the current work",
 				side_question: "It asks something unrelated to the current work",
 				other: "Something else",
 			},
@@ -38,6 +46,7 @@ export const inputInterjection = defineDecision({
 		const kind = pickChoice(answers.kind, { minProbability: 0.7 });
 		if (kind === "correction") return "steer";
 		if (kind === "addition" || kind === "side_question") return "followUp";
+		if (kind === "status") return (answers.kind.probabilities?.status ?? 1) >= STATUS_SURE ? "answer" : "keep";
 		return "keep";
 	},
 	// Whatever key the user pressed stands.

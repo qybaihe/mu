@@ -64,7 +64,9 @@ export const JUDGE_QUESTIONS: Record<keyof typeof DECISIONS, readonly JudgeQuest
     { id: 'reasoning_depth', type: 'score', levels: 4 },
     { id: 'tool_complexity', type: 'score', levels: 4 },
   ],
-  'input.interjection': [{ id: 'kind', type: 'choice', answers: ['correction', 'addition', 'side_question', 'other'] }],
+  'input.interjection': [
+    { id: 'kind', type: 'choice', answers: ['correction', 'addition', 'status', 'side_question', 'other'] },
+  ],
   'tool.admission': [
     { id: 'kind', type: 'choice', answers: ADMISSION_KINDS },
     { id: 'k', key: 'chunk', from: 1, type: 'choice', answers: ADMISSION_KINDS },
