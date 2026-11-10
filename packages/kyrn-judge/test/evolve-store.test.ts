@@ -106,6 +106,13 @@ describe("the evolution store", () => {
 			status: "active",
 		});
 		expect(rowOf({ type: "adaptation", id: "g1", kind: "grant", cwd, at, status: "active" })).toBeUndefined();
+		expect(rowOf({ type: "said", cwd, at, about: "line:0.70" })).toEqual({
+			type: "said",
+			cwd,
+			at,
+			about: "line:0.70",
+		});
+		expect(rowOf({ type: "said", cwd, at })).toBeUndefined();
 		expect(rowOf({ type: "unknown", at })).toBeUndefined();
 		expect(rowOf("text")).toBeUndefined();
 	});

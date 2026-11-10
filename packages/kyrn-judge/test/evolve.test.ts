@@ -144,13 +144,19 @@ describe("mu adapting to its user", () => {
 			expect.objectContaining({ probability: 0.72, answer: "once" }),
 		]);
 
+		// The run those answers were given in has ended: mu says there is something to accept, before anyone types /evolve.
+		const told = () => session.notes.filter((note) => note.startsWith("mu: you allowed all"));
+		expect(told()).toEqual([
+			"mu: you allowed all 2 calls here that the judge wasn't sure enough of. /evolve shows the lower approval line this suggests, and /evolve accept takes it. mu won't bring this up again.",
+		]);
 		await session.harness.session.prompt("/evolve");
 		expect(session.notes.at(-1)).toContain("Approval line: 0.80 (built in)");
 		expect(session.notes.at(-1)).toContain("You allowed all 2 calls the judge put between 0.70 and 0.80");
 
-		// Nothing changes until the user accepts.
+		// Nothing changes until the user accepts, and the same suggestion is not said a second time.
 		await session.run("Regenerate them again.", ["node scripts/c.js"]);
 		expect(session.asked).toHaveLength(3);
+		expect(told()).toHaveLength(1);
 
 		await session.harness.session.prompt("/evolve accept");
 		expect(session.notes.at(-1)).toContain("This project's approval line is now 0.70.");
@@ -397,6 +403,30 @@ describe("mu adapting to its user", () => {
 		expect(session.notes.at(-1)).toBe("Taken back: mu asks about npm test in this project again.");
 		await session.run("Once more.", ["npm test"]);
 		expect(session.asked).toHaveLength(7);
+	});
+
+	it("says a command it could keep allowed once, when the run that made it one has ended", async () => {
+		const session = await start({ only: ["permissions", "evolve"], mode: "ask" });
+		const told = () => session.notes.filter((note) => note.startsWith("mu: you allowed npm test"));
+		for (let round = 0; round < 3; round++) {
+			expect(told()).toEqual([]);
+			session.picks.push(1);
+			await session.run("Run the tests.", ["npm test"]);
+			await session.harness.session.prompt("/permissions reset");
+		}
+		expect(told()).toEqual([
+			"mu: you allowed npm test for the session 3 times in a row here. /evolve accept npm test keeps it allowed in this project. mu won't bring this up again.",
+		]);
+		// Kept in the store, so a later session of the project does not say it again either.
+		expect(session.rows().filter((row) => row.type === "said")).toEqual([
+			expect.objectContaining({ cwd: session.harness.tempDir, about: "grant:ask:shell:npm test" }),
+		]);
+		session.picks.push(1);
+		await session.run("And again.", ["npm test"]);
+		expect(told()).toHaveLength(1);
+		// It waits in /evolve all the same.
+		await session.harness.session.prompt("/evolve");
+		expect(session.notes.at(-1)).toContain("/evolve accept npm test keeps it allowed in this project");
 	});
 
 	it("observes nothing when it is switched off", async () => {
