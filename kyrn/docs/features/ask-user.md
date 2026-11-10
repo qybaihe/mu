@@ -46,7 +46,7 @@ A second `ask_user` in the same turn after a skip gets the skip back at once, wi
 
 ## Answering later: `/answer`
 
-Questions that timed out stay open. The status bar says `mu has a question for you: type /answer` (`mu.ask.pending`).
+Questions that timed out stay open. The status bar says `mu has a question for you: type /answer` (`mu.ask.pending`), and `/waiting` lists them with everything else that waits for you ([what waits for you](waiting.md)).
 
 Nobody was there, so the questions that follow are not waited for either: a later `ask_user` call is `pending` at once, with no dialog and no `question.asked` frame, and its entry has `waitedMs: 0`. A run with nobody at the keyboard loses one wait, not one per question. "Away" is one thing for these questions and permission questions ([permissions](permissions.md#a-question-nobody-answers)): a permission question nobody answered makes the model's next question pending at once, and the other way round. It lasts until the user writes a message, answers a question or types `/answer` or `/approve`. `/answer` asks the open questions again from the first one still unanswered, and sends the answers as a message of the user's:
 

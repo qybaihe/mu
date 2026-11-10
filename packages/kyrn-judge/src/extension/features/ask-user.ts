@@ -1,7 +1,7 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { say } from "../../language.ts";
-import { failOpen, type KyrnRuntime } from "../runtime.ts";
+import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
 
 export const QUESTION_ENTRY = "kyrn.question";
 export const PENDING_STATUS = "mu.ask.pending";
@@ -286,6 +286,27 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 	/** One set of questions at a time: two calls in one reply would otherwise open their dialogs over each other. */
 	let queue: Promise<unknown> = Promise.resolve();
 
+	runtime.waits(() =>
+		open.map((asked) => {
+			const left = asked.questions.slice(asked.answers.length);
+			const first = clip(left[0]?.question ?? "", 80);
+			return {
+				kind: "held" as const,
+				command: "/answer",
+				what:
+					left.length > 1
+						? say({
+								zh: `模型问了你，没等到回答就接着做了：${first}（还有 ${left.length - 1} 个问题）`,
+								en: `the model asked, and went on without your answer: ${first} (and ${left.length - 1} more)`,
+							})
+						: say({
+								zh: `模型问了你，没等到回答就接着做了：${first}`,
+								en: `the model asked, and went on without your answer: ${first}`,
+							}),
+			};
+		}),
+	);
+
 	const showOpen = (ctx: ExtensionContext): void => {
 		if (!ctx.hasUI) return;
 		ctx.ui.setStatus(
@@ -381,10 +402,10 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 				const askedAt = Date.now();
 				// Nobody answered the question before this one, of the model's or about a permission: this one waits for
 				// /answer at once, where waiting again would hold the run for someone who is not there.
-				const { answers, ended } =
-					runtime.userAway && waitMs > 0
-						? { answers: [], ended: "timeout" as const }
-						: await askEach(toolCallId, questions, [], ctx, signal ?? ctx.signal);
+				const away = runtime.userAway && waitMs > 0;
+				const { answers, ended } = away
+					? { answers: [], ended: "timeout" as const }
+					: await askEach(toolCallId, questions, [], ctx, signal ?? ctx.signal);
 				if (ended === "timeout") runtime.userAway = true;
 				else if (ended !== "stopped") runtime.userAway = false;
 				observe(questions, answers, 0, ended);
@@ -409,7 +430,8 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 					count: questions.length,
 					outcome,
 					answered: answers.length,
-					waitedMs: Date.now() - askedAt,
+					// With no dialog nobody was waited for: 0, not the millisecond the lines above may have taken.
+					waitedMs: away ? 0 : Date.now() - askedAt,
 				});
 				return reply(outcome, answers);
 			});

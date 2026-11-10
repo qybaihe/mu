@@ -117,6 +117,23 @@ export function registerFeatureOffers(runtime: KyrnRuntime, configDir: string | 
 		});
 	}
 
+	runtime.waits(() =>
+		[...answered].flatMap(([name, answer]) => {
+			const feature = answer === "offered" ? titleOf(name) : undefined;
+			if (!feature) return [];
+			return [
+				{
+					kind: "offered" as const,
+					command: `/capabilities open feature:${name}`,
+					what: say({
+						zh: `打开「${say(feature.title)}」，下一个会话起生效：模型建议这类任务用它，现在是关的`,
+						en: `turn on ${say(feature.title)}, from the next session: the model suggested it for work like this, and it's off now`,
+					}),
+				},
+			];
+		}),
+	);
+
 	const record = (data: FeatureOfferRecord): void => {
 		answered.set(data.feature, data.answer);
 		pi.appendEntry(FEATURE_OFFER_ENTRY, data);
@@ -166,8 +183,8 @@ export function registerFeatureOffers(runtime: KyrnRuntime, configDir: string | 
 				const words = { title: say(feature.title), summary: say(feature.summary) };
 				ctx.ui.notify(
 					say({
-						zh: `mu：模型建议为这类任务打开「${words.title}」，它现在是关的。${words.summary}\n/capabilities open feature:${name} 打开它，下一个会话起生效。不用理会就保持关闭，这次对话里不会再提。`,
-						en: `mu: the model suggests ${words.title} for work like this. It's off now. ${words.summary}\n/capabilities open feature:${name} turns it on, from the next session. Leave it and it stays off; mu won't bring it up again in this session.`,
+						zh: `mu：模型建议为这类任务打开「${words.title}」，它现在是关的。${words.summary}\n/capabilities open feature:${name} 打开它，下一个会话起生效。不用理会就保持关闭，这次对话里不会再提，之后在 /waiting 里能看到。`,
+						en: `mu: the model suggests ${words.title} for work like this. It's off now. ${words.summary}\n/capabilities open feature:${name} turns it on, from the next session. Leave it and it stays off; mu won't bring it up again in this session, and it stays in /waiting.`,
 					}),
 					"info",
 				);

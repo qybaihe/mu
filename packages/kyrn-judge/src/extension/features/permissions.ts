@@ -336,6 +336,17 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		ctx.ui.setStatus(key, text);
 	};
 
+	runtime.waits(() =>
+		waiting.map((question) => ({
+			kind: "held" as const,
+			command: "/approve",
+			what: say({
+				zh: `这一步要你授权才会做：${clip(question.need.summary, 80)}`,
+				en: `a step that runs once you allow it: ${clip(question.need.summary, 80)}`,
+			}),
+		})),
+	);
+
 	/** The status line and the count other features read, as the waiting questions stand. */
 	const showWaiting = (ctx: ExtensionContext | undefined) => {
 		runtime.permissionsWaiting = waiting.length;

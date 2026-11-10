@@ -118,7 +118,15 @@ describe("offers of features that are off", () => {
 		expect(notes).toHaveLength(1);
 		expect(notes[0]).toContain("mu: the model suggests Mid-stream correction for work like this. It's off now.");
 		expect(notes[0]).toContain("/capabilities open feature:ttsr turns it on, from the next session.");
+		expect(notes[0]).toContain("mu won't bring it up again in this session, and it stays in /waiting.");
 		expect(saidAfter).toEqual(["Done without it."]);
+		await harness.session.prompt("/waiting");
+		expect(notes.at(-1)).toBe(
+			[
+				"mu suggests these, and nothing waits for them:",
+				"  /capabilities open feature:ttsr: turn on Mid-stream correction, from the next session: the model suggested it for work like this, and it's off now",
+			].join("\n"),
+		);
 		expect(existsSync(join(roots.agentDir, "mu.json"))).toBe(false);
 		expect(records(harness)).toEqual([{ feature: "ttsr", answer: "offered", by: "model" }]);
 	});
@@ -147,6 +155,9 @@ describe("offers of features that are off", () => {
 
 		await harness.session.prompt("/capabilities open feature:compaction");
 		expect(notes.at(-1)).toContain("The user turned on Summary-free compaction");
+		// Turned on: it waits for nobody any more.
+		await harness.session.prompt("/waiting");
+		expect(notes.at(-1)).toBe("Nothing waits for you.");
 		expect(JSON.parse(readFileSync(join(roots.agentDir, "mu.json"), "utf8"))).toEqual({
 			features: { compaction: true },
 		});

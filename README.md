@@ -390,6 +390,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/goal <condition>` | Keep working until the condition holds; `/goal clear` ends it |
 | `/plan [task]` | Plan first: the agent only looks and asks, and starts once you approve its plan; `/plan off` leaves |
 | `/permissions` | Choose Full access, Judge mode or Ask first |
+| `/waiting` | List what waits for you: steps that need permission, the model's questions, skill drafts and mu's suggestions, each with the command that deals with it |
 | `/board` | Turn the plain-language board on or off |
 | `/remember`, `/lessons`, `/forget` | Keep a lesson, list lessons, retire one |
 | `/skills` | Show the skills mu drafted from runs, and accept or reject each |

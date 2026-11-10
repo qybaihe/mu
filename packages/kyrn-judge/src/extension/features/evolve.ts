@@ -169,8 +169,8 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			fresh.push({
 				about: `line:${line.line.toFixed(2)}`,
 				text: say({
-					zh: `mu：判定器拿不准而问你的调用里，有 ${line.allowed} 次你全都允许了。/evolve 看它建议的更低的审批线，/evolve accept 接受。这条不会再提。`,
-					en: `mu: you allowed all ${line.allowed} calls here that the judge wasn't sure enough of. /evolve shows the lower approval line this suggests, and /evolve accept takes it. mu won't bring this up again.`,
+					zh: `mu：判定器拿不准而问你的调用里，有 ${line.allowed} 次你全都允许了。/evolve 看它建议的更低的审批线，/evolve accept 接受。这条不会再提，之后在 /waiting 里能看到。`,
+					en: `mu: you allowed all ${line.allowed} calls here that the judge wasn't sure enough of. /evolve shows the lower approval line this suggests, and /evolve accept takes it. mu won't bring this up again; it stays in /waiting.`,
 				}),
 			});
 		}
@@ -178,8 +178,8 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			fresh.push({
 				about: `grant:${grant.mode}:${grant.key}`,
 				text: say({
-					zh: `mu：${grant.label} 你已经连续 ${grant.sessions} 次选了“这次对话都允许”。/evolve accept ${grant.label} 让它在这个项目里一直允许。这条不会再提。`,
-					en: `mu: you allowed ${grant.label} for the session ${counted(grant.sessions, "time")} in a row here. /evolve accept ${grant.label} keeps it allowed in this project. mu won't bring this up again.`,
+					zh: `mu：${grant.label} 你已经连续 ${grant.sessions} 次选了“这次对话都允许”。/evolve accept ${grant.label} 让它在这个项目里一直允许。这条不会再提，之后在 /waiting 里能看到。`,
+					en: `mu: you allowed ${grant.label} for the session ${counted(grant.sessions, "time")} in a row here. /evolve accept ${grant.label} keeps it allowed in this project. mu won't bring this up again; it stays in /waiting.`,
 				}),
 			});
 		}
@@ -193,6 +193,33 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			store.append({ type: "said", cwd: ctx.cwd, at: now(), about: each.about });
 		}
 	};
+	// As `announce` says them once: here they stay for as long as the answers support them.
+	runtime.waits((cwd) => {
+		if (!learns(runtime.ctx)) return [];
+		const line = suggest(cwd);
+		return [
+			...(line
+				? [
+						{
+							kind: "offered" as const,
+							command: "/evolve accept",
+							what: say({
+								zh: `把这个项目的审批线从 ${line.from.toFixed(2)} 降到 ${line.line.toFixed(2)}：判定器拿不准而问你的 ${line.allowed} 次调用，你全都允许了（/evolve 看详情）`,
+								en: `lower the approval line here from ${line.from.toFixed(2)} to ${line.line.toFixed(2)}: you allowed all ${line.allowed} calls the judge wasn't sure enough of (/evolve shows them)`,
+							}),
+						},
+					]
+				: []),
+			...grantable(cwd).map((grant) => ({
+				kind: "offered" as const,
+				command: `/evolve accept ${grant.label}`,
+				what: say({
+					zh: `让 ${grant.label} 在这个项目里一直允许：你已经连续 ${grant.sessions} 次选了“这次对话都允许”`,
+					en: `keep ${grant.label} allowed in this project: you allowed it for the session ${counted(grant.sessions, "time")} in a row`,
+				}),
+			})),
+		];
+	});
 	const undo = (adaptation: AdaptationRow): void => {
 		store.append({ ...adaptation, status: "undone", at: now() });
 		if (adaptation.kind === "grant") standing.delete(adaptation.cwd);

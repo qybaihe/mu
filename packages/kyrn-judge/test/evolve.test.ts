@@ -147,8 +147,15 @@ describe("mu adapting to its user", () => {
 		// The run those answers were given in has ended: mu says there is something to accept, before anyone types /evolve.
 		const told = () => session.notes.filter((note) => note.startsWith("mu: you allowed all"));
 		expect(told()).toEqual([
-			"mu: you allowed all 2 calls here that the judge wasn't sure enough of. /evolve shows the lower approval line this suggests, and /evolve accept takes it. mu won't bring this up again.",
+			"mu: you allowed all 2 calls here that the judge wasn't sure enough of. /evolve shows the lower approval line this suggests, and /evolve accept takes it. mu won't bring this up again; it stays in /waiting.",
 		]);
+		await session.harness.session.prompt("/waiting");
+		expect(session.notes.at(-1)).toBe(
+			[
+				"mu suggests these, and nothing waits for them:",
+				"  /evolve accept: lower the approval line here from 0.80 to 0.70: you allowed all 2 calls the judge wasn't sure enough of (/evolve shows them)",
+			].join("\n"),
+		);
 		await session.harness.session.prompt("/evolve");
 		expect(session.notes.at(-1)).toContain("Approval line: 0.80 (built in)");
 		expect(session.notes.at(-1)).toContain("You allowed all 2 calls the judge put between 0.70 and 0.80");
@@ -416,7 +423,7 @@ describe("mu adapting to its user", () => {
 			await session.harness.session.prompt("/permissions reset");
 		}
 		expect(told()).toEqual([
-			"mu: you allowed npm test for the session 3 times in a row here. /evolve accept npm test keeps it allowed in this project. mu won't bring this up again.",
+			"mu: you allowed npm test for the session 3 times in a row here. /evolve accept npm test keeps it allowed in this project. mu won't bring this up again; it stays in /waiting.",
 		]);
 		// Kept in the store, so a later session of the project does not say it again either.
 		expect(session.rows().filter((row) => row.type === "said")).toEqual([
@@ -425,9 +432,16 @@ describe("mu adapting to its user", () => {
 		session.picks.push(1);
 		await session.run("And again.", ["npm test"]);
 		expect(told()).toHaveLength(1);
-		// It waits in /evolve all the same.
+		// It waits in /evolve all the same, and in /waiting, until it is accepted.
 		await session.harness.session.prompt("/evolve");
 		expect(session.notes.at(-1)).toContain("/evolve accept npm test keeps it allowed in this project");
+		await session.harness.session.prompt("/waiting");
+		expect(session.notes.at(-1)).toContain(
+			"  /evolve accept npm test: keep npm test allowed in this project: you allowed it for the session 4 times in a row",
+		);
+		await session.harness.session.prompt("/evolve accept npm test");
+		await session.harness.session.prompt("/waiting");
+		expect(session.notes.at(-1)).toBe("Nothing waits for you.");
 	});
 
 	it("observes nothing when it is switched off", async () => {

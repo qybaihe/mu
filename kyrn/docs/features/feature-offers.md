@@ -30,10 +30,10 @@ When the run has settled (`agent_settled`: no check sends the agent back any mor
 
 ```text
 mu: the model suggests Mid-stream correction for work like this. It's off now. The judge, not a regular expression, notices when output goes astray, …
-/capabilities open feature:ttsr turns it on, from the next session. Leave it and it stays off; mu won't bring it up again in this session.
+/capabilities open feature:ttsr turns it on, from the next session. Leave it and it stays off; mu won't bring it up again in this session, and it stays in /waiting.
 ```
 
-A notice takes no answer and no key press: it does not take the editor, so a message the user is typing is not interrupted. The desktop app shows it as a line in the conversation.
+A notice takes no answer and no key press: it does not take the editor, so a message the user is typing is not interrupted. The desktop app shows it as a line in the conversation. For the rest of the conversation the offer is in `/waiting` ([what waits for you](waiting.md)), until the feature is turned on.
 
 What the model is told:
 
