@@ -470,7 +470,7 @@ On by default: yes. Decision points: `hive.publish`, `hive.deliver`, `hive.relat
 
 ## evolve
 
-**Adapting to you.** Keeps what mu observes: your answers to approval questions, programs missing on this machine, the files a project's sessions open with, how long you stay away and how often a run needed you. From these it makes suggestions you accept with /evolve accept: for now, lowering a project's approval line to where you allowed every call anyway. Only a command you type loosens anything; marking an approval wrong (/ledger wrong) takes it back at once. The data stays in your agent folder (mu/evolve.jsonl) and holds no commands, messages or file contents.
+**Adapting to you.** Keeps what mu observes: your answers to approval questions, programs missing on this machine, the files a project's sessions open with, how long you stay away and how often a run needed you. From these it makes suggestions you accept with /evolve accept: lowering a project's approval line to where you allowed every call anyway, or keeping a command allowed in a project when you allow it in every session. Only a command you type loosens anything; marking an approval wrong (/ledger wrong) takes it back at once. The data stays in your agent folder (mu/evolve.jsonl) and holds no commands, messages or file contents.
 
 On by default: yes.
 
@@ -479,6 +479,7 @@ On by default: yes.
 | `minAnswers` | `12` | Answers needed before a lower approval line is suggested. Among the calls the judge read as needed but wasn't sure enough of, this many answers above the new line, all of them allowed and at least half given after reading the question. Range 4 to 200. |
 | `floor` | `0.6` | Lowest approval line. No suggested line goes below this. The decision point itself takes none below 0.6. Range 0.6 to 0.8. |
 | `consideredMs` | `1500` ms | How long an answer waits to count as read. An answer faster than this was probably given without reading; such answers alone don't lower a line. Range 0 to 60000. |
+| `minGrants` | `3` | Times in a row a command is allowed before mu suggests keeping it allowed. When your latest answers about a command were all "Allow for this session", this many times, /evolve suggests keeping it allowed in the project. One refusal starts the count again. Range 1 to 50. |
 | `commands` | `true` | Learn which programs are missing on this machine. When a command fails with "command not found" and then works with one word changed, mu keeps which program was missing and what stood in for it. The opening snapshot tells later sessions, until the program is installed. |
 | `unattended` | `false` | Also observe in unattended runs. Unattended means a one-shot mu --print or json-mode run. By default such a run uses what you accepted and observes nothing new. |
 

@@ -1434,6 +1434,7 @@
         "approved": {
           "judge": "Hakem size sormadan geçirdi: {{summary}}",
           "grant": "Bu konuşma için izin verildiğinden sormadan çalıştı: {{summary}}",
+          "project": "Bu komuta bu projede izin verdiğiniz için sormadan çalıştı: {{summary}}",
           "user": "Sonradan izin verdiğiniz için çalıştı: {{summary}}"
         }
       },

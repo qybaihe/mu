@@ -426,7 +426,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		}),
 	);
 
-	const approvedBy = (event: ToolCallEvent, need: PermissionNeed, by: "judge" | "grant" | "user") => {
+	const approvedBy = (event: ToolCallEvent, need: PermissionNeed, by: "judge" | "grant" | "project" | "user") => {
 		runtime.present("permissions.approved", {
 			toolCallId: event.toolCallId,
 			tool: event.toolName,
@@ -554,6 +554,10 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				"permission",
 				answer === "timeout" ? "unanswered" : answer === "once" || answer === "session" ? "same" : "changed",
 			);
+		}
+		// A command allowed for the session, or refused, where that was offered: what a standing grant is read from.
+		if (question.grant && question.need.kind === "shell" && (answer === "session" || answer === "deny")) {
+			runtime.evolve?.grantAnswered({ cwd: question.cwd, ...question.grant, mode, answer });
 		}
 		// Needed, the judge read, but not surely enough: the user's answer says where the line could be.
 		if (reason === "unsure" && said?.needed && (answer === "once" || answer === "session" || answer === "deny")) {
@@ -782,7 +786,12 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const flag = leaking ? SENDS_CREDENTIAL : command ? riskFlag(command) : undefined;
 		// Allowed with /approve after its question had waited out its time: this same call runs, once.
 		if (allowedLate.delete(callKey(event))) return letOut(event, approvedBy(event, need, "user"));
-		if (!need.protected && !flag && need.grant && grants.has(need.grant.key)) return approvedBy(event, need, "grant");
+		if (!need.protected && !flag && need.grant) {
+			if (grants.has(need.grant.key)) return approvedBy(event, need, "grant");
+			// A command the user accepted for this project (/evolve accept): the same grant, kept from session to session.
+			if (need.kind === "shell" && runtime.evolve?.granted(ctx.cwd, need.grant.key, mode))
+				return approvedBy(event, need, "project");
+		}
 		let reason: AskReason = need.protected ? "protected" : flag ? "flagged" : "ask";
 		let said: JudgeSaid | undefined;
 		// The way out goes to the judge first in full access as well; minimal permissions ask the user about it, as about

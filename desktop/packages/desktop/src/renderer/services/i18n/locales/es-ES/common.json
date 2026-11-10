@@ -1434,6 +1434,7 @@
         "approved": {
           "judge": "El juez lo dejó pasar sin preguntarte: {{summary}}",
           "grant": "Se ejecutó sin preguntar, porque está permitido en esta conversación: {{summary}}",
+          "project": "Se ejecutó sin preguntar, porque permitiste este comando en este proyecto: {{summary}}",
           "user": "Se ejecutó porque lo permitiste después: {{summary}}"
         }
       },

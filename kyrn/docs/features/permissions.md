@@ -117,7 +117,7 @@ Tell the desktop session before changing the version, the location or the accept
 - `/permissions`: a picker of the three modes with descriptions. Without a UI, it prints the current mode.
 - `/permissions full | judge | ask`: switch. `yolo`, `auto`, `minimal`, `read-only`, `完全访问`, `审批`, `判定模式` and `最小权限` also work.
 - `/permissions full | judge | ask --here`: switch this conversation only (above).
-- `/permissions reset`: forget what was allowed for this conversation.
+- `/permissions reset`: forget what was allowed for this conversation. A command accepted for the project with `/evolve accept <command>` stays: `/evolve undo <id>` takes that back ([self-evolution](self-evolution.md), section 6).
 - `/approve`: answer the permission questions nobody answered in time (above).
 
 ## Presentation events (for the desktop)
@@ -127,7 +127,7 @@ Tell the desktop session before changing the version, the location or the accept
 | `permissions.mode` | `{ mode, label, conversationSwitch: true, modes: [{ id, label, description }] }` | at session start and on every switch. `conversationSwitch` says `--here` is understood; an older harness would read `judge --here` as an unknown word |
 | `permissions.request` | `{ id, toolCallId, mode, tool, kind, summary, reason, flag?, grant?: { key, label }, answers: string[] }` | right before the picker opens |
 | `permissions.resolved` | `{ id, toolCallId, answer: "once" \| "session" \| "deny" \| "pending" }` | once the picker is answered, or its wait is over (`pending`: nobody answered, the call did not run and waits for `/approve`) |
-| `permissions.approved` | `{ toolCallId, tool, kind, summary, by: "judge" \| "grant" \| "user" }` | a call that needed permission ran without asking you now (`user`: you allowed this same call with `/approve`) |
+| `permissions.approved` | `{ toolCallId, tool, kind, summary, by: "judge" \| "grant" \| "project" \| "user" }` | a call that needed permission ran without asking you now (`grant`: allowed for this conversation; `project`: a command you accepted for this project with `/evolve accept`; `user`: you allowed this same call with `/approve`) |
 
 - `toolCallId` is the id of the tool call the event is about: the same id as in pi's tool events and in that call's tool result. A client marks that call's own row with it, also when the judge or a conversation grant let the call run. What the model is told about a refused call stays in English in the tool result.
 - `kind` is one of `edit`, `shell`, `run`, `outside`, `delegate` or `other`.

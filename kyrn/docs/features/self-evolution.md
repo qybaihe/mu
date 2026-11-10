@@ -104,7 +104,30 @@ The suggested line is the lowest one, in steps of 0.05, such that:
 
 `/evolve undo` takes it back. So does `/ledger wrong` on any `tool.approval` verdict in the project: one approval you call wrong puts the built-in line back at once.
 
-## 6. What a run takes of you (`/evolve`, `features.evolve`)
+## 6. Commands you keep allowing (`/evolve`, `features.evolve`)
+
+**Problem.** "Allow for this session" lasts one session. In a project where you run `npm test` every day, mu asks about it again in every session, and you give the same answer every time.
+
+**Example.** Monday: `npm test`, "Allow for this session". Tuesday, a new session: the same question, the same answer. By Friday you have answered it five times and learned nothing from any of them.
+
+**What it does.** Each time a permission question about a command offers "for this session", mu keeps whether you took that answer or refused: the command's first words (`npm test`), the permission mode and the answer. "Allow once" is not kept: it says you want to see each call. When your latest 3 answers about a command in the project were all "for this session", `/evolve` says so:
+
+```
+  npm test: you allowed it for the session 3 times in a row. /evolve accept npm test keeps it allowed in this project, and mu stops asking.
+```
+
+`/evolve accept npm test` writes a grant for the project. From then on the permission gate lets that command run there as if you had allowed it for the session, in every session.
+
+- **It covers what a grant for the session covers, and no more.** `npm test -- --bail` runs. `npm publish` asks, as another command. `npm test && git push --force` asks, as a chain. A command a rule flags as risky, or one that touches mu's own settings, asks every time, as it does within a session.
+- **Commands only.** Edits, files outside the project, subagents and actions outside this computer are not suggested.
+- **It holds in the permission mode you accepted it in.** A grant accepted in Ask first does not carry to Judge mode, where the judge decides on the command first.
+- **One refusal starts the count again**, and 3 more answers "for this session" are needed.
+- **`/evolve` lists the grants in force**, and `/evolve undo <id>` takes one back.
+- The desktop app's Judge tab says which calls ran this way (`permissions.approved` with `by: "project"`).
+
+The threshold is `features.evolve.minGrants`. Not measured: how many questions this saves in real use.
+
+## 7. What a run takes of you (`/evolve`, `features.evolve`)
 
 **Problem.** mu is meant to need less of you over time, and nothing counted how much it needs now. Without the count, a change that asks less cannot be told from one that only feels quieter.
 

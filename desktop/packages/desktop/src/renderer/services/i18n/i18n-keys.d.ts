@@ -586,6 +586,7 @@ export type I18nKey =
   | 'common.kyrn.eventLine.permissions.answers.session'
   | 'common.kyrn.eventLine.permissions.approved.grant'
   | 'common.kyrn.eventLine.permissions.approved.judge'
+  | 'common.kyrn.eventLine.permissions.approved.project'
   | 'common.kyrn.eventLine.permissions.approved.user'
   | 'common.kyrn.eventLine.permissions.mode'
   | 'common.kyrn.eventLine.permissions.request'

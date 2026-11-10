@@ -1,6 +1,7 @@
 // What mu has observed about how this user and this machine work, and the adaptations the user accepted.
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { type PermissionMode, parseMode } from "../permissions/modes.ts";
 
 /**
  * The evolution store on disk: `<agentDir>/mu/evolve.jsonl`, one JSON object per line, only ever appended to, as the
@@ -8,10 +9,11 @@ import { dirname } from "node:path";
  * program that was missing, how long the user stayed away, what a run took of them). An adaptation is a change to how mu behaves that the user
  * accepted; its lines fold by `id`, the last one holding, so undoing one appends a line.
  *
- * Nothing here holds a command, a message or a file's contents: paths of the project, program names and numbers only.
+ * Nothing here holds a command, a message or a file's contents: paths of the project, program names, the first words
+ * of a command the user allowed (`npm test`) and numbers only.
  * It is the user's file, in their agent folder: a project cannot write it, and no tool the model has does.
  */
-export type EvolveRow = ApprovalRow | OpeningRow | CommandRow | GapRow | RunRow | AdaptationRow;
+export type EvolveRow = ApprovalRow | OpeningRow | CommandRow | GapRow | RunRow | GrantRow | AdaptationRow;
 
 /** The user's answer to a call the approval judge read as needed, but not surely enough to let it run. */
 export interface ApprovalRow {
@@ -80,18 +82,52 @@ export interface RunRow extends RunCounts {
 	readonly stopped: boolean;
 }
 
-export interface AdaptationRow {
+/**
+ * The user's answer to a permission question about a command, when the question offered "for this session": that
+ * answer, or a refusal. "Once" is not kept: it says the user wants to see each such call.
+ */
+export interface GrantRow {
+	readonly type: "grant";
+	readonly cwd: string;
+	readonly at: string;
+	/** What the answer covers, as the permission gate keys it (`shell:npm test`) and as the user reads it (`npm test`). */
+	readonly key: string;
+	readonly label: string;
+	/** The permission mode the question was asked in. */
+	readonly mode: PermissionMode;
+	readonly answer: "session" | "deny";
+}
+
+interface AdaptationBase {
 	readonly type: "adaptation";
 	readonly id: string;
-	/** `approval-line`: how sure the approval judge has to be in this project, in place of the built-in line. */
-	readonly kind: "approval-line";
 	readonly cwd: string;
-	readonly value: number;
-	/** What it was accepted on, in numbers, for the listing. */
-	readonly evidence: { readonly allowed: number; readonly considered: number; readonly from: number };
 	readonly at: string;
 	readonly status: "active" | "undone";
 }
+
+/** How sure the approval judge has to be in this project, in place of the built-in line. */
+export interface LineAdaptation extends AdaptationBase {
+	readonly kind: "approval-line";
+	readonly value: number;
+	/** What it was accepted on, in numbers, for the listing. */
+	readonly evidence: { readonly allowed: number; readonly considered: number; readonly from: number };
+}
+
+/**
+ * A command the permission gate lets run in this project without asking, as "for this session" does within a session.
+ * It holds in the permission mode it was accepted in, and not for a call a rule flags or one that touches mu's settings.
+ */
+export interface GrantAdaptation extends AdaptationBase {
+	readonly kind: "grant";
+	readonly key: string;
+	readonly label: string;
+	readonly mode: PermissionMode;
+	/** How many times in a row the user had allowed it for the session when they accepted. */
+	readonly sessions: number;
+}
+
+export type AdaptationRow = LineAdaptation | GrantAdaptation;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
@@ -145,25 +181,40 @@ export function rowOf(value: unknown): EvolveRow | undefined {
 			stopped: value.stopped === true,
 		};
 	}
+	if (value.type === "grant") {
+		const mode = parseMode(value.mode);
+		if (!isText(value.cwd) || !isText(value.key) || !isText(value.label) || !mode) return undefined;
+		if (value.answer !== "session" && value.answer !== "deny") return undefined;
+		return { type: "grant", cwd: value.cwd, at, key: value.key, label: value.label, mode, answer: value.answer };
+	}
 	if (value.type === "adaptation") {
-		const evidence = value.evidence;
-		if (!isText(value.id) || value.kind !== "approval-line" || !isText(value.cwd) || !isNumber(value.value)) {
-			return undefined;
+		if (!isText(value.id) || !isText(value.cwd)) return undefined;
+		const status = value.status;
+		if (status !== "active" && status !== "undone") return undefined;
+		const base: AdaptationBase = { type: "adaptation", id: value.id, cwd: value.cwd, at, status };
+		if (value.kind === "grant") {
+			const mode = parseMode(value.mode);
+			if (!isText(value.key) || !isText(value.label) || !mode) return undefined;
+			return {
+				...base,
+				kind: "grant",
+				key: value.key,
+				label: value.label,
+				mode,
+				sessions: countOf(value.sessions),
+			};
 		}
-		if (value.status !== "active" && value.status !== "undone") return undefined;
+		if (value.kind !== "approval-line" || !isNumber(value.value)) return undefined;
+		const evidence = value.evidence;
 		return {
-			type: "adaptation",
-			id: value.id,
+			...base,
 			kind: "approval-line",
-			cwd: value.cwd,
 			value: value.value,
 			evidence: {
 				allowed: isRecord(evidence) && isNumber(evidence.allowed) ? evidence.allowed : 0,
 				considered: isRecord(evidence) && isNumber(evidence.considered) ? evidence.considered : 0,
 				from: isRecord(evidence) && isNumber(evidence.from) ? evidence.from : 0,
 			},
-			at,
-			status: value.status,
 		};
 	}
 	return undefined;
@@ -218,15 +269,58 @@ export function adaptations(rows: readonly EvolveRow[]): AdaptationRow[] {
 	return [...latest.values()];
 }
 
-/** The adaptation of one kind in force in a project, if the user accepted one and has not undone it. */
-export function activeAdaptation(
+/** The adaptations of one kind in force in a project: accepted and not undone, oldest first. */
+export function activeAdaptations<Kind extends AdaptationRow["kind"]>(
 	rows: readonly EvolveRow[],
-	kind: AdaptationRow["kind"],
+	kind: Kind,
 	cwd: string,
-): AdaptationRow | undefined {
-	return adaptations(rows)
-		.filter((row) => row.kind === kind && row.cwd === cwd && row.status === "active")
-		.pop();
+): Extract<AdaptationRow, { kind: Kind }>[] {
+	return adaptations(rows).filter(
+		(row): row is Extract<AdaptationRow, { kind: Kind }> =>
+			row.kind === kind && row.cwd === cwd && row.status === "active",
+	);
+}
+
+/** The latest adaptation of one kind in force in a project, for a kind a project has one of. */
+export function activeAdaptation<Kind extends AdaptationRow["kind"]>(
+	rows: readonly EvolveRow[],
+	kind: Kind,
+	cwd: string,
+): Extract<AdaptationRow, { kind: Kind }> | undefined {
+	return activeAdaptations(rows, kind, cwd).pop();
+}
+
+/** A command the user keeps allowing for the session in a project: what a standing grant would cover. */
+export interface GrantSuggestion {
+	readonly key: string;
+	readonly label: string;
+	readonly mode: PermissionMode;
+	/** How many times in a row, up to the latest answer, the user allowed it for the session. */
+	readonly sessions: number;
+}
+
+/**
+ * The commands of a project that could be granted for good, in one permission mode: the latest `least` answers about
+ * each were all "for this session", and no grant in force covers it yet. One refusal starts the count again.
+ */
+export function grantSuggestions(
+	rows: readonly EvolveRow[],
+	cwd: string,
+	mode: PermissionMode,
+	least: number,
+): GrantSuggestion[] {
+	const inForce = new Set(
+		activeAdaptations(rows, "grant", cwd)
+			.filter((grant) => grant.mode === mode)
+			.map((grant) => grant.key),
+	);
+	const runs = new Map<string, GrantSuggestion>();
+	for (const row of rows) {
+		if (row.type !== "grant" || row.cwd !== cwd || row.mode !== mode) continue;
+		const sessions = row.answer === "session" ? (runs.get(row.key)?.sessions ?? 0) + 1 : 0;
+		runs.set(row.key, { key: row.key, label: row.label, mode, sessions });
+	}
+	return [...runs.values()].filter((run) => run.sessions >= least && !inForce.has(run.key));
 }
 
 /**
@@ -313,6 +407,10 @@ export interface EvolveLink {
 	approvalAnswered(answer: Omit<ApprovalRow, "type" | "at">): void;
 	/** A question put to the user ended: a permission question, or one of ask_user's. */
 	asked(kind: "permission" | "question", ended: AskedEnd): void;
+	/** The user answered a permission question about a command with "for this session", or refused it. */
+	grantAnswered(answer: Omit<GrantRow, "type" | "at">): void;
+	/** Whether the user accepted a standing grant for this command, in this project and permission mode. */
+	granted(cwd: string, key: string, mode: PermissionMode): boolean;
 	/** The files a session read in its opening steps, relative to the project. */
 	opened(cwd: string, paths: readonly string[]): void;
 	/** Files earlier openings of this project read, the most read first. */

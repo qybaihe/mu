@@ -357,7 +357,7 @@ is marked: two features that set it in the same turn decide between them by the 
 | `onPresentation` | `extension/kyrn-judge.ts` | `extension/runtime.ts` |
 | `onProgress` | `extension/features/preflight.ts` | `extension/runtime.ts` |
 | `onTurnBegin` | `extension/features/frame.ts` | `extension/runtime.ts` |
-| `permissionMode` | `extension/features/permissions.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/guard.ts`, `extension/features/swarm.ts` |
+| `permissionMode` | `extension/features/permissions.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/evolve.ts`, `extension/features/guard.ts`, `extension/features/swarm.ts` |
 | `permissionsWaiting` | `extension/features/permissions.ts` | `extension/features/continuation.ts` |
 | `planMode` | `extension/features/plan.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/plan.ts` |
 | `questionsOpen` | `extension/features/ask-user.ts` | `extension/features/continuation.ts` |

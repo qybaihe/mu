@@ -244,6 +244,7 @@ Since 2026-11-10 `permissions.resolved` has one more `answer`, and `permissions.
 | --- | --- | --- |
 | `permissions.resolved` `answer` | `pending` | Nobody answered within `features.permissions.waitMs`. The call did not run, and its question waits for `/approve`. Close the dialog; a client may offer a button that sends `/approve`. |
 | `permissions.approved` `by` | `user` | The user allowed this same call with `/approve`, after its question had waited. |
+| `permissions.approved` `by` | `project` | The command is one the user accepted for this project with `/evolve accept <command>`: it runs in every session there without a question. |
 
 The mode labels and descriptions are already in Chinese or English. Key your own strings on `mode` and `modes[].id`.
 

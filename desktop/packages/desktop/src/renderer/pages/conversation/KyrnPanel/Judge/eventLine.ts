@@ -385,16 +385,17 @@ function permissionAnswerLine(t: TFunction, payload: Record<string, unknown>): s
 }
 
 /** Who let a call through without asking, by the harness's `by`: an older harness names the judge `jev`. */
-const APPROVERS: ReadonlyMap<string, 'judge' | 'grant' | 'user'> = new Map([
+const APPROVERS: ReadonlyMap<string, 'judge' | 'grant' | 'project' | 'user'> = new Map([
   ['judge', 'judge'],
   ['jev', 'judge'],
   ['grant', 'grant'],
+  ['project', 'project'],
   ['user', 'user'],
 ]);
 
 /**
- * A call that ran without asking: the judge let it through, the person had allowed it for this conversation, or they
- * allowed this very call with `/approve` after its question had waited.
+ * A call that ran without asking: the judge let it through, the person had allowed it for this conversation or, with
+ * `/evolve accept`, for the project, or they allowed this very call with `/approve` after its question had waited.
  */
 function permissionApprovedLine(t: TFunction, payload: Record<string, unknown>): string[] | undefined {
   const summary = str(payload.summary);

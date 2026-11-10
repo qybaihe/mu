@@ -8,9 +8,12 @@ import {
 	type AdaptationRow,
 	type ApprovalRow,
 	activeAdaptation,
+	activeAdaptations,
 	adaptations,
 	attention,
 	EvolveStore,
+	type GrantRow,
+	grantSuggestions,
 	medianGap,
 	missingCommands,
 	openingReads,
@@ -85,6 +88,24 @@ describe("the evolution store", () => {
 		expect(
 			rowOf({ type: "adaptation", id: "a", kind: "something-else", cwd, value: 0.7, at, status: "active" }),
 		).toBeUndefined();
+		// An answer a standing grant is read from, and the grant: each needs a permission mode mu knows.
+		const grant = { cwd, at, key: "shell:npm test", label: "npm test", mode: "ask" };
+		expect(rowOf({ type: "grant", ...grant, answer: "session" })).toEqual({
+			type: "grant",
+			...grant,
+			answer: "session",
+		});
+		expect(rowOf({ type: "grant", ...grant, answer: "once" })).toBeUndefined();
+		expect(rowOf({ type: "grant", ...grant, mode: "sometimes", answer: "deny" })).toBeUndefined();
+		expect(rowOf({ type: "adaptation", id: "g1", kind: "grant", ...grant, sessions: 3, status: "active" })).toEqual({
+			type: "adaptation",
+			id: "g1",
+			kind: "grant",
+			...grant,
+			sessions: 3,
+			status: "active",
+		});
+		expect(rowOf({ type: "adaptation", id: "g1", kind: "grant", cwd, at, status: "active" })).toBeUndefined();
 		expect(rowOf({ type: "unknown", at })).toBeUndefined();
 		expect(rowOf("text")).toBeUndefined();
 	});
@@ -106,6 +127,55 @@ describe("the evolution store", () => {
 		const rows = [accepted, { ...accepted, status: "undone" as const }];
 		expect(adaptations(rows)).toHaveLength(1);
 		expect(activeAdaptation(rows, "approval-line", cwd)).toBeUndefined();
+	});
+
+	it("suggests a standing grant for a command whose latest answers were all for the session", () => {
+		const said = (label: string, answer: GrantRow["answer"], mode: GrantRow["mode"] = "judge"): GrantRow => ({
+			type: "grant",
+			cwd,
+			at,
+			key: `shell:${label}`,
+			label,
+			mode,
+			answer,
+		});
+		const three = [said("npm test", "session"), said("npm test", "session"), said("npm test", "session")];
+		expect(grantSuggestions(three.slice(0, 2), cwd, "judge", 3)).toEqual([]);
+		expect(grantSuggestions(three, cwd, "judge", 3)).toEqual([
+			{ key: "shell:npm test", label: "npm test", mode: "judge", sessions: 3 },
+		]);
+		// Answers given in one permission mode say nothing for another, nor for another project.
+		expect(grantSuggestions(three, cwd, "ask", 3)).toEqual([]);
+		expect(grantSuggestions(three, "/work/other", "judge", 3)).toEqual([]);
+		// One refusal starts the count again.
+		const refused = [...three, said("npm test", "deny"), said("npm test", "session"), said("npm test", "session")];
+		expect(grantSuggestions(refused, cwd, "judge", 3)).toEqual([]);
+		expect(grantSuggestions([...refused, said("npm test", "session")], cwd, "judge", 3)).toHaveLength(1);
+		// Each command has its own count.
+		expect(
+			grantSuggestions([...three, said("git commit", "session")], cwd, "judge", 3).map((each) => each.label),
+		).toEqual(["npm test"]);
+
+		// Once accepted it is in force and no longer suggested; undone, it is suggested again.
+		const accepted: AdaptationRow = {
+			type: "adaptation",
+			id: "g1",
+			kind: "grant",
+			cwd,
+			key: "shell:npm test",
+			label: "npm test",
+			mode: "judge",
+			sessions: 3,
+			at,
+			status: "active",
+		};
+		expect(activeAdaptations([...three, accepted], "grant", cwd)).toEqual([accepted]);
+		expect(grantSuggestions([...three, accepted], cwd, "judge", 3)).toEqual([]);
+		const undone = [...three, accepted, { ...accepted, status: "undone" as const }];
+		expect(activeAdaptations(undone, "grant", cwd)).toEqual([]);
+		expect(grantSuggestions(undone, cwd, "judge", 3)).toHaveLength(1);
+		// A grant is not the project's approval line, and the other way round.
+		expect(activeAdaptation([accepted], "approval-line", cwd)).toBeUndefined();
 	});
 
 	it("counts what a project's sessions opened with, and leaves out what one of several read once", () => {
