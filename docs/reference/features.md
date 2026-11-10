@@ -129,6 +129,7 @@ On by default: yes. Decision points: `tool.approval`.
 | --- | --- | --- |
 | `mode` | `judge` | Mode for new conversations. Once you pick a mode with /permissions, your latest choice is used. One of `full` (Full access), `judge` (Judge mode), `ask` (Ask first). |
 | `readOnlyChains` | `true` | Read-only command chains go ahead. Commands made only of read-only commands joined by ;, &&, \|\| or \| (such as pwd && ls -la; git status) run without asking the judge or you, like a single read-only command. They may throw output away with 2>/dev/null or 2>&1; a redirect that writes a file, sed -i, tee or find with -exec or -delete is not read-only. Off: only a single read-only command or pipeline goes ahead. |
+| `waitMs` | `120000` ms | Wait per permission question. When nobody answers in time, the step doesn't run and the agent carries on with what doesn't depend on it; /approve brings the question back. 0 waits until you answer. Range 0 to 3600000. |
 
 ## plan
 

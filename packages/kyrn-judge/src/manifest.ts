@@ -1005,6 +1005,19 @@ const DESCRIBED: HarnessManifest = {
 						en: "Commands made only of read-only commands joined by ;, &&, || or | (such as pwd && ls -la; git status) run without asking the judge or you, like a single read-only command. They may throw output away with 2>/dev/null or 2>&1; a redirect that writes a file, sed -i, tee or find with -exec or -delete is not read-only. Off: only a single read-only command or pipeline goes ahead.",
 					},
 				},
+				{
+					key: "waitMs",
+					kind: "number",
+					default: 120000,
+					min: 0,
+					max: 3600000,
+					unit: ms,
+					label: { zh: "授权提问最多等", en: "Wait per permission question" },
+					help: {
+						zh: "到时没人回答，这一步先不做，代理接着做不依赖它的事；输入 /approve 再回答。0 表示一直等到你回答。",
+						en: "When nobody answers in time, the step doesn't run and the agent carries on with what doesn't depend on it; /approve brings the question back. 0 waits until you answer.",
+					},
+				},
 			],
 		},
 		{

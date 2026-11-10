@@ -128,10 +128,13 @@ const OutcomeSchema = Type.Union([
 		ledgerId: Type.Optional(Type.String()),
 		specId: Type.Optional(Type.String()),
 		judged: Type.Optional(Type.Unknown()),
-		answer: Type.Union(["once", "session", "deny", "dismissed", "none"].map((answer) => Type.Literal(answer))),
+		answer: Type.Union(
+			["once", "session", "deny", "dismissed", "none", "timeout"].map((answer) => Type.Literal(answer)),
+		),
 		grant: Type.Optional(Type.String()),
 		waitedMs: Type.Number(),
 		outsideFloor: Type.Optional(Type.Literal(true)),
+		late: Type.Optional(Type.Literal(true)),
 	}),
 	Type.Object({
 		kind: Type.Literal("mark"),
@@ -255,7 +258,7 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 	{
 		type: "kyrn.outcome",
 		kind: "entry",
-		version: 3,
+		version: 4,
 		writers: [
 			features("permissions"),
 			features("commands"),
@@ -268,6 +271,15 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 		summary:
 			"What became of a judgment: the user's answer to the question it sent them, their mark that it was wrong, what the agent did with the nudge it sent, a left-out part the model read back, when the user returned after a warming verdict, or what a conversation's opening read against what was forecast.",
 		schema: OutcomeSchema,
+	},
+	{
+		type: "kyrn.approval",
+		kind: "message",
+		version: 1,
+		writers: [features("permissions")],
+		readers: [],
+		summary:
+			"Tells the model what the user answered with /approve about calls whose permission question had waited out its time.",
 	},
 	{
 		type: "kyrn.verdict",

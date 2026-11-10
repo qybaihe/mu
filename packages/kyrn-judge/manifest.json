@@ -3210,6 +3210,25 @@
 						"tr-TR": "Yalnızca salt okunur komutlardan oluşan ve ;, &&, || ya da | ile bağlanan komutlar (ör. pwd && ls -la; git status), tek bir salt okunur komut gibi hakeme de size de sorulmadan çalışır. Çıktıyı 2>/dev/null veya 2>&1 ile atabilirler; dosyaya yazan bir yönlendirme, sed -i, tee ya da -exec veya -delete içeren find salt okunur sayılmaz. Kapalı: yalnızca tek bir salt okunur komut ya da boru hattı sorulmadan çalışır.",
 						"fa-IR": "فرمان‌هایی که فقط از فرمان‌های فقط‌خواندنی ساخته شده‌اند و با ; یا && یا || یا | به هم وصل‌اند (مثل pwd && ls -la; git status)، مثل یک فرمان فقط‌خواندنی، بی‌پرسش از داور یا شما اجرا می‌شوند. می‌توانند خروجی را با 2>/dev/null یا 2>&1 دور بریزند؛ تغییر مسیری که در فایل می‌نویسد، sed -i، tee یا find با -exec یا -delete فقط‌خواندنی نیست. خاموش: فقط یک فرمان یا خط لوله‌ی فقط‌خواندنی بی‌پرسش اجرا می‌شود."
 					}
+				},
+				{
+					"key": "waitMs",
+					"kind": "number",
+					"default": 120000,
+					"min": 0,
+					"max": 3600000,
+					"unit": {
+						"zh": "毫秒",
+						"en": "ms"
+					},
+					"label": {
+						"zh": "授权提问最多等",
+						"en": "Wait per permission question"
+					},
+					"help": {
+						"zh": "到时没人回答，这一步先不做，代理接着做不依赖它的事；输入 /approve 再回答。0 表示一直等到你回答。",
+						"en": "When nobody answers in time, the step doesn't run and the agent carries on with what doesn't depend on it; /approve brings the question back. 0 waits until you answer."
+					}
 				}
 			]
 		},

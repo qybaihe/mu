@@ -238,6 +238,13 @@ One more was added on 2026-11-04:
 | --- | --- |
 | `long` | The step is too long for the judge to read in full, so mu asks you. A command is then shown as its start and the parts a rule flagged; no "for this session" answer is offered. |
 
+Since 2026-11-10 `permissions.resolved` has one more `answer`, and `permissions.approved` one more `by`:
+
+| field | value | meaning |
+| --- | --- | --- |
+| `permissions.resolved` `answer` | `pending` | Nobody answered within `features.permissions.waitMs`. The call did not run, and its question waits for `/approve`. Close the dialog; a client may offer a button that sends `/approve`. |
+| `permissions.approved` `by` | `user` | The user allowed this same call with `/approve`, after its question had waited. |
+
 The mode labels and descriptions are already in Chinese or English. Key your own strings on `mode` and `modes[].id`.
 
 ## web.search
