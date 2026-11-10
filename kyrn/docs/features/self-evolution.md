@@ -40,6 +40,7 @@ Machine: macOS (arm64), zsh; this project uses pnpm (pnpm-lock.yaml)
 ```
 
 - It is a message, not part of the system prompt, so the prompt's prefix is the same for every conversation and the provider's cache of it holds.
+- It comes after your message, as the frame and the lessons do, so on a first turn your message is not the last one the model reads. Putting it first costs more than it gives, both ways there are. A message sent before the run lands ahead of the system prompt, which pi writes into a new conversation only when the first run starts (seen in a test: custom, system, user); a model that takes system messages mid-conversation would then get the prompt after the snapshot. Moving it in a `context` handler makes pi fold every later system message into the leading one (read in pi's code, not run), so such a model would lose its cached prefix whenever the tools change.
 - Nothing is run but `git status`, with a 1.5 s limit. Programs are looked up on the PATH. No judge is asked.
 - A listing that was cut says so (`the first 60 of 214`). An empty folder is said to be empty.
 - File and branch names are the project's text and could say anything, so the snapshot says they are not your words, each name is cut at 80 characters, and commit messages are left out.

@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fauxAssistantMessage } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
@@ -21,7 +21,8 @@ function machine(
 		arch: "arm64",
 		env: { SHELL: "/bin/zsh" },
 		find: (binary) => programs[binary],
-		exists: (path) => files.some((file) => path.endsWith(`/${file}`)),
+		// By name alone: the path's separators are the system's the test runs on.
+		exists: (path) => files.includes(basename(path)),
 	};
 }
 
