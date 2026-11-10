@@ -6,7 +6,7 @@
 // marks are a JSON watchable; each mark records the generation of its latest change (generations only increase), so a
 // change during a build keeps its mark, however late an older build's rollout clears.
 
-import { type Dirent, type FSWatcher, lstatSync, readdirSync, realpathSync, watch } from "node:fs";
+import { type BigIntStats, type Dirent, type FSWatcher, lstatSync, readdirSync, realpathSync, watch } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { BACKGROUND_CONTEXT, type Context } from "../../context/index.ts";
 import type { JsonValue } from "../../json.ts";
@@ -41,6 +41,19 @@ export type WatcherOptions = {
 const IGNORED = new Set(["node_modules", ".git"]);
 
 /**
+ * mu: whether a tree's watches settle. On macOS a watch is not exact around its start (Node watches a directory there
+ * through FSEvents). It also reports what changed in the moments before: events still on their way (some 10 ms of
+ * them) reach the new watch, the directory's own creation among them, named like the directory. And it can miss what
+ * changes in the moments after: every watch added makes the process's one event stream anew, and an event delivered to
+ * the stream it replaces is lost. So there, while a tree settles, an event counts only when its entry shows otherwise
+ * than when last seen, and after `SETTLE_MS` the tree is read once more for what no event told.
+ */
+const SETTLES = process.platform === "darwin";
+
+/** mu: how long a tree settles before it is read once more, and how long again until what was seen is forgotten: 1 s. */
+const SETTLE_MS = 1_000;
+
+/**
  * The watcher and the marks (`state`), a JSON watchable published at most once per microtask turn with changes. It
  * marks for the plugins of the last discovery (`know`) and the files their last builds read (`used`).
  */
@@ -52,6 +65,13 @@ export class PluginWatcher extends Source {
 	readonly #trees = new Set<string>();
 	/** Its watches, one per directory of its trees. */
 	readonly #watchers = new Map<string, FSWatcher>();
+	/**
+	 * mu: while a tree settles (`SETTLES`), what the entries of each of its directories showed when last seen (when the
+	 * watch started, at their last event), by directory and name (`"."`: the directory itself).
+	 */
+	readonly #seen = new Map<string, Map<string, string>>();
+	/** mu: the trees still settling, each with the timer of its next step. */
+	readonly #settling = new Map<string, NodeJS.Timeout>();
 	/** A failure to watch was reported (once). */
 	#reported = false;
 	/** The generation the next change gets: every mark records a newer one than any before it. */
@@ -170,6 +190,9 @@ export class PluginWatcher extends Source {
 	close(): void {
 		for (const watcher of this.#watchers.values()) watcher.close();
 		this.#watchers.clear();
+		for (const timer of this.#settling.values()) clearTimeout(timer);
+		this.#settling.clear();
+		this.#seen.clear();
 		this.#trees.clear();
 	}
 
@@ -204,22 +227,63 @@ export class PluginWatcher extends Source {
 	#watchTree(dir: string): void {
 		if (this.#trees.has(dir)) return;
 		this.#trees.add(dir);
-		this.#watchDirs(dir);
+		this.#watchDirs(dir, true);
+		if (SETTLES && this.#watchers.has(dir)) this.#settle(dir, true);
 	}
 
 	/** Stops watching the tree at `dir`. */
 	#unwatchTree(dir: string): void {
 		this.#trees.delete(dir);
+		clearTimeout(this.#settling.get(dir));
+		this.#settling.delete(dir);
 		this.#unwatchDirs(dir);
 	}
 
-	/** Watches `dir` and, walking down, every directory under it but ignored ones (each not watched yet). */
-	#watchDirs(dir: string): void {
+	/**
+	 * mu: the next step of `tree`'s settling, `SETTLE_MS` from now. `again`: its directories are read once more, and an
+	 * entry that shows otherwise than when last seen had no event and gets one. Then, as long again later (the events of
+	 * what the reading found may still be on their way), what was seen is forgotten: from then on every event marks.
+	 */
+	#settle(tree: string, again: boolean): void {
+		const timer = setTimeout(() => {
+			if (again) {
+				for (const [dir, seen] of this.#seen) if (dir === tree || inside(tree, dir)) this.#readAgain(dir, seen);
+				this.#settle(tree, false);
+			} else {
+				this.#settling.delete(tree);
+				for (const dir of this.#seen.keys()) if (dir === tree || inside(tree, dir)) this.#seen.delete(dir);
+			}
+		}, SETTLE_MS);
+		timer.unref();
+		this.#settling.set(tree, timer);
+	}
+
+	/** mu: reads `dir` once more: an entry that shows otherwise than when last `seen` had no event, and gets one. */
+	#readAgain(dir: string, seen: ReadonlyMap<string, string>): void {
+		let names: string[];
+		try {
+			names = readdirSync(dir);
+		} catch {
+			// Removed meanwhile: its parent's reading says so.
+			return;
+		}
+		for (const name of new Set([...names, ...seen.keys()])) {
+			if (name === "." || IGNORED.has(name)) continue;
+			if (shown(join(dir, name)) !== seen.get(name)) this.#changedIn(dir, name);
+		}
+	}
+
+	/**
+	 * Watches `dir` and, walking down, every directory under it but ignored ones (each not watched yet). `tree`: the walk
+	 * starts a tree's watches (where they settle, what it finds is what the next build reads: seen, no change), not those
+	 * of a directory that appeared (what is in it is new).
+	 */
+	#watchDirs(dir: string, tree: boolean): void {
 		if (this.#watchers.has(dir) || this.#reported) return;
 		let watcher: FSWatcher;
 		try {
 			watcher = watch(dir, (_event, file) => {
-				if (file !== null) this.#changedIn(join(dir, file));
+				if (file !== null) this.#changedIn(dir, file);
 			});
 		} catch (error) {
 			if ((error as NodeJS.ErrnoException).code !== "ENOENT") this.#failed(error);
@@ -227,6 +291,12 @@ export class PluginWatcher extends Source {
 		}
 		watcher.on("error", (error) => this.#failed(error));
 		this.#watchers.set(dir, watcher);
+		// mu: seen after its watch started, so a change from now on shows against it.
+		const seen = tree && SETTLES ? new Map<string, string>() : undefined;
+		if (seen !== undefined) {
+			this.#seen.set(dir, seen);
+			remember(seen, ".", dir);
+		}
 		let entries: Dirent[];
 		try {
 			entries = readdirSync(dir, { withFileTypes: true });
@@ -235,18 +305,47 @@ export class PluginWatcher extends Source {
 			return;
 		}
 		for (const entry of entries) {
-			if (entry.isDirectory() && !IGNORED.has(entry.name)) this.#watchDirs(join(dir, entry.name));
+			if (IGNORED.has(entry.name)) continue;
+			const path = join(dir, entry.name);
+			if (seen !== undefined) remember(seen, entry.name, path);
+			if (entry.isDirectory()) this.#watchDirs(path, tree);
 		}
 	}
 
-	/** An event for `path` in a watched directory: a new directory gets its watches, a removed one loses them; marked. */
-	#changedIn(path: string): void {
+	/**
+	 * An event for `file` in the watched directory `dir`: a new directory gets its watches, a removed one loses them;
+	 * marked, unless it tells nothing new while `dir`'s tree settles.
+	 */
+	#changedIn(dir: string, file: string): void {
+		const path = join(dir, file);
 		const name = basename(path);
 		if (!IGNORED.has(name)) {
-			if (isDirectory(path)) this.#watchDirs(path);
+			if (this.#asSeen(dir, name, path)) return;
+			if (isDirectory(path)) this.#watchDirs(path, false);
 			else if (this.#watchers.has(path)) this.#unwatchDirs(path);
 		}
 		this.mark(path);
+	}
+
+	/**
+	 * mu: whether an event for the entry `name` of `dir` (at `path`) tells nothing new while `dir`'s tree settles: the
+	 * entry is there and shows what it did when last seen (on a file system keeping exact times). An event named like
+	 * `dir` for no entry of it is about `dir` itself. An entry that is gone always counts: created and removed again
+	 * between two events, it shows nothing either time. What the entry shows now is kept as seen.
+	 */
+	#asSeen(dir: string, name: string, path: string): boolean {
+		const seen = this.#seen.get(dir);
+		if (seen === undefined) return false;
+		let key = name;
+		let now = shown(path);
+		if (now === undefined && name === basename(dir) && !seen.has(name)) {
+			key = ".";
+			now = shown(dir);
+		}
+		const was = seen.get(key);
+		if (now === undefined) seen.delete(key);
+		else seen.set(key, now);
+		return now !== undefined && now === was && !now.startsWith(COARSE);
 	}
 
 	/** Stops watching `dir` and the directories under it (it was removed, or its tree is not watched any more). */
@@ -255,6 +354,7 @@ export class PluginWatcher extends Source {
 			if (watched !== dir && !inside(dir, watched)) continue;
 			watcher.close();
 			this.#watchers.delete(watched);
+			this.#seen.delete(watched);
 		}
 	}
 
@@ -288,6 +388,34 @@ function isDirectory(path: string): boolean {
 	} catch {
 		return false;
 	}
+}
+
+/** mu: how `shown` starts for an entry of a file system keeping coarse times. */
+const COARSE = "coarse ";
+
+/**
+ * mu: what `lstat` (never following a link) shows of the entry at `path`, as far as a change of it shows there: a
+ * directory's identity and mode (its times change with its entries, which have their own events), anything else's
+ * identity, size and times, marked coarse when its change time has no fraction of a millisecond (a file system keeping
+ * coarse times shows two changes within one of its ticks alike). `undefined` for no entry or one that cannot be read.
+ */
+function shown(path: string): string | undefined {
+	let stats: BigIntStats | undefined;
+	try {
+		stats = lstatSync(path, { bigint: true, throwIfNoEntry: false });
+	} catch {
+		return undefined;
+	}
+	if (stats === undefined) return undefined;
+	if (stats.isDirectory()) return `directory ${stats.ino} ${stats.mode}`;
+	const file = `${stats.ino} ${stats.size} ${stats.mtimeNs} ${stats.ctimeNs}`;
+	return stats.ctimeNs % 1_000_000n === 0n ? `${COARSE}${file}` : file;
+}
+
+/** mu: keeps in `seen`, as `key`, what the entry at `path` shows now. */
+function remember(seen: Map<string, string>, key: string, path: string): void {
+	const now = shown(path);
+	if (now !== undefined) seen.set(key, now);
 }
 
 /** `dir` absolute and by its real path; as given (absolute) when it does not exist. */
