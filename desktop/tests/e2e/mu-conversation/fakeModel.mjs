@@ -71,13 +71,16 @@ export function textOf(content) {
 }
 
 /**
- * mu's own note about the task frame goes to the model as a user message after the person's (a session it has no frame
- * for yet, an imported one, gets one at its first message): it is not the person's turn.
+ * mu's own notes go to the model as user messages after the person's, and none of them is the person's turn: the one
+ * about the task frame (a session it has no frame for yet, an imported one, gets one at its first message), and what a
+ * conversation's first message comes with (the workspace snapshot, and the files mu expects the task to need).
  */
-const isFrameNote = (message) => /^\s*\[mu task frame/.test(textOf(message?.content));
+const MU_NOTE =
+  /^\s*\[mu(?: task frame|: the workspace as this conversation starts|: (?:a file|\d+ files) this task is likely to need)/;
+const isMuNote = (message) => MU_NOTE.test(textOf(message?.content));
 
 /**
- * What to answer, from the request's messages: the turn is the last user message (not mu's note about the task frame),
+ * What to answer, from the request's messages: the turn is the last user message that is not a note of mu's own,
  * the step is how many tool results came back after it.
  */
 export function planReply(messages) {
@@ -88,7 +91,7 @@ export function planReply(messages) {
     .join('\n');
   let lastUser = -1;
   for (let i = list.length - 1; i >= 0; i -= 1) {
-    if (list[i]?.role === 'user' && !isFrameNote(list[i])) {
+    if (list[i]?.role === 'user' && !isMuNote(list[i])) {
       lastUser = i;
       break;
     }
@@ -254,7 +257,7 @@ export async function startFakeModel({ port = 0, log = () => {} } = {}) {
         aborted: false,
       };
       for (let i = (body.messages?.length ?? 0) - 1; i >= 0; i -= 1) {
-        if (body.messages[i]?.role === 'user' && !isFrameNote(body.messages[i])) {
+        if (body.messages[i]?.role === 'user' && !isMuNote(body.messages[i])) {
           const content = body.messages[i].content;
           record.lastUser = textOf(content).slice(-400);
           record.images = Array.isArray(content) ? content.filter((part) => part?.type === 'image_url').length : 0;
