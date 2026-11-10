@@ -14,7 +14,7 @@ Each is a label that costs nothing. Until now only three of them were kept (`kyr
 
 - **Loosening is yours to accept.** Anything that makes mu ask less or allow more takes effect only after a command you type (`/evolve accept`). No verdict, no tool the model has and no file in a project can do it.
 - **Tightening needs nobody.** A rule that stops more calls, or a line that goes back up, takes effect at once.
-- **A suggestion is said once.** When the run in which something became acceptable has ended, mu says so in one notice, with the command that takes it. After that it waits in `/evolve` and is not brought up again, in this session or a later one (the store keeps that it was said).
+- **A suggestion is said once.** When the run in which something became acceptable has ended, mu says so in one notice, with the command that takes it. After that it waits in `/evolve` and in `/waiting` ([what waits for you](waiting.md)), and is not brought up again, in this session or a later one (the store keeps that it was said).
 - **What adapts is visible and can be undone.** `/evolve` lists what mu has seen and what is in force; `/evolve undo` and `/forget` take things back.
 - **Labels come from outcomes, not from the agent's say-so.** An approval answered in under 1.5 s counts for less: at least half the answers behind a suggestion have to have waited longer.
 - **The safety checks do not adapt.** `tool.risk`, `tool.injection`, `tool.description`, protected paths and the write sandbox are outside all of this.

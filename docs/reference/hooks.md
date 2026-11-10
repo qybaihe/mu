@@ -314,6 +314,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 | `/review` | `packs` |
 | `/mu` | `kernel` |
 | `/status` | `kernel` |
+| `/waiting` | `kernel` |
 | `/help` | `kernel` |
 | `/clear` | `kernel` |
 | `/ledger` | `kernel` |

@@ -143,6 +143,18 @@ export interface TurnState {
 	continued: number;
 }
 
+/**
+ * One thing that waits for the user. `held`: part of the agent's work waits for it (a step that did not run, a
+ * question the model went on without). `offered`: something mu suggests, which nothing waits for.
+ */
+export interface Waiting {
+	readonly kind: "held" | "offered";
+	/** The command that deals with it. */
+	readonly command: string;
+	/** What it is, in the user's language, as the rest of a line that begins with the command. */
+	readonly what: string;
+}
+
 export interface Savings {
 	/** Characters of tool output kept out of the context by admission control. */
 	admissionOmittedChars: number;
@@ -617,6 +629,29 @@ export class KyrnRuntime {
 		const goal = clip(this.firstUserMessage, 300);
 		const current = clip(this.turn.userMessage, 200);
 		return { goal, currentSubgoal: current && current !== goal ? current : undefined };
+	}
+
+	private readonly waitingSources: ((cwd: string) => readonly Waiting[])[] = [];
+
+	/**
+	 * A feature that keeps things waiting for the user says here what waits now, for a session in this folder: the
+	 * permissions, askUser, procedures, evolve and featureOffers features do. `/waiting` (features/commands.ts) lists
+	 * them, so one command shows what five others deal with.
+	 */
+	waits(source: (cwd: string) => readonly Waiting[]): void {
+		this.waitingSources.push(source);
+	}
+
+	/** Everything that waits for the user now, what the agent's work waits for first. A source that fails says nothing. */
+	waiting(cwd: string): Waiting[] {
+		const all = this.waitingSources.flatMap((source) => {
+			try {
+				return source(cwd);
+			} catch {
+				return [];
+			}
+		});
+		return [...all.filter((each) => each.kind === "held"), ...all.filter((each) => each.kind === "offered")];
 	}
 
 	/** Sets mu's line in the footer; undefined takes it down. */

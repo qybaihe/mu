@@ -27,6 +27,7 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
 从这里开始
   /status：判定器、各判定点的模式、没放进上下文的内容、最近的判定
   /doctor：检查判定器、模型、浏览器、子代理有没有接好
+  /waiting：在等你处理的事（要授权的步骤、模型的提问、技能草稿、mu 的建议），以及各自用哪条命令处理
   /init：让代理为这个项目写一份 AGENTS.md
   /clear：开始一段新对话（同 /new）
   /import-chat [文件]：把这个项目在 Claude Code、Codex 或 ZCode 里的对话导入进来，接着在这里聊
@@ -90,6 +91,10 @@ const helpSectionsEn = (): HelpSection[] => [
 				"show the model, the judge, each decision point's mode, what was kept out of context and recent verdicts",
 			],
 			["/doctor", "check that the judge, model, browser and subagents are set up"],
+			[
+				"/waiting",
+				"list what waits for you (steps that need permission, the model's questions, skill drafts, mu's suggestions), each with the command that deals with it",
+			],
 			["/init", "have the agent write an AGENTS.md for this project"],
 			["/clear", "start a new session (same as /new)"],
 			[
@@ -428,6 +433,35 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 			en: "Show the model, the judge, each decision point's mode, context savings and recent verdicts",
 		}),
 		handler: async (_args, ctx) => mu("", ctx),
+	});
+
+	// One place for what is otherwise spread over /approve, /answer, /skills, /evolve and /capabilities, each of which
+	// a notice named once.
+	pi.registerCommand("waiting", {
+		description: say({
+			zh: "列出在等你处理的事：要授权的步骤、模型的提问、技能草稿、mu 的建议，以及各自用哪条命令处理",
+			en: "List what waits for you: steps that need permission, the model's questions, skill drafts and mu's suggestions, each with the command that deals with it",
+		}),
+		handler: async (_args, ctx) => {
+			runtime.touch(ctx);
+			const all = runtime.waiting(ctx.cwd);
+			const colon = say({ zh: "：", en: ": " });
+			const under = (kind: "held" | "offered", title: string): string[] => {
+				const lines = all.flatMap((each) => (each.kind === kind ? [`  ${each.command}${colon}${each.what}`] : []));
+				return lines.length > 0 ? [title, ...lines] : [];
+			};
+			const lines = [
+				...under("held", say({ zh: "代理的工作在等这些：", en: "The agent's work waits for these:" })),
+				...under(
+					"offered",
+					say({ zh: "mu 的建议，没有什么在等它们：", en: "mu suggests these, and nothing waits for them:" }),
+				),
+			];
+			ctx.ui.notify(
+				lines.length > 0 ? lines.join("\n") : say({ zh: "没有在等你处理的事。", en: "Nothing waits for you." }),
+				"info",
+			);
+		},
 	});
 
 	pi.registerCommand("help", {

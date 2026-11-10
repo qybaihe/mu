@@ -1,7 +1,7 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { say } from "../../language.ts";
-import { failOpen, type KyrnRuntime } from "../runtime.ts";
+import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
 
 export const QUESTION_ENTRY = "kyrn.question";
 export const PENDING_STATUS = "mu.ask.pending";
@@ -285,6 +285,27 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 	let skippedTurn = -1;
 	/** One set of questions at a time: two calls in one reply would otherwise open their dialogs over each other. */
 	let queue: Promise<unknown> = Promise.resolve();
+
+	runtime.waits(() =>
+		open.map((asked) => {
+			const left = asked.questions.slice(asked.answers.length);
+			const first = clip(left[0]?.question ?? "", 80);
+			return {
+				kind: "held" as const,
+				command: "/answer",
+				what:
+					left.length > 1
+						? say({
+								zh: `模型问了你，没等到回答就接着做了：${first}（还有 ${left.length - 1} 个问题）`,
+								en: `the model asked, and went on without your answer: ${first} (and ${left.length - 1} more)`,
+							})
+						: say({
+								zh: `模型问了你，没等到回答就接着做了：${first}`,
+								en: `the model asked, and went on without your answer: ${first}`,
+							}),
+			};
+		}),
+	);
 
 	const showOpen = (ctx: ExtensionContext): void => {
 		if (!ctx.hasUI) return;

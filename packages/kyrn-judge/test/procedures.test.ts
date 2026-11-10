@@ -192,6 +192,13 @@ describe("procedures", () => {
 		expect(session.events.some((event) => event.kind === "skill.drafted")).toBe(true);
 		// Waiting is not installed: nothing is where pi looks for skills.
 		expect(existsSync(join(session.agentDir, "skills"))).toBe(false);
+		await session.harness.session.prompt("/waiting");
+		expect(session.notes.at(-1)).toBe(
+			[
+				"mu suggests these, and nothing waits for them:",
+				"  /skills show release-to-npm: a skill mu drafted from a run, Cut a patch release of this package and publish it to npm. (/skills accept release-to-npm installs it, /skills reject release-to-npm discards it)",
+			].join("\n"),
+		);
 
 		await session.harness.session.prompt("/skills accept release-to-npm");
 		expect(readFileSync(join(session.agentDir, "skills", "release-to-npm", "SKILL.md"), "utf8")).toBe(draft.markdown);

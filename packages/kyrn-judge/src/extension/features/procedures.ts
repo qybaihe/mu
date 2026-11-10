@@ -178,6 +178,17 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 		}),
 	);
 
+	runtime.waits(() =>
+		drafts.list().map((draft) => ({
+			kind: "offered" as const,
+			command: `/skills show ${draft.name}`,
+			what: say({
+				zh: `mu 从一次运行里起草的技能，${clip(draft.description, 80)}（/skills accept ${draft.name} 安装，/skills reject ${draft.name} 丢掉）`,
+				en: `a skill mu drafted from a run, ${clip(draft.description, 80)} (/skills accept ${draft.name} installs it, /skills reject ${draft.name} discards it)`,
+			}),
+		})),
+	);
+
 	const listing = (): string => {
 		const all = drafts.list();
 		if (all.length === 0) {
