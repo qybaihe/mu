@@ -60,13 +60,14 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 8. `catalog`
 9. `injection`
 10. `plan`
-11. `askUser`
-12. `monitor`
-13. `notify`
-14. `hive`
-15. `inherit`
-16. `mcp`
-17. `packs`
+11. `permissions`
+12. `askUser`
+13. `monitor`
+14. `notify`
+15. `hive`
+16. `inherit`
+17. `mcp`
+18. `packs`
 
 ### `before_provider_request`
 
@@ -90,13 +91,14 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 4. `frame`
 5. `memory`
 6. `evolve`
-7. `monitor`
-8. `ttsr` (off by default)
-9. `watchdog`
-10. `lsp`
-11. `goal`
-12. `checkpoint`
-13. `warming`
+7. `permissions`
+8. `monitor`
+9. `ttsr` (off by default)
+10. `watchdog`
+11. `lsp`
+12. `goal`
+13. `checkpoint`
+14. `warming`
 
 ### `message_end`
 
@@ -286,6 +288,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 | `/capabilities` | `catalog` |
 | `/plan` | `plan` |
 | `/permissions` | `permissions` |
+| `/approve` | `permissions` |
 | `/answer` | `askUser` |
 | `/lsp` | `lsp` |
 | `/goal` | `goal` |
@@ -352,6 +355,7 @@ is marked: two features that set it in the same turn decide between them by the 
 | `onProgress` | `extension/features/preflight.ts` | `extension/runtime.ts` |
 | `onTurnBegin` | `extension/features/frame.ts` | `extension/runtime.ts` |
 | `permissionMode` | `extension/features/permissions.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/guard.ts`, `extension/features/swarm.ts` |
+| `permissionsWaiting` | `extension/features/permissions.ts` | `extension/features/continuation.ts` |
 | `planMode` | `extension/features/plan.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/plan.ts` |
 | `questionsOpen` | `extension/features/ask-user.ts` | `extension/features/continuation.ts` |
 | `skillsHidden` | `extension/features/skills.ts` | `extension/features/swarm.ts` |

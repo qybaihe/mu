@@ -7,7 +7,7 @@ import {
 	type ToolCallEventResult,
 } from "@earendil-works/pi-coding-agent";
 import { isCheckChain, shellStart } from "../../checkpoint/mutating.ts";
-import type { Decision } from "../../decision.ts";
+import { type Decision, digestOf } from "../../decision.ts";
 import { toolApproval } from "../../decisions/tool-approval.ts";
 import { toolRisk } from "../../decisions/tool-risk.ts";
 import { say } from "../../language.ts";
@@ -28,7 +28,7 @@ import { threeZone } from "../../policy.ts";
 import { environmentSecrets, redactSecrets } from "../../redact.ts";
 import { subAgentUserGoal } from "../../swarm/brief.ts";
 import type { JsonValue } from "../../types.ts";
-import { clip, type KyrnRuntime } from "../runtime.ts";
+import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 import {
 	carriesCredential,
@@ -48,6 +48,8 @@ import type { HarnessRoots } from "./inherit.ts";
 export const PERMISSIONS_ENTRY = "mu.permissions";
 /** Session entry: what the user answered when asked to allow a call (`PermissionOutcome`). */
 export const OUTCOME_ENTRY = "kyrn.outcome";
+/** Custom message: what the user answered with /approve about calls whose question had waited out its time. */
+export const APPROVED_MESSAGE = "kyrn.approval";
 
 /**
  * What the user answered when asked to allow a call, kept in the session. When a judge was asked first, `ledgerId`
@@ -67,14 +69,19 @@ export interface PermissionOutcome {
 	readonly ledgerId?: string;
 	readonly specId?: string;
 	readonly judged?: JsonValue;
-	/** `dismissed`: the question was closed or cancelled. `none`: nobody could be asked, so the call was refused. */
-	readonly answer: "once" | "session" | "deny" | "dismissed" | "none";
+	/**
+	 * `dismissed`: the question was closed or cancelled. `none`: nobody could be asked, so the call was refused.
+	 * `timeout`: nobody answered within the wait, so the call did not run and waits for /approve.
+	 */
+	readonly answer: "once" | "session" | "deny" | "dismissed" | "none" | "timeout";
 	/** What "for this session" allowed, when that was the answer. */
 	readonly grant?: string;
 	/** How long the question waited for the answer. */
 	readonly waitedMs: number;
 	/** The call asked to run outside the write sandbox (`outside: true`). */
 	readonly outsideFloor?: true;
+	/** The answer came through /approve, after the question had waited out its time. */
+	readonly late?: true;
 }
 
 /**
@@ -122,6 +129,37 @@ export type AskReason =
 	| "nojudge"
 	| "judgedown"
 	| "long";
+
+/** A call's permission question: what the picker shows, and what the answer is recorded against. */
+interface Question {
+	/** `permission-<n>`, as the `permissions.request` and `permissions.resolved` frames name it. */
+	readonly id: string;
+	readonly toolCallId: string;
+	readonly tool: string;
+	readonly need: PermissionNeed;
+	readonly reason: AskReason;
+	readonly flag?: string;
+	readonly said?: JudgeSaid;
+	readonly leaving: boolean;
+	/** What "for this conversation" would cover. Undefined: this call can only be allowed once. */
+	readonly grant?: NonNullable<PermissionNeed["grant"]>;
+	/** The picker's text under its first line: the call, and why mu asks. */
+	readonly body: string;
+	/** The call itself (`callKey`): an answer given after the wait holds for this call and no other. */
+	readonly key: string;
+	readonly cwd: string;
+	readonly askedAt: number;
+}
+
+/** How a question ended. `timeout`: nobody answered within the wait. `dismissed`: closed, or the run was stopped. */
+type Picked = "once" | "session" | "deny" | "dismissed" | "timeout";
+
+/** A call as itself: the tool and its whole input. */
+const callKey = (event: ToolCallEvent): string => digestOf([event.toolName, event.input]);
+
+/** What the model is told about a call whose question nobody has answered yet. */
+const pendingReason = (need: PermissionNeed): string =>
+	`The user has not answered yet whether to allow this (${need.summary}). This is pending: not permission, and not a refusal. Do not try another way around it. Carry on with work that does not depend on it, and say at the end what still waits for them. If they allow it later you are told, and can make this call again.`;
 
 const KIND_TEXT: Readonly<Record<PermissionKind, { zh: string; en: string }>> = {
 	edit: { zh: "改文件", en: "edit a file" },
@@ -243,6 +281,13 @@ function projectSettings(cwd: string): string[] {
  * status bar. Without anyone to ask (print mode, a sub-agent), what would be
  * asked is refused with a reason the model can report.
  *
+ * A question does not hold the run for long. It waits `waitMs` (0: until
+ * answered); when nobody answers in that time the call does not run, the model
+ * is told it is pending and carries on with what does not depend on it, and
+ * `/approve` asks again. What the user allows there holds for that same call,
+ * made again. While nobody has answered, later questions wait with the first
+ * at once: a person who is away is not waited for a second time.
+ *
  * The risk guard's rules are part of this: in judge mode a flagged command runs
  * only when the judge is sure the user asked for it; in the other modes the flag is
  * shown with the question, or, in full access, nothing is asked at all.
@@ -254,9 +299,12 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		mode: "judge",
 		/** A chain of read-only commands (`pwd && ls; git status`) only looks, as one read-only command does. */
 		readOnlyChains: true,
+		/** How long a permission question waits before the call is set aside for /approve. 0: until answered. */
+		waitMs: 120_000,
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
+	const waitMs = Math.max(0, Math.floor(Number(options.waitMs) || 0));
 	const defaults = new PermissionDefaults(roots ? join(roots.agentDir, "mu") : undefined);
 	const guarded = protectedPaths(roots);
 	const initial = (): PermissionMode =>
@@ -265,7 +313,47 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	/** What the user allowed "for this conversation": `shell:npm test`, `edit`, `tool:browse`. */
 	let grants = new Set<string>();
 	let asked = 0;
+	/** Questions nobody answered in time, oldest first: their calls did not run, and /approve asks each again. */
+	let waiting: Question[] = [];
+	/** Calls the user allowed with /approve (`callKey`): each runs once when the model makes it again. */
+	let allowedLate = new Set<string>();
+	/** Nobody answered the last question: the next ones wait with it, until the user writes or answers something. */
+	let away = false;
 	runtime.permissionMode = () => mode;
+
+	/** The status line about permission questions as it stands, so it is written only when it changes. */
+	let pendingStatus: string | undefined;
+	const setPending = (ctx: ExtensionContext | undefined, text: string | undefined) => {
+		if (!ctx?.hasUI || text === pendingStatus) return;
+		pendingStatus = text;
+		ctx.ui.setStatus(PENDING_STATUS, text);
+	};
+
+	/** The status line and the count other features read, as the waiting questions stand. */
+	const showWaiting = (ctx: ExtensionContext | undefined) => {
+		runtime.permissionsWaiting = waiting.length;
+		setPending(
+			ctx,
+			waiting.length === 0
+				? undefined
+				: say({
+						zh: `${waiting.length} 步在等你授权：输入 /approve`,
+						en:
+							waiting.length === 1
+								? "1 step is waiting for your permission: type /approve"
+								: `${waiting.length} steps are waiting for your permission: type /approve`,
+					}),
+		);
+	};
+
+	/** What was asked or allowed under one mode, or in one conversation, does not carry over to the next. */
+	const forgetAnswers = (ctx: ExtensionContext | undefined) => {
+		grants = new Set();
+		allowedLate = new Set();
+		waiting = [];
+		away = false;
+		showWaiting(ctx);
+	};
 
 	const show = (ctx: ExtensionContext | undefined) => {
 		if (ctx?.hasUI)
@@ -287,7 +375,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	const switchTo = (next: PermissionMode, ctx: ExtensionContext, here = false) => {
 		mode = next;
 		// Allowed under one mode is not allowed under another: a switch to fewer permissions must ask again.
-		grants = new Set();
+		forgetAnswers(ctx);
 		pi.appendEntry(PERMISSIONS_ENTRY, { mode: next });
 		if (!here) {
 			try {
@@ -307,11 +395,30 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				restored = parseMode((entry.data as { mode?: unknown } | undefined)?.mode) ?? restored;
 		}
 		mode = restored ?? initial();
-		grants = new Set();
+		forgetAnswers(ctx);
 		show(ctx);
 	});
 
-	const approvedBy = (event: ToolCallEvent, need: PermissionNeed, by: "judge" | "grant") => {
+	// The user is here: a message of theirs, typed mid-run or not, ends the waiting that began when nobody answered.
+	pi.on(
+		"input",
+		failOpen((event) => {
+			if (event.source !== "extension" && event.text.trim()) away = false;
+			return undefined;
+		}),
+	);
+	// A new message of the user's says what they want now: the questions of the run before it are no longer waited on.
+	pi.on(
+		"before_agent_start",
+		failOpen((event, ctx) => {
+			if (event.messageType !== "user" || waiting.length === 0) return undefined;
+			waiting = [];
+			showWaiting(ctx);
+			return undefined;
+		}),
+	);
+
+	const approvedBy = (event: ToolCallEvent, need: PermissionNeed, by: "judge" | "grant" | "user") => {
 		runtime.present("permissions.approved", {
 			toolCallId: event.toolCallId,
 			tool: event.toolName,
@@ -410,6 +517,140 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		return { approved: false, reason: unanswered(decision) ?? verdict, said };
 	};
 
+	const record = (
+		question: Omit<Question, "id">,
+		answer: PermissionOutcome["answer"],
+		extra: { grantKey?: string; late?: true } = {},
+	) => {
+		const { reason, flag, said } = question;
+		const outcome: PermissionOutcome = {
+			kind: "permission",
+			toolCallId: question.toolCallId,
+			tool: question.tool,
+			mode,
+			reason,
+			...(flag ? { flagCode: FLAG_CODES[flag] ?? flag } : {}),
+			...(said?.ledgerId ? { ledgerId: said.ledgerId } : {}),
+			...(said ? { specId: said.specId } : {}),
+			...(said?.judged !== undefined ? { judged: said.judged } : {}),
+			answer,
+			...(extra.grantKey ? { grant: extra.grantKey } : {}),
+			waitedMs: Date.now() - question.askedAt,
+			...(question.leaving ? { outsideFloor: true as const } : {}),
+			...(extra.late ? { late: true as const } : {}),
+		};
+		pi.appendEntry(OUTCOME_ENTRY, outcome);
+		// Needed, the judge read, but not surely enough: the user's answer says where the line could be.
+		if (reason === "unsure" && said?.needed && (answer === "once" || answer === "session" || answer === "deny")) {
+			runtime.evolve?.approvalAnswered({ cwd: question.cwd, ...said.needed, answer, waitedMs: outcome.waitedMs });
+		}
+	};
+
+	/** The answers a question offers, in the picker's order. */
+	const answersOf = (question: Question) => {
+		const { grant } = question;
+		return {
+			once: say(ANSWERS.once),
+			session: grant
+				? `${say(ANSWERS.session)}${say({ zh: `（${grant.label}）`, en: ` (${grant.label})` })}`
+				: undefined,
+			deny: say(ANSWERS.deny),
+		};
+	};
+
+	const announce = (question: Question) => {
+		const { need, flag, grant } = question;
+		const { once, session, deny } = answersOf(question);
+		runtime.present("permissions.request", {
+			id: question.id,
+			// The call this is about, here and in `permissions.resolved`: a client marks that call's own row by it, in
+			// its own words. The model is still told in English why a refused call did not run.
+			toolCallId: question.toolCallId,
+			mode,
+			tool: question.tool,
+			kind: need.kind,
+			summary: need.summary,
+			reason: question.reason,
+			...(flag ? { flag, flagCode: FLAG_CODES[flag] ?? flag } : {}),
+			...(grant ? { grant } : {}),
+			answers: [once, ...(session ? [session] : []), deny],
+			// The same answers by id, in the same order: what `permissions.resolved` reports back.
+			answerIds: ["once", ...(session ? ["session"] : []), "deny"],
+		});
+	};
+
+	/** Opens the picker for a question and waits `wait` ms for the answer (0: until there is one). */
+	const pick = async (
+		question: Question,
+		ctx: ExtensionContext,
+		signal: AbortSignal | undefined,
+		wait: number,
+	): Promise<Picked> => {
+		const { need } = question;
+		const { once, session, deny } = answersOf(question);
+		announce(question);
+		setPending(
+			ctx,
+			say({
+				zh: `等你授权：${clip(need.summary, 60)}`,
+				en: `Waiting for your permission: ${clip(need.summary, 60)}`,
+			}),
+		);
+		const openedAt = Date.now();
+		let picked: string | undefined;
+		try {
+			picked = await ctx.ui.select(
+				[
+					say({
+						zh: `mu 想${(question.leaving ? LEAVING_TEXT : KIND_TEXT[need.kind]).zh}，需要你授权`,
+						en: `mu wants to ${(question.leaving ? LEAVING_TEXT : KIND_TEXT[need.kind]).en}`,
+					}),
+					question.body,
+				].join("\n"),
+				[once, ...(session ? [session] : []), deny],
+				{ signal, ...(wait > 0 ? { timeout: wait } : {}) },
+			);
+		} catch (error) {
+			showWaiting(ctx);
+			throw error;
+		}
+		if (picked === once) return "once";
+		if (session && picked === session) return "session";
+		if (picked !== undefined) return "deny";
+		// Nothing was picked: the wait ran out, or the picker was closed (Esc, or the run was stopped).
+		return !signal?.aborted && wait > 0 && Date.now() - openedAt >= wait - 50 ? "timeout" : "dismissed";
+	};
+
+	/** Records an answer and says so. True when the call may run. */
+	const settle = (question: Question, answer: Exclude<Picked, "timeout">, late?: true): boolean => {
+		const { grant } = question;
+		record(question, answer, {
+			...(answer === "session" && grant ? { grantKey: grant.key } : {}),
+			...(late ? { late } : {}),
+		});
+		runtime.present("permissions.resolved", {
+			id: question.id,
+			toolCallId: question.toolCallId,
+			answer: answer === "dismissed" ? "deny" : answer,
+		});
+		if (answer === "session" && grant) grants.add(grant.key);
+		return answer === "once" || answer === "session";
+	};
+
+	/** Nobody answered: the call does not run, and its question waits for /approve. */
+	const setAside = (question: Question, ctx: ExtensionContext): ToolCallEventResult => {
+		record(question, "timeout");
+		away = true;
+		waiting.push(question);
+		runtime.present("permissions.resolved", {
+			id: question.id,
+			toolCallId: question.toolCallId,
+			answer: "pending",
+		});
+		showWaiting(ctx);
+		return { block: true, reason: pendingReason(question.need) };
+	};
+
 	const askUser = async (
 		event: ToolCallEvent,
 		need: PermissionNeed,
@@ -419,98 +660,58 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		said?: JudgeSaid,
 		leaving = false,
 	): Promise<ToolCallEventResult | undefined> => {
-		const askedAt = Date.now();
-		const record = (answer: PermissionOutcome["answer"], grantKey?: string) => {
-			const outcome: PermissionOutcome = {
-				kind: "permission",
-				toolCallId: event.toolCallId,
-				tool: event.toolName,
-				mode,
-				reason,
-				...(flag ? { flagCode: FLAG_CODES[flag] ?? flag } : {}),
-				...(said?.ledgerId ? { ledgerId: said.ledgerId } : {}),
-				...(said ? { specId: said.specId } : {}),
-				...(said?.judged !== undefined ? { judged: said.judged } : {}),
-				answer,
-				...(grantKey ? { grant: grantKey } : {}),
-				waitedMs: Date.now() - askedAt,
-				...(leaving ? { outsideFloor: true as const } : {}),
-			};
-			pi.appendEntry(OUTCOME_ENTRY, outcome);
-			// Needed, the judge read, but not surely enough: the user's answer says where the line could be.
-			if (reason === "unsure" && said?.needed && (answer === "once" || answer === "session" || answer === "deny")) {
-				runtime.evolve?.approvalAnswered({ cwd: ctx.cwd, ...said.needed, answer, waitedMs: outcome.waitedMs });
-			}
-		};
 		const why =
 			reason === "flagged"
 				? say({ zh: `危险操作：${FLAG_ZH[flag ?? ""] ?? flag}。`, en: `Risky: ${flag}.` })
 				: say(REASON_TEXT[reason]);
 		// A flagged, protected or long call is decided each time: a grant for its first word would cover what comes next.
 		const grant = flag || need.protected || reason === "long" ? undefined : need.grant;
+		const command = (event.input as { command?: unknown }).command;
+		const asking: Omit<Question, "id"> = {
+			toolCallId: event.toolCallId,
+			tool: event.toolName,
+			need,
+			reason,
+			...(flag ? { flag } : {}),
+			...(said ? { said } : {}),
+			leaving,
+			...(grant ? { grant } : {}),
+			body: [
+				// A flagged command shows the parts its flag is about, which a summary cut at a fixed length can leave out,
+				// and a long command as much of itself as a person reads at once.
+				(flag && flag !== SENDS_CREDENTIAL) || (reason === "long" && typeof command === "string")
+					? riskExcerpt(String(command ?? ""), RISK_CONFIRM_CHARS)
+					: need.summary,
+				why,
+			].join("\n"),
+			key: callKey(event),
+			cwd: ctx.cwd,
+			askedAt: Date.now(),
+		};
 		if (!ctx.hasUI) {
-			record("none");
+			record(asking, "none");
 			return {
 				block: true,
 				reason: `mu: this needs the user's permission (${modeLabel(mode)}: ${why}), and there is nobody to ask here. Do not try another way around it; say what you needed.`,
 			};
 		}
-		const id = `permission-${++asked}`;
-		const once = say(ANSWERS.once);
-		const session = grant
-			? `${say(ANSWERS.session)}${say({ zh: `（${grant.label}）`, en: ` (${grant.label})` })}`
-			: undefined;
-		const deny = say(ANSWERS.deny);
-		runtime.present("permissions.request", {
-			id,
-			// The call this is about, here and in `permissions.resolved`: a client marks that call's own row by it, in
-			// its own words. The model is still told in English why a refused call did not run.
-			toolCallId: event.toolCallId,
-			mode,
-			tool: event.toolName,
-			kind: need.kind,
-			summary: need.summary,
-			reason,
-			...(flag ? { flag, flagCode: FLAG_CODES[flag] ?? flag } : {}),
-			...(grant ? { grant } : {}),
-			answers: [once, ...(session ? [session] : []), deny],
-			// The same answers by id, in the same order: what `permissions.resolved` reports back.
-			answerIds: ["once", ...(session ? ["session"] : []), "deny"],
-		});
-		ctx.ui.setStatus(
-			PENDING_STATUS,
-			say({
-				zh: `等你授权：${clip(need.summary, 60)}`,
-				en: `Waiting for your permission: ${clip(need.summary, 60)}`,
-			}),
-		);
-		let picked: string | undefined;
-		try {
-			picked = await ctx.ui.select(
-				[
-					say({
-						zh: `mu 想${(leaving ? LEAVING_TEXT : KIND_TEXT[need.kind]).zh}，需要你授权`,
-						en: `mu wants to ${(leaving ? LEAVING_TEXT : KIND_TEXT[need.kind]).en}`,
-					}),
-					// A flagged command shows the parts its flag is about, which a summary cut at a fixed length can leave out,
-					// and a long command as much of itself as a person reads at once.
-					(flag && flag !== SENDS_CREDENTIAL) ||
-					(reason === "long" && typeof (event.input as { command?: unknown }).command === "string")
-						? riskExcerpt(String((event.input as { command?: unknown }).command ?? ""), RISK_CONFIRM_CHARS)
-						: need.summary,
-					why,
-				].join("\n"),
-				[once, ...(session ? [session] : []), deny],
-				{ signal: ctx.signal },
-			);
-		} finally {
-			ctx.ui.setStatus(PENDING_STATUS, undefined);
+		const at = waiting.findIndex((each) => each.key === asking.key);
+		if (at >= 0) {
+			// The same call again while nobody has answered about it: the answer is the same, with no second wait.
+			if (away) return { block: true, reason: pendingReason(need) };
+			// The user is back: this call asks them now, in place of /approve.
+			waiting.splice(at, 1);
 		}
-		const answer = picked === once ? "once" : session && picked === session ? "session" : "deny";
-		record(picked === undefined ? "dismissed" : answer, answer === "session" ? grant?.key : undefined);
-		runtime.present("permissions.resolved", { id, toolCallId: event.toolCallId, answer });
-		if (answer === "session" && grant) grants.add(grant.key);
-		if (answer !== "deny") return undefined;
+		const question: Question = { ...asking, id: `permission-${++asked}` };
+		if (away && waitMs > 0) {
+			announce(question);
+			return setAside(question, ctx);
+		}
+		const answer = await pick(question, ctx, ctx.signal, waitMs);
+		if (answer === "timeout") return setAside(question, ctx);
+		away = false;
+		showWaiting(ctx);
+		if (settle(question, answer)) return undefined;
 		return {
 			block: true,
 			reason: `The user did not allow this (${need.summary}). Do not try another way around it: ask them, or carry on without it.`,
@@ -565,6 +766,8 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				}
 			: asked;
 		const flag = leaking ? SENDS_CREDENTIAL : command ? riskFlag(command) : undefined;
+		// Allowed with /approve after its question had waited out its time: this same call runs, once.
+		if (allowedLate.delete(callKey(event))) return letOut(event, approvedBy(event, need, "user"));
 		if (!need.protected && !flag && need.grant && grants.has(need.grant.key)) return approvedBy(event, need, "grant");
 		let reason: AskReason = need.protected ? "protected" : flag ? "flagged" : "ask";
 		let said: JudgeSaid | undefined;
@@ -634,6 +837,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			}
 			if (word === "reset") {
 				grants = new Set();
+				allowedLate = new Set();
 				ctx.ui.notify(
 					say({
 						zh: "已清空这次对话里“都允许”过的操作。",
@@ -680,6 +884,57 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 					en: `Permissions set to ${modeLabel(next)}. ${MODE_TEXT[next].enDescription}`,
 				}),
 				"info",
+			);
+		},
+	});
+
+	pi.registerCommand("approve", {
+		description: say({
+			zh: "回答还在等你授权的步骤：没人及时回答的权限提问，逐个再问一遍",
+			en: "Answer the steps still waiting for your permission",
+		}),
+		handler: async (_args, ctx) => {
+			runtime.touch(ctx);
+			away = false;
+			if (waiting.length === 0) {
+				ctx.ui.notify(say({ zh: "没有等你授权的步骤。", en: "No steps are waiting for your permission." }), "info");
+				return;
+			}
+			const allowed: string[] = [];
+			const refused: string[] = [];
+			while (waiting.length > 0) {
+				const question = waiting[0];
+				const answer = await pick(question, ctx, undefined, waitMs);
+				// Nobody answered this time either: it waits on, with the ones after it.
+				if (answer === "timeout") {
+					away = true;
+					break;
+				}
+				waiting.shift();
+				if (settle(question, answer, true)) {
+					allowedLate.add(question.key);
+					allowed.push(question.need.summary);
+				} else refused.push(question.need.summary);
+			}
+			showWaiting(ctx);
+			if (allowed.length + refused.length === 0) return;
+			// Not the user's own words: mu reports what they picked, so nothing reads it as a new task or a rule of theirs.
+			pi.sendMessage(
+				{
+					customType: APPROVED_MESSAGE,
+					content: [
+						"[mu: the user answered about the steps that were waiting for their permission]",
+						...allowed.map(
+							(summary) =>
+								`- Allowed: ${summary}. If you still need it, make that same call again; the permission holds for exactly that call, once.`,
+						),
+						...refused.map((summary) => `- Not allowed: ${summary}. Do not try another way around it.`),
+					].join("\n"),
+					display: true,
+				},
+				// Steered into a run that is going. With none going, an allowed call is work to go back to and starts one; a
+				// refusal alone is only something to know, and is there when the next run starts.
+				{ deliverAs: "steer", ...(allowed.length > 0 ? { triggerTurn: true } : {}) },
 			);
 		},
 	});

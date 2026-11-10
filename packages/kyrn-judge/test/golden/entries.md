@@ -6,6 +6,7 @@ without one.
 
 | type | kind | written by | read by | what it is |
 |---|---|---|---|---|
+| `kyrn.approval` | message | src/extension/features/permissions.ts | - | Tells the model what the user answered with /approve about calls whose permission question had waited out its time. |
 | `kyrn.board` | entry | src/extension/features/board.ts | - | The plain-language board after an update, so a reopened session shows it again. |
 | `kyrn.capabilities` | message | src/extension/features/catalog.ts | - | Tells the model, after the first turn, which capabilities were opened for the request. |
 | `kyrn.capability` | entry | src/extension/features/catalog.ts; src/extension/features/packs.ts | - | A capability opened, and who opened it: one the model had to ask for is the label the disclosure decision is measured by. |
@@ -52,6 +53,10 @@ without one.
 | `mu.import` | message | src/import/session.ts | - | The first message of a conversation brought in from another tool: where it came from. |
 | `mu.import.context` | message | src/import/session.ts | - | What the imported conversation held that was not a message there, for the model only. |
 | `mu.permissions` | entry | src/extension/features/permissions.ts | desktop: nativeHost/settings.ts | The conversation's permission mode after a switch; the latest on the branch holds when it is opened again. |
+
+## kyrn.approval v1
+
+A message. No schema: no other program reads it.
 
 ## kyrn.board v1
 
@@ -670,7 +675,7 @@ A message. No schema: no other program reads it.
 
 A message. No schema: no other program reads it.
 
-## kyrn.outcome v3
+## kyrn.outcome v4
 
 A entry, read by another program:
 
@@ -786,6 +791,10 @@ A entry, read by another program:
 						{
 							"type": "string",
 							"const": "none"
+						},
+						{
+							"type": "string",
+							"const": "timeout"
 						}
 					]
 				},
@@ -796,6 +805,10 @@ A entry, read by another program:
 					"type": "number"
 				},
 				"outsideFloor": {
+					"type": "boolean",
+					"const": true
+				},
+				"late": {
 					"type": "boolean",
 					"const": true
 				}

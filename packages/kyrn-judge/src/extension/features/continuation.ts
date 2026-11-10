@@ -138,8 +138,10 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 				nudgedIn = turn;
 				return undefined;
 			}
-			// Waiting on questions the user has not answered yet is not asking for a go-ahead on work they asked for.
-			if (decision.outcome === "go_ahead" && runtime.questionsOpen > 0) return undefined;
+			// Waiting on questions or permissions the user has not answered yet is not asking for a go-ahead on work they
+			// asked for.
+			if (decision.outcome === "go_ahead" && (runtime.questionsOpen > 0 || runtime.permissionsWaiting > 0))
+				return undefined;
 			if (decision.outcome === "promised" && isUnattended(ctx)) {
 				const promised = promisedNudges.get(turn) ?? 0;
 				if (promised >= options.unattendedPromised) return undefined;

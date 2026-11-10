@@ -201,6 +201,11 @@ export class KyrnRuntime {
 	/** Sets of questions the model asked with ask_user that nobody answered in time and that still wait for /answer. */
 	questionsOpen = 0;
 	/**
+	 * Calls whose permission question nobody answered in time and that still wait for /approve. Set by the permissions
+	 * feature; the continuation check reads it, so an agent that ends on them is not sent back to work.
+	 */
+	permissionsWaiting = 0;
+	/**
 	 * Plan mode is on (`/plan`, features/plan.ts): nothing changes until the user approves a plan, and the checks that
 	 * send the agent back to work leave a plan as it is.
 	 */

@@ -64,6 +64,30 @@ Allowances are forgotten when you switch mode or run `/permissions reset`.
 
 Esc while the picker is open counts as "Don't allow". A refusal reaches the model as: "The user did not allow this (…). Do not try another way around it: ask them, or carry on without it."
 
+### A question nobody answers
+
+A question does not hold the run for long. The picker waits `features.permissions.waitMs` (default 120 000 ms; 0 waits until answered). When nobody answers in that time:
+
+- The call does not run. The model is told: "The user has not answered yet whether to allow this (…). This is pending: not permission, and not a refusal. Do not try another way around it. Carry on with work that does not depend on it, and say at the end what still waits for them."
+- The question waits. The status line `mu.permissions.pending` says "1 step is waiting for your permission: type /approve" / "1 步在等你授权：输入 /approve".
+- Nobody was there, so the questions that follow in the same run are not waited for either: each waits with the first at once. The same call made again gets the same answer, with no second question. This lasts until the user writes a message or answers a question.
+
+`/approve` asks the waiting questions again, oldest first, with the same picker and the same answers. Then mu tells the model what was picked, in a `kyrn.approval` message of its own (not as the user's words, so nothing reads it as a new task or a rule):
+
+```
+[mu: the user answered about the steps that were waiting for their permission]
+- Allowed: npm install left-pad. If you still need it, make that same call again; the permission holds for exactly that call, once.
+- Not allowed: git push origin main. Do not try another way around it.
+```
+
+- An allowed call runs when the model makes it again with the same tool and the same input, once. A call that differs in any way asks again.
+- With an allowed call, the message is steered into a run that is going, or starts one. A refusal alone starts nothing: the model reads it when the next run starts.
+- A question `/approve` asks that nobody answers in time waits on.
+
+A new message from the user ends the waiting: the questions of the run before it are dropped, and a call that needs permission asks with the picker again, since the user is there. Switching mode drops them too, with what was allowed.
+
+While questions wait, a `go_ahead` verdict of turn.continue does not send the agent back: an agent that ends on "Should I install it once you allow it?" is waiting for an answer only the user can give.
+
 When nobody can be asked (print mode, a sub-agent), a call that would ask is refused, and the reason tells the model to report what it needed.
 
 ## Where the mode comes from
@@ -94,6 +118,7 @@ Tell the desktop session before changing the version, the location or the accept
 - `/permissions full | judge | ask`: switch. `yolo`, `auto`, `minimal`, `read-only`, `完全访问`, `审批`, `判定模式` and `最小权限` also work.
 - `/permissions full | judge | ask --here`: switch this conversation only (above).
 - `/permissions reset`: forget what was allowed for this conversation.
+- `/approve`: answer the permission questions nobody answered in time (above).
 
 ## Presentation events (for the desktop)
 
@@ -101,11 +126,12 @@ Tell the desktop session before changing the version, the location or the accept
 | --- | --- | --- |
 | `permissions.mode` | `{ mode, label, conversationSwitch: true, modes: [{ id, label, description }] }` | at session start and on every switch. `conversationSwitch` says `--here` is understood; an older harness would read `judge --here` as an unknown word |
 | `permissions.request` | `{ id, toolCallId, mode, tool, kind, summary, reason, flag?, grant?: { key, label }, answers: string[] }` | right before the picker opens |
-| `permissions.resolved` | `{ id, toolCallId, answer: "once" \| "session" \| "deny" }` | once the picker is answered |
-| `permissions.approved` | `{ toolCallId, tool, kind, summary, by: "judge" \| "grant" }` | a call that needed permission ran without asking you |
+| `permissions.resolved` | `{ id, toolCallId, answer: "once" \| "session" \| "deny" \| "pending" }` | once the picker is answered, or its wait is over (`pending`: nobody answered, the call did not run and waits for `/approve`) |
+| `permissions.approved` | `{ toolCallId, tool, kind, summary, by: "judge" \| "grant" \| "user" }` | a call that needed permission ran without asking you now (`user`: you allowed this same call with `/approve`) |
 
 - `toolCallId` is the id of the tool call the event is about: the same id as in pi's tool events and in that call's tool result. A client marks that call's own row with it, also when the judge or a conversation grant let the call run. What the model is told about a refused call stays in English in the tool result.
 - `kind` is one of `edit`, `shell`, `run`, `outside`, `delegate` or `other`.
 - `reason` is one of `ask` (minimal mode), `unsure`, `beyond`, `unrelated`, `flagged`, `protected`, `nojudge` (no judge will answer the next step either) or `judgedown` (the judge did not answer this time). A flagged command keeps `flagged` whatever the judge did.
+- A question answered with `/approve` gets a second `permissions.request` and `permissions.resolved` pair with the `id` and the `toolCallId` it had the first time. A question set aside at once, because nobody answered the one before it, gets its `permissions.request` and a `pending` `permissions.resolved` with no dialog between them.
 - `answers` holds the exact option strings the picker offers, in order. The picker is the normal extension `select` dialog (over RPC, `extension_ui_request` with `method: "select"`), so the desktop answers it with the chosen string.
 - To switch modes, send `/permissions <id>` as a typed command when the person picked the mode, and `/permissions <id> --here` when the app does it by itself (and `conversationSwitch` is there).

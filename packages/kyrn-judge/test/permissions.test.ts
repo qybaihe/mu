@@ -14,9 +14,14 @@ import type { DecisionMode } from "../src/decision.ts";
 import { toolRisk } from "../src/decisions/tool-risk.ts";
 import { JudgeError } from "../src/errors.ts";
 import { riskFlag } from "../src/extension/features/guard.ts";
-import { APPROVAL_CALL_CHARS, OUTCOME_ENTRY, type PermissionOutcome } from "../src/extension/features/permissions.ts";
+import {
+	APPROVAL_CALL_CHARS,
+	APPROVED_MESSAGE,
+	OUTCOME_ENTRY,
+	type PermissionOutcome,
+} from "../src/extension/features/permissions.ts";
 import { permissionEnv } from "../src/extension/features/swarm.ts";
-import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
+import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
 import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
 import type { KyrnRuntime } from "../src/extension/runtime.ts";
 import {
@@ -824,7 +829,14 @@ describe("permission modes in a session", () => {
 		after?: ExtensionFactory[];
 		/** Tools besides edit, write and bash. */
 		tools?: string[];
+		/** `permissions.waitMs`. Default: the feature's own. */
+		waitMs?: number;
+		/** Features besides preflight, frame and permissions. */
+		also?: FeatureName[];
 	}
+
+	/** What `pick` returns to let the picker wait out its time, as it does when nobody is there. */
+	const WAIT = "\u0000wait";
 
 	async function start(responder: MockResponder, setup: Setup = {}) {
 		const ran: string[] = [];
@@ -854,10 +866,11 @@ describe("permission modes in a session", () => {
 							permissions: {
 								...(setup.mode ? { mode: setup.mode } : {}),
 								...(setup.readOnlyChains === undefined ? {} : { readOnlyChains: setup.readOnlyChains }),
+								...(setup.waitMs === undefined ? {} : { waitMs: setup.waitMs }),
 							},
 						},
 					}),
-					only: ["preflight", "frame", "permissions"],
+					only: ["preflight", "frame", "permissions", ...(setup.also ?? [])],
 					onPresentation: (event) => events.push(event),
 					...(setup.agentDir ? { roots: { home: setup.agentDir, agentDir: setup.agentDir } } : {}),
 				}),
@@ -865,19 +878,24 @@ describe("permission modes in a session", () => {
 			],
 		});
 		harnesses.push(harness);
-		const asked: { title: string; options: string[]; initialIndex?: number }[] = [];
+		const asked: { title: string; options: string[]; initialIndex?: number; timeout?: number }[] = [];
 		const status: (string | undefined)[] = [];
 		const notes: string[] = [];
 		if (setup.pick) {
 			const pick = setup.pick;
 			const known: Record<string, unknown> = {
-				select: async (title: string, options: string[], opts?: { initialIndex?: number }) => {
+				select: async (title: string, options: string[], opts?: { initialIndex?: number; timeout?: number }) => {
 					asked.push({
 						title,
 						options,
 						...(opts?.initialIndex !== undefined ? { initialIndex: opts.initialIndex } : {}),
+						...(opts?.timeout !== undefined ? { timeout: opts.timeout } : {}),
 					});
-					return pick(options, title);
+					const picked = pick(options, title);
+					if (picked !== WAIT) return picked;
+					// Nobody answers: the dialog closes itself when its time is up, as pi's does.
+					await new Promise((resolve) => setTimeout(resolve, opts?.timeout ?? 0));
+					return undefined;
 				},
 				setStatus: (key: string, text: string | undefined) => {
 					if (key === "mu.permissions.pending") status.push(text);
@@ -1732,6 +1750,168 @@ describe("permission modes in a session", () => {
 		expect(ran).toEqual([]);
 		expect(asked[0].title).toContain("mu's own settings");
 		expect(asked[0].options).toEqual(["Allow once", "Don't allow"]);
+	});
+
+	describe("a question nobody answers in time", () => {
+		const outcomes = (harness: Harness) =>
+			harness.sessionManager
+				.getEntries()
+				.flatMap((entry) =>
+					entry.type === "custom" && entry.customType === OUTCOME_ENTRY ? [entry.data as PermissionOutcome] : [],
+				);
+		const told = (harness: Harness) =>
+			harness.session.messages.flatMap((message) =>
+				message.role === "custom" && message.customType === APPROVED_MESSAGE ? [String(message.content)] : [],
+			);
+		const install = { command: "npm install left-pad" };
+
+		it("the call does not run and the model carries on; /approve lets that same call run, once", async () => {
+			const picks = [WAIT, "Allow once", "Don't allow"];
+			const { harness, ran, asked, status, of } = await start(() => ({}), {
+				mode: "ask",
+				waitMs: 40,
+				pick: () => picks.shift(),
+			});
+			harness.setResponses([call("bash", install, "call-install"), fauxAssistantMessage("The rest is done.")]);
+			await harness.session.prompt("Add left-pad");
+
+			expect(ran).toEqual([]);
+			expect(asked[0].timeout).toBe(40);
+			expect(results(harness)[0]).toContain(
+				"The user has not answered yet whether to allow this (npm install left-pad). This is pending: not permission, and not a refusal.",
+			);
+			expect(status).toEqual([
+				"Waiting for your permission: npm install left-pad",
+				"1 step is waiting for your permission: type /approve",
+			]);
+			expect(of("permissions.resolved")).toEqual([
+				{ id: "permission-1", toolCallId: "call-install", answer: "pending" },
+			]);
+			expect(outcomes(harness)).toEqual([
+				expect.objectContaining({ answer: "timeout", toolCallId: "call-install" }),
+			]);
+
+			// The model makes the call again, twice: the permission was for one run of it.
+			harness.appendResponses([
+				call("bash", install, "call-install-2"),
+				call("bash", install, "call-install-3"),
+				fauxAssistantMessage("Installed."),
+			]);
+			await harness.session.prompt("/approve");
+			await vi.waitFor(() => expect(harness.getPendingResponseCount()).toBe(0));
+
+			expect(ran).toEqual(["bash npm install left-pad"]);
+			expect(told(harness)).toEqual([expect.stringContaining("- Allowed: npm install left-pad.")]);
+			expect(of("permissions.approved")).toEqual([
+				expect.objectContaining({ toolCallId: "call-install-2", tool: "bash", by: "user" }),
+			]);
+			expect(asked).toHaveLength(3);
+			expect(outcomes(harness).map(({ answer, late }) => ({ answer, late }))).toEqual([
+				{ answer: "timeout", late: undefined },
+				{ answer: "once", late: true },
+				{ answer: "deny", late: undefined },
+			]);
+			expect(status.at(-1)).toBeUndefined();
+		});
+
+		it("while nobody has answered, the next question waits with it at once, and the same call is not asked twice", async () => {
+			const { harness, ran, asked, status, of } = await start(() => ({}), {
+				mode: "ask",
+				waitMs: 40,
+				pick: () => WAIT,
+			});
+			harness.setResponses([
+				call("bash", install, "call-a"),
+				call("bash", { command: "npm run build" }, "call-b"),
+				call("bash", install, "call-a-again"),
+				fauxAssistantMessage("Two steps wait for you."),
+			]);
+			await harness.session.prompt("Add left-pad and build");
+
+			expect(ran).toEqual([]);
+			// One picker, for the first call. Nobody was there, so the second was not waited for.
+			expect(asked).toHaveLength(1);
+			expect(results(harness)).toHaveLength(3);
+			for (const result of results(harness)) expect(result).toContain("This is pending: not permission");
+			expect(of("permissions.resolved")).toEqual([
+				{ id: "permission-1", toolCallId: "call-a", answer: "pending" },
+				{ id: "permission-2", toolCallId: "call-b", answer: "pending" },
+			]);
+			expect(status.at(-1)).toBe("2 steps are waiting for your permission: type /approve");
+		});
+
+		it("a new message of the user's ends the waiting: the call asks them now", async () => {
+			const picks = [WAIT, "Allow once"];
+			const { harness, ran, asked, status } = await start(() => ({}), {
+				mode: "ask",
+				waitMs: 40,
+				pick: () => picks.shift(),
+			});
+			harness.setResponses([call("bash", install), fauxAssistantMessage("Waiting on the install.")]);
+			await harness.session.prompt("Add left-pad");
+			expect(status.at(-1)).toBe("1 step is waiting for your permission: type /approve");
+
+			harness.setResponses([call("bash", install), fauxAssistantMessage("Installed.")]);
+			await harness.session.prompt("Go on, install it.");
+			expect(asked).toHaveLength(2);
+			expect(ran).toEqual(["bash npm install left-pad"]);
+			expect(status.at(-1)).toBeUndefined();
+		});
+
+		it("/approve with a refusal tells the model and starts no run; with nothing waiting it says so", async () => {
+			const picks = [WAIT, "Don't allow"];
+			const { harness, ran, notes } = await start(() => ({}), {
+				mode: "ask",
+				waitMs: 40,
+				pick: () => picks.shift(),
+			});
+			harness.setResponses([call("bash", install), fauxAssistantMessage("Waiting on the install.")]);
+			await harness.session.prompt("Add left-pad");
+
+			harness.setResponses([fauxAssistantMessage("unused")]);
+			await harness.session.prompt("/approve");
+			expect(told(harness)).toEqual([
+				expect.stringContaining("- Not allowed: npm install left-pad. Do not try another way around it."),
+			]);
+			expect(harness.getPendingResponseCount()).toBe(1);
+			expect(ran).toEqual([]);
+
+			await harness.session.prompt("/approve");
+			expect(notes.at(-1)).toBe("No steps are waiting for your permission.");
+		});
+
+		it("waitMs 0 waits until there is an answer", async () => {
+			const { harness, ran, asked } = await start(() => ({}), {
+				mode: "ask",
+				waitMs: 0,
+				pick: (options) => options[0],
+			});
+			harness.setResponses([call("bash", install), fauxAssistantMessage("Installed.")]);
+			await harness.session.prompt("Add left-pad");
+			expect(asked[0].timeout).toBeUndefined();
+			expect(ran).toEqual(["bash npm install left-pad"]);
+		});
+
+		it("an agent that ends on a step waiting for permission is not sent back for a go-ahead", async () => {
+			const judged: string[] = [];
+			const { harness } = await start(
+				(request): Record<string, Answer> => {
+					if (!("promised" in request.questions)) return {};
+					judged.push("turn.continue");
+					return { promised: no, asks_go_ahead: yes, work_requested: yes, beyond_request: no, irreversible: no };
+				},
+				{ mode: "ask", waitMs: 40, pick: () => WAIT, also: ["continuation"] },
+			);
+			harness.setResponses([
+				call("bash", install),
+				fauxAssistantMessage("The code is in. Should I install left-pad once you allow it?"),
+				fauxAssistantMessage("unused"),
+			]);
+			await harness.session.prompt("Add left-pad");
+			await new Promise((resolve) => setTimeout(resolve, 50));
+			expect(judged).toHaveLength(1);
+			expect(harness.getPendingResponseCount()).toBe(1);
+		});
 	});
 
 	it("/permissions switches this conversation, remembers it for new ones and a reopened one, and forgets earlier grants", async () => {
