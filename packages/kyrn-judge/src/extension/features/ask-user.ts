@@ -402,10 +402,10 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 				const askedAt = Date.now();
 				// Nobody answered the question before this one, of the model's or about a permission: this one waits for
 				// /answer at once, where waiting again would hold the run for someone who is not there.
-				const { answers, ended } =
-					runtime.userAway && waitMs > 0
-						? { answers: [], ended: "timeout" as const }
-						: await askEach(toolCallId, questions, [], ctx, signal ?? ctx.signal);
+				const away = runtime.userAway && waitMs > 0;
+				const { answers, ended } = away
+					? { answers: [], ended: "timeout" as const }
+					: await askEach(toolCallId, questions, [], ctx, signal ?? ctx.signal);
 				if (ended === "timeout") runtime.userAway = true;
 				else if (ended !== "stopped") runtime.userAway = false;
 				observe(questions, answers, 0, ended);
@@ -430,7 +430,8 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 					count: questions.length,
 					outcome,
 					answered: answers.length,
-					waitedMs: Date.now() - askedAt,
+					// With no dialog nobody was waited for: 0, not the millisecond the lines above may have taken.
+					waitedMs: away ? 0 : Date.now() - askedAt,
 				});
 				return reply(outcome, answers);
 			});
