@@ -1434,6 +1434,7 @@
         "approved": {
           "judge": "判定器放行了，沒有問你：{{summary}}",
           "grant": "這次對話已允許，沒有再問：{{summary}}",
+          "project": "你已允許這條命令在這個專案裡執行，沒有再問：{{summary}}",
           "user": "你事後允許了，已執行：{{summary}}"
         }
       },

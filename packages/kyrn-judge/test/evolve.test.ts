@@ -336,6 +336,69 @@ describe("mu adapting to its user", () => {
 		);
 	});
 
+	it("keeps a command allowed in the project once the user accepts it, and asks again when it is taken back", async () => {
+		// Ask first: every command asks, with no judge in between. The second answer is "Allow for this session".
+		const session = await start({ only: ["permissions", "evolve"], mode: "ask" });
+		const approved = () =>
+			session.events
+				.filter((event) => event.kind === "permissions.approved")
+				.map((event) => (event.payload as { by?: string }).by);
+		/** One conversation's worth: the command asks, the user allows it for the session, and the session's grants go. */
+		const allowForSession = async () => {
+			session.picks.push(1);
+			await session.run("Run the tests.", ["npm test"]);
+			await session.harness.session.prompt("/permissions reset");
+		};
+
+		await allowForSession();
+		await allowForSession();
+		await session.harness.session.prompt("/evolve");
+		expect(session.notes.at(-1)).not.toContain("npm test");
+		await session.harness.session.prompt("/evolve accept npm test");
+		expect(session.notes.at(-1)).toBe('No suggestion for "npm test" here. /evolve lists what there is.');
+
+		await allowForSession();
+		expect(session.asked).toHaveLength(3);
+		expect(session.rows().filter((row) => row.type === "grant")).toEqual([
+			expect.objectContaining({ key: "shell:npm test", label: "npm test", mode: "ask", answer: "session" }),
+			expect.objectContaining({ answer: "session" }),
+			expect.objectContaining({ answer: "session" }),
+		]);
+		await session.harness.session.prompt("/evolve");
+		expect(session.notes.at(-1)).toContain(
+			"  npm test: you allowed it for the session 3 times in a row. /evolve accept npm test keeps it allowed in this project, and mu stops asking.",
+		);
+		// Nothing changes until the user accepts, and accepting takes the command's name.
+		await session.run("Run the tests.", ["npm test"]);
+		expect(session.asked).toHaveLength(4);
+		await session.harness.session.prompt("/evolve accept");
+		expect(session.notes.at(-1)).toBe("Name the command to accept: /evolve accept npm test");
+
+		await session.harness.session.prompt("/evolve accept npm test");
+		expect(session.notes.at(-1)).toContain("npm test now runs in this project without asking, in Ask first.");
+		const [grant] = session.rows().filter((row) => row.type === "adaptation");
+		expect(grant).toMatchObject({ kind: "grant", key: "shell:npm test", mode: "ask", sessions: 3, status: "active" });
+
+		// The command runs with any arguments, with no question and nobody's answer.
+		await session.run("Run them again.", ["npm test -- --bail", "npm test"]);
+		expect(session.asked).toHaveLength(4);
+		expect(session.ran.slice(-2)).toEqual(["npm test -- --bail", "npm test"]);
+		expect(approved().slice(-2)).toEqual(["project", "project"]);
+		// What a grant for the session does not cover, this does not cover: another command, a chain, a flagged call.
+		await session.run("And more.", ["npm publish", "npm test && git push --force"]);
+		expect(session.asked).toHaveLength(6);
+		await session.harness.session.prompt("/evolve");
+		expect(session.notes.at(-1)).toContain(
+			`Commands that run in this project without asking (you accepted them; /evolve undo <id> takes one back):\n  ${grant.type === "adaptation" ? grant.id.slice(0, 8) : ""} · npm test (Ask first)`,
+		);
+
+		// Taken back: the command asks again.
+		await session.harness.session.prompt(`/evolve undo ${grant.type === "adaptation" ? grant.id.slice(0, 8) : ""}`);
+		expect(session.notes.at(-1)).toBe("Taken back: mu asks about npm test in this project again.");
+		await session.run("Once more.", ["npm test"]);
+		expect(session.asked).toHaveLength(7);
+	});
+
 	it("observes nothing when it is switched off", async () => {
 		const session = await start({
 			only: ["preflight", "frame", "permissions", "evolve"],

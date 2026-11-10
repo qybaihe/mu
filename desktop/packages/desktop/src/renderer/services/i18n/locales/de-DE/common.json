@@ -1434,6 +1434,7 @@
         "approved": {
           "judge": "Der Judge hat es ohne Rückfrage durchgelassen: {{summary}}",
           "grant": "Ohne Rückfrage, weil für diese Unterhaltung erlaubt: {{summary}}",
+          "project": "Ohne Rückfrage, weil du diesen Befehl in diesem Projekt erlaubt hast: {{summary}}",
           "user": "Ausgeführt, weil du es nachträglich erlaubt hast: {{summary}}"
         }
       },

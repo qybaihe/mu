@@ -704,6 +704,10 @@ describe('Permission lines', () => {
     expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'user' })).toEqual([
       'Ran, as you allowed it after it had waited: npm test',
     ]);
+    // A command accepted for the project with /evolve accept.
+    expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'project' })).toEqual([
+      'Ran without asking, as you allowed this command in this project: npm test',
+    ]);
     expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'someone' })).toBeUndefined();
     expect(say(en, 'permissions.approved', { by: 'judge' })).toBeUndefined();
     expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'constructor' })).toBeUndefined();

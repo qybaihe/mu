@@ -7,14 +7,17 @@ import {
 	type AdaptationRow,
 	type ApprovalRow,
 	activeAdaptation,
+	activeAdaptations,
 	attention,
 	EvolveStore,
+	grantSuggestions,
 	medianGap,
 	missingCommands,
 	openingReads,
 	type RunCounts,
 } from "../../evolve/store.ts";
 import { say } from "../../language.ts";
+import { MODE_TEXT } from "../../permissions/modes.ts";
 import { failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 import type { HarnessRoots } from "./inherit.ts";
@@ -76,6 +79,10 @@ const duration = (ms: number): string =>
  * - **The approval line of a project.** In judge mode the user is asked about a call the judge reads as needed with a
  *   probability under the line. When they allow every such call down to some probability, `/evolve` says so and
  *   `/evolve accept` lowers the line to there for this project. Marking an approval wrong (`/ledger wrong`) undoes it.
+ * - **Commands allowed in a project.** When the user's latest answers about a command were all "allow for this
+ *   session", `/evolve` says so, and `/evolve accept <command>` keeps it allowed in the project, in the permission mode
+ *   it was accepted in. It covers what a grant for the session covers: not a call a rule flags, nor one that touches
+ *   mu's settings. `/evolve undo <id>` takes it back.
  * - **Programs missing on this machine.** A command that fails with "command not found" and works with one word
  *   changed names the stand-in; the opening snapshot tells later sessions, until the program is on the PATH.
  * - **What a project's sessions open with**, for the preload feature, and **how long the user stays away**.
@@ -97,6 +104,8 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		floor: LOWEST_APPROVE_AT,
 		/** An answer that waited at least this long counts as read; half of `minAnswers` have to be. */
 		consideredMs: 1500,
+		/** "Allow for this session" answers in a row a command has to have before a standing grant is suggested. */
+		minGrants: 3,
 		/** Learn which programs are missing here from a command that failed and worked with one word changed. */
 		commands: true,
 		/** Observe in a `mu --print` or json run too. */
@@ -128,9 +137,26 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				consideredMs: options.consideredMs,
 			},
 		);
+	/** The standing grants of each project asked about in this session, as `<mode> <key>`; as with `lines`. */
+	const standing = new Map<string, Set<string>>();
+	const grantsOf = (cwd: string): Set<string> => {
+		let known = standing.get(cwd);
+		if (!known) {
+			known = new Set(activeAdaptations(store.rows(), "grant", cwd).map((grant) => `${grant.mode} ${grant.key}`));
+			standing.set(cwd, known);
+		}
+		return known;
+	};
+	const least = Math.max(1, Math.floor(Number(options.minGrants) || 0));
+	/** What could be granted for good in the permission mode this session is in. None with the permission gate off. */
+	const grantable = (cwd: string) => {
+		const mode = runtime.permissionMode?.();
+		return mode ? grantSuggestions(store.rows(), cwd, mode, least) : [];
+	};
 	const undo = (adaptation: AdaptationRow): void => {
 		store.append({ ...adaptation, status: "undone", at: now() });
-		lines.set(adaptation.cwd, undefined);
+		if (adaptation.kind === "grant") standing.delete(adaptation.cwd);
+		else lines.set(adaptation.cwd, undefined);
 	};
 
 	/** What the run that is going has taken of the user so far, and what was asked of them since the last one settled. */
@@ -160,6 +186,10 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		approvalAnswered: (answer) => {
 			if (learns(runtime.ctx)) store.append({ type: "approval", at: now(), ...answer });
 		},
+		grantAnswered: (answer) => {
+			if (learns(runtime.ctx)) store.append({ type: "grant", at: now(), ...answer });
+		},
+		granted: (cwd, key, mode) => grantsOf(cwd).has(`${mode} ${key}`),
 		opened: (cwd, paths) => {
 			if (paths.length > 0 && learns(runtime.ctx)) store.append({ type: "opening", cwd, at: now(), paths });
 		},
@@ -181,6 +211,7 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		"session_start",
 		failOpen(() => {
 			lines.clear();
+			standing.clear();
 			taken = NOTHING_TAKEN;
 			started = false;
 			return undefined;
@@ -292,14 +323,41 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 						en: `  No lower line to suggest yet: ${answers} answered here so far, and a band needs ${options.minAnswers}, all of them allowed.`,
 					}),
 		);
-		const standing = runtime.standingRules?.(cwd) ?? [];
-		if (standing.length > 0) {
+		const granted = activeAdaptations(rows, "grant", cwd);
+		if (granted.length > 0) {
+			said.push(
+				say({
+					zh: "这个项目里不再询问的命令（你接受的；/evolve undo <id> 撤销）：",
+					en: "Commands that run in this project without asking (you accepted them; /evolve undo <id> takes one back):",
+				}),
+				...granted.map((grant) => `  ${grant.id.slice(0, 8)} · ${grant.label} (${say(MODE_TEXT[grant.mode])})`),
+			);
+		}
+		const suggested = grantable(cwd);
+		if (suggested.length > 0) {
+			said.push(
+				say({
+					zh: "你每次对话都允许的命令：",
+					en: "Commands you keep allowing for the session here:",
+				}),
+			);
+		}
+		for (const grant of suggested) {
+			said.push(
+				say({
+					zh: `  ${grant.label}：你连续 ${grant.sessions} 次都选了“这次对话都允许”。/evolve accept ${grant.label} 让它在这个项目里一直允许，mu 不再问。`,
+					en: `  ${grant.label}: you allowed it for the session ${counted(grant.sessions, "time")} in a row. /evolve accept ${grant.label} keeps it allowed in this project, and mu stops asking.`,
+				}),
+			);
+		}
+		const rules = runtime.standingRules?.(cwd) ?? [];
+		if (rules.length > 0) {
 			said.push(
 				say({
 					zh: "常驻规则（改动前逐条把关；/forget <id> 去掉）：",
 					en: "Standing rules (checked before a change; /forget <id> removes one):",
 				}),
-				...standing.map((rule) => `  ${rule.id.slice(0, 8)} · ${rule.text}`),
+				...rules.map((rule) => `  ${rule.id.slice(0, 8)} · ${rule.text}`),
 			);
 		}
 		const missing = missingCommands(rows);
@@ -402,15 +460,54 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
-			const [word = "", id = ""] = args.trim().split(/\s+/);
+			const [word = "", ...rest] = args.trim().split(/\s+/);
+			const named = rest.join(" ");
+			if (word === "accept" && named) {
+				const grant = grantable(ctx.cwd).find((each) => each.label === named);
+				if (!grant) {
+					ctx.ui.notify(
+						say({
+							zh: `这里没有关于「${named}」的建议。/evolve 列出现有的。`,
+							en: `No suggestion for "${named}" here. /evolve lists what there is.`,
+						}),
+						"warning",
+					);
+					return;
+				}
+				const adaptation: AdaptationRow = {
+					type: "adaptation",
+					id: randomUUID(),
+					...grant,
+					kind: "grant",
+					cwd: ctx.cwd,
+					at: now(),
+					status: "active",
+				};
+				store.append(adaptation);
+				standing.delete(ctx.cwd);
+				ctx.ui.notify(
+					say({
+						zh: `${grant.label} 在这个项目里不再询问（${MODE_TEXT[grant.mode].zh}下）。被规则标成危险的命令、动到 mu 自己设置的命令照旧会问。/evolve undo ${adaptation.id.slice(0, 8)} 撤销。`,
+						en: `${grant.label} now runs in this project without asking, in ${MODE_TEXT[grant.mode].en}. A command a rule flags as risky, or one that touches mu's own settings, still asks. /evolve undo ${adaptation.id.slice(0, 8)} takes it back.`,
+					}),
+					"info",
+				);
+				return;
+			}
 			if (word === "accept") {
 				const suggestion = suggest(ctx.cwd);
 				if (!suggestion) {
+					const commands = grantable(ctx.cwd);
 					ctx.ui.notify(
-						say({
-							zh: "现在没有可接受的建议。/evolve 看已经观察到什么。",
-							en: "Nothing to accept yet. /evolve shows what has been seen so far.",
-						}),
+						commands.length > 0
+							? say({
+									zh: `要接受哪条命令，写上它：/evolve accept ${commands[0].label}`,
+									en: `Name the command to accept: /evolve accept ${commands[0].label}`,
+								})
+							: say({
+									zh: "现在没有可接受的建议。/evolve 看已经观察到什么。",
+									en: "Nothing to accept yet. /evolve shows what has been seen so far.",
+								}),
 						"info",
 					);
 					return;
@@ -440,8 +537,16 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				return;
 			}
 			if (word === "undo") {
-				const accepted = activeAdaptation(store.rows(), "approval-line", ctx.cwd);
-				if (!accepted || (id && !accepted.id.startsWith(id.toLowerCase()))) {
+				const id = named.toLowerCase();
+				const rows = store.rows();
+				const line = activeAdaptation(rows, "approval-line", ctx.cwd);
+				// Without an id: the approval line, the one adaptation a project has one of.
+				const accepted = id
+					? [...(line ? [line] : []), ...activeAdaptations(rows, "grant", ctx.cwd)].find((each) =>
+							each.id.startsWith(id),
+						)
+					: line;
+				if (!accepted) {
 					ctx.ui.notify(
 						say({
 							zh: "这个项目没有这样一条可撤销的适配。/evolve 列出现有的。",
@@ -453,10 +558,15 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				}
 				undo(accepted);
 				ctx.ui.notify(
-					say({
-						zh: `已撤销：审批线回到内置的 ${APPROVE_AT.toFixed(2)}。`,
-						en: `Taken back: the approval line is the built-in ${APPROVE_AT.toFixed(2)} again.`,
-					}),
+					accepted.kind === "grant"
+						? say({
+								zh: `已撤销：${accepted.label} 在这个项目里重新要问你。`,
+								en: `Taken back: mu asks about ${accepted.label} in this project again.`,
+							})
+						: say({
+								zh: `已撤销：审批线回到内置的 ${APPROVE_AT.toFixed(2)}。`,
+								en: `Taken back: the approval line is the built-in ${APPROVE_AT.toFixed(2)} again.`,
+							}),
 					"info",
 				);
 				return;

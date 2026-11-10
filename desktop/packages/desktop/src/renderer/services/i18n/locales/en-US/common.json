@@ -1434,6 +1434,7 @@
         "approved": {
           "judge": "The judge let it run without asking you: {{summary}}",
           "grant": "Ran without asking, as allowed for this conversation: {{summary}}",
+          "project": "Ran without asking, as you allowed this command in this project: {{summary}}",
           "user": "Ran, as you allowed it after it had waited: {{summary}}"
         }
       },
