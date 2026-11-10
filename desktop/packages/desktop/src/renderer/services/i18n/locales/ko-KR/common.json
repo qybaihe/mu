@@ -1427,12 +1427,14 @@
         "answers": {
           "once": "한 번 허용했습니다",
           "session": "이 대화 동안 허용됨",
-          "deny": "허용하지 않았습니다"
+          "deny": "허용하지 않았습니다",
+          "pending": "제때 답이 없어 보류 중입니다"
         },
         "about": "{{answer}}: {{summary}}",
         "approved": {
           "judge": "판정기가 묻지 않고 실행을 허용했습니다: {{summary}}",
-          "grant": "이 대화 동안 허용되어 묻지 않고 실행했습니다: {{summary}}"
+          "grant": "이 대화 동안 허용되어 묻지 않고 실행했습니다: {{summary}}",
+          "user": "나중에 허용하여 실행했습니다: {{summary}}"
         }
       },
       "board": {

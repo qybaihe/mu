@@ -5,7 +5,11 @@ import { I18nextProvider } from 'react-i18next';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
 import type { DialogAnswer, ViewDialog, ViewPermission, ViewQuestion } from '@/common/utils/nativeHost';
-import { pickAnyAnswer, QuestionsOpenLine } from '@/renderer/pages/native/components/composer/NativeQuestion';
+import {
+  PermissionsWaitingLine,
+  pickAnyAnswer,
+  QuestionsOpenLine,
+} from '@/renderer/pages/native/components/composer/NativeQuestion';
 import NativeDialog from '@/renderer/pages/native/components/NativeDialog';
 import { dialogChoices, permissionCard } from '@/renderer/pages/native/utils/dialogCard';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
@@ -331,6 +335,25 @@ describe('a question of mu’s ask_user', () => {
     });
     await act(async () => {
       fireEvent.click(screen.getByTestId('native-questions-answer'));
+    });
+    expect(asked).toEqual([1]);
+  });
+
+  it('says calls wait for a permission nobody gave in time, and its button asks about them again once', async () => {
+    const asked: number[] = [];
+    render(
+      <I18nextProvider i18n={i18n}>
+        <PermissionsWaitingLine onApprove={() => asked.push(1)} />
+      </I18nextProvider>
+    );
+    expect(screen.getByTestId('native-permissions-waiting')).toHaveTextContent(
+      'Steps are waiting for your permission.'
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-permissions-review'));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-permissions-review'));
     });
     expect(asked).toEqual([1]);
   });

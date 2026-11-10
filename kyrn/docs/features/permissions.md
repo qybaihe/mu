@@ -69,7 +69,7 @@ Esc while the picker is open counts as "Don't allow". A refusal reaches the mode
 A question does not hold the run for long. The picker waits `features.permissions.waitMs` (default 120 000 ms; 0 waits until answered). When nobody answers in that time:
 
 - The call does not run. The model is told: "The user has not answered yet whether to allow this (…). This is pending: not permission, and not a refusal. Do not try another way around it. Carry on with work that does not depend on it, and say at the end what still waits for them."
-- The question waits. The status line `mu.permissions.pending` says "1 step is waiting for your permission: type /approve" / "1 步在等你授权：输入 /approve".
+- The question waits. A status line of its own, `mu.approve.pending`, says "1 step is waiting for your permission: type /approve" / "1 步在等你授权：输入 /approve". It has a text while questions wait, as `mu.ask.pending` has for ask_user's: a client can draw a button that sends `/approve` from it. `mu.permissions.pending` is only the open picker's line.
 - Nobody was there, so the questions that follow in the same run are not waited for either: each waits with the first at once. The same call made again gets the same answer, with no second question. This lasts until the user writes a message or answers a question.
 
 `/approve` asks the waiting questions again, oldest first, with the same picker and the same answers. Then mu tells the model what was picked, in a `kyrn.approval` message of its own (not as the user's words, so nothing reads it as a new task or a rule):

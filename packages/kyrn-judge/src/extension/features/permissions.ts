@@ -112,7 +112,13 @@ interface JudgeSaid {
 	readonly needed?: { readonly probability: number; readonly check: boolean };
 }
 const MODE_STATUS = "mu.permissions";
+/** Status line while a picker is open: the call it asks about. */
 const PENDING_STATUS = "mu.permissions.pending";
+/**
+ * Status line while questions nobody answered in time wait for /approve. A key of its own, as ask_user's
+ * `mu.ask.pending` is: a client that draws a button for /approve shows it while this status has a text.
+ */
+export const WAITING_STATUS = "mu.approve.pending";
 
 /**
  * Why the user is being asked. `nojudge` and `judgedown` are judge mode without a verdict: no judge can answer yet
@@ -321,19 +327,21 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	let away = false;
 	runtime.permissionMode = () => mode;
 
-	/** The status line about permission questions as it stands, so it is written only when it changes. */
-	let pendingStatus: string | undefined;
-	const setPending = (ctx: ExtensionContext | undefined, text: string | undefined) => {
-		if (!ctx?.hasUI || text === pendingStatus) return;
-		pendingStatus = text;
-		ctx.ui.setStatus(PENDING_STATUS, text);
+	/** The two status lines about permission questions as they stand, so each is written only when it changes. */
+	const statusShown = new Map<string, string>();
+	const setStatus = (ctx: ExtensionContext | undefined, key: string, text: string | undefined) => {
+		if (!ctx?.hasUI || text === statusShown.get(key)) return;
+		if (text === undefined) statusShown.delete(key);
+		else statusShown.set(key, text);
+		ctx.ui.setStatus(key, text);
 	};
 
 	/** The status line and the count other features read, as the waiting questions stand. */
 	const showWaiting = (ctx: ExtensionContext | undefined) => {
 		runtime.permissionsWaiting = waiting.length;
-		setPending(
+		setStatus(
 			ctx,
+			WAITING_STATUS,
 			waiting.length === 0
 				? undefined
 				: say({
@@ -589,8 +597,9 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const { need } = question;
 		const { once, session, deny } = answersOf(question);
 		announce(question);
-		setPending(
+		setStatus(
 			ctx,
+			PENDING_STATUS,
 			say({
 				zh: `等你授权：${clip(need.summary, 60)}`,
 				en: `Waiting for your permission: ${clip(need.summary, 60)}`,
@@ -610,9 +619,8 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				[once, ...(session ? [session] : []), deny],
 				{ signal, ...(wait > 0 ? { timeout: wait } : {}) },
 			);
-		} catch (error) {
-			showWaiting(ctx);
-			throw error;
+		} finally {
+			setStatus(ctx, PENDING_STATUS, undefined);
 		}
 		if (picked === once) return "once";
 		if (session && picked === session) return "session";
@@ -710,7 +718,6 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const answer = await pick(question, ctx, ctx.signal, waitMs);
 		if (answer === "timeout") return setAside(question, ctx);
 		away = false;
-		showWaiting(ctx);
 		if (settle(question, answer)) return undefined;
 		return {
 			block: true,

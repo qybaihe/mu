@@ -6,7 +6,8 @@
  * the person's own words. Skip answers nothing: mu tells the model the questions were skipped.
  *
  * `QuestionsOpenLine` is the line above the send box while questions nobody answered in time wait: its button sends
- * `/answer`, which asks them again.
+ * `/answer`, which asks them again. `PermissionsWaitingLine` is the same line for permission questions nobody answered
+ * in time: its button sends `/approve`.
  */
 import { Button, Checkbox, Input, Radio } from '@arco-design/web-react';
 import React, { useEffect, useState } from 'react';
@@ -165,9 +166,14 @@ const QuestionCard: React.FC<{ dialog: ViewDialog; question: ViewQuestion; answe
   );
 };
 
-/** One quiet line above the send box while mu's questions wait: what waits, and a button that sends `/answer`. */
-export const QuestionsOpenLine: React.FC<{ onAnswer: () => void }> = ({ onAnswer }) => {
-  const { t } = useTranslation();
+/** One quiet line above the send box while something of mu's waits for the person: what waits, and a button to take it up. */
+const WaitingLine: React.FC<{
+  text: string;
+  action: string;
+  testId: string;
+  actionTestId: string;
+  onAct: () => void;
+}> = ({ text, action, testId, actionTestId, onAct }) => {
   const [asking, setAsking] = useState(false);
   useEffect(() => {
     if (!asking) return undefined;
@@ -178,22 +184,50 @@ export const QuestionsOpenLine: React.FC<{ onAnswer: () => void }> = ({ onAnswer
     <div
       className='mb-8px flex items-center justify-between gap-8px px-4px text-13px leading-20px text-t-secondary'
       role='status'
-      data-testid='native-questions-open'
+      data-testid={testId}
     >
-      <span>{t('mu.native.question.waiting')}</span>
+      <span>{text}</span>
       <Button
         type='text'
         size='mini'
         disabled={asking}
-        data-testid='native-questions-answer'
+        data-testid={actionTestId}
         onClick={() => {
           setAsking(true);
-          onAnswer();
+          onAct();
         }}
       >
-        {t('mu.native.question.answer')}
+        {action}
       </Button>
     </div>
+  );
+};
+
+/** While mu's questions wait: what waits, and a button that sends `/answer`. */
+export const QuestionsOpenLine: React.FC<{ onAnswer: () => void }> = ({ onAnswer }) => {
+  const { t } = useTranslation();
+  return (
+    <WaitingLine
+      text={t('mu.native.question.waiting')}
+      action={t('mu.native.question.answer')}
+      testId='native-questions-open'
+      actionTestId='native-questions-answer'
+      onAct={onAnswer}
+    />
+  );
+};
+
+/** While calls wait for the person's permission: that they wait, and a button that sends `/approve`. */
+export const PermissionsWaitingLine: React.FC<{ onApprove: () => void }> = ({ onApprove }) => {
+  const { t } = useTranslation();
+  return (
+    <WaitingLine
+      text={t('mu.native.permission.waiting')}
+      action={t('mu.native.permission.review')}
+      testId='native-permissions-waiting'
+      actionTestId='native-permissions-review'
+      onAct={onApprove}
+    />
   );
 };
 

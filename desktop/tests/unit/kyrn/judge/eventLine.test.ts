@@ -682,6 +682,10 @@ describe('Permission lines', () => {
     ]);
     expect(say(en, 'permissions.resolved', { id: 'p1', answer: 'once' })).toEqual(['You allowed it once']);
     expect(say(zh, 'permissions.resolved', { id: 'p1', answer: 'session' }, 'zh-CN')).toEqual(['这次对话都允许']);
+    // Nobody answered in time: the call did not run, and its question waits for /approve.
+    expect(say(en, 'permissions.resolved', { id: 'p1', answer: 'pending' })).toEqual([
+      'No answer in time, so it waits for you',
+    ]);
     expect(say(en, 'permissions.resolved', { id: 'p1', answer: 'always' })).toBeUndefined();
   });
 
@@ -696,6 +700,9 @@ describe('Permission lines', () => {
     ]);
     expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'grant', toolCallId: 'call-1' })).toEqual([
       'Ran without asking, as allowed for this conversation: npm test',
+    ]);
+    expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'user' })).toEqual([
+      'Ran, as you allowed it after it had waited: npm test',
     ]);
     expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'someone' })).toBeUndefined();
     expect(say(en, 'permissions.approved', { by: 'judge' })).toBeUndefined();

@@ -1057,6 +1057,10 @@
       "waiting": "mu의 질문이 아직 답을 기다리고 있습니다.",
       "answer": "답하기"
     },
+    "permission": {
+      "waiting": "사용자의 허용을 기다리는 단계가 있습니다.",
+      "review": "확인하기"
+    },
     "host": {
       "output": "mu의 마지막 출력",
       "restartHint": "메시지를 보내면 mu가 다시 시작됩니다."

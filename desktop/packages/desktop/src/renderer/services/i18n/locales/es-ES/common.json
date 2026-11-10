@@ -1427,12 +1427,14 @@
         "answers": {
           "once": "Lo has permitido una vez",
           "session": "Permitido en esta conversación",
-          "deny": "No lo has permitido"
+          "deny": "No lo has permitido",
+          "pending": "Sin respuesta a tiempo; queda esperándote"
         },
         "about": "{{answer}}: {{summary}}",
         "approved": {
           "judge": "El juez lo dejó pasar sin preguntarte: {{summary}}",
-          "grant": "Se ejecutó sin preguntar, porque está permitido en esta conversación: {{summary}}"
+          "grant": "Se ejecutó sin preguntar, porque está permitido en esta conversación: {{summary}}",
+          "user": "Se ejecutó porque lo permitiste después: {{summary}}"
         }
       },
       "board": {

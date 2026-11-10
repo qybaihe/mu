@@ -14,7 +14,7 @@
  */
 import { Button } from '@arco-design/web-react';
 import type { IMessageText, TMessage } from '@/common/chat/chatLib';
-import { ANSWER_COMMAND } from '@/common/utils/nativeHost';
+import { ANSWER_COMMAND, APPROVE_COMMAND } from '@/common/utils/nativeHost';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ContextUsageIndicator from '@/renderer/components/agent/ContextUsageIndicator';
@@ -46,7 +46,7 @@ import { NativeAttachButton, NativeAttachmentList } from './composer/NativeAttac
 import NativeJobs from './composer/NativeJobs';
 import NativeModelChip from './composer/NativeModelChip';
 import NativePermissionPill from './composer/NativePermissionPill';
-import { QuestionsOpenLine } from './composer/NativeQuestion';
+import { PermissionsWaitingLine, QuestionsOpenLine } from './composer/NativeQuestion';
 import NativeDialog from './NativeDialog';
 import NativeHostNotice from './NativeHostNotice';
 import NativeStatus from './NativeStatus';
@@ -187,6 +187,10 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   // Questions of ask_user nobody answered in time: `/answer` asks them again, a run going or not.
   const answerQuestions = useCallback(() => {
     void request({ type: 'prompt', message: ANSWER_COMMAND });
+  }, [request]);
+  // Permission questions nobody answered in time: `/approve` asks them again, a run going or not.
+  const approveWaiting = useCallback(() => {
+    void request({ type: 'prompt', message: APPROVE_COMMAND });
   }, [request]);
   const usage = useMemo(() => contextUsageOf(view), [view]);
   useSessionStats(conversation);
@@ -334,9 +338,12 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
             onExpire={expire}
           />
         </div>
-      ) : view.host.questionsOpen ? (
-        <QuestionsOpenLine onAnswer={answerQuestions} />
-      ) : null}
+      ) : (
+        <>
+          {view.host.permissionsWaiting ? <PermissionsWaitingLine onApprove={approveWaiting} /> : null}
+          {view.host.questionsOpen ? <QuestionsOpenLine onAnswer={answerQuestions} /> : null}
+        </>
+      )}
       {/* Above the status line: the line tucks under the send box, and would cover what came between them. */}
       {goal ? <GoalLine key={goal.text} goal={goal} onEnd={endGoal} /> : null}
       <NativeStatus view={view} host={host} sendingSince={outgoing?.at} />

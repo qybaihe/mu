@@ -1057,6 +1057,10 @@
       "waiting": "mu'nun size, hâlâ yanıt bekleyen bir sorusu var.",
       "answer": "Yanıtla"
     },
+    "permission": {
+      "waiting": "Hâlâ izninizi bekleyen adımlar var.",
+      "review": "İncele"
+    },
     "host": {
       "output": "mu'nun son çıktısı",
       "restartHint": "mu'yu yeniden başlatmak için bir mesaj gönderin."

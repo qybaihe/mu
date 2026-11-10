@@ -366,8 +366,8 @@ function permissionsLine(t: TFunction, payload: Record<string, unknown>): string
 
 // ── permissions.request / resolved / approved ───────────────────────────────
 
-/** mu's answers by id, as `permissions.resolved` reports them. */
-const PERMISSION_ANSWERS: ReadonlySet<string> = new Set(['once', 'session', 'deny']);
+/** mu's answers by id, as `permissions.resolved` reports them. `pending`: nobody answered in time, and it waits. */
+const PERMISSION_ANSWERS: ReadonlySet<string> = new Set(['once', 'session', 'deny', 'pending']);
 
 /** mu waits for the person's permission; the call it names is data, shown as it is. */
 function permissionRequestLine(t: TFunction, payload: Record<string, unknown>): string[] {
@@ -385,13 +385,17 @@ function permissionAnswerLine(t: TFunction, payload: Record<string, unknown>): s
 }
 
 /** Who let a call through without asking, by the harness's `by`: an older harness names the judge `jev`. */
-const APPROVERS: ReadonlyMap<string, 'judge' | 'grant'> = new Map([
+const APPROVERS: ReadonlyMap<string, 'judge' | 'grant' | 'user'> = new Map([
   ['judge', 'judge'],
   ['jev', 'judge'],
   ['grant', 'grant'],
+  ['user', 'user'],
 ]);
 
-/** A call that ran without asking: the judge let it through, or the person had allowed it for this conversation. */
+/**
+ * A call that ran without asking: the judge let it through, the person had allowed it for this conversation, or they
+ * allowed this very call with `/approve` after its question had waited.
+ */
 function permissionApprovedLine(t: TFunction, payload: Record<string, unknown>): string[] | undefined {
   const summary = str(payload.summary);
   const by = APPROVERS.get(str(payload.by));

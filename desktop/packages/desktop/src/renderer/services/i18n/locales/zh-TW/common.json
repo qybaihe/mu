@@ -1427,12 +1427,14 @@
         "answers": {
           "once": "你允許了一次",
           "session": "這次對話都允許",
-          "deny": "你沒允許"
+          "deny": "你沒允許",
+          "pending": "沒等到回答，先擱著等你"
         },
         "about": "{{answer}}：{{summary}}",
         "approved": {
           "judge": "判定器放行了，沒有問你：{{summary}}",
-          "grant": "這次對話已允許，沒有再問：{{summary}}"
+          "grant": "這次對話已允許，沒有再問：{{summary}}",
+          "user": "你事後允許了，已執行：{{summary}}"
         }
       },
       "board": {

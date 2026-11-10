@@ -1427,12 +1427,14 @@
         "answers": {
           "once": "你允许了一次",
           "session": "这次对话都允许",
-          "deny": "你没允许"
+          "deny": "你没允许",
+          "pending": "没等到回答，先搁着等你"
         },
         "about": "{{answer}}：{{summary}}",
         "approved": {
           "judge": "判定器放行了，没有问你：{{summary}}",
-          "grant": "这次对话已允许，没有再问：{{summary}}"
+          "grant": "这次对话已允许，没有再问：{{summary}}",
+          "user": "你事后允许了，已执行：{{summary}}"
         }
       },
       "board": {

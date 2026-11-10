@@ -1057,6 +1057,10 @@
       "waiting": "mu a une question pour vous qui attend encore une réponse.",
       "answer": "Répondre"
     },
+    "permission": {
+      "waiting": "Des étapes attendent encore votre autorisation.",
+      "review": "Examiner"
+    },
     "host": {
       "output": "Dernière sortie de mu",
       "restartHint": "Envoyez un message pour redémarrer mu."
