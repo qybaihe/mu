@@ -83,6 +83,11 @@
       "verdict": "keep or prune, passage by passage",
       "result": "Kept passages stay word for word; pruned ones keep only their opening lines. No model writes a summary."
     },
+    "context.preload": {
+      "scene": "You open a conversation with \"the 1h30m case fails in the duration parser\". Nine of the project's files share a word with that or were read when earlier conversations opened.",
+      "verdict": "2 of the 9 will be read",
+      "result": "In shadow, the default, the verdict is recorded and compared with the files the first 8 tool calls read. Set to active, those two files reach the model with your first message, so it doesn't spend a step on each. The judge sees the task and the paths, never a file's contents."
+    },
     "memory.recall": {
       "scene": "A new task in a project where you once said \"use pnpm, never npm\".",
       "verdict": "this lesson applies",
