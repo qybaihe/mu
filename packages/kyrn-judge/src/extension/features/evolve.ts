@@ -7,10 +7,12 @@ import {
 	type AdaptationRow,
 	type ApprovalRow,
 	activeAdaptation,
+	attention,
 	EvolveStore,
 	medianGap,
 	missingCommands,
 	openingReads,
+	type RunCounts,
 } from "../../evolve/store.ts";
 import { say } from "../../language.ts";
 import { failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
@@ -48,6 +50,18 @@ export function replacement(failed: string, worked: string, missing: string): st
 	return instead && /^[\w.+-]+$/.test(instead) ? instead : undefined;
 }
 
+const NOTHING_TAKEN: RunCounts = {
+	permissions: 0,
+	permissionsSame: 0,
+	questions: 0,
+	questionsSame: 0,
+	unanswered: 0,
+	messages: 0,
+};
+
+/** A count with its noun: "1 run", "3 runs". */
+const counted = (count: number, one: string): string => `${count} ${one}${count === 1 ? "" : "s"}`;
+
 const duration = (ms: number): string =>
 	ms < 90_000
 		? `${Math.round(ms / 1000)} s`
@@ -65,6 +79,10 @@ const duration = (ms: number): string =>
  * - **Programs missing on this machine.** A command that fails with "command not found" and works with one word
  *   changed names the stand-in; the opening snapshot tells later sessions, until the program is on the PATH.
  * - **What a project's sessions open with**, for the preload feature, and **how long the user stays away**.
+ * - **What a run takes of the user.** For each run a message of theirs starts: the permission questions and the
+ *   questions of ask_user they dealt with, how many of those changed nothing (they allowed the call, they took the
+ *   option the model had put first), the messages they sent into the run, and whether they stopped it. `/evolve` adds
+ *   them up. Nothing adapts to these counts yet: they are what asking less would be measured by.
  *
  * Loosening is the user's to accept, by a command they type: no verdict, no tool and no project file changes a line.
  * Tightening needs nobody: a mark undoes at once. An unattended run (`mu --print`, json mode) reads what was accepted
@@ -115,8 +133,30 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		lines.set(adaptation.cwd, undefined);
 	};
 
+	/** What the run that is going has taken of the user so far, and what was asked of them since the last one settled. */
+	let taken = NOTHING_TAKEN;
+	/** A message of the user's started the run that is going: it is one to keep a row for. */
+	let started = false;
+
 	runtime.evolve = {
 		approvalLine: lineOf,
+		asked: (kind, ended) => {
+			if (!learns(runtime.ctx)) return;
+			if (ended === "unanswered") taken = { ...taken, unanswered: taken.unanswered + 1 };
+			else if (kind === "permission") {
+				taken = {
+					...taken,
+					permissions: taken.permissions + 1,
+					permissionsSame: taken.permissionsSame + (ended === "same" ? 1 : 0),
+				};
+			} else {
+				taken = {
+					...taken,
+					questions: taken.questions + 1,
+					questionsSame: taken.questionsSame + (ended === "same" ? 1 : 0),
+				};
+			}
+		},
 		approvalAnswered: (answer) => {
 			if (learns(runtime.ctx)) store.append({ type: "approval", at: now(), ...answer });
 		},
@@ -141,6 +181,29 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		"session_start",
 		failOpen(() => {
 			lines.clear();
+			taken = NOTHING_TAKEN;
+			started = false;
+			return undefined;
+		}),
+	);
+
+	pi.on(
+		"before_agent_start",
+		failOpen((event) => {
+			if (event.messageType === "user") started = true;
+			return undefined;
+		}),
+	);
+	pi.on(
+		"agent_settled",
+		failOpen((event, ctx) => {
+			// A run the harness cut itself goes on in the one it starts next (features/ttsr.ts, features/watchdog.ts), and
+			// one mu started (an answer given with /approve) belongs with the next run of the user's.
+			if (!started || runtime.harnessAbort) return undefined;
+			started = false;
+			const counts = taken;
+			taken = NOTHING_TAKEN;
+			if (learns(ctx)) store.append({ type: "run", cwd: ctx.cwd, at: now(), ...counts, stopped: event.aborted });
 			return undefined;
 		}),
 	);
@@ -186,7 +249,12 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	pi.on(
 		"input",
 		failOpen((event, ctx) => {
-			if (event.source === "extension" || event.streamingBehavior || !event.text.trim()) return undefined;
+			if (event.source === "extension" || !event.text.trim()) return undefined;
+			if (event.streamingBehavior) {
+				// Written into a run that is going: the user stepped in.
+				if (learns(ctx)) taken = { ...taken, messages: taken.messages + 1 };
+				return undefined;
+			}
 			const ended = endedAt;
 			endedAt = undefined;
 			if (ended !== undefined && learns(ctx)) {
@@ -261,6 +329,68 @@ export function registerEvolve(runtime: KyrnRuntime, roots?: HarnessRoots): void
 					en: `After a run ends, you're usually back in ${duration(gap)} (median).`,
 				}),
 			);
+		}
+		const sum = attention(rows, cwd);
+		if (sum) {
+			const asked = sum.permissions + sum.questions;
+			said.push(
+				say({
+					zh: `最近 ${sum.runs} 轮运行占用了你多少注意力：`,
+					en: `What the last ${counted(sum.runs, "run")} here took of you:`,
+				}),
+				say({
+					zh: `  ${sum.quiet} 轮完全没找你。`,
+					en: `  ${sum.quiet} needed nothing from you.`,
+				}),
+			);
+			if (asked > 0) {
+				said.push(
+					say({
+						zh: `  mu 问了你 ${asked} 次：${sum.permissions} 次授权，${sum.questions} 次模型提问。`,
+						en: `  mu asked you ${counted(asked, "time")}: ${counted(sum.permissions, "permission question")}, ${counted(sum.questions, "question")} from the model.`,
+					}),
+				);
+			}
+			if (sum.messages > 0) {
+				said.push(
+					say({
+						zh: `  运行途中你发了 ${sum.messages} 条消息。`,
+						en: `  You wrote into a run ${counted(sum.messages, "time")}.`,
+					}),
+				);
+			}
+			if (sum.stopped > 0) {
+				said.push(
+					say({
+						zh: `  你叫停了 ${sum.stopped} 轮。`,
+						en: `  You stopped ${counted(sum.stopped, "run")}.`,
+					}),
+				);
+			}
+			if (sum.permissions > 0) {
+				said.push(
+					say({
+						zh: `  授权：${sum.permissions} 次里有 ${sum.permissionsSame} 次问了也没改变结果（你允许了）。`,
+						en: `  Permission questions: ${sum.permissionsSame} of ${sum.permissions} changed nothing (you allowed the call).`,
+					}),
+				);
+			}
+			if (sum.questions > 0) {
+				said.push(
+					say({
+						zh: `  模型提问：${sum.questions} 次里有 ${sum.questionsSame} 次问了也没改变结果（你选了它排在第一的选项，或跳过了）。`,
+						en: `  Questions from the model: ${sum.questionsSame} of ${sum.questions} changed nothing (you picked the option it had put first, or skipped the question).`,
+					}),
+				);
+			}
+			if (sum.unanswered > 0) {
+				said.push(
+					say({
+						zh: `  ${sum.unanswered} 次提问没等到回答，运行照常继续。`,
+						en: `  ${counted(sum.unanswered, "question")} got no answer in time, and the run went on.`,
+					}),
+				);
+			}
 		}
 		return said.join("\n");
 	};

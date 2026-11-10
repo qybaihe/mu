@@ -104,6 +104,41 @@ The suggested line is the lowest one, in steps of 0.05, such that:
 
 `/evolve undo` takes it back. So does `/ledger wrong` on any `tool.approval` verdict in the project: one approval you call wrong puts the built-in line back at once.
 
+## 6. What a run takes of you (`/evolve`, `features.evolve`)
+
+**Problem.** mu is meant to need less of you over time, and nothing counted how much it needs now. Without the count, a change that asks less cannot be told from one that only feels quieter.
+
+**What it does.** For each run a message of yours starts, mu keeps one line when the run has settled, counts only:
+
+| count | what it is |
+| --- | --- |
+| `permissions`, `permissionsSame` | permission questions you dealt with, and how many you allowed |
+| `questions`, `questionsSame` | questions the model asked with `ask_user` that you dealt with, and how many you answered with the option it had put first, or skipped |
+| `unanswered` | questions of either kind nobody answered in time (the run went on, see [permissions](permissions.md) and [ask_user](ask-user.md)) |
+| `messages` | messages you sent while the run was going |
+| `stopped` | you stopped the run |
+
+"Same" means the run went where it would have gone unasked: the call you allowed ran, the option the model recommended was taken. Such a question took your attention and changed nothing. A refusal, another option or your own words did change something.
+
+`/evolve` adds up the latest 50 runs of the project, once there are 5:
+
+```
+What the last 42 runs here took of you:
+  18 needed nothing from you.
+  mu asked you 27 times: 21 permission questions, 6 questions from the model.
+  You wrote into a run 8 times.
+  You stopped 2 runs.
+  Permission questions: 19 of 21 changed nothing (you allowed the call).
+  Questions from the model: 4 of 6 changed nothing (you picked the option it had put first, or skipped the question).
+  3 questions got no answer in time, and the run went on.
+```
+
+- A run mu started itself (an answer given with `/approve`, a run restarted after a cut) gets no line of its own: what it took is counted with the next run of yours.
+- A question nobody answered took nothing of you, so a run with only such questions counts as one that needed nothing.
+- Nothing adapts to these counts yet. They are what the approval line (section 5) and any later change that asks less would be measured by.
+
+Known weak spots: "the option the model put first" is taken as its recommendation because `ask_user`'s description asks for that order; a model that orders its options another way makes the count mean less. A message you send into a run may be a correction or only a question about progress: the count does not tell them apart.
+
 ## More labels
 
 Three more `kyrn.outcome` kinds, all joined to the verdict's record on `ledgerId`:

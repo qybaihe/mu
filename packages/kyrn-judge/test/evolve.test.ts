@@ -36,6 +36,8 @@ describe("mu adapting to its user", () => {
 		only: FeatureName[];
 		evolve?: Record<string, unknown>;
 		mode?: string;
+		/** How long a permission question waits, in ms. */
+		waitMs?: number;
 		bash?: AgentTool;
 	}) {
 		const agentDir = mkdtempSync(join(tmpdir(), "mu-evolve-agent-"));
@@ -66,7 +68,10 @@ describe("mu adapting to its user", () => {
 					config: parseConfig({
 						features: {
 							memory: false,
-							permissions: { mode: setup.mode ?? "judge" },
+							permissions: {
+								mode: setup.mode ?? "judge",
+								...(setup.waitMs === undefined ? {} : { waitMs: setup.waitMs }),
+							},
 							evolve: { minAnswers: 2, consideredMs: 0, ...setup.evolve },
 						},
 					}),
@@ -79,10 +84,18 @@ describe("mu adapting to its user", () => {
 		harnesses.push(harness);
 		const asked: string[] = [];
 		const notes: string[] = [];
+		/**
+		 * What the user picks in the selects to come, oldest first: the option at that place (-1: the last one), or
+		 * "nobody" to let the question run out of time. With none left they pick the first option.
+		 */
+		const picks: (number | "nobody")[] = [];
 		const known: Record<string, unknown> = {
-			select: async (title: string, options: string[]) => {
+			select: async (title: string, options: string[], dialog?: { timeout?: number }) => {
 				asked.push(title);
-				return options[0];
+				const pick = picks.shift();
+				if (pick !== "nobody") return options.at(pick ?? 0);
+				await new Promise((resolve) => setTimeout(resolve, dialog?.timeout ?? 0));
+				return undefined;
 			},
 			notify: (message: string) => notes.push(message),
 			setStatus: () => undefined,
@@ -117,7 +130,7 @@ describe("mu adapting to its user", () => {
 				.filter((entry) => entry.type === "custom" && entry.customType === LEDGER_ENTRY_TYPE)
 				.map((entry) => (entry as { data: LedgerRecord }).data)
 				.filter((record) => record.specId === "tool.approval");
-		return { harness, ran, asked, notes, run, rows, approvals, events };
+		return { harness, ran, asked, notes, picks, run, rows, approvals, events };
 	}
 
 	it("suggests a lower approval line from the user's answers, applies it once accepted, and takes it back on a wrong mark", async () => {
@@ -232,6 +245,95 @@ describe("mu adapting to its user", () => {
 		const gaps = session.rows().filter((row) => row.type === "gap");
 		expect(gaps).toEqual([expect.objectContaining({ cwd: session.harness.tempDir })]);
 		expect(gaps[0].type === "gap" && gaps[0].gapMs).toBeLessThan(60_000);
+	});
+
+	it("keeps what each run took of the user, and /evolve adds it up", async () => {
+		// A shell whose commands can stand for the user: one writes into the run, one stops it.
+		const user: { harness?: Harness } = {};
+		const bash: AgentTool = {
+			name: "bash",
+			label: "bash",
+			description: "bash",
+			parameters: Type.Object({}, { additionalProperties: true }),
+			execute: async (_id, params) => {
+				const command = String((params as { command?: unknown }).command);
+				if (command === "sleep 1") {
+					await user.harness?.session.prompt("Use the staging file.", { streamingBehavior: "steer" });
+				}
+				if (command === "sleep 2") void user.harness?.session.abort();
+				return { content: [{ type: "text", text: "ok" }], details: {} };
+			},
+		};
+		const session = await start({ only: ["permissions", "askUser", "evolve"], waitMs: 80, bash });
+		user.harness = session.harness;
+		const runs = () => session.rows().filter((row) => row.type === "run");
+		const ask = (id: string) =>
+			fauxAssistantMessage(
+				[
+					fauxToolCall(
+						"ask_user",
+						{ questions: [{ question: "Tabs or spaces?", options: [{ label: "Tabs" }, { label: "Spaces" }] }] },
+						{ id },
+					),
+				],
+				{ stopReason: "toolUse" },
+			);
+
+		// A call the user allows, then one they refuse.
+		await session.run("Regenerate the fixtures.", ["node scripts/a.js"]);
+		session.picks.push(-1);
+		await session.run("And the others.", ["node scripts/b.js"]);
+		// A question of the model's answered with the option it put first, then one answered with another.
+		session.harness.setResponses([ask("ask-1"), fauxAssistantMessage("Tabs it is.")]);
+		await session.harness.session.prompt("Format the file.");
+		session.picks.push(1);
+		session.harness.setResponses([ask("ask-2"), fauxAssistantMessage("Spaces it is.")]);
+		await session.harness.session.prompt("Format the other file.");
+		// A run that needs nothing, one the user writes into, and one they stop.
+		await session.run("List the fixtures.", ["ls fixtures"]);
+		session.harness.setResponses([
+			fauxAssistantMessage([fauxToolCall("bash", { command: "sleep 1" })], { stopReason: "toolUse" }),
+			fauxAssistantMessage("Done."),
+			fauxAssistantMessage("Used the staging file."),
+		]);
+		await session.harness.session.prompt("Load the fixtures.");
+		await session.run("Wait for the server.", ["sleep 2"]);
+		// A permission question nobody answers: it takes nothing of the user, and the run goes on.
+		session.picks.push("nobody");
+		await session.run("Regenerate once more.", ["node scripts/c.js"]);
+
+		const nothing = {
+			permissions: 0,
+			permissionsSame: 0,
+			questions: 0,
+			questionsSame: 0,
+			unanswered: 0,
+			messages: 0,
+		};
+		expect(runs().map(({ type, cwd, at, ...taken }) => taken)).toEqual([
+			{ ...nothing, permissions: 1, permissionsSame: 1, stopped: false },
+			{ ...nothing, permissions: 1, stopped: false },
+			{ ...nothing, questions: 1, questionsSame: 1, stopped: false },
+			{ ...nothing, questions: 1, stopped: false },
+			{ ...nothing, stopped: false },
+			{ ...nothing, messages: 1, stopped: false },
+			{ ...nothing, stopped: true },
+			{ ...nothing, unanswered: 1, stopped: false },
+		]);
+
+		await session.harness.session.prompt("/evolve");
+		expect(session.notes.at(-1)).toContain(
+			[
+				"What the last 8 runs here took of you:",
+				"  2 needed nothing from you.",
+				"  mu asked you 4 times: 2 permission questions, 2 questions from the model.",
+				"  You wrote into a run 1 time.",
+				"  You stopped 1 run.",
+				"  Permission questions: 1 of 2 changed nothing (you allowed the call).",
+				"  Questions from the model: 1 of 2 changed nothing (you picked the option it had put first, or skipped the question).",
+				"  1 question got no answer in time, and the run went on.",
+			].join("\n"),
+		);
 	});
 
 	it("observes nothing when it is switched off", async () => {

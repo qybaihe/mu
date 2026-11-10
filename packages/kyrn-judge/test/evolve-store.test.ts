@@ -9,10 +9,12 @@ import {
 	type ApprovalRow,
 	activeAdaptation,
 	adaptations,
+	attention,
 	EvolveStore,
 	medianGap,
 	missingCommands,
 	openingReads,
+	type RunRow,
 	rowOf,
 } from "../src/evolve/store.ts";
 import { missingProgram, replacement } from "../src/extension/features/evolve.ts";
@@ -64,6 +66,22 @@ describe("the evolution store", () => {
 			rowOf({ type: "approval", cwd, at, probability: 0.7, answer: "dismissed", waitedMs: 900 }),
 		).toBeUndefined();
 		expect(rowOf({ type: "gap", cwd, at, gapMs: -5 })).toBeUndefined();
+		// A run's counts: whole numbers, and none for one that is missing or is no count.
+		expect(
+			rowOf({ type: "run", cwd, at, permissions: 2, permissionsSame: 1.9, messages: -3, stopped: true }),
+		).toEqual({
+			type: "run",
+			cwd,
+			at,
+			permissions: 2,
+			permissionsSame: 1,
+			questions: 0,
+			questionsSame: 0,
+			unanswered: 0,
+			messages: 0,
+			stopped: true,
+		});
+		expect(rowOf({ type: "run", at })).toBeUndefined();
 		expect(
 			rowOf({ type: "adaptation", id: "a", kind: "something-else", cwd, value: 0.7, at, status: "active" }),
 		).toBeUndefined();
@@ -125,6 +143,45 @@ describe("the evolution store", () => {
 		expect(medianGap(gaps([50, 10, 30, 20, 40]), cwd)).toBe(30);
 		expect(medianGap(gaps([10, 20, 30, 40, 50, 60]), cwd)).toBe(35);
 		expect(medianGap(gaps([10, 20, 30, 40, 50]), "/work/other")).toBeUndefined();
+	});
+
+	it("adds up what a project's latest runs took of the user, once there are enough to say", () => {
+		const run = (taken: Partial<RunRow> = {}): RunRow => ({
+			type: "run",
+			cwd,
+			at,
+			permissions: 0,
+			permissionsSame: 0,
+			questions: 0,
+			questionsSame: 0,
+			unanswered: 0,
+			messages: 0,
+			stopped: false,
+			...taken,
+		});
+		const runs = [
+			run({ permissions: 3, permissionsSame: 2 }),
+			run({ questions: 2, questionsSame: 1, messages: 1 }),
+			run(),
+			// A question nobody answered took nothing of the user: the run counts as a quiet one.
+			run({ unanswered: 2 }),
+			run({ stopped: true }),
+		];
+		expect(attention(runs.slice(0, 4), cwd)).toBeUndefined();
+		expect(attention(runs, cwd)).toEqual({
+			runs: 5,
+			quiet: 2,
+			stopped: 1,
+			permissions: 3,
+			permissionsSame: 2,
+			questions: 2,
+			questionsSame: 1,
+			unanswered: 2,
+			messages: 1,
+		});
+		expect(attention(runs, "/work/other")).toBeUndefined();
+		// Only the latest runs count: the first one, with its three questions, is out of the last four.
+		expect(attention(runs, cwd, 4, 1)).toMatchObject({ runs: 4, permissions: 0, quiet: 2 });
 	});
 });
 

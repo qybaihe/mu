@@ -311,6 +311,26 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 
 	const record = (data: QuestionRecord): void => pi.appendEntry(QUESTION_ENTRY, data);
 
+	/**
+	 * Tells the evolve feature how the questions asked from `from` on ended: an answer that is the option the model put
+	 * first, and a skipped question, leave the model where it would have gone unasked.
+	 */
+	const observe = (
+		questions: readonly Question[],
+		answers: readonly QuestionAnswer[],
+		from: number,
+		ended: AskEnded,
+	): void => {
+		for (const [index, answer] of answers.entries()) {
+			if (index < from) continue;
+			const first = questions[index].options[0]?.label;
+			const same = answer.custom === undefined && answer.selected.length === 1 && answer.selected[0] === first;
+			runtime.evolve?.asked("question", same ? "same" : "changed");
+		}
+		if (ended === "skipped") runtime.evolve?.asked("question", "same");
+		if (ended === "timeout") runtime.evolve?.asked("question", "unanswered");
+	};
+
 	pi.registerTool({
 		name: "ask_user",
 		label: "Ask the user",
@@ -358,6 +378,7 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 			const run = queue.then(async () => {
 				const askedAt = Date.now();
 				const { answers, ended } = await askEach(toolCallId, questions, [], ctx, signal ?? ctx.signal);
+				observe(questions, answers, 0, ended);
 				const outcome: QuestionOutcome =
 					ended === "answered"
 						? "answered"
@@ -402,6 +423,8 @@ export function registerAskUser(runtime: KyrnRuntime): void {
 				return;
 			}
 			const { answers, ended } = await askEach(asking.toolCallId, asking.questions, asking.answers, ctx, undefined);
+			// One that runs out of time again was counted as unanswered when it first did.
+			observe(asking.questions, answers, asking.answers.length, ended === "timeout" ? "answered" : ended);
 			if (ended === "timeout") {
 				open.unshift({ ...asking, answers });
 				runtime.questionsOpen = open.length;
