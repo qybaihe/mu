@@ -1,7 +1,7 @@
 {
 	"name": "mu-agent",
-	"version": "0.3.9",
-	"description": "mu: most of what a coding agent decides isn't code. mu hands 40 kinds of yes/no calls to a small judge model: fewer wasted tokens, fewer approvals on autopilot, fewer runs that stop halfway. Built on pi.",
+	"version": "0.3.10",
+	"description": "mu: most of what a coding agent decides isn't code. mu hands 41 kinds of yes/no calls to a small judge model: fewer wasted tokens, fewer approvals on autopilot, fewer runs that stop halfway. Built on pi.",
 	"type": "module",
 	"bin": {
 		"mu": "kyrn/bin/mu.mjs"
