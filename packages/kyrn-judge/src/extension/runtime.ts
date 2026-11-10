@@ -206,6 +206,13 @@ export class KyrnRuntime {
 	 */
 	permissionsWaiting = 0;
 	/**
+	 * Nobody answered the last question put to the user within its wait, a permission question or one of ask_user's:
+	 * they are taken to be away, and a question that follows, of either kind, does not wait for them a second time. Set
+	 * by features/permissions.ts and features/ask-user.ts when a wait runs out; each clears it when the user answers a
+	 * question of theirs or writes, and reads it before it opens a dialog.
+	 */
+	userAway = false;
+	/**
 	 * Plan mode is on (`/plan`, features/plan.ts): nothing changes until the user approves a plan, and the checks that
 	 * send the agent back to work leave a plan as it is.
 	 */
