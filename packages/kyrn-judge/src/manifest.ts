@@ -146,8 +146,8 @@ const DESCRIBED: HarnessManifest = {
 			feature: "interjection",
 			title: { zh: "中途插话", en: "Mid-run messages" },
 			summary: {
-				zh: "任务进行中你又发来一句话：判断是在下一步就带进工作，还是等这一轮做完再处理。判定最多等 1.5 秒；没有判定时，消息按你发送的方式送达。",
-				en: "For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
+				zh: "任务进行中你又发来一句话：判断是在下一步就带进工作，还是等这一轮做完再处理。问进度的消息由 mu 直接回答，不发给代理。判定最多等 1.5 秒；没有判定时，消息按你发送的方式送达。",
+				en: "For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. A message that asks how far the work has got is answered by mu and not sent to the agent. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
 			},
 		},
 		{
@@ -601,6 +601,15 @@ const DESCRIBED: HarnessManifest = {
 					max: 10000,
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
+				},
+				{
+					key: "answerStatus",
+					kind: "boolean",
+					default: true,
+					label: {
+						zh: "问进度时由 mu 直接回答，不打断代理",
+						en: "Answer a question about progress without interrupting the agent",
+					},
 				},
 			],
 		},

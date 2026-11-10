@@ -462,6 +462,7 @@
         "nudge": "Doğrulamayı hatırlat",
         "steer": "Mevcut işi yönlendir",
         "followUp": "Takip olarak sıraya al",
+        "answer": "mu yanıtladı",
         "warm": "Sıcak tut",
         "stop": "Isıtmayı durdur",
         "default": "Varsayılan",
@@ -603,6 +604,7 @@
           "answers": {
             "correction": "Bir düzeltme",
             "addition": "Sonrası için ek iş",
+            "status": "İlerlemeyle ilgili bir soru",
             "side_question": "İlgisiz bir soru",
             "other": "Başka bir şey"
           }

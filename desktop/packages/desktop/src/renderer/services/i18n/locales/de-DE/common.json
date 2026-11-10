@@ -462,6 +462,7 @@
         "nudge": "An die Überprüfung erinnern",
         "steer": "Laufende Arbeit lenken",
         "followUp": "Als Anschluss einreihen",
+        "answer": "Von mu beantwortet",
         "warm": "Warm halten",
         "stop": "Aufwärmen beenden",
         "default": "Standard",
@@ -603,6 +604,7 @@
           "answers": {
             "correction": "Eine Korrektur",
             "addition": "Mehr Arbeit für später",
+            "status": "Eine Frage zum Fortschritt",
             "side_question": "Eine Frage, die nicht dazugehört",
             "other": "Etwas anderes"
           }

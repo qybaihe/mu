@@ -462,6 +462,7 @@
         "nudge": "검증 알림",
         "steer": "현재 작업 방향 조정",
         "followUp": "후속 작업으로 대기",
+        "answer": "mu가 직접 답변",
         "warm": "예열 유지",
         "stop": "예열 중지",
         "default": "기본값",
@@ -603,6 +604,7 @@
           "answers": {
             "correction": "정정",
             "addition": "나중에 할 추가 작업",
+            "status": "진행 상황에 대한 질문",
             "side_question": "관련 없는 질문",
             "other": "그 밖의 것"
           }

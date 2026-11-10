@@ -41,36 +41,38 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 ### `agent_start`
 
-1. `preflight`
-2. `compaction` (off by default)
-3. `monitor`
-4. `ttsr` (off by default)
-5. `deadline`
-6. `watchdog`
-7. `board`
-8. `hive`
+1. `interjection`
+2. `preflight`
+3. `compaction` (off by default)
+4. `monitor`
+5. `ttsr` (off by default)
+6. `deadline`
+7. `watchdog`
+8. `board`
+9. `hive`
 
 ### `before_agent_start`
 
 1. `kernel`
-2. `preflight`
-3. `frame`
-4. `memory`
-5. `evolve`
-6. `snapshot`
-7. `preload`
-8. `skills` ×2
-9. `catalog`
-10. `injection`
-11. `plan`
-12. `permissions`
-13. `askUser`
-14. `monitor`
-15. `notify`
-16. `hive`
-17. `inherit`
-18. `mcp`
-19. `packs`
+2. `interjection`
+3. `preflight`
+4. `frame`
+5. `memory`
+6. `evolve`
+7. `snapshot`
+8. `preload`
+9. `skills` ×2
+10. `catalog`
+11. `injection`
+12. `plan`
+13. `permissions`
+14. `askUser`
+15. `monitor`
+16. `notify`
+17. `hive`
+18. `inherit`
+19. `mcp`
+20. `packs`
 
 ### `before_provider_request`
 
@@ -208,14 +210,16 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 ### `tool_execution_end`
 
-1. `monitor`
-2. `board`
-3. `checkpoint`
+1. `interjection`
+2. `monitor`
+3. `board`
+4. `checkpoint`
 
 ### `tool_execution_start`
 
-1. `monitor`
-2. `board`
+1. `interjection`
+2. `monitor`
+3. `board`
 
 ### `tool_execution_update`
 
@@ -342,10 +346,10 @@ is marked: two features that set it in the same turn decide between them by the 
 | `capabilitiesOpen` | `extension/features/catalog.ts` | `extension/features/swarm.ts` |
 | `deadlineAt` | `extension/features/deadline.ts` | `extension/features/deadline.ts`, `extension/features/watchdog.ts` |
 | `enabled` | `extension/kyrn-judge.ts` | `extension/features/commands.ts`, `extension/features/welcome.ts`, `extension/runtime.ts` |
-| `evolve` | `extension/features/evolve.ts` | `extension/features/ask-user.ts`, `extension/features/commands.ts`, `extension/features/permissions.ts`, `extension/features/preload.ts`, `extension/features/snapshot.ts` |
+| `evolve` | `extension/features/evolve.ts` | `extension/features/ask-user.ts`, `extension/features/commands.ts`, `extension/features/interjection.ts`, `extension/features/permissions.ts`, `extension/features/preload.ts`, `extension/features/snapshot.ts` |
 | `floor` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/packs/debugger.ts` |
 | `floorExit` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/permissions.ts` |
-| `frameState` | `extension/features/frame.ts` | `extension/features/frame.ts`, `extension/runtime.ts` |
+| `frameState` | `extension/features/frame.ts` | `extension/features/frame.ts`, `extension/features/interjection.ts`, `extension/runtime.ts` |
 | `goalActive` | `extension/features/goal.ts` | `extension/features/board.ts`, `extension/features/completion.ts`, `extension/features/continuation.ts` |
 | `harnessAbort` (set in more than one file) | `extension/features/ttsr.ts`, `extension/features/watchdog.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/evolve.ts`, `extension/features/goal.ts`, `extension/features/interrupted.ts` |
 | `knownLessons` | `extension/features/memory.ts` | `extension/features/hive.ts`, `extension/features/swarm.ts` |
@@ -359,11 +363,11 @@ is marked: two features that set it in the same turn decide between them by the 
 | `onProgress` | `extension/features/preflight.ts` | `extension/runtime.ts` |
 | `onTurnBegin` | `extension/features/frame.ts` | `extension/runtime.ts` |
 | `permissionMode` | `extension/features/permissions.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/evolve.ts`, `extension/features/guard.ts`, `extension/features/swarm.ts` |
-| `permissionsWaiting` | `extension/features/permissions.ts` | `extension/features/continuation.ts` |
+| `permissionsWaiting` | `extension/features/permissions.ts` | `extension/features/continuation.ts`, `extension/features/interjection.ts` |
 | `planMode` | `extension/features/plan.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/plan.ts` |
-| `questionsOpen` | `extension/features/ask-user.ts` | `extension/features/continuation.ts` |
+| `questionsOpen` | `extension/features/ask-user.ts` | `extension/features/continuation.ts`, `extension/features/interjection.ts` |
 | `skillsHidden` | `extension/features/skills.ts` | `extension/features/swarm.ts` |
 | `standingRules` | `extension/features/memory.ts` | `extension/features/constraints.ts`, `extension/features/evolve.ts`, `extension/features/memory.ts` |
 | `stateDir` | `extension/kyrn-judge.ts` | `extension/features/tool-descriptions.ts` |
 | `toolCalls` | `extension/features/preflight.ts` | `extension/features/preflight.ts` |
-| `userAway` (set in more than one file) | `extension/features/ask-user.ts`, `extension/features/permissions.ts` | `extension/features/ask-user.ts`, `extension/features/permissions.ts` |
+| `userAway` (set in more than one file) | `extension/features/ask-user.ts`, `extension/features/interjection.ts`, `extension/features/permissions.ts` | `extension/features/ask-user.ts`, `extension/features/permissions.ts` |

@@ -140,6 +140,7 @@ The threshold is `features.evolve.minGrants`. Not measured: how many questions t
 | `questions`, `questionsSame` | questions the model asked with `ask_user` that you dealt with, and how many you answered with the option it had put first, or skipped |
 | `unanswered` | questions of either kind nobody answered in time (the run went on, see [permissions](permissions.md) and [ask_user](ask-user.md)) |
 | `messages` | messages you sent while the run was going |
+| `status` | how many of those asked how far the work had got, and were answered by mu ([mid-run messages](mid-run-messages.md)) |
 | `stopped` | you stopped the run |
 
 "Same" means the run went where it would have gone unasked: the call you allowed ran, the option the model recommended was taken. Such a question took your attention and changed nothing. A refusal, another option or your own words did change something.
@@ -150,7 +151,7 @@ The threshold is `features.evolve.minGrants`. Not measured: how many questions t
 What the last 42 runs here took of you:
   18 needed nothing from you.
   mu asked you 27 times: 21 permission questions, 6 questions from the model.
-  You wrote into a run 8 times.
+  You wrote into a run 8 times, 5 of them to ask how far it was, which mu answered.
   You stopped 2 runs.
   Permission questions: 19 of 21 changed nothing (you allowed the call).
   Questions from the model: 4 of 6 changed nothing (you picked the option it had put first, or skipped the question).
@@ -161,7 +162,7 @@ What the last 42 runs here took of you:
 - A question nobody answered took nothing of you, so a run with only such questions counts as one that needed nothing.
 - Nothing adapts to these counts yet. They are what the approval line (section 5) and any later change that asks less would be measured by.
 
-Known weak spots: "the option the model put first" is taken as its recommendation because `ask_user`'s description asks for that order; a model that orders its options another way makes the count mean less. A message you send into a run may be a correction or only a question about progress: the count does not tell them apart.
+Known weak spots: "the option the model put first" is taken as its recommendation because `ask_user`'s description asks for that order; a model that orders its options another way makes the count mean less. `status` counts only the questions about progress the judge read as one surely enough for mu to answer; one it was less sure of went to the agent and is in `messages` alone. The other messages you send into a run may be a correction or more work: the count does not tell them apart.
 
 ## More labels
 

@@ -269,19 +269,19 @@
 				"fa-IR": "پیام‌های حین کار"
 			},
 			"summary": {
-				"zh": "任务进行中你又发来一句话：判断是在下一步就带进工作，还是等这一轮做完再处理。判定最多等 1.5 秒；没有判定时，消息按你发送的方式送达。",
-				"en": "For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
-				"zh-TW": "任務進行中你又傳來一則訊息：判斷是在下一步就帶進工作，還是等這一輪做完再處理。判定最多等 1.5 秒；沒有判定時，訊息照你傳送的方式送達。",
-				"ja-JP": "エージェントの作業中に送ったメッセージを、次のステップで作業に取り込むか、実行が終わるまで待たせるかを判定します。判定は最大 1.5 秒待ち、判定がなければメッセージは送ったとおりに届きます。",
-				"ko-KR": "에이전트가 작업하는 중에 보낸 메시지를 다음 단계에서 작업에 반영할지, 실행이 끝날 때까지 기다리게 할지 판정합니다. 판정은 최대 1.5초 기다리며, 판정이 없으면 메시지는 보낸 그대로 전달됩니다.",
-				"de-DE": "Eine Nachricht, die Sie senden, während der Agent arbeitet: beim nächsten Schritt in die Arbeit aufnehmen oder zurückhalten, bis der Lauf fertig ist. mu wartet bis zu 1,5 Sekunden auf das Urteil; ohne Urteil wird die Nachricht so zugestellt, wie Sie sie gesendet haben.",
-				"fr-FR": "Un message envoyé pendant que l’agent travaille : l’intégrer au travail dès l’étape suivante, ou le garder jusqu’à la fin de l’exécution. mu attend le jugement jusqu’à 1,5 seconde ; sans jugement, le message part tel que vous l’avez envoyé.",
-				"es-ES": "Un mensaje que envías mientras el agente trabaja: incorporarlo al trabajo en el siguiente paso o guardarlo hasta que termine la ejecución. mu espera el veredicto hasta 1,5 segundos; sin veredicto, el mensaje se entrega tal como lo enviaste.",
-				"pt-BR": "Uma mensagem que você envia enquanto o agente trabalha: levá-la ao trabalho na próxima etapa ou guardá-la até a execução terminar. O mu espera o veredito por até 1,5 segundo; sem ele, a mensagem segue como você a enviou.",
-				"ru-RU": "Сообщение, отправленное во время работы агента: включить его в работу на следующем шаге или придержать до конца запуска. mu ждёт решения до 1,5 секунды; без решения сообщение доставляется так, как вы его отправили.",
-				"uk-UA": "Повідомлення, надіслане під час роботи агента: долучити його до роботи на наступному кроці чи притримати до кінця запуску. mu чекає на рішення до 1,5 секунди; без рішення повідомлення доставляється так, як ви його надіслали.",
-				"tr-TR": "Ajan çalışırken gönderdiğiniz bir mesaj: bir sonraki adımda işe katılsın mı, yoksa çalışma bitene kadar beklesin mi? mu karar için en fazla 1,5 saniye bekler; karar gelmezse mesaj gönderdiğiniz gibi iletilir.",
-				"fa-IR": "پیامی که هنگام کار عامل می‌فرستید: در گام بعدی وارد کار شود، یا تا پایان اجرا نگه داشته شود. mu حداکثر 1.5 ثانیه منتظر نتیجهٔ داوری می‌ماند؛ اگر نتیجه‌ای نرسد، پیام همان‌طور که فرستاده‌اید تحویل داده می‌شود."
+				"zh": "任务进行中你又发来一句话：判断是在下一步就带进工作，还是等这一轮做完再处理。问进度的消息由 mu 直接回答，不发给代理。判定最多等 1.5 秒；没有判定时，消息按你发送的方式送达。",
+				"en": "For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. A message that asks how far the work has got is answered by mu and not sent to the agent. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
+				"zh-TW": "任務進行中你又傳來一則訊息：判斷是在下一步就帶進工作，還是等這一輪做完再處理。問進度的訊息由 mu 直接回答，不傳給代理。判定最多等 1.5 秒；沒有判定時，訊息照你傳送的方式送達。",
+				"ja-JP": "エージェントの作業中に送ったメッセージを、次のステップで作業に取り込むか、実行が終わるまで待たせるかを判定します。作業の進み具合を尋ねるメッセージには mu が答え、エージェントには送りません。判定は最大 1.5 秒待ち、判定がなければメッセージは送ったとおりに届きます。",
+				"ko-KR": "에이전트가 작업하는 중에 보낸 메시지를 다음 단계에서 작업에 반영할지, 실행이 끝날 때까지 기다리게 할지 판정합니다. 작업이 어디까지 진행됐는지 묻는 메시지는 mu가 직접 답하고 에이전트에게 보내지 않습니다. 판정은 최대 1.5초 기다리며, 판정이 없으면 메시지는 보낸 그대로 전달됩니다.",
+				"de-DE": "Eine Nachricht, die Sie senden, während der Agent arbeitet: beim nächsten Schritt in die Arbeit aufnehmen oder zurückhalten, bis der Lauf fertig ist. Eine Nachricht, die fragt, wie weit die Arbeit ist, beantwortet mu selbst und schickt sie nicht an den Agenten. mu wartet bis zu 1,5 Sekunden auf das Urteil; ohne Urteil wird die Nachricht so zugestellt, wie Sie sie gesendet haben.",
+				"fr-FR": "Un message envoyé pendant que l’agent travaille : l’intégrer au travail dès l’étape suivante, ou le garder jusqu’à la fin de l’exécution. Un message qui demande où en est le travail reçoit la réponse de mu et n’est pas envoyé à l’agent. mu attend le jugement jusqu’à 1,5 seconde ; sans jugement, le message part tel que vous l’avez envoyé.",
+				"es-ES": "Un mensaje que envías mientras el agente trabaja: incorporarlo al trabajo en el siguiente paso o guardarlo hasta que termine la ejecución. A un mensaje que pregunta cuánto ha avanzado el trabajo responde mu, y no se envía al agente. mu espera el veredicto hasta 1,5 segundos; sin veredicto, el mensaje se entrega tal como lo enviaste.",
+				"pt-BR": "Uma mensagem que você envia enquanto o agente trabalha: levá-la ao trabalho na próxima etapa ou guardá-la até a execução terminar. Uma mensagem que pergunta em que ponto o trabalho está é respondida pelo mu e não é enviada ao agente. O mu espera o veredito por até 1,5 segundo; sem ele, a mensagem segue como você a enviou.",
+				"ru-RU": "Сообщение, отправленное во время работы агента: включить его в работу на следующем шаге или придержать до конца запуска. На сообщение с вопросом о том, как продвигается работа, mu отвечает сам и не передаёт его агенту. mu ждёт решения до 1,5 секунды; без решения сообщение доставляется так, как вы его отправили.",
+				"uk-UA": "Повідомлення, надіслане під час роботи агента: долучити його до роботи на наступному кроці чи притримати до кінця запуску. На повідомлення із запитанням, як просувається робота, mu відповідає сам і не передає його агентові. mu чекає на рішення до 1,5 секунди; без рішення повідомлення доставляється так, як ви його надіслали.",
+				"tr-TR": "Ajan çalışırken gönderdiğiniz bir mesaj: bir sonraki adımda işe katılsın mı, yoksa çalışma bitene kadar beklesin mi? İşin ne kadar ilerlediğini soran bir mesajı mu kendisi yanıtlar ve ajana göndermez. mu karar için en fazla 1,5 saniye bekler; karar gelmezse mesaj gönderdiğiniz gibi iletilir.",
+				"fa-IR": "پیامی که هنگام کار عامل می‌فرستید: در گام بعدی وارد کار شود، یا تا پایان اجرا نگه داشته شود. به پیامی که می‌پرسد کار تا کجا پیش رفته است خود mu پاسخ می‌دهد و آن را برای عامل نمی‌فرستد. mu حداکثر 1.5 ثانیه منتظر نتیجهٔ داوری می‌ماند؛ اگر نتیجه‌ای نرسد، پیام همان‌طور که فرستاده‌اید تحویل داده می‌شود."
 			}
 		},
 		{
@@ -1851,6 +1851,26 @@
 						"uk-UA": "Чекати щонайбільше",
 						"tr-TR": "En fazla bekleme",
 						"fa-IR": "حداکثر انتظار"
+					}
+				},
+				{
+					"key": "answerStatus",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "问进度时由 mu 直接回答，不打断代理",
+						"en": "Answer a question about progress without interrupting the agent",
+						"zh-TW": "問進度時由 mu 直接回答，不打斷代理",
+						"ja-JP": "進み具合の質問には、エージェントを中断せずに mu が答える",
+						"ko-KR": "진행 상황을 묻는 질문에는 에이전트를 중단하지 않고 mu가 답하기",
+						"de-DE": "Fragen zum Fortschritt beantworten, ohne den Agenten zu unterbrechen",
+						"fr-FR": "Répondre à une question sur l’avancement sans interrompre l’agent",
+						"es-ES": "Responder a una pregunta sobre el avance sin interrumpir al agente",
+						"pt-BR": "Responder a uma pergunta sobre o andamento sem interromper o agente",
+						"ru-RU": "Отвечать на вопрос о ходе работы, не прерывая агента",
+						"uk-UA": "Відповідати на запитання про хід роботи, не перериваючи агента",
+						"tr-TR": "İlerlemeyle ilgili soruyu ajanı kesmeden yanıtla",
+						"fa-IR": "پاسخ به پرسش دربارهٔ پیشرفت کار بدون قطع کردن کار عامل"
 					}
 				}
 			]

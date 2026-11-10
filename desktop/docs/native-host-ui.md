@@ -74,7 +74,7 @@ side"). Nothing here shows unless the main process says the native host is on (`
   `changed` event. The person's row shows the images they sent (60 px, whole on a click), as a sent image file shows
   in mu's other conversations, live and when the conversation is read back from its file. While a run goes the send
   box sends a message as a steer, and mu decides when it reaches the work (at the next step, or after the run:
-  `input.interjection`); it also offers to stop. The send box has what mu's other conversations have: a "+" for files and images (also dropped or
+  `input.interjection`), or answers it itself when it only asks how far the work has got; it also offers to stop. The send box has what mu's other conversations have: a "+" for files and images (also dropped or
   pasted), the permission mode pill, the model · thinking level chip, pi's slash commands in the `/` menu and `@`
   mentions of the folder's files. Above it, the goal line of mu's other conversations (`GoalLine`): "Goal in progress"
   or "Goal paused" and the condition, with "End"; beside the send button, their context ring
@@ -449,7 +449,9 @@ conversation; the browser's own find sees the drawn rows only.
 
 - `prompt` when no run goes; `prompt` with `streamingBehavior: 'steer'` while one goes, so a run that ended just
   before the message arrived is started by it instead of leaving it queued. mu's kernel (`input.interjection`) moves
-  the message to after the run when that suits it better; the queue shows where it went.
+  the message to after the run when that suits it better; the queue shows where it went. A message that asks how far
+  the work has got, the kernel answers itself: nothing is queued, and its answer is a notice line in the conversation
+  (`notify`, as mu wrote it).
 - `abort` to stop; a prompt stopped while the judge still classified it is stopped again if pi takes it after the stop.
 - `clear_queue` to take the queue back; `respond` for dialogs; a panel's `/board on|off` as a prompt.
 - `get_state` only after a prompt that started no run (an extension command such as `/lessons`), to learn whether pi

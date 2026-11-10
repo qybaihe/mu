@@ -462,6 +462,7 @@
         "nudge": "Remind to verify",
         "steer": "Steer the current work",
         "followUp": "Queue as follow-up",
+        "answer": "Answered by mu",
         "warm": "Keep warm",
         "stop": "Stop warming",
         "default": "Default",
@@ -603,6 +604,7 @@
           "answers": {
             "correction": "A correction",
             "addition": "More work for later",
+            "status": "A question about progress",
             "side_question": "An unrelated question",
             "other": "Something else"
           }

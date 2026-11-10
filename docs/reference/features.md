@@ -39,6 +39,7 @@ On by default: yes. Decision points: `input.interjection`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `waitMs` | `1500` ms | Wait at most `1500` ms. Range 200 to 10000. |
+| `answerStatus` | `true` | Answer a question about progress without interrupting the agent. |
 
 ## skills
 

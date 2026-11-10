@@ -462,6 +462,7 @@
         "nudge": "検証をリマインド",
         "steer": "現在の作業を誘導",
         "followUp": "フォローアップとして待機",
+        "answer": "mu が回答",
         "warm": "保温を継続",
         "stop": "保温を停止",
         "default": "既定",
@@ -603,6 +604,7 @@
           "answers": {
             "correction": "訂正",
             "addition": "あとでやる追加の作業",
+            "status": "進み具合についての質問",
             "side_question": "関係のない質問",
             "other": "その他"
           }

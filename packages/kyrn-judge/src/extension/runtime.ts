@@ -209,7 +209,8 @@ export class KyrnRuntime {
 	 * Nobody answered the last question put to the user within its wait, a permission question or one of ask_user's:
 	 * they are taken to be away, and a question that follows, of either kind, does not wait for them a second time. Set
 	 * by features/permissions.ts and features/ask-user.ts when a wait runs out; each clears it when the user answers a
-	 * question of theirs or writes, and reads it before it opens a dialog.
+	 * question of theirs or writes, and reads it before it opens a dialog. features/interjection.ts clears it for a
+	 * message written into a run, which it may take before those two see it.
 	 */
 	userAway = false;
 	/**
