@@ -812,10 +812,12 @@ describe("board feature", () => {
 			only?: FeatureName[];
 			features?: Record<string, unknown>;
 			mode?: "tui" | "rpc" | "print" | "json";
+			models?: Array<{ id: string }>;
 		} = {},
 	): Promise<{ harness: Harness; events: KyrnPresentationEvent[]; notes: string[] }> {
 		const events: KyrnPresentationEvent[] = [];
 		const harness = await createHarness({
+			...(extra.models ? { models: extra.models } : {}),
 			// A test's own tool of the same name takes the plain one's place.
 			tools: [
 				...new Map(
@@ -2300,6 +2302,112 @@ describe("board feature", () => {
 		expect(await writes({ maxStaleMs: 60_000 })).toBe(2);
 		// Once the board the person sees is older than maxStaleMs, every look writes.
 		expect(await writes({ maxStaleMs: 0 })).toBe(4);
+	});
+
+	it("keeps earlier model-written progress on a missed writer call, and falls back after repeated empty replies", async () => {
+		const dir = mkdtempSync(join(tmpdir(), "mu-board-slow-"));
+		try {
+			const { harness, notes } = await start(
+				reading(() => ({ phase: choice("changing"), needs_user: no, changed: yes })),
+				{ everyTools: 1, maxStaleMs: 0 },
+				dir,
+				{},
+				{
+					models: [{ id: "faux-agent" }, { id: "gemini-4-carbon-high" }, { id: "gemini-3.8-flash-high" }],
+				},
+			);
+			const provider = harness.getModel().provider;
+			new BoardProjects(join(dir, "mu")).setModel(`${provider}/gemini-4-carbon-high`);
+			await harness.session.prompt("/board on");
+			const writerCalls: Array<{ id: string; maxTokens?: number; reasoning?: string }> = [];
+			let carbonCalls = 0;
+			const makeStep = (agentSteps: AssistantMessage[]) =>
+				Array.from(
+					{ length: 6 },
+					() =>
+						(
+							context: { messages: unknown },
+							options: { reasoning?: string; maxTokens?: number } | undefined,
+							_state: unknown,
+							model: { id: string },
+						) => {
+							if (JSON.stringify(context.messages).includes(WRITER)) {
+								writerCalls.push({
+									id: model.id,
+									maxTokens: options?.maxTokens,
+									reasoning: options?.reasoning,
+								});
+								if (model.id === "gemini-4-carbon-high") {
+									carbonCalls++;
+									if (carbonCalls === 1) {
+										return fauxAssistantMessage(
+											JSON.stringify({
+												progress: "Cause found in parser.ts; wiring the guard.",
+												now: "Editing a.ts.",
+												confirm: [],
+											}),
+										);
+									}
+									return fauxAssistantMessage("");
+								}
+								return fauxAssistantMessage(
+									JSON.stringify({
+										progress: "Guard wired across a.ts, b.ts and c.ts.",
+										now: "Wrapped up the edits.",
+										confirm: [],
+									}),
+								);
+							}
+							return agentSteps.shift() ?? fauxAssistantMessage("no more agent replies");
+						},
+				);
+
+			// Turn 1: gemini-4-carbon-high writes the progress.
+			harness.setResponses(makeStep([fauxAssistantMessage("Found the parser bug in a.ts.")]));
+			await harness.session.prompt("Inspect a.ts.");
+			await vi.waitFor(() => expect(boards(harness).at(-1)?.ended).toBe(true), { timeout: 5000 });
+			expect(boards(harness).at(-1)).toMatchObject({
+				by: "model",
+				progress: "Cause found in parser.ts; wiring the guard.",
+			});
+
+			// Turn 2: gemini-4-carbon-high returns empty — the earlier model-written progress stays instead of
+			// resetting to "No checklist yet."
+			harness.setResponses(makeStep([fauxAssistantMessage("Updated a.ts.")]));
+			await harness.session.prompt("Update a.ts.");
+			await vi.waitFor(() => expect(boards(harness)).toHaveLength(2), { timeout: 5000 });
+			expect(boards(harness).at(-1)).toMatchObject({
+				by: "rules",
+				progress: "Cause found in parser.ts; wiring the guard.",
+			});
+			expect(boards(harness).at(-1)?.confirmCodes).toBeUndefined();
+
+			// Turn 3 & 4: second consecutive empty reply reaches WRITER_FAILURE_LIMIT, so the next look switches to
+			// gemini-3.8-flash-high and restores model narration.
+			harness.setResponses(makeStep([fauxAssistantMessage("Updated b.ts.")]));
+			await harness.session.prompt("Update b.ts.");
+			await vi.waitFor(() => expect(boards(harness)).toHaveLength(3), { timeout: 5000 });
+			expect(boards(harness).at(-1)).toMatchObject({
+				by: "rules",
+				progress: "Cause found in parser.ts; wiring the guard.",
+			});
+
+			harness.setResponses(makeStep([fauxAssistantMessage("Finished c.ts.")]));
+			await harness.session.prompt("Update c.ts.");
+			await vi.waitFor(
+				() => expect(boards(harness).at(-1)?.progress).toBe("Guard wired across a.ts, b.ts and c.ts."),
+				{ timeout: 5000 },
+			);
+			expect(boards(harness).at(-1)).toMatchObject({
+				by: "model",
+				progress: "Guard wired across a.ts, b.ts and c.ts.",
+			});
+			expect(writerCalls.every((call) => call.maxTokens === 4000 && call.reasoning === "off")).toBe(true);
+			expect(writerCalls.map((call) => call.id)).toContain("gemini-3.8-flash-high");
+			expect(notes.filter((note) => note.includes("gemini-3.8-flash-high"))).toHaveLength(1);
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
+		}
 	});
 });
 

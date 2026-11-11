@@ -135,10 +135,14 @@ function fromLedger(view: NativeView, framed: ReadonlySet<string>): Activity[] {
 }
 
 /** The panel's activity of one view, in time order. */
-export function toActivity(view: NativeView): Activity[] {
+export function toActivity(view: NativeView, options?: { board?: boolean; cwd?: string }): Activity[] {
   const judgments = new Map(view.judgments.map((judgment) => [judgment.id, judgmentPayload(judgment)]));
   const framed = new Set<string>();
+  let hasBoardSwitch = false;
+  let hasBoardUpdate = false;
   const events: Activity[] = view.host.activity.map((line) => {
+    if (line.kind === 'board.switched') hasBoardSwitch = true;
+    else if (line.kind === 'board.update') hasBoardUpdate = true;
     const id = line.kind === 'decision' ? text(line.payload.id) : '';
     if (id) framed.add(id);
     const payload = (id && judgments.get(id)) || line.payload;
@@ -152,6 +156,22 @@ export function toActivity(view: NativeView): Activity[] {
       ...(line.sequence !== undefined ? { sequence: line.sequence } : {}),
     };
   });
+  if (!hasBoardSwitch && typeof options?.board === 'boolean') {
+    events.push({
+      id: 'board:switched',
+      at: 0,
+      kind: 'board.switched',
+      payload: { on: options.board, ...(options.cwd ? { cwd: options.cwd } : {}) },
+    });
+  }
+  if (!hasBoardUpdate && view.board && options?.board !== false) {
+    events.push({
+      id: 'board:saved',
+      at: view.board.at,
+      kind: 'board.update',
+      payload: { ...view.board.payload, restored: true },
+    });
+  }
   events.push(...fromLedger(view, framed));
   for (const message of view.messages) if (message.role === 'assistant') events.push(...fromTools(message));
   const usage = latestUsage(view);

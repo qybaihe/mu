@@ -7,7 +7,7 @@ without one.
 | type | kind | written by | read by | what it is |
 |---|---|---|---|---|
 | `kyrn.approval` | message | src/extension/features/permissions.ts | - | Tells the model what the user answered with /approve about calls whose permission question had waited out its time. |
-| `kyrn.board` | entry | src/extension/features/board.ts | - | The plain-language board after an update, so a reopened session shows it again. |
+| `kyrn.board` | entry | src/extension/features/board.ts | desktop: nativeHost/reducer.ts | The plain-language board after an update, so a reopened session shows it again. |
 | `kyrn.capabilities` | message | src/extension/features/catalog.ts | - | Tells the model, after the first turn, which capabilities were opened for the request. |
 | `kyrn.capability` | entry | src/extension/features/catalog.ts; src/extension/features/packs.ts | - | A capability opened, and who opened it: one the model had to ask for is the label the disclosure decision is measured by. |
 | `kyrn.checkpoint` | entry | src/extension/features/checkpoint.ts | desktop: nativeHost/reducer.ts | A checkpoint taken before the first change of a user turn: the snapshot commit and the message it goes back to. |
@@ -58,9 +58,334 @@ without one.
 
 A message. No schema: no other program reads it.
 
-## kyrn.board v1
+## kyrn.board v2
 
-A entry. No schema: no other program reads it.
+A entry, read by another program:
+
+```json
+{
+	"type": "object",
+	"required": [
+		"progress",
+		"now",
+		"confirm",
+		"needsUser",
+		"done",
+		"total",
+		"by",
+		"ended"
+	],
+	"properties": {
+		"headline": {
+			"type": "string"
+		},
+		"headlineCode": {
+			"type": "string"
+		},
+		"headlineParams": {
+			"type": "object",
+			"patternProperties": {
+				"^.*$": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "number"
+						}
+					]
+				}
+			}
+		},
+		"progress": {
+			"type": "string"
+		},
+		"now": {
+			"type": "string"
+		},
+		"blocked": {
+			"type": "string"
+		},
+		"blockedCode": {
+			"type": "string"
+		},
+		"blockedParams": {
+			"type": "object",
+			"patternProperties": {
+				"^.*$": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "number"
+						}
+					]
+				}
+			}
+		},
+		"next": {
+			"type": "string"
+		},
+		"confirm": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"confirmCodes": {
+			"type": "array",
+			"items": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "null"
+					}
+				]
+			}
+		},
+		"note": {
+			"type": "string"
+		},
+		"phase": {
+			"anyOf": [
+				{
+					"type": "string",
+					"const": "understanding"
+				},
+				{
+					"type": "string",
+					"const": "planning"
+				},
+				{
+					"type": "string",
+					"const": "changing"
+				},
+				{
+					"type": "string",
+					"const": "checking"
+				},
+				{
+					"type": "string",
+					"const": "fixing"
+				},
+				{
+					"type": "string",
+					"const": "waiting"
+				},
+				{
+					"type": "string",
+					"const": "wrapping_up"
+				},
+				{
+					"type": "string",
+					"const": "stuck"
+				},
+				{
+					"type": "string",
+					"const": "blocked"
+				}
+			]
+		},
+		"focus": {
+			"type": "string"
+		},
+		"focusText": {
+			"type": "string"
+		},
+		"needsUser": {
+			"type": "boolean"
+		},
+		"done": {
+			"type": "number"
+		},
+		"total": {
+			"type": "number"
+		},
+		"by": {
+			"anyOf": [
+				{
+					"type": "string",
+					"const": "model"
+				},
+				{
+					"type": "string",
+					"const": "rules"
+				}
+			]
+		},
+		"ended": {
+			"type": "boolean"
+		},
+		"news": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"log": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"sequence",
+					"at",
+					"kind",
+					"text",
+					"by"
+				],
+				"properties": {
+					"sequence": {
+						"type": "number"
+					},
+					"at": {
+						"type": "number"
+					},
+					"kind": {
+						"anyOf": [
+							{
+								"type": "string",
+								"const": "step"
+							},
+							{
+								"type": "string",
+								"const": "check"
+							},
+							{
+								"type": "string",
+								"const": "said"
+							},
+							{
+								"type": "string",
+								"const": "ticked"
+							},
+							{
+								"type": "string",
+								"const": "asked"
+							},
+							{
+								"type": "string",
+								"const": "helpers"
+							},
+							{
+								"type": "string",
+								"const": "goal"
+							},
+							{
+								"type": "string",
+								"const": "trouble"
+							},
+							{
+								"type": "string",
+								"const": "ended"
+							}
+						]
+					},
+					"text": {
+						"type": "string"
+					},
+					"by": {
+						"anyOf": [
+							{
+								"type": "string",
+								"const": "model"
+							},
+							{
+								"type": "string",
+								"const": "rules"
+							}
+						]
+					},
+					"code": {
+						"type": "string"
+					},
+					"params": {
+						"type": "object",
+						"patternProperties": {
+							"^.*$": {
+								"anyOf": [
+									{
+										"type": "string"
+									},
+									{
+										"type": "number"
+									}
+								]
+							}
+						}
+					},
+					"failed": {
+						"type": "boolean"
+					},
+					"who": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					}
+				}
+			}
+		},
+		"agents": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"who",
+					"state",
+					"doing"
+				],
+				"properties": {
+					"who": {
+						"type": "string"
+					},
+					"label": {
+						"type": "string"
+					},
+					"role": {
+						"type": "string"
+					},
+					"state": {
+						"anyOf": [
+							{
+								"type": "string",
+								"const": "working"
+							},
+							{
+								"type": "string",
+								"const": "waiting"
+							},
+							{
+								"type": "string",
+								"const": "done"
+							},
+							{
+								"type": "string",
+								"const": "failed"
+							},
+							{
+								"type": "string",
+								"const": "stuck"
+							}
+						]
+					},
+					"doing": {
+						"type": "string"
+					},
+					"sinceMs": {
+						"type": "number"
+					}
+				}
+			}
+		},
+		"updatedAt": {
+			"type": "number"
+		}
+	}
+}
+```
 
 ## kyrn.capabilities v1
 

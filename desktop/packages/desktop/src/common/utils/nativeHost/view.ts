@@ -350,6 +350,13 @@ export type ViewCheckpoint = { id: number; entryId: string; label: string; turn:
  */
 export type ViewGoal = { status: 'active' | 'paused' | 'met' | 'cleared'; text: string };
 
+/**
+ * The plain-language board mu saved on the branch (its latest `kyrn.board` entry, live from `entry_appended` or read
+ * from the session file): shown when no `board.update` frame is in `host.activity` (a conversation opened with no
+ * host, or after its idle host ended).
+ */
+export type ViewBoard = { at: number; payload: JsonObject };
+
 export type NativeView = {
   messages: ViewMessage[];
   status: TurnStatus;
@@ -363,6 +370,8 @@ export type NativeView = {
   goal?: ViewGoal;
   /** The checkpoints on the branch, oldest first; absent before the first. */
   checkpoints?: ViewCheckpoint[];
+  /** The latest plain-language board saved on the branch; absent before the first. */
+  board?: ViewBoard;
 };
 
 export const emptyHost = (): ViewHost => ({ activity: [], notices: [], queue: { steering: [], followUp: [] } });

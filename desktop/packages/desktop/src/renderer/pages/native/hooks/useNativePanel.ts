@@ -58,7 +58,8 @@ export function useNativePanel(
   loading: boolean,
   failure?: NativeFailure,
   cwd?: string,
-  request?: (command: PiCommand) => Promise<NativeResult<unknown>>
+  request?: (command: PiCommand) => Promise<NativeResult<unknown>>,
+  board?: boolean
 ): void {
   // Before paint: the layout keeps the last project on every /conversation/ route.
   useLayoutEffect(() => setCurrentProject(null), [id]);
@@ -81,7 +82,14 @@ export function useNativePanel(
     EVERY_MS
   );
   const shown = looked.view;
-  const events = useMemo(() => toActivity(shown), [shown]);
+  const events = useMemo(
+    () =>
+      toActivity(shown, {
+        ...(typeof board === 'boolean' ? { board } : {}),
+        ...(cwd ? { cwd } : {}),
+      }),
+    [board, cwd, shown]
+  );
   const error = failure?.message;
   const activity = useMemo(
     () => ({ events, loading, settled: !loading, ...(error !== undefined ? { error } : {}) }),

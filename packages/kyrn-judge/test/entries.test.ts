@@ -16,7 +16,7 @@ import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
 import type { ExtensionUIContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { Value } from "typebox/value";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
 import { ENTRY_TYPES, type EntryType, entryType } from "../src/entries.ts";
@@ -232,7 +232,12 @@ describe("what sessions of mu write", () => {
 		// Judge mode as in an interactive session, every feature on: a permission switch, a change, a command the
 		// judge cannot tell about and the user allows, and a verdict the user marks wrong.
 		const judged = await start(
-			attended({ memory: false, permissions: { mode: "judge" }, checkpoint: { dir: shadow } }),
+			attended({
+				memory: false,
+				permissions: { mode: "judge" },
+				checkpoint: { dir: shadow },
+				board: { defaultOn: true, model: "session" },
+			}),
 			[write, tool("bash"), tool("read")],
 		);
 		project = judged.tempDir;
@@ -248,6 +253,7 @@ describe("what sessions of mu write", () => {
 			fauxAssistantMessage("Done."),
 		]);
 		await judged.session.prompt("Fix the parseDuration test in src/parse.ts, then publish the package.");
+		await vi.waitFor(() => expect(customOf(judged).some((entry) => entry.type === "kyrn.board")).toBe(true));
 		const record = customOf(judged).find((entry) => entry.type === "kyrn.decision")?.data as { id: string };
 		await judged.session.prompt(`/ledger wrong ${record.id} it asked about nothing`);
 
@@ -283,6 +289,7 @@ describe("what sessions of mu write", () => {
 			"kyrn.verdict",
 			"kyrn.goal",
 			"kyrn.checkpoint",
+			"kyrn.board",
 			"mu.permissions",
 		])
 			expect(types, type).toContain(type);

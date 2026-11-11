@@ -75,8 +75,13 @@ const LOG_LINES = 40;
 const ACCOUNT_LINES = 6;
 /** Mid-run, a board the writer has not written by then is out of date: it gets this long, and no longer. */
 const LIVE_TIMEOUT_MS = 20_000;
-/** Mid-run the writer's reply is one short JSON object: a runaway one only costs time. */
-const LIVE_MAX_TOKENS = 600;
+/**
+ * Mid-run the writer's reply is one short JSON object, yet an always-thinking model behind an OpenAI-compatible
+ * relay spends max_tokens on hidden reasoning before writing: room for that reasoning plus the reply.
+ */
+const LIVE_MAX_TOKENS = 4000;
+/** How many empty or timed-out calls in a row before another available model writes the board instead. */
+const WRITER_FAILURE_LIMIT = 2;
 /** A stall is told again at these multiples of `stallMs`: 1, 3 and 10 minutes by default. */
 const STALL_STEPS = [1, 3, 10];
 /** A subagent this long without a sign of life is said to have had no new output. */
@@ -587,6 +592,9 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	let moment = false;
 	/** The chosen model is not usable here: said once per session. */
 	let toldUnusable = false;
+	/** Empty or timed-out calls in a row by model ref, so a model that keeps stalling gives way to another. */
+	const writerFailures = new Map<string, number>();
+	let toldSlow = false;
 	let toolsSinceLook = 0;
 	let lastLookAt = 0;
 	let board: BoardUpdate | undefined;
@@ -650,12 +658,37 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		const model = slash > 0 ? ctx.modelRegistry.find(ref.slice(0, slash), ref.slice(slash + 1)) : undefined;
 		return model !== undefined && ctx.modelRegistry.hasConfiguredAuth(model);
 	};
-	/** The model that writes the board now: the chosen one while it is usable, else the writer, else the conversation's. */
+	/** Another model to write the board when `skip` keeps timing out: a recommended one first, then the writer, then the session's. */
+	const standbyRef = (ctx: ExtensionContext, skip: string): string | undefined => {
+		const available = ctx.modelRegistry.getAvailable().map(refOf);
+		for (const model of RECOMMENDED_BOARD_MODELS) {
+			const match = available.find(
+				(ref) => ref !== skip && (writerFailures.get(ref) ?? 0) < WRITER_FAILURE_LIMIT && model.pattern.test(ref),
+			);
+			if (match) return match;
+		}
+		if (runtime.config.writer && runtime.config.writer !== skip && usable(ctx, runtime.config.writer)) {
+			return runtime.config.writer;
+		}
+		const sessionRef = ctx.model ? refOf(ctx.model) : undefined;
+		if (sessionRef && sessionRef !== skip) return sessionRef;
+		return available.find((ref) => ref !== skip && (writerFailures.get(ref) ?? 0) < WRITER_FAILURE_LIMIT);
+	};
+	/** The model that writes the board now: the chosen one while it answers, else a standby, else the writer or session's. */
 	const writerRef = (ctx: ExtensionContext): string | undefined => {
 		const picked = chosen();
-		if (picked && picked !== SESSION_MODEL && usable(ctx, picked)) return picked;
-		if (picked !== SESSION_MODEL && runtime.config.writer) return runtime.config.writer;
-		return ctx.model ? refOf(ctx.model) : undefined;
+		const candidate =
+			picked && picked !== SESSION_MODEL && usable(ctx, picked)
+				? picked
+				: picked !== SESSION_MODEL && runtime.config.writer && usable(ctx, runtime.config.writer)
+					? runtime.config.writer
+					: ctx.model
+						? refOf(ctx.model)
+						: undefined;
+		if (candidate && (writerFailures.get(candidate) ?? 0) >= WRITER_FAILURE_LIMIT) {
+			return standbyRef(ctx, candidate) ?? candidate;
+		}
+		return candidate;
 	};
 	/** The recommended models, and which of them the person could pick right now. */
 	const recommended = (ctx: ExtensionContext) => {
@@ -713,7 +746,10 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	};
 
 	/** The plain-speaking model. A chosen one that cannot be used here (signed out, say) is said once, then stood in for. */
-	const writerModel = (ctx: ExtensionContext, ended: boolean): LlmCompletion | undefined => {
+	const writerModel = (
+		ctx: ExtensionContext,
+		ended: boolean,
+	): { ref: string; complete: LlmCompletion } | undefined => {
 		const picked = chosen();
 		if (picked && picked !== SESSION_MODEL && !usable(ctx, picked) && !toldUnusable) {
 			toldUnusable = true;
@@ -729,7 +765,32 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			}
 		}
 		const ref = writerRef(ctx);
-		return ref ? runtime.llm(ref, { thinking: "off", ...(ended ? {} : { maxTokens: LIVE_MAX_TOKENS }) }) : undefined;
+		if (
+			picked &&
+			picked !== SESSION_MODEL &&
+			usable(ctx, picked) &&
+			(writerFailures.get(picked) ?? 0) >= WRITER_FAILURE_LIMIT &&
+			ref &&
+			ref !== picked &&
+			!toldSlow
+		) {
+			toldSlow = true;
+			if (ctx.hasUI) {
+				ctx.ui.notify(
+					words({
+						zh: `看板模型 ${picked} 连续超时或没返回内容，先改用 ${ref} 来写。/board model 可以换一个。`,
+						en: `The board's model ${picked} timed out or returned nothing repeatedly, so ${ref} is writing it for now. Use /board model to pick another.`,
+					}),
+					"warning",
+				);
+			}
+		}
+		return ref
+			? {
+					ref,
+					complete: runtime.llm(ref, { thinking: "off", ...(ended ? {} : { maxTokens: LIVE_MAX_TOKENS }) }),
+				}
+			: undefined;
 	};
 	const words = (texts: { readonly zh: string; readonly en: string }) => (language() === "zh" ? texts.zh : texts.en);
 	/** Who writes the board, in words: a model, or the conversation's own. */
@@ -1194,10 +1255,10 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			total: items.length,
 			ended,
 		};
-		const complete = writerModel(ctx, ended);
+		const writer = writerModel(ctx, ended);
 		// The rules' headline goes out at once when the stage changed or something is stuck, and the writer's
 		// replaces it: the person hears "running npm test, 3 min in" now, not in the 3 to 15 s the writer takes.
-		if (complete && rules.headline !== board?.headline && (!board || board.phase !== phase || stall || asking)) {
+		if (writer && rules.headline !== board?.headline && (!board || board.phase !== phase || stall || asking)) {
 			const headline = {
 				headline: rules.headline,
 				headlineCode: rules.headlineCode,
@@ -1211,9 +1272,9 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		}
 		const tongue = writing();
 		let text: WriterReply | undefined;
-		if (complete) {
+		if (writer) {
 			try {
-				const reply = await complete({
+				const reply = await writer.complete({
 					system: narratorSystem(tongue.wording, tongue.name),
 					// The writer tells what the agent did, never the key it did it with.
 					user: redactSecrets(narratorRequest(facts), environmentSecrets()),
@@ -1227,6 +1288,10 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 				text = parseBoardText(reply.text, helpers);
 			} catch {
 				text = undefined;
+			}
+			if (!gone.aborted) {
+				if (text) writerFailures.delete(writer.ref);
+				else writerFailures.set(writer.ref, (writerFailures.get(writer.ref) ?? 0) + 1);
 			}
 		}
 		if (at !== epoch) return;
@@ -1253,8 +1318,14 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		const quote = [...news].reverse().find((event) => event.kind === "said");
 		if (text?.note) tellModel(kind, text.note);
 		else if (ended) tell("ended", read.needsUser ? "waiting_reply" : "ended", {});
-		else if (complete && quote) tell("said", "said_quote", { text: clip(quote.text, 160) });
-		const { doing, labels: _labels, ...told } = text ?? { ...rules, doing: undefined, labels: undefined };
+		else if (writer && quote) tell("said", "said_quote", { text: clip(quote.text, 160) });
+		// When the writer did not answer and there is no checklist yet, keep the last model-written progress
+		// instead of wiping it with "No checklist yet."
+		const fallbackRules =
+			!text && kept?.progress && !kept.confirmCodes && items.length === 0
+				? { ...rules, progress: kept.progress, confirmCodes: undefined }
+				: rules;
+		const { doing, labels: _labels, ...told } = text ?? { ...fallbackRules, doing: undefined, labels: undefined };
 		// Rules say what is stuck when the writer did not: it may have written before the stall crossed a step.
 		const stuck = stall ?? (ended ? undefined : longestStall());
 		const blocked =
@@ -1532,6 +1603,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			runStartedAt = undefined;
 			moment = false;
 			toldUnusable = false;
+			writerFailures.clear();
+			toldSlow = false;
 			toolsSinceLook = 0;
 			// A panel opening with the session learns whether the board is on here, and what it said last.
 			const switched = announce(ctx, true);
@@ -1706,6 +1779,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 					return;
 				}
 				toldUnusable = false;
+				writerFailures.clear();
+				toldSlow = false;
 				announce(ctx, true);
 				if (ctx.hasUI) {
 					ctx.ui.notify(
