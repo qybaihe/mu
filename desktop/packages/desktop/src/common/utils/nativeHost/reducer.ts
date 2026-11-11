@@ -77,6 +77,8 @@ export const VERDICT_ENTRY = 'kyrn.verdict';
 export const GOAL_ENTRY = 'kyrn.goal';
 /** A checkpoint mu took before a turn's first file change (`ViewCheckpoint`). */
 export const CHECKPOINT_ENTRY = 'kyrn.checkpoint';
+/** The plain-language board mu saves on the branch (BOARD_ENTRY in the harness). */
+export const BOARD_ENTRY = 'kyrn.board';
 export const GOAL_FRAME = 'goal.state';
 
 const GOAL_STATUSES: ReadonlySet<string> = new Set(['active', 'paused', 'met', 'cleared']);
@@ -123,6 +125,15 @@ function addCheckpoint(view: NativeView, data: JsonObject): NativeView {
 function takeGoal(view: NativeView, data: unknown): NativeView {
   const goal = readGoal(data);
   return goal ? { ...view, goal } : view;
+}
+
+/** A `kyrn.board` entry's data, when it carries `now` and `progress` as the harness writes them. */
+function takeBoard(view: NativeView, entry: JsonObject): NativeView {
+  const data = asObject(entry.data);
+  if (typeof data.now !== 'string' || typeof data.progress !== 'string') return view;
+  const parsed = Date.parse(asText(entry.timestamp));
+  const at = asNumber(data.updatedAt) ?? (Number.isFinite(parsed) ? parsed : 0);
+  return { ...view, board: { at, payload: data } };
 }
 
 const isRunning = (status: TurnStatus): boolean => status === 'working' || status === 'thinking';
@@ -492,6 +503,7 @@ function addEntry(view: NativeView, entry: JsonObject): NativeView {
     if (entry.customType === VERDICT_ENTRY) return attachVerdict(view, asObject(entry.data));
     if (entry.customType === GOAL_ENTRY) return takeGoal(view, entry.data);
     if (entry.customType === CHECKPOINT_ENTRY) return addCheckpoint(view, asObject(entry.data));
+    if (entry.customType === BOARD_ENTRY) return takeBoard(view, entry);
     return view;
   }
   // Extensions' messages for the person that pi writes at a turn's boundary come only as entries.

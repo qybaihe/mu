@@ -146,7 +146,16 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
       void navigate(nativeConversationPath(conversation.id), { replace: true, state: { samePage: true } });
   }, [conversation.id, id, navigate]);
 
-  useNativePanel(conversation.id, view, conversation.epoch, loading, failure, cwd, conversation.request);
+  useNativePanel(
+    conversation.id,
+    view,
+    conversation.epoch,
+    loading,
+    failure,
+    cwd,
+    conversation.request,
+    conversation.settings?.board
+  );
 
   // What the conversation wanted of its person (a run ended, a question) is seen once it is on screen.
   useEffect(() => {

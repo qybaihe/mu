@@ -12,7 +12,7 @@ import { readSessionFile, SessionReader } from '../sessions/readSession.ts';
 import { SessionStore, type StoredSession } from '../sessions/SessionStore.ts';
 import { Conversation, type ConversationOwner } from './Conversation.ts';
 import { NativeRequestError } from './errors.ts';
-import { readDefaultModel, type ModelChoice } from './modelSearch.ts';
+import { readDefaultModel, readProjectBoardSwitch, type ModelChoice } from './modelSearch.ts';
 import type { ConversationEvents, NativeConversationsApi, StartHost } from './types.ts';
 
 /**
@@ -114,6 +114,7 @@ export class NativeConversations implements NativeConversationsApi {
           ...(conversation.permissions ? { permissions: conversation.permissions } : {}),
         }),
       defaultModel: () => readDefaultModel(this.folders().agentDir),
+      boardSwitch: (cwd) => readProjectBoardSwitch(this.folders().agentDir, cwd),
       renamed: (conversation, previous, left) => this.renamed(conversation, previous, left),
       touched: (conversation) => this.touched(conversation),
       makeRoom: (conversation) => this.makeRoom(conversation),

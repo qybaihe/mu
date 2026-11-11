@@ -498,7 +498,8 @@ export class KyrnRuntime {
 			const model =
 				slash > 0 ? ctx.modelRegistry.find(modelRef.slice(0, slash), modelRef.slice(slash + 1)) : undefined;
 			if (!model) throw new JudgeError("bad_request", `Model "${modelRef}" is not available`);
-			const thinking = options.thinking && options.thinking !== "off" ? options.thinking : undefined;
+			const reasoning = options.thinking || undefined;
+			const thinking = reasoning && reasoning !== "off" ? reasoning : undefined;
 			const message = await ctx.modelRegistry
 				.streamSimple(
 					model,
@@ -509,9 +510,10 @@ export class KyrnRuntime {
 					{
 						signal,
 						// The reasoning comes out of the same budget: thinking on mu's questions, Nemotron 3 Ultra
-						// used up to 4,400 tokens.
-						maxTokens: options.maxTokens ?? (thinking ? 8000 : 2000),
-						reasoning: thinking as never,
+						// used up to 4,400 tokens, and an always-thinking model behind an OpenAI-compatible relay
+						// spends max_tokens on reasoning even when thinking is off.
+						maxTokens: options.maxTokens ?? (thinking ? 8000 : 4000),
+						reasoning: reasoning as never,
 						cacheRetention: "none",
 						sessionId: this.sessionId,
 					},

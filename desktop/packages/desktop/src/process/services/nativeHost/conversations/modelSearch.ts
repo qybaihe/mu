@@ -30,6 +30,28 @@ export function readDefaultModel(agentDir: string): ModelChoice | undefined {
   }
 }
 
+/** Whether the plain-language board is configured for `cwd`, as `<agentDir>/mu/board.json` and `mu.json` say. */
+export function readProjectBoardSwitch(agentDir: string, cwd: string): boolean | undefined {
+  const folder = path.resolve(cwd);
+  try {
+    const board = asObject(JSON.parse(readFileSync(path.join(agentDir, 'mu', 'board.json'), 'utf8')));
+    if (board.version === 1) {
+      const switched = asObject(board.projects)[folder];
+      if (typeof switched === 'boolean') return switched;
+    }
+  } catch {
+    // No board.json or unreadable: fall back to mu.json's defaultOn when set.
+  }
+  try {
+    const config = asObject(JSON.parse(readFileSync(path.join(agentDir, 'mu', 'mu.json'), 'utf8')));
+    const defaultOn = asObject(asObject(config.features).board).defaultOn;
+    if (typeof defaultOn === 'boolean') return defaultOn;
+  } catch {
+    // Neither file names a switch for this project.
+  }
+  return undefined;
+}
+
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => {
     const timer = setTimeout(resolve, ms);

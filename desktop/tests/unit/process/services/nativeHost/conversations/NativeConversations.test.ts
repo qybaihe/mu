@@ -159,6 +159,14 @@ describe('native conversations', () => {
     // A draft has no file yet: the mode it was made with is the one its mu starts in.
     const draft = await w.conversations.create({ cwd: w.project, permissions: 'ask' });
     await expect(w.conversations.open(draft.id)).resolves.toMatchObject({ session: { permissions: 'ask' } });
+    mkdirSync(join(w.agentDir, 'mu'), { recursive: true });
+    writeFileSync(
+      join(w.agentDir, 'mu', 'board.json'),
+      JSON.stringify({ version: 1, projects: { [w.project]: true } })
+    );
+    await expect(w.conversations.open('cli')).resolves.toMatchObject({
+      session: { model: 'e2e/e2e-fake-model', thinkingLevel: 'high', permissions: 'full', board: true },
+    });
     expect(w.pi.hosts).toHaveLength(0);
   });
 

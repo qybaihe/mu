@@ -173,6 +173,8 @@ export type ConversationOwner = {
   env(conversation: Conversation): Record<string, string>;
   /** The model new sessions start on, for a host that started without one. */
   defaultModel(): ModelChoice | undefined;
+  /** Whether the plain-language board is on for `cwd` (`mu/board.json`), for a conversation with no host. */
+  boardSwitch?(cwd: string): boolean | undefined;
   /**
    * The conversation's id changed from `previous`: a draft got its session's, or pi runs another session now. `left`
    * is the session file it moved away from, when there was one: that session is a conversation of its own again.
@@ -333,7 +335,12 @@ export class Conversation {
     if (this.host && this.ready) return this.hostSnapshot();
     // What the next host resumes with: the file's own, else the mode mu will start in here (MU_PERMISSIONS).
     const permissions = settings.permissions ?? this.permissions;
-    const session = { ...settings, ...(permissions ? { permissions } : {}) };
+    const board = settings.board ?? this.owner.boardSwitch?.(this.cwd);
+    const session = {
+      ...settings,
+      ...(permissions ? { permissions } : {}),
+      ...(typeof board === 'boolean' ? { board } : {}),
+    };
     return {
       conversation: this.describe(),
       status: this.current,

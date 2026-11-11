@@ -72,6 +72,51 @@ describe('the work panel’s activity', () => {
     expect(live.filter((event) => event.id.startsWith('judgment:'))).toEqual([]);
   });
 
+  it('restores the plain-language board and project switch from a session file when no host runs', () => {
+    const savedBoard = {
+      headline: 'Wired the guard in parser.ts.',
+      now: 'Wired the guard in parser.ts and ran the unit tests.',
+      progress: 'Guard wired and unit tests pass.',
+      confirm: [],
+      phase: 'wrapping_up',
+      needsUser: false,
+      done: 2,
+      total: 2,
+      by: 'model',
+      ended: true,
+      updatedAt: 1790685900000,
+    };
+    const view = fromEntries([
+      {
+        type: 'custom',
+        id: 'b1',
+        parentId: null,
+        timestamp: '2026-09-29T12:45:00.000Z',
+        customType: 'kyrn.board',
+        data: savedBoard,
+      },
+    ]);
+    expect(view.board).toEqual({ at: 1790685900000, payload: savedBoard });
+
+    const events = toActivity(view, { board: true, cwd: '/work/app' });
+    expect(events.find((event) => event.kind === 'board.switched')?.payload).toEqual({
+      on: true,
+      cwd: '/work/app',
+    });
+    expect(events.find((event) => event.kind === 'board.update')?.payload).toMatchObject({
+      ...savedBoard,
+      restored: true,
+    });
+
+    // When the project turned the board off in board.json, a stale saved entry stays hidden and the switch shows off.
+    const switchedOff = toActivity(view, { board: false, cwd: '/work/app' });
+    expect(switchedOff.find((event) => event.kind === 'board.switched')?.payload).toEqual({
+      on: false,
+      cwd: '/work/app',
+    });
+    expect(switchedOff.find((event) => event.kind === 'board.update')).toBeUndefined();
+  });
+
   it('counts the latest reply that read anything, as the board’s cache ring shows it', () => {
     const view = reduceAll([
       ended(user('hi')),

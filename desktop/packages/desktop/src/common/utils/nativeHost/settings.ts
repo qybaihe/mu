@@ -3,13 +3,14 @@ import { asObject, asText, type JsonObject } from './records.ts';
 
 /**
  * What a session file says its session runs with, read the way pi and mu read it when they resume it: for a
- * conversation whose host is not running, so the screen can say which model, thinking level and permission mode the
- * next message will meet without starting a host.
+ * conversation whose host is not running, so the screen can say which model, thinking level, permission mode and
+ * plain-language board switch the next message will meet without starting a host.
  *
  * - model: the latest `model_change` or assistant message on the branch (pi's `getSessionContextSettings`), apart
  *   from a reply imported from another tool, which names the tool as its provider: pi cannot go on with that model;
  * - thinking level: the latest `thinking_level_change` on the branch (pi writes one when a session starts);
- * - permission mode: the latest `mu.permissions` entry on the branch (mu's permissions feature, `session_start`).
+ * - permission mode: the latest `mu.permissions` entry on the branch (mu's permissions feature, `session_start`);
+ * - board: whether the plain-language board is on for the conversation's project (`<agentDir>/mu/board.json`).
  *
  * A field the branch does not name is left out: pi then takes its settings' default, mu its start mode. Pure.
  */
@@ -19,6 +20,8 @@ export type SessionSettings = {
   thinkingLevel?: string;
   /** `full`, `judge` or `ask`. */
   permissions?: string;
+  /** Whether the plain-language board is on for this project (`mu/board.json`). */
+  board?: boolean;
 };
 
 /** The custom entry mu keeps a conversation's permission mode in (PERMISSIONS_ENTRY in the harness). */
