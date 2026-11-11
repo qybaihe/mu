@@ -4,6 +4,17 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.11] - 2026-11-11
+
+**In 0.3.11 runs keep moving when nobody is at the keyboard, `/waiting` gathers everything that waits for you in one place, and mu shows how far a task has got without interrupting the agent.** The plain-language board stays reliable across reasoning relays and reopened conversations, `/evolve` can keep a recurring project command allowed once you accept it, and `mu judge` switches judges without running full setup again. The desktop app carries mu-agent 0.3.11.
+
+### Runs that don't stall, and clear progress when you look
+
+- **Unanswered prompts set work aside instead of holding the run.** Permission questions now wait `features.permissions.waitMs` (2 minutes by default) and then set the call aside for `/approve` so the agent can continue with independent work; in the desktop app, a bar above the send box offers a **Review** button when steps are waiting. Once any permission or `ask_user` prompt goes unanswered, later questions in the same run are set aside immediately instead of waiting 2 minutes each, and offers for off-by-default features are reported after the run settles rather than blocking mid-run.
+- **`/waiting` and status without interrupting.** `/waiting` lists every pending approval, `ask_user` question, feature offer, `/evolve` suggestion and drafted skill in one place, starting each line with the command that handles it. Asking "how far along are you?" mid-run is answered directly by mu from the task state without spending an agent turn, the terminal footer shows `Checklist X/Y` while a checklist is active, and mu prints where the checklist stands with the agent's evidence when a run settles.
+- **Project command grants, run-end `/evolve` hints and `mu judge`.** When you allow the same command for the session repeatedly in a project, `/evolve` offers to keep that command allowed there (`/evolve accept <command>`) and mentions a new `/evolve` suggestion once when the run ends; `/evolve` also records per-run interaction counts in `~/.mu/agent/mu/evolve.jsonl`. Running `mu judge` in a terminal now picks the judge directly (listing ready judges first, the rest under **More judges**) without re-entering model credentials.
+- **Plain-language board reliability.** Board writer calls pass `reasoning: "off"` and a 4,000-token budget so OpenAI-compatible relays with hidden reasoning tokens no longer starve or time out mid-run updates, preserve prior model-written progress if a single call misses, and fall back to a standby model after repeated empty replies. In the desktop app, reopened or idle native conversations restore persisted `kyrn.board` updates and project board switches from disk.
+
 ## [0.3.10] - 2026-11-10
 
 **In 0.3.10 mu starts to adapt to you and your machine from what it sees happen. A conversation opens with a snapshot of the workspace, a rule you had to repeat becomes a standing rule that mu enforces, and `/evolve` shows where your answers say a project's approval line could be.** The desktop app's conversation, sidebar and cards are tighter. None of the adaptation has been measured on real sessions yet, and the new decision point ships in shadow. The desktop app carries mu-agent 0.3.10.

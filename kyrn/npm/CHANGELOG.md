@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [0.3.11] - 2026-11-11
+
+**0.3.11 lets unattended runs move past unanswered permission and `ask_user` prompts after a single wait (`/approve`, `/waiting`), answers mid-run status checks without spending an agent turn (`input.interjection` v2), surfaces checklist progress in the terminal footer and at run end, adds per-project command grants and run-end suggestions to `/evolve`, lets `mu judge` switch judges standalone, and hardens the plain-language board against reasoning-relay token starvation (`kyrn.board` v2).**
+
+### Added
+
+- **Timed-out permission questions and `/approve`** (`features.permissions.waitMs`, 120,000 ms; `0` waits indefinitely): when a permission picker goes unanswered, the call does not run, the model is told the step is pending rather than denied, `mu.approve.pending` reports how many steps wait, and `/approve` reviews them later. Once any permission or `ask_user` prompt times out in a run, subsequent prompts in that run go pending without waiting again.
+- **`/waiting`**: lists everything waiting on the user in the session—pending `/approve` steps, `/answer` questions, `/evolve` suggestions, `/skills` drafts and offered `/capabilities`—each prefixed with the command that acts on it.
+- **Status interjections and checklist visibility**: `input.interjection` v2 adds `status` so mid-run "how far along are you?" messages are answered by mu from the task frame, steps and subagents without interrupting the agent; the terminal footer shows `Checklist <done>/<total>` while a checklist is active, and `agent_settled` prints a summary of ticked and open checklist items when the checklist changed during the run.
+- **`/evolve` command grants, run counts and notices**: `/evolve` tracks per-run user interaction counts in `<agent dir>/mu/evolve.jsonl`, suggests keeping a command allowed in a project after repeated session-wide approvals (`/evolve accept <command>`), and prints a new suggestion once when the run settles.
+- **Standalone `mu judge`**: running `mu judge` interactively picks the judge in `<agent dir>/mu.json` without re-running model setup, grouping ready judges first and the remaining options under **More judges**.
+
+### Changed
+
+- **Feature offers (`feature:<name>`)**: `find_capability({ open: "feature:…" })` returns immediately instead of holding the run on a picker, and reports offered features once when the run settles.
+- **`kyrn.board` v2**: adds a registered TypeBox schema and `desktop: nativeHost/reducer.ts` reader entry for persisted plain-language boards.
+
+### Fixed
+
+- **Plain-language board (`board` and `runtime.llm`)**: passes `reasoning: "off"` and raises the live and non-thinking `maxTokens` ceiling to 4,000 so OpenAI-compatible relays whose hidden reasoning shares `max_tokens` no longer return empty replies; retains the previous model-written `progress` when a single writer call fails without a checklist; and falls back to an available standby model after two consecutive empty or timed-out writer calls.
+
 ## [0.3.10] - 2026-11-10
 
 **0.3.10 starts adapting mu to its user and its machine from outcomes it can observe: an opening workspace snapshot (`snapshot`, on), standing rules from lessons the user had to repeat (`memory.standing`, on), a per-project approval line the user accepts with `/evolve` (`tool.approval` v4), programs learned to be missing on the machine, the `context.preload` decision point (shadow), and three more `kyrn.outcome` kinds (v3). Nothing here has been measured on real sessions.**
