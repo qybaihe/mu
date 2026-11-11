@@ -3,7 +3,7 @@ import { type TSchema, Type } from "typebox";
 /**
  * Every custom entry and custom message kyrn writes into a session, with who writes it and who reads it. A session file
  * outlives the code that wrote it, and other programs read some of these: the desktop app shows judgments, goals,
- * checkpoints and permission modes from them, and `mu ledger` reads the judge's records and the user's answers. So an
+ * checkpoints, boards and permission modes from them, and `mu ledger` reads the judge's records and the user's answers. So an
  * entry another program reads has a schema here, and its `version` goes up whenever the schema changes;
  * `test/golden/entries.md` holds the schemas, and its test fails on a change without a new version.
  * `test/entries.test.ts` fails on a type written in `src` that is not listed here.
@@ -243,6 +243,80 @@ const MonitorSchema = Type.Union([
 	}),
 ]);
 
+const NoteParamsSchema = Type.Record(Type.String(), Type.Union([Type.String(), Type.Number()]));
+
+/** `BoardUpdate` in board.ts. */
+const BoardSchema = Type.Object({
+	headline: Type.Optional(Type.String()),
+	headlineCode: Type.Optional(Type.String()),
+	headlineParams: Type.Optional(NoteParamsSchema),
+	progress: Type.String(),
+	now: Type.String(),
+	blocked: Type.Optional(Type.String()),
+	blockedCode: Type.Optional(Type.String()),
+	blockedParams: Type.Optional(NoteParamsSchema),
+	next: Type.Optional(Type.String()),
+	confirm: Type.Array(Type.String()),
+	confirmCodes: Type.Optional(Type.Array(Type.Union([Type.String(), Type.Null()]))),
+	note: Type.Optional(Type.String()),
+	phase: Type.Optional(
+		Type.Union(
+			[
+				"understanding",
+				"planning",
+				"changing",
+				"checking",
+				"fixing",
+				"waiting",
+				"wrapping_up",
+				"stuck",
+				"blocked",
+			].map((phase) => Type.Literal(phase)),
+		),
+	),
+	focus: Type.Optional(Type.String()),
+	focusText: Type.Optional(Type.String()),
+	needsUser: Type.Boolean(),
+	done: Type.Number(),
+	total: Type.Number(),
+	by: Type.Union([Type.Literal("model"), Type.Literal("rules")]),
+	ended: Type.Boolean(),
+	news: Type.Optional(Type.Array(Type.String())),
+	log: Type.Optional(
+		Type.Array(
+			Type.Object({
+				sequence: Type.Number(),
+				at: Type.Number(),
+				kind: Type.Union(
+					["step", "check", "said", "ticked", "asked", "helpers", "goal", "trouble", "ended"].map((kind) =>
+						Type.Literal(kind),
+					),
+				),
+				text: Type.String(),
+				by: Type.Union([Type.Literal("model"), Type.Literal("rules")]),
+				code: Type.Optional(Type.String()),
+				params: Type.Optional(NoteParamsSchema),
+				failed: Type.Optional(Type.Boolean()),
+				who: Type.Optional(Type.String()),
+				label: Type.Optional(Type.String()),
+			}),
+		),
+	),
+	agents: Type.Optional(
+		Type.Array(
+			Type.Object({
+				who: Type.String(),
+				label: Type.Optional(Type.String()),
+				role: Type.Optional(Type.String()),
+				state: Type.Union(["working", "waiting", "done", "failed", "stuck"].map((state) => Type.Literal(state))),
+				doing: Type.String(),
+				sinceMs: Type.Optional(Type.Number()),
+			}),
+		),
+	),
+	updatedAt: Type.Optional(Type.Number()),
+});
+
 const features = (name: string) => `src/extension/features/${name}.ts`;
 
 export const ENTRY_TYPES: readonly EntryType[] = [
@@ -350,10 +424,11 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 	{
 		type: "kyrn.board",
 		kind: "entry",
-		version: 1,
+		version: 2,
 		writers: [features("board")],
-		readers: [],
+		readers: [DESKTOP_REDUCER],
 		summary: "The plain-language board after an update, so a reopened session shows it again.",
+		schema: BoardSchema,
 	},
 	{
 		type: "kyrn.capability",
