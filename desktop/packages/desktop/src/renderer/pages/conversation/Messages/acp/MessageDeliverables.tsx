@@ -10,6 +10,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TMessage } from '@/common/chat/chatLib';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
+import LocalImageView from '@/renderer/components/media/LocalImageView';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { useMessageListRun } from '../hooks';
 
@@ -58,6 +59,10 @@ export function fileSize(bytes: number): string {
 /** The folder a file is in, as the row shows it beside the name. */
 const folderOf = (path: string): string => path.replace(/[\\/][^\\/]*$/, '') || path;
 
+/** An image `present` handed over: the row shows it, not only its name. */
+const IMAGE_PATH_RE = /\.(?:png|jpe?g|webp|gif|bmp)$/i;
+const isImagePath = (path: string): boolean => IMAGE_PATH_RE.test(path);
+
 const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered }) => {
   const { t } = useTranslation();
   const conversation = useConversationContextSafe();
@@ -93,10 +98,20 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
             data-path={file.path}
             onClick={() => void open?.(file.path)}
           >
-            <span className='flex w-full items-baseline gap-8px min-w-0'>
-              <span className='text-13px font-500 text-t-primary truncate'>{file.name}</span>
-              <span className='text-12px text-t-tertiary truncate flex-1 min-w-0'>{folderOf(file.path)}</span>
-              <span className='text-11.5px font-mono text-t-tertiary flex-none'>{fileSize(file.bytes)}</span>
+            <span className='flex w-full items-center gap-8px min-w-0'>
+              {isImagePath(file.path) ? (
+                <span
+                  className='flex-none size-40px rd-6px overflow-hidden flex items-center justify-center bg-fill-2'
+                  data-testid='message-deliverables-thumb'
+                >
+                  <LocalImageView src={file.path} alt={file.name} className='size-full object-cover' />
+                </span>
+              ) : null}
+              <span className='flex flex-1 items-baseline gap-8px min-w-0'>
+                <span className='text-13px font-500 text-t-primary truncate'>{file.name}</span>
+                <span className='text-12px text-t-tertiary truncate flex-1 min-w-0'>{folderOf(file.path)}</span>
+                <span className='text-11.5px font-mono text-t-tertiary flex-none'>{fileSize(file.bytes)}</span>
+              </span>
             </span>
           </Button>
         ))}

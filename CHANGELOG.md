@@ -1,8 +1,8 @@
-# Changelog
-
-What changed in each release of mu: the desktop app and the `mu` command line together. Releases are published under [Releases](https://github.com/qybaihe/mu/releases) with their downloads; the `mu-agent` npm package has its own, more detailed [changelog](kyrn/npm/CHANGELOG.md).
-
 ## [Unreleased]
+
+### Added
+
+- **Files `present` hands over show their pictures.** An image in a deliverables card is drawn as a thumbnail in its row, not only named; any other file keeps its row as it was.
 
 ## [0.3.11] - 2026-11-11
 
