@@ -2,6 +2,7 @@
 
 ### Added
 
+- **A reply's media can be saved or quoted from its hover bar.** A reply that embeds local images or videos gains two actions beside copy: one saves every embedded file, the other drops their markdown into the send box to quote them in the next message.
 - **A video of a reply plays on hover and opens on click.** A local video written with the markdown image syntax plays while the pointer is over it, and a click opens it large with native controls, zoom, rotation and a save button — the video sibling of what images got.
 - **Images in a reply open the shared preview.** A local markdown image in a reply can be clicked: the preview zooms in and out, steps through the conversation's images, and saves the file from its toolbar. Images are also capped in height in the transcript, so a tall one no longer stretches the conversation.
 
