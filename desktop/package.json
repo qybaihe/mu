@@ -1,6 +1,6 @@
 {
   "name": "mu-desktop",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "description": "mu, the coding agent with a judge model, as a desktop app.",
   "keywords": [],
   "license": "MIT AND Apache-2.0",

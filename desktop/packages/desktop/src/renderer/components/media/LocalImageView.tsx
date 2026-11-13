@@ -59,7 +59,7 @@ const LocalImageView: React.FC<{
         });
         setLoading(false);
       });
-  }, [absolutePath]);
+  }, [absolutePath, root]);
 
   const save = useCallback(async (): Promise<void> => {
     const name = absolutePath.split(/[/\\]/).pop() || 'image';

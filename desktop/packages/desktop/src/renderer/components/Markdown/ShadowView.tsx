@@ -339,6 +339,10 @@ const initStyleCss = (
     max-width: 100%;
     max-height: 360px;
     height: auto;
+    object-fit: contain;
+  }
+  .cursor-zoom-in {
+    cursor: zoom-in;
   }
    /* Table border styles */
   table {
