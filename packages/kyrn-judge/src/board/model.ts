@@ -22,13 +22,13 @@ export const RECOMMENDED_BOARD_MODELS: readonly RecommendedModel[] = [
 		name: "Claude Opus 4.6",
 		pattern: /claude-opus-4[.-]6/,
 		why: { zh: "讲得最自然、最稳", en: "the most natural and consistent" },
-		from: { zh: "登录 Anthropic（/login）", en: "sign in to Anthropic (/login)" },
+		from: { zh: "用 mu setup 添加 Anthropic API key", en: "add an Anthropic API key with mu setup" },
 	},
 	{
 		name: "Gemini 3.8 Flash",
 		pattern: /gemini-3\.8-flash/,
 		why: { zh: "更快，也更省", en: "faster and cheaper" },
-		from: { zh: "登录 Google（/login）", en: "sign in with Google (/login)" },
+		from: { zh: "用 mu setup 添加 Gemini API key", en: "add a Gemini API key with mu setup" },
 	},
 ];
 
@@ -146,8 +146,8 @@ export function addModelHelp(wording: Wording, recommended?: RecommendedModel): 
 		first,
 		pick(
 			{
-				zh: "添加模型：/login 登录 Anthropic、Google、OpenAI 等账号，或在设置里填一个 OpenAI / Anthropic 兼容的接口地址和密钥。加好之后用 /board model 选它；在那之前，看板先用这次对话的模型来写。",
-				en: "To add a model, sign in to Anthropic, Google, OpenAI or another provider with /login, or add an OpenAI- or Anthropic-compatible endpoint and key in settings. Then pick it with /board model. Until then, the session's model writes the board.",
+				zh: "添加模型：用 /login 以 ChatGPT 登录、用 mu setup 添加 API key，或在设置里填一个 OpenAI / Anthropic 兼容的接口地址和密钥。加好之后用 /board model 选它；在那之前，看板先用这次对话的模型来写。",
+				en: "To add a model, sign in with ChatGPT using /login, add an API key with mu setup, or add an OpenAI- or Anthropic-compatible endpoint and key in settings. Then pick it with /board model. Until then, the session's model writes the board.",
 			},
 			wording,
 		),
