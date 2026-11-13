@@ -108,10 +108,8 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
             inset: 0,
             zIndex: 1100,
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '14px',
             background: 'rgba(0,0,0,.8)',
           }}
           onClick={(event) => {
@@ -120,9 +118,9 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
         >
           <div
             style={{
+              zIndex: 1,
               transform: `scale(${scale}) rotate(${turns * 90}deg)`,
               transition: 'transform .2s ease',
-              maxWidth: '90vw',
             }}
           >
             <video
@@ -135,11 +133,29 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
               controls
               autoPlay
               preload='metadata'
-              style={{ maxWidth: '90vw', maxHeight: '78vh', borderRadius: '8px', display: 'block', background: '#000' }}
+              // A quarter turn swaps the video's axes: keep it inside the view, so a turned
+              // wide video cannot reach the toolbar the way it otherwise would.
+              style={
+                turns % 2 === 1
+                  ? { maxWidth: '72vh', maxHeight: '62vw', borderRadius: '8px', display: 'block', background: '#000' }
+                  : { maxWidth: '90vw', maxHeight: '74vh', borderRadius: '8px', display: 'block', background: '#000' }
+              }
             />
           </div>
           <div
-            style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
+            style={{
+              position: 'absolute',
+              bottom: '28px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 2,
+              display: 'flex',
+              gap: '8px',
+              alignItems: 'center',
+              padding: '6px',
+              borderRadius: '10px',
+              background: 'rgba(20,20,20,.82)',
+            }}
             onClick={(event) => event.stopPropagation()}
           >
             <button
