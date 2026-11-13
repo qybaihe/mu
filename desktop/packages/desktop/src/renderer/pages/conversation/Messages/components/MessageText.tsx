@@ -11,10 +11,13 @@ import { parseSessionMessageBlock, parseSessionsBlock } from './sessionMarkers';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
+import { downloadFileFromPath } from '@/renderer/utils/file/download';
+import { emitter } from '@/renderer/utils/emitter';
+import { mediaPathsOf, mediaQuoteOf } from './messageTextMedia';
 import { formatDateTime, formatTime } from '@/renderer/services/i18n/format';
 import { iconColors } from '@/renderer/styles/colors';
 import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
-import { Copy, Undo } from '@icon-park/react';
+import { Copy, Download, Link, Undo } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -214,6 +217,23 @@ const MessageText: React.FC<{
       });
   };
 
+  // The reply's own embedded media: the hover bar can hand them over (save) or quote them
+  // (drop their markdown into the send box for the next message).
+  const mediaPaths = useMemo(() => mediaPathsOf(renderedText), [renderedText]);
+  const downloadMedia = async (): Promise<void> => {
+    try {
+      for (const path of mediaPaths)
+        await downloadFileFromPath(path, path.split(/[/\\]/).pop() || 'file', conversationContext?.workspace);
+      Message.success(t('acp.image.download_success'));
+    } catch (error) {
+      console.error('[MessageText] Failed to download media:', error);
+      Message.error(t('acp.image.download_error'));
+    }
+  };
+  const quoteMedia = () => {
+    emitter.emit('sendbox.fill', mediaQuoteOf(mediaPaths));
+  };
+
   const copyButton = (
     <Tooltip content={t('common.copy', { defaultValue: 'Copy' })}>
       <div
@@ -407,6 +427,30 @@ const MessageText: React.FC<{
             })}
           >
             {copyButton}
+            {mediaPaths.length ? (
+              <>
+                <Tooltip content={t('acp.image.download')}>
+                  <div
+                    className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+                    onClick={() => void downloadMedia()}
+                    style={{ lineHeight: 0 }}
+                    data-testid='message-download-media'
+                  >
+                    <Download theme='outline' size='16' fill={iconColors.secondary} />
+                  </div>
+                </Tooltip>
+                <Tooltip content={t('common.reply')}>
+                  <div
+                    className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+                    onClick={quoteMedia}
+                    style={{ lineHeight: 0 }}
+                    data-testid='message-quote-media'
+                  >
+                    <Link theme='outline' size='16' fill={iconColors.secondary} />
+                  </div>
+                </Tooltip>
+              </>
+            ) : null}
             {forkButton}
             {rewindButton}
             {message.created_at && (
