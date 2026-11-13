@@ -179,7 +179,7 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
           const imgProps = rest as React.ImgHTMLAttributes<HTMLImageElement>;
           if (isLocalFilePath(imgProps.src || '')) {
             const src = decodeURIComponent(imgProps.src || '');
-            return <LocalImageView src={src} alt={imgProps.alt || ''} className={imgProps.className} />;
+            return <LocalImageView src={src} alt={imgProps.alt || ''} className={imgProps.className} preview />;
           }
           return <img {...imgProps} alt={imgProps.alt || ''} />;
         },

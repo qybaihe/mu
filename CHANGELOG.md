@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- **Images in a reply open the shared preview.** A local markdown image in a reply can be clicked: the preview zooms in and out, steps through the conversation's images, and saves the file from its toolbar. Images are also capped in height in the transcript, so a tall one no longer stretches the conversation.
+
 ## [0.3.11] - 2026-11-11
 
 **In 0.3.11 runs keep moving when nobody is at the keyboard, `/waiting` gathers everything that waits for you in one place, and mu shows how far a task has got without interrupting the agent.** The plain-language board stays reliable across reasoning relays and reopened conversations, `/evolve` can keep a recurring project command allowed once you accept it, and `mu judge` switches judges without running full setup again. The desktop app carries mu-agent 0.3.11.

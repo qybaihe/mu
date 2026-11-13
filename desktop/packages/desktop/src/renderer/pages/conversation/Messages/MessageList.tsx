@@ -288,7 +288,7 @@ const rowTestId = (message: TMessage, native: boolean): string => {
 
 // Image preview context
 export const ImagePreviewContext = createContext<{ inPreviewGroup: boolean }>({ inPreviewGroup: false });
-const IMAGE_PREVIEW_ACTIONS_LAYOUT = ['zoomIn', 'zoomOut', 'originalSize', 'rotateLeft', 'rotateRight'];
+const IMAGE_PREVIEW_ACTIONS_LAYOUT = ['zoomIn', 'zoomOut', 'originalSize', 'rotateLeft', 'rotateRight', 'extra'];
 const IN_PREVIEW_GROUP_VALUE = { inPreviewGroup: true } as const;
 
 const MessageListSkeleton: React.FC<{ rowWidthClass: string }> = ({ rowWidthClass }) => {
