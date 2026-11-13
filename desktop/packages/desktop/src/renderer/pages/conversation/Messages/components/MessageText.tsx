@@ -13,7 +13,7 @@ import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
 import { emitter } from '@/renderer/utils/emitter';
-import { mediaPathsOf, mediaQuoteOf } from './messageTextMedia';
+import { mediaPathsOf } from './messageTextMedia';
 import { formatDateTime, formatTime } from '@/renderer/services/i18n/format';
 import { iconColors } from '@/renderer/styles/colors';
 import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
@@ -231,7 +231,7 @@ const MessageText: React.FC<{
     }
   };
   const quoteMedia = () => {
-    emitter.emit('sendbox.fill', mediaQuoteOf(mediaPaths));
+    emitter.emit('sendbox.mention.files', mediaPaths, conversationContext?.conversation_id);
   };
 
   const copyButton = (

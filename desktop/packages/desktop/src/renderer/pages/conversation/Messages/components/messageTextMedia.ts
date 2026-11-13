@@ -18,8 +18,3 @@ export function mediaPathsOf(text: string): string[] {
   }
   return paths;
 }
-
-/** The markdown that quotes media back into the send box. */
-export function mediaQuoteOf(paths: string[]): string {
-  return paths.map((path) => `![${path.split(/[/\\]/).pop() || 'media'}](${path})`).join('\n\n');
-}

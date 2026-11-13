@@ -45,6 +45,8 @@ interface EventTypes {
   ];
   // 填充输入框事件 / Fill sendbox input event
   'sendbox.fill': [string]; // prompt text to fill
+  // Mention local files into the send box the way typing `@` and picking them does: token + attachment.
+  'sendbox.mention.files': [string[], string | undefined]; // absolute paths, target conversation id
   'sendbox.reply': [ReplyQuote]; // reply/quote a message
   'sendbox.reply.clear': void; // clear reply quote
   /**
