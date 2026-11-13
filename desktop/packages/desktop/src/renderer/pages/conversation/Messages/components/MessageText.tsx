@@ -426,7 +426,6 @@ const MessageText: React.FC<{
               'flex-row-reverse': isUserMessage,
             })}
           >
-            {copyButton}
             {mediaPaths.length ? (
               <>
                 <Tooltip content={t('acp.image.download')}>
@@ -451,6 +450,7 @@ const MessageText: React.FC<{
                 </Tooltip>
               </>
             ) : null}
+            {copyButton}
             {forkButton}
             {rewindButton}
             {message.created_at && (
