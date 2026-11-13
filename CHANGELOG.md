@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- **Images in a reply open the shared preview.** A local markdown image in a reply can be clicked: the preview zooms in and out, steps through the conversation's images, and saves the file from its toolbar. Images are also capped in height in the transcript, so a tall one no longer stretches the conversation ([#420](https://github.com/qybaihe/mu/pull/420) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
+
 ## [0.3.12] - 2026-11-13
 
 **0.3.12 shows image thumbnails in deliverables cards and fixes relative markdown images in native conversations.** The command line is unchanged from 0.3.11; the desktop app carries mu-agent 0.3.11.
