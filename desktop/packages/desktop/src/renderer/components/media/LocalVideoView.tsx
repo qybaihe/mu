@@ -57,8 +57,15 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     };
   }, [src, root]);
 
+  // React's muted prop reaches the element inconsistently, and Chromium then treats the video
+  // as unmuted: play() without a user gesture — hover is none — is rejected, and the catch
+  // below swallows it. Setting muted imperatively right before play makes hover-play reliable.
   const startInline = useCallback(() => {
-    void inlineRef.current?.play().catch(() => {});
+    const video = inlineRef.current;
+    if (!video) return;
+    video.muted = true;
+    video.defaultMuted = true;
+    void video.play().catch(() => {});
   }, []);
   const stopInline = useCallback(() => {
     inlineRef.current?.pause();
@@ -69,7 +76,12 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   useEffect(() => {
     if (!open) return;
     inlineRef.current?.pause();
-    void modalRef.current?.play().catch(() => {});
+    const large = modalRef.current;
+    if (large) {
+      large.muted = true;
+      large.defaultMuted = true;
+      void large.play().catch(() => {});
+    }
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);
     };
