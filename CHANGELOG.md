@@ -1,8 +1,16 @@
+# Changelog
+
+What changed in each release of mu: the desktop app and the `mu` command line together. Releases are published under [Releases](https://github.com/qybaihe/mu/releases) with their downloads; the `mu-agent` npm package has its own, more detailed [changelog](kyrn/npm/CHANGELOG.md).
+
 ## [Unreleased]
 
 ### Added
 
-- **Files `present` hands over show their pictures.** An image in a deliverables card is drawn as a thumbnail in its row, not only named; any other file keeps its row as it was.
+- **Files `present` hands over show their pictures.** An image in a deliverables card is drawn as a thumbnail in its row, not only named; any other file keeps its row as it was ([#417](https://github.com/qybaihe/mu/issues/417), [#419](https://github.com/qybaihe/mu/pull/419) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
+
+### Fixed
+
+- **A markdown image in a reply of a native conversation renders again from its relative path.** The transcript now receives the conversation's workspace, so `![alt](out/card.png)` in a reply is resolved against the folder mu works in instead of collapsing into a broken image ([#416](https://github.com/qybaihe/mu/issues/416), [#418](https://github.com/qybaihe/mu/pull/418) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
 
 ## [0.3.11] - 2026-11-11
 

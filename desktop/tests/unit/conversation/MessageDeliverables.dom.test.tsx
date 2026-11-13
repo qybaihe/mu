@@ -64,6 +64,7 @@ describe('deliverables', () => {
 });
 
 describe('MessageDeliverables', () => {
+  // https://github.com/qybaihe/mu/issues/417
   it('shows an image file as a thumbnail in its row, and a document only by name', async () => {
     render(
       <MessageDeliverables
