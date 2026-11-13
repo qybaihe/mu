@@ -337,6 +337,7 @@ const initStyleCss = (
   }
   img {
     max-width: 100%;
+    max-height: 360px;
     height: auto;
   }
    /* Table border styles */
