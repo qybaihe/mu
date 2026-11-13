@@ -1310,53 +1310,27 @@ const SendBox: React.FC<{
     [canMentionSessions, caretPosition, getTextareaElement, input, onSelectedSessionsChange, selectedSessions, setInput]
   );
 
-  // Mention local files from outside the box (a reply's quote action): the same effect as
-  // typing `@` and picking each file — the `@path` token in the text, the file attached, and
-  // the attachment event the conversation's own lanes listen for.
+  // Quote local files from outside the box (a reply's quote action): they become attachment
+  // chips above the input — the file name only, never a long `@path` token in the text — the
+  // same thing attaching through the file picker does, plus the per-conversation append event.
   const mentionFilesFromMessage = useCallback(
     (paths: string[]) => {
       const items = localSelectionItems(paths);
       if (!items.length) return;
-      let nextValue = input;
-      let nextCaret = caretPosition;
-      for (const item of items) {
-        const path = item.path;
-        if (!path) continue;
-        const insertion = insertMentionAtCaret(nextValue, nextCaret, `@${escapeAtFilePath(path)}`, isBoundaryChar);
-        nextValue = insertion.value;
-        nextCaret = insertion.caret;
-        if (selectedWorkspaceItems && onSelectedWorkspaceItemsChange) {
-          const merged = mergeFileSelectionItems(selectedWorkspaceItems, [item]);
-          onSelectedWorkspaceItemsChange(
-            buildOwnedSelectionItems(
-              merged,
-              mentionOwnedPathsRef.current,
-              externalOwnedPathsRef.current,
-              selectedItemByPathRef.current
-            )
-          );
-        }
-        emitSelectedFileAppend(item);
+      if (selectedWorkspaceItems && onSelectedWorkspaceItemsChange) {
+        const merged = mergeFileSelectionItems(selectedWorkspaceItems, items);
+        onSelectedWorkspaceItemsChange(
+          buildOwnedSelectionItems(
+            merged,
+            mentionOwnedPathsRef.current,
+            externalOwnedPathsRef.current,
+            selectedItemByPathRef.current
+          )
+        );
       }
-      setInput(nextValue);
-      requestAnimationFrame(() => {
-        const textarea = getTextareaElement();
-        if (!textarea) return;
-        textarea.focus();
-        textarea.setSelectionRange(nextCaret, nextCaret);
-        setCaretPosition(nextCaret);
-      });
+      for (const item of items) emitSelectedFileAppend(item);
     },
-    [
-      caretPosition,
-      emitSelectedFileAppend,
-      externalOwnedPathsRef,
-      getTextareaElement,
-      input,
-      onSelectedWorkspaceItemsChange,
-      selectedWorkspaceItems,
-      setInput,
-    ]
+    [emitSelectedFileAppend, externalOwnedPathsRef, onSelectedWorkspaceItemsChange, selectedWorkspaceItems]
   );
 
   useAddEventListener(
