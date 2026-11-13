@@ -23,6 +23,9 @@ export const BINARY_MIME_MAP: Record<string, string> = {
   bz2: 'application/x-bzip2',
   '7z': 'application/x-7z-compressed',
   rar: 'application/vnd.rar',
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+  mov: 'video/quicktime',
 };
 
 /**
