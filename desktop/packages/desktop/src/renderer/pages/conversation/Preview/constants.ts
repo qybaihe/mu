@@ -62,7 +62,7 @@ export const LARGE_TEXT_VIEWER_THRESHOLD = 30_000;
  * 具有内置打开按钮的文件类型
  * File types with built-in open buttons
  */
-export const FILE_TYPES_WITH_BUILTIN_OPEN = ['word', 'ppt', 'pdf', 'excel'] as const;
+export const FILE_TYPES_WITH_BUILTIN_OPEN = ['word', 'ppt', 'pdf', 'excel', 'html'] as const;
 
 /**
  * 可编辑的内容类型
