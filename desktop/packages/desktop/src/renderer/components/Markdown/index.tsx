@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { convertLatexDelimiters } from '@renderer/utils/chat/latexDelimiters';
 import LocalImageView from '@renderer/components/media/LocalImageView';
 import LocalVideoView from '@renderer/components/media/LocalVideoView';
+import LocalHtmlView from '@renderer/components/media/LocalHtmlView';
 import CodeBlock from './CodeBlock';
 import LocalFileLink from './LocalFileLink';
 import ShadowView from './ShadowView';
@@ -36,6 +37,9 @@ import type { LocalFileLinkReference } from './markdownUtils';
 
 /** A video the same markdown image syntax carries: it plays on hover and opens on click. */
 const VIDEO_PATH_RE = /\.(?:mp4|webm|mov)$/i;
+
+/** A self-contained page the same syntax carries: it renders as a live sandbox, not a picture. */
+const HTML_PATH_RE = /\.html?$/i;
 
 const isLocalFilePath = (src: string): boolean => {
   if (src.startsWith('http://') || src.startsWith('https://')) return false;
@@ -183,6 +187,7 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
           const imgProps = rest as React.ImgHTMLAttributes<HTMLImageElement>;
           if (isLocalFilePath(imgProps.src || '')) {
             const src = decodeURIComponent(imgProps.src || '');
+            if (HTML_PATH_RE.test(src)) return <LocalHtmlView src={src} title={imgProps.alt || ''} />;
             if (VIDEO_PATH_RE.test(src)) return <LocalVideoView src={src} title={imgProps.alt || ''} />;
             return <LocalImageView src={src} alt={imgProps.alt || ''} className={imgProps.className} preview />;
           }
