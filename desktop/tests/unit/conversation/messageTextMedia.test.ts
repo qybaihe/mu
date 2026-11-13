@@ -19,12 +19,7 @@ describe('mediaPathsOf', () => {
       '![bad-percent](out/100%raw.png)',
       'after',
     ].join('\n');
-    expect(mediaPathsOf(text)).toEqual([
-      'E:/out/card.png',
-      './out/demo.mp4',
-      'F:/报告/shot.webp',
-      'out/100%raw.png',
-    ]);
+    expect(mediaPathsOf(text)).toEqual(['E:/out/card.png', './out/demo.mp4', 'F:/报告/shot.webp', 'out/100%raw.png']);
     expect(mediaPathsOf(text, '/Users/demo/project')).toEqual([
       'E:/out/card.png',
       '/Users/demo/project/out/demo.mp4',
