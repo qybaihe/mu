@@ -28,7 +28,7 @@ export type ActiveAtFileQuery = {
   token: string;
 };
 
-export function isBoundaryChar(char: string): boolean {
+function isBoundaryChar(char: string): boolean {
   return AT_FILE_BOUNDARY_RE.test(char);
 }
 

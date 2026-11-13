@@ -1,22 +1,34 @@
 import { ipcBridge } from '@/common';
 import { joinPath } from '@/common/chat/chatLib';
-import { LoadingTwo } from '@icon-park/react';
-import React, { useEffect, useMemo, useState } from 'react';
+import { Download, Link, LoadingTwo } from '@icon-park/react';
+import { Image as ArcoImage, Message } from '@arco-design/web-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useConversationContextSafe } from '@renderer/hooks/context/ConversationContext';
 import { iconColors } from '@/renderer/styles/colors';
+import { downloadFileFromPath } from '@/renderer/utils/file/download';
+import { emitter } from '@/renderer/utils/emitter';
+
+/** The preview's toolbar, with the per-image extra action (save) at the end. */
+const PREVIEW_ACTIONS_LAYOUT = ['zoomIn', 'zoomOut', 'originalSize', 'rotateLeft', 'rotateRight', 'extra'];
 
 const LocalImageView: React.FC<{
   src: string;
   alt: string;
   className?: string;
-}> = ({ src, alt, className }) => {
+  /** Open the image preview on click: zoom, step through the conversation's images, save the file. */
+  preview?: boolean;
+}> = ({ src, alt, className, preview }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [url, setUrl] = useState(src);
   // Resolve relative image paths (e.g. ![](./chart.png)) against the conversation
   // workspace = the agent cwd, and pass it as the fs sandbox workspace. Outside a
   // conversation (settings markdown) there is no workspace, so the src is sent
   // through unchanged — matching the previous default root of ''.
-  const root = useConversationContextSafe()?.workspace ?? '';
+  const conversation = useConversationContextSafe();
+  const root = conversation?.workspace ?? '';
+  const conversationId = conversation?.conversation_id;
 
   const absolutePath = useMemo(() => {
     if (!root) return src;
@@ -50,7 +62,18 @@ const LocalImageView: React.FC<{
         });
         setLoading(false);
       });
-  }, [absolutePath]);
+  }, [absolutePath, root]);
+
+  const save = useCallback(async (): Promise<void> => {
+    const name = absolutePath.split(/[/\\]/).pop() || 'image';
+    try {
+      await downloadFileFromPath(absolutePath, name, root || undefined);
+    } catch (error) {
+      console.error('[LocalImageView] Failed to download image:', { path: absolutePath, error });
+      Message.error(t('acp.image.download_error'));
+    }
+  }, [absolutePath, root, t]);
+
   if (loading)
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -65,6 +88,39 @@ const LocalImageView: React.FC<{
         <span>{alt}</span>
       </span>
     );
+
+  if (preview)
+    return (
+      <ArcoImage
+        src={url}
+        alt={alt}
+        className={className ? `${className} cursor-zoom-in` : 'cursor-zoom-in'}
+        previewProps={{
+          actionsLayout: PREVIEW_ACTIONS_LAYOUT,
+          actions: [
+            {
+              key: 'quote',
+              name: t('common.reply'),
+              getContainer: (actionElement: React.ReactNode) => (
+                <span data-testid='local-image-quote'>{actionElement}</span>
+              ),
+              content: <Link theme='outline' />,
+              onClick: () => emitter.emit('sendbox.mention.files', [absolutePath], conversationId),
+            },
+            {
+              key: 'save',
+              name: t('acp.image.download'),
+              getContainer: (actionElement: React.ReactNode) => (
+                <span data-testid='local-image-save'>{actionElement}</span>
+              ),
+              content: <Download theme='outline' />,
+              onClick: () => void save(),
+            },
+          ],
+        }}
+      />
+    );
+
   return <img src={url} alt={alt} className={className} />;
 };
 

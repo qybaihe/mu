@@ -17,10 +17,8 @@ import { appendPromptToDraft, useConversationSendBoxPrefill } from '@/renderer/h
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import {
   buildAtFileInsertion,
-  escapeAtFilePath,
   getActiveAtFileQuery,
   getAllAtFileQueries,
-  isBoundaryChar,
   resolveAtFileMenuKey,
 } from '@/renderer/utils/chat/atFileQuery';
 import type { SessionMentionTarget, SessionRef } from '@/common/adapter/ipcBridge';
@@ -34,12 +32,15 @@ import {
 } from '@/renderer/utils/chat/atSessionQuery';
 import { buildAttachedMentionRanges } from '@/renderer/utils/chat/mentionHighlight';
 import { applyMentionInsertion, insertMentionAtCaret } from '@/renderer/utils/chat/mentionInsertion';
-import { localSelectionItems } from '@/renderer/utils/file/fileSelection';
+import {
+  localSelectionItems,
+  mergeFileSelectionItems,
+  type FileSelectionItem,
+} from '@/renderer/utils/file/fileSelection';
 import { reconcileSessionRefs } from './sessionMentionReconcile';
 import { getLastAssistantText } from '@/renderer/utils/chat/getLastAssistantText';
 import { formatRelativeTime } from '@/renderer/utils/chat/relativeTime';
 import { emitter, type ReplyQuote, useAddEventListener } from '@/renderer/utils/emitter';
-import { mergeFileSelectionItems, type FileSelectionItem } from '@/renderer/utils/file/fileSelection';
 import type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
 import { filterWorkspaceMentionItems, workspaceMentionItemFromListing } from '@/renderer/utils/file/workspaceMentions';
 import { useProjectMentionSearch } from '@/renderer/pages/conversation/explorer/search/useProjectMentionSearch';
@@ -1317,13 +1318,12 @@ const SendBox: React.FC<{
     (paths: string[]) => {
       const items = localSelectionItems(paths);
       if (!items.length) return;
-      // Own the paths first: buildOwnedSelectionItems keeps only owned ones, and the `@` lane
-      // owns what it inserts the same way — without this the chip is filtered out silently.
       for (const item of items) {
         const path = getSelectedItemKey(item);
         if (path) {
-          mentionOwnedPathsRef.current.add(path);
-          everMentionOwnedPathsRef.current.add(path);
+          rememberSelectedItem(selectedItemByPathRef.current, item);
+          externalOwnedPathsRef.current.add(path);
+          everMentionOwnedPathsRef.current.delete(path);
         }
       }
       if (selectedWorkspaceItems && onSelectedWorkspaceItemsChange) {
@@ -1339,7 +1339,7 @@ const SendBox: React.FC<{
       }
       for (const item of items) emitSelectedFileAppend(item);
     },
-    [emitSelectedFileAppend, externalOwnedPathsRef, onSelectedWorkspaceItemsChange, selectedWorkspaceItems]
+    [emitSelectedFileAppend, onSelectedWorkspaceItemsChange, selectedWorkspaceItems]
   );
 
   useAddEventListener(

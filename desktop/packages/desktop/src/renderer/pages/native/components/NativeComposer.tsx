@@ -223,6 +223,16 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   // what is there, as the classic box does.
   useAddEventListener('sendbox.fill', (text: string) => setDraft((old) => (old ? `${old}${text}` : text)), []);
 
+  // Files added from outside the box (Explorer's "add to chat", or quoting a reply's media): merge into mentioned.
+  useAddEventListener(
+    'acp.selected.file.append',
+    (items, targetConversationId) => {
+      if (targetConversationId !== undefined && targetConversationId !== id) return;
+      setMentioned((old) => mergeFileSelectionItems(old, items));
+    },
+    [id]
+  );
+
   // Text mu put into the person's editor (a checkpoint rewind gives the request back, to send again): into the box,
   // before what was typed since. Each once; an empty one clears nothing the person typed. What the conversation's
   // snapshot already held was given before this box was opened: it isn't given again.

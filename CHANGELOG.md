@@ -6,7 +6,20 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Added
 
-- **A reply's media can be saved or quoted from its hover bar.** A reply that embeds local images or videos gains two actions beside copy: one saves every embedded file, the other quotes them into the send box as attachment chips, like the file picker's attach.
+- **Images in a reply open the shared preview.** A local markdown image in a reply can be clicked: the preview zooms in and out, steps through the conversation's images, and saves or quotes the file from its toolbar. Images are also capped in height in the transcript, so a tall one no longer stretches the conversation ([#420](https://github.com/qybaihe/mu/pull/420) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
+- **A reply's media can be saved or quoted from its hover bar.** A reply that embeds local images or videos gains two actions beside copy: one saves every embedded file, the other quotes them into the send box as attachment chips, like the file picker's attach ([#422](https://github.com/qybaihe/mu/pull/422) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
+
+## [0.3.12] - 2026-11-13
+
+**0.3.12 shows image thumbnails in deliverables cards and fixes relative markdown images in native conversations.** The command line is unchanged from 0.3.11; the desktop app carries mu-agent 0.3.11.
+
+### Added
+
+- **Files `present` hands over show their pictures.** An image in a deliverables card is drawn as a thumbnail in its row, not only named; any other file keeps its row as it was ([#417](https://github.com/qybaihe/mu/issues/417), [#419](https://github.com/qybaihe/mu/pull/419) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
+
+### Fixed
+
+- **A markdown image in a reply of a native conversation renders again from its relative path.** The transcript now receives the conversation's workspace, so `![alt](out/card.png)` in a reply is resolved against the folder mu works in instead of collapsing into a broken image ([#416](https://github.com/qybaihe/mu/issues/416), [#418](https://github.com/qybaihe/mu/pull/418) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
 
 ## [0.3.11] - 2026-11-11
 
