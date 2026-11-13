@@ -42,13 +42,13 @@ beforeEach(() => {
 });
 
 describe('LocalVideoView', () => {
-  it('plays on hover and pauses on leave, without opening anything', async () => {
+  it('plays on hover of the whole video area and pauses on leave, without opening anything', async () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
-    const video = await screen.findByTestId('local-video');
+    await screen.findByTestId('local-video');
     expect(invoke).toHaveBeenCalledWith({ path: 'E:/out/demo.mp4', workspace: undefined });
-    fireEvent.mouseEnter(video);
+    fireEvent.mouseEnter(screen.getByTestId('local-video-wrap')); // the open button covers the video itself
     expect(play).toHaveBeenCalled();
-    fireEvent.mouseLeave(video);
+    fireEvent.mouseLeave(screen.getByTestId('local-video-wrap'));
     expect(pause).toHaveBeenCalled();
     expect(screen.queryByTestId('local-video-modal')).toBeNull();
   });
@@ -57,8 +57,9 @@ describe('LocalVideoView', () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     await screen.findByTestId('local-video');
     fireEvent.click(screen.getByTestId('local-video-open'));
-    const modal = screen.getByTestId('local-video-modal');
+    const modal = screen.getByTestId('local-video-modal'); // portaled to the body
     expect(modal).toBeTruthy();
+    expect(play).toHaveBeenCalled(); // the overlay starts playing at once
     expect(screen.getByTestId('local-video-zoom-in')).toBeTruthy();
     fireEvent.click(screen.getByTestId('local-video-rotate'));
     fireEvent.click(screen.getByTestId('local-video-save'));
