@@ -739,6 +739,25 @@ describe("what needs permission", () => {
 		expect(commandPrefix("find . -name '*.ts'")).toBe("find");
 	});
 
+	it("knows a wrapper by its path, its extension and its quotes too", () => {
+		for (const command of [
+			"/bin/bash -c 'rm -rf build'",
+			"/usr/bin/sudo rm -rf /",
+			"/usr/bin/env node x.js",
+			"bash.exe -c x",
+			"C:\\Windows\\System32\\cmd.exe /c del /q *",
+			"\\bash -c x",
+			'"bash" -c x',
+			'"C:\\Program Files\\Git\\bin\\bash.exe" -c x',
+			"/usr/bin/find . -delete",
+		]) {
+			expect(commandPrefix(command), command).toBeUndefined();
+		}
+		// A program by its path is still one permission per action, like the bare name.
+		expect(commandPrefix("/usr/bin/git push origin main")).toBe("/usr/bin/git push");
+		expect(commandPrefix("./node_modules/.bin/vitest run")).toBe("./node_modules/.bin/vitest");
+	});
+
 	it("leaves mu's own settings to the user, however a command spells the folder", () => {
 		// A home as this machine writes one: /home/me, or <drive>:\home\me on Windows.
 		const home = resolve("/home/me");
