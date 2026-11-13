@@ -225,6 +225,39 @@ describe("test-log arms", () => {
 		expect(JSON.stringify(state).length).toBeLessThanOrEqual(14_000);
 	});
 
+	it("shows the judge the text of a candidate that is one long line", async () => {
+		const dump = JSON.stringify({ rows: Array.from({ length: 300 }, (_, id) => ({ id, name: `row-${id}` })) });
+		const testCase: TestLogCase = {
+			id: "one-long-line",
+			goal: "Make the rows test print less.",
+			intent: "Run the rows test to see what it prints.",
+			call: "bash: npx vitest --run src/rows.test.ts",
+			output: [
+				" RUN  v3.2.4 /repo",
+				"",
+				"stdout | src/rows.test.ts > rows > parses rows",
+				dump,
+				"",
+				" ✓ src/rows.test.ts (1 test) 12ms",
+				"",
+				" Test Files  1 passed (1)",
+				"      Tests  1 passed (1)",
+				"",
+			].join("\n"),
+			required: [],
+			optional: [],
+		};
+		const provider = new MockJudgeProvider(alwaysOmit);
+		await run(testCase, "jev", provider);
+		const candidates = (provider.calls[0].state as { candidates: Record<string, { text: string }> }).candidates;
+		const view = Object.values(candidates).find((candidate) => candidate.text.includes("stdout | src/rows.test.ts"));
+		// Cut at line ends, the view was the header and a marker: none of the 8,000 characters the judge could omit.
+		expect(view?.text).toContain(dump.slice(0, 200));
+		expect(view?.text).toContain(dump.slice(-150));
+		expect(view?.text).toMatch(/\[\d+ more characters not shown\]/);
+		expect(view?.text.length).toBeLessThanOrEqual(800);
+	});
+
 	it("ignores verdicts on ids it did not offer", async () => {
 		const testCase = byId("vv-debug-expired-token");
 		const protectedIds = segmentTestLog(testCase.output)

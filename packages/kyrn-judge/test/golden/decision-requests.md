@@ -1157,7 +1157,7 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 }
 ```
 
-## tool.admission.test-log v3
+## tool.admission.test-log v4
 
 ```json
 {

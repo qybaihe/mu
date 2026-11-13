@@ -389,14 +389,29 @@ export function segmentTestLog(output: string, anchors: readonly string[] = []):
 	});
 }
 
-/** What the judge sees of a candidate: all of a short one, the head and tail of a long homogeneous one. */
+const VIEW_HEAD_CHARS = Math.floor(CANDIDATE_VIEW_CHARS * 0.65);
+const VIEW_TAIL_CHARS = Math.floor(CANDIDATE_VIEW_CHARS * 0.3);
+
+/**
+ * What the judge sees of a candidate: all of a short one, the head and tail of a long one. The cuts fall at a line
+ * end when one is near. A long line of its own, such as a JSON dump a test printed, is cut inside: cut at the line
+ * ends around it, the judge would see the header and a marker and none of the text it is asked to omit.
+ */
 function candidateView(unit: LogUnit): string {
 	const text = unit.text.replace(ANSI, "");
 	if (text.length <= CANDIDATE_VIEW_CHARS) return text;
-	const head = text.slice(0, text.lastIndexOf("\n", CANDIDATE_VIEW_CHARS * 0.65) + 1);
-	const tail = text.slice(text.indexOf("\n", text.length - CANDIDATE_VIEW_CHARS * 0.3) + 1);
-	const hidden = unit.lines - head.split("\n").length - tail.split("\n").length + 2;
-	return `${head}[${hidden} more lines of the same kind not shown]\n${tail}`;
+	const lineEnd = text.lastIndexOf("\n", VIEW_HEAD_CHARS) + 1;
+	const headEnd = lineEnd >= VIEW_HEAD_CHARS / 2 ? lineEnd : VIEW_HEAD_CHARS;
+	const lineStart = text.indexOf("\n", text.length - VIEW_TAIL_CHARS) + 1;
+	const tailStart =
+		lineStart > 0 && text.length - lineStart >= VIEW_TAIL_CHARS / 2 ? lineStart : text.length - VIEW_TAIL_CHARS;
+	const head = text.slice(0, headEnd);
+	const hidden = text.slice(headEnd, tailStart);
+	const wholeLines = head.endsWith("\n") && hidden.endsWith("\n");
+	const marker = wholeLines
+		? `[${hidden.split("\n").length - 1} more lines of the same kind not shown]`
+		: `[${hidden.length} more characters not shown]`;
+	return `${head}${head.endsWith("\n") ? "" : "\n"}${marker}\n${text.slice(tailStart)}`;
 }
 
 interface SelectionInput {
@@ -450,7 +465,7 @@ function omits(wording: TestLogWording, answer: Answer | undefined): boolean {
 export function testLogSelectionFor(wording: TestLogWording) {
 	return defineDecision({
 		id: wording === "suffices" ? "tool.admission.test-log" : `tool.admission.test-log.${wording}`,
-		version: 3,
+		version: 4,
 		cacheImpact: "none",
 		latency: "inline",
 		capabilities: "relate",
@@ -519,13 +534,15 @@ export async function planTestLog(
 		.filter((line) => SUMMARY_LINE.test(line) || FAILED_TEST_LINE.test(line))
 		.slice(0, 16)
 		.join("\n");
-	// The largest candidates first: they are where an omission pays. What does not fit stays.
+	// The largest candidates first: they are where an omission pays. What does not fit stays, and so does everything
+	// smaller than it: filling the rest of the budget with small candidates costs the judge more than omitting them saves.
 	const spec = testLogSelectionFor(wording);
 	const asked: LogUnit[] = [];
 	for (const unit of [...candidates].sort((a, b) => b.text.length - a.text.length)) {
 		if (asked.length >= MAX_QUESTIONS) break;
 		const next: SelectionInput = { ...input, run, candidates: [...asked, unit] };
-		if (JSON.stringify(spec.buildState(next)).length <= STATE_BUDGET_CHARS) asked.push(unit);
+		if (JSON.stringify(spec.buildState(next)).length > STATE_BUDGET_CHARS) break;
+		asked.push(unit);
 	}
 	if (asked.length === 0) return { ...byRules, reason: "judge-budget" };
 	asked.sort((a, b) => units.indexOf(a) - units.indexOf(b));
