@@ -60,13 +60,23 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   // React's muted prop reaches the element inconsistently, and Chromium then treats the video
   // as unmuted: play() without a user gesture — hover is none — is rejected, and the catch
   // below swallows it. Setting muted imperatively right before play makes hover-play reliable.
+  const [diag, setDiag] = useState('');
+  const instance = useMemo(() => {
+    const w = window as Window & typeof globalThis & { __vvCount?: number };
+    const count = (w.__vvCount = (w.__vvCount ?? 0) + 1);
+    return count;
+  }, []);
   const startInline = useCallback(() => {
     const video = inlineRef.current;
     if (!video) return;
     video.muted = true;
     video.defaultMuted = true;
-    void video.play().catch(() => {});
-  }, []);
+    setDiag(`#${instance} enter m=${video.muted} r=${video.readyState}`);
+    video
+      .play()
+      .then(() => setDiag(`#${instance} ▶`))
+      .catch((error: DOMException) => setDiag(`#${instance} ${error.name}`));
+  }, [instance]);
   const stopInline = useCallback(() => {
     inlineRef.current?.pause();
   }, []);
@@ -100,6 +110,24 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   }, [src, root, t]);
 
   const name = useMemo(() => src.split(/[/\\]/).pop() || 'video.mp4', [src]);
+
+  // React's synthetic mouseenter never arrives in the transcript (its mouseover/out pairing
+  // breaks there), while mousemove does; native listeners on the node are not affected.
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const node = wrapRef.current;
+    if (!node) return;
+    const enter = () => startInline();
+    const leave = () => stopInline();
+    node.addEventListener('mouseenter', enter);
+    node.addEventListener('mouseleave', leave);
+    return () => {
+      node.removeEventListener('mouseenter', enter);
+      node.removeEventListener('mouseleave', leave);
+    };
+    // `url` re-runs this once the loading placeholder (which carries no wrapper node) gave
+    // way to the real one, so the listeners are attached to the node that is actually shown.
+  }, [startInline, stopInline, url]);
 
   if (url === null)
     return (
@@ -211,10 +239,9 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
 
   return (
     <span
+      ref={wrapRef}
       data-testid='local-video-wrap'
       style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}
-      onMouseEnter={startInline}
-      onMouseLeave={stopInline}
     >
       <video
         ref={inlineRef}
@@ -244,7 +271,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
         }}
       >
         <PlayOne theme='filled' size='12' fill='#fff' />
-        {name}
+        {diag || name}
       </span>
       <button
         type='button'

@@ -46,9 +46,10 @@ describe('LocalVideoView', () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     await screen.findByTestId('local-video');
     expect(invoke).toHaveBeenCalledWith({ path: 'E:/out/demo.mp4', workspace: undefined });
-    fireEvent.mouseEnter(screen.getByTestId('local-video-wrap')); // the open button covers the video itself
+    const wrap = screen.getByTestId('local-video-wrap'); // the open button covers the video itself
+    fireEvent(wrap, new MouseEvent('mouseenter', { bubbles: false })); // native listeners, not React's synthetic pair
     expect(play).toHaveBeenCalled();
-    fireEvent.mouseLeave(screen.getByTestId('local-video-wrap'));
+    fireEvent(wrap, new MouseEvent('mouseleave', { bubbles: false }));
     expect(pause).toHaveBeenCalled();
     expect(screen.queryByTestId('local-video-modal')).toBeNull();
   });
