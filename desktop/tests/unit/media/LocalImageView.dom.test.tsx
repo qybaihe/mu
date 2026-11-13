@@ -22,6 +22,9 @@ const { invoke } = vi.hoisted(() => ({
 }));
 vi.mock('@/common', () => ({ ipcBridge: { fs: { getImageBase64: { invoke } } } }));
 
+const emit = vi.fn();
+vi.mock('@/renderer/utils/emitter', () => ({ emitter: { emit } }));
+
 vi.mock('@arco-design/web-react', async () => {
   const actual = await vi.importActual<typeof import('@arco-design/web-react')>('@arco-design/web-react');
   return { ...actual, Message: { error: vi.fn() } };
@@ -33,6 +36,7 @@ Object.assign(URL, { createObjectURL, revokeObjectURL });
 
 afterEach(() => {
   invoke.mockClear();
+  emit.mockClear();
 });
 
 describe('LocalImageView', () => {
@@ -47,6 +51,10 @@ describe('LocalImageView', () => {
     expect(save).toBeTruthy();
     expect(document.querySelector('.arco-image-preview')).toBeTruthy();
     invoke.mockClear();
+    const quote = screen.getByTestId('local-image-quote');
+    expect(quote).toBeTruthy();
+    fireEvent.click(quote.firstElementChild ?? quote); // quote the file into the send box
+    expect(emit).toHaveBeenCalledWith('sendbox.mention.files', ['E:/out/card.png'], undefined);
     fireEvent.click(save.firstElementChild ?? save); // the span only wraps Arco's action div
     await waitFor(() => expect(invoke).toHaveBeenCalledWith({ path: 'E:/out/card.png', workspace: undefined }));
   });
