@@ -82,6 +82,7 @@ vi.mock('@/renderer/pages/native/hooks/useNativeConversation', () => ({
 }));
 
 describe('NativeConversationScreen', () => {
+  // https://github.com/qybaihe/mu/issues/416
   it('gives the transcript the conversation workspace', () => {
     render(
       <MemoryRouter>
