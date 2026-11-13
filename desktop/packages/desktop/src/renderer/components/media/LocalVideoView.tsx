@@ -1,5 +1,5 @@
 import { ipcBridge } from '@/common';
-import { Download, LoadingTwo, PlayOne } from '@icon-park/react';
+import { Download, LoadingTwo, Pause, PlayOne } from '@icon-park/react';
 import { Message } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -70,6 +70,24 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const stopInline = useCallback(() => {
     inlineRef.current?.pause();
   }, []);
+
+  // The badge follows the playback itself, not the pointer: native play/pause events say
+  // what the video actually does, whatever started or stopped it.
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    const video = inlineRef.current;
+    if (!video) return;
+    const on = () => setPlaying(true);
+    const off = () => setPlaying(false);
+    video.addEventListener('play', on);
+    video.addEventListener('pause', off);
+    video.addEventListener('ended', off);
+    return () => {
+      video.removeEventListener('play', on);
+      video.removeEventListener('pause', off);
+      video.removeEventListener('ended', off);
+    };
+  }, [url]);
 
   // Opening the overlay plays the large video at once (it is muted, so autoplay is allowed) and
   // stops the small one; Esc closes.
@@ -260,7 +278,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
           pointerEvents: 'none',
         }}
       >
-        <PlayOne theme='filled' size='12' fill='#fff' />
+        {playing ? <Pause theme='filled' size='12' fill='#fff' /> : <PlayOne theme='filled' size='12' fill='#fff' />}
         {name}
       </span>
       <button
