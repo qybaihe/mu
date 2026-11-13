@@ -1,12 +1,12 @@
-# Changelog
-
-What changed in each release of mu: the desktop app and the `mu` command line together. Releases are published under [Releases](https://github.com/qybaihe/mu/releases) with their downloads; the `mu-agent` npm package has its own, more detailed [changelog](kyrn/npm/CHANGELOG.md).
-
 ## [Unreleased]
 
 ### Added
 
 - **Images in a reply open the shared preview.** A local markdown image in a reply can be clicked: the preview zooms in and out, steps through the conversation's images, and saves the file from its toolbar. Images are also capped in height in the transcript, so a tall one no longer stretches the conversation.
+
+### Fixed
+
+- **A markdown image in a reply of a native conversation renders again from its relative path.** The transcript now receives the conversation's workspace, so `![alt](out/card.png)` in a reply is resolved against the folder mu works in instead of collapsing into a broken image.
 
 ## [0.3.11] - 2026-11-11
 
