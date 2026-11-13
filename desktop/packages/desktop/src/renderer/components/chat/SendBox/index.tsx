@@ -1317,6 +1317,15 @@ const SendBox: React.FC<{
     (paths: string[]) => {
       const items = localSelectionItems(paths);
       if (!items.length) return;
+      // Own the paths first: buildOwnedSelectionItems keeps only owned ones, and the `@` lane
+      // owns what it inserts the same way — without this the chip is filtered out silently.
+      for (const item of items) {
+        const path = getSelectedItemKey(item);
+        if (path) {
+          mentionOwnedPathsRef.current.add(path);
+          everMentionOwnedPathsRef.current.add(path);
+        }
+      }
       if (selectedWorkspaceItems && onSelectedWorkspaceItemsChange) {
         const merged = mergeFileSelectionItems(selectedWorkspaceItems, items);
         onSelectedWorkspaceItemsChange(
