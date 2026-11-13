@@ -123,16 +123,31 @@ const WRAPPER =
 /** What makes `find` run a program on, or delete, every file it finds. */
 const FIND_ACTS = /^-(?:exec|execdir|ok|okdir|delete|fprint0?|fprintf|fls)$/;
 
+/**
+ * The program a command's first word runs, as the lists above name it: `/usr/bin/sudo`, `C:\Windows\System32\cmd.exe`
+ * and `\bash` are `sudo`, `cmd` and `bash`.
+ */
+function programOf(word: string): string {
+	return word
+		.replace(/^\\+/, "")
+		.replace(/^.*[\\/]/, "")
+		.replace(/\.(?:exe|com|cmd|bat)$/i, "");
+}
+
 /** "npm test", "git commit", "python": what "allow for this conversation" allows for a command. */
 export function commandPrefix(command: string): string | undefined {
 	const text = command.trim();
 	if (!text || COMPOUND.test(text)) return undefined;
 	const words = text.split(/\s+/);
-	// A leading `VAR=value` or `sudo` changes what runs: such a command is allowed once or not at all.
-	if (/=/.test(words[0]) || WRAPPER.test(words[0])) return undefined;
-	if (/^find$/i.test(words[0]) && words.some((word) => FIND_ACTS.test(word))) return undefined;
+	// A quoted program can hide a wrapper behind its quotes or a space in its path (`"C:\Program Files\Git\bin\bash.exe"`).
+	if (/^["']/.test(words[0])) return undefined;
+	const program = programOf(words[0]);
+	// A leading `VAR=value` or `sudo` changes what runs: such a command is allowed once or not at all. A path or an
+	// extension does not change that: allowing `/bin/bash` would allow `/bin/bash -c <anything>`.
+	if (/=/.test(words[0]) || WRAPPER.test(program)) return undefined;
+	if (/^find$/i.test(program) && words.some((word) => FIND_ACTS.test(word))) return undefined;
 	const [first, second] = words;
-	return TWO_WORD.test(first) && second && !second.startsWith("-") ? `${first} ${second}` : first;
+	return TWO_WORD.test(program) && second && !second.startsWith("-") ? `${first} ${second}` : first;
 }
 
 const text = (value: unknown): string => (typeof value === "string" ? value : "");
