@@ -5,7 +5,7 @@
  */
 
 /**
- * A local image can open the shared preview on click (zoom, save) when `preview` is on — the markdown reply's
+ * A local image can open the shared preview on click (zoom, quote, save) when `preview` is on — the markdown reply's
  * images — and stays a plain sized <img> without it — the three call sites that pass their own sizing classes.
  */
 import React from 'react';
@@ -22,6 +22,9 @@ const { invoke } = vi.hoisted(() => ({
 }));
 vi.mock('@/common', () => ({ ipcBridge: { fs: { getImageBase64: { invoke } } } }));
 
+const { emit } = vi.hoisted(() => ({ emit: vi.fn() }));
+vi.mock('@/renderer/utils/emitter', () => ({ emitter: { emit } }));
+
 vi.mock('@arco-design/web-react', async () => {
   const actual = await vi.importActual<typeof import('@arco-design/web-react')>('@arco-design/web-react');
   return { ...actual, Message: { error: vi.fn() } };
@@ -33,21 +36,25 @@ Object.assign(URL, { createObjectURL, revokeObjectURL });
 
 afterEach(() => {
   invoke.mockClear();
+  emit.mockClear();
 });
 
 describe('LocalImageView', () => {
-  it('opens the preview with a save action on click when preview is on', async () => {
+  it('opens the preview with quote and save actions on click when preview is on', async () => {
     render(<LocalImageView src='E:/out/card.png' alt='card.png' preview />);
     const image = await screen.findByAltText('card.png');
-    fireEvent.load(image); // jsdom never loads images; Arco opens the preview only once loaded
+    fireEvent.load(image);
     fireEvent.click(image);
     const shown = await waitFor(() => document.querySelector('.arco-image-preview-img'), { timeout: 3000 });
-    fireEvent.load(shown as HTMLElement); // and its toolbar waits for the previewed image to load
+    fireEvent.load(shown as HTMLElement);
     const save = await screen.findByTestId('local-image-save', undefined, { timeout: 3000 });
     expect(save).toBeTruthy();
     expect(document.querySelector('.arco-image-preview')).toBeTruthy();
     invoke.mockClear();
-    fireEvent.click(save.firstElementChild ?? save); // the span only wraps Arco's action div
+    const quote = screen.getByTestId('local-image-quote');
+    fireEvent.click(quote.firstElementChild ?? quote);
+    expect(emit).toHaveBeenCalledWith('sendbox.mention.files', ['E:/out/card.png'], undefined);
+    fireEvent.click(save.firstElementChild ?? save);
     await waitFor(() => expect(invoke).toHaveBeenCalledWith({ path: 'E:/out/card.png', workspace: undefined }));
   });
 

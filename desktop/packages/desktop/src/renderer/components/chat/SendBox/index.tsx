@@ -32,11 +32,15 @@ import {
 } from '@/renderer/utils/chat/atSessionQuery';
 import { buildAttachedMentionRanges } from '@/renderer/utils/chat/mentionHighlight';
 import { applyMentionInsertion, insertMentionAtCaret } from '@/renderer/utils/chat/mentionInsertion';
+import {
+  localSelectionItems,
+  mergeFileSelectionItems,
+  type FileSelectionItem,
+} from '@/renderer/utils/file/fileSelection';
 import { reconcileSessionRefs } from './sessionMentionReconcile';
 import { getLastAssistantText } from '@/renderer/utils/chat/getLastAssistantText';
 import { formatRelativeTime } from '@/renderer/utils/chat/relativeTime';
 import { emitter, type ReplyQuote, useAddEventListener } from '@/renderer/utils/emitter';
-import { mergeFileSelectionItems, type FileSelectionItem } from '@/renderer/utils/file/fileSelection';
 import type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
 import { filterWorkspaceMentionItems, workspaceMentionItemFromListing } from '@/renderer/utils/file/workspaceMentions';
 import { useProjectMentionSearch } from '@/renderer/pages/conversation/explorer/search/useProjectMentionSearch';
@@ -1305,6 +1309,50 @@ const SendBox: React.FC<{
       });
     },
     [canMentionSessions, caretPosition, getTextareaElement, input, onSelectedSessionsChange, selectedSessions, setInput]
+  );
+
+  // Quote local files from outside the box (a reply's quote action): they become attachment
+  // chips above the input — the file name only, never a long `@path` token in the text — the
+  // same thing attaching through the file picker does, plus the per-conversation append event.
+  const mentionFilesFromMessage = useCallback(
+    (paths: string[]) => {
+      const items = localSelectionItems(paths);
+      if (!items.length) return;
+      for (const item of items) {
+        const path = getSelectedItemKey(item);
+        if (path) {
+          rememberSelectedItem(selectedItemByPathRef.current, item);
+          externalOwnedPathsRef.current.add(path);
+          everMentionOwnedPathsRef.current.delete(path);
+        }
+      }
+      if (selectedWorkspaceItems && onSelectedWorkspaceItemsChange) {
+        const merged = mergeFileSelectionItems(selectedWorkspaceItems, items);
+        onSelectedWorkspaceItemsChange(
+          buildOwnedSelectionItems(
+            merged,
+            mentionOwnedPathsRef.current,
+            externalOwnedPathsRef.current,
+            selectedItemByPathRef.current
+          )
+        );
+      }
+      for (const item of items) emitSelectedFileAppend(item);
+    },
+    [emitSelectedFileAppend, onSelectedWorkspaceItemsChange, selectedWorkspaceItems]
+  );
+
+  useAddEventListener(
+    'sendbox.mention.files',
+    (paths, targetConversationId) => {
+      // Several conversation views can be mounted at once, so only the send box
+      // the click belongs to may react — same guard the other lanes carry.
+      if (targetConversationId !== undefined && targetConversationId !== conversationContext?.conversation_id) {
+        return;
+      }
+      mentionFilesFromMessage(paths);
+    },
+    [conversationContext?.conversation_id, mentionFilesFromMessage]
   );
 
   useAddEventListener(

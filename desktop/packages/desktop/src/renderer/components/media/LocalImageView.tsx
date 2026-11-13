@@ -1,12 +1,13 @@
 import { ipcBridge } from '@/common';
 import { joinPath } from '@/common/chat/chatLib';
-import { Download, LoadingTwo } from '@icon-park/react';
+import { Download, Link, LoadingTwo } from '@icon-park/react';
 import { Image as ArcoImage, Message } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConversationContextSafe } from '@renderer/hooks/context/ConversationContext';
 import { iconColors } from '@/renderer/styles/colors';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
+import { emitter } from '@/renderer/utils/emitter';
 
 /** The preview's toolbar, with the per-image extra action (save) at the end. */
 const PREVIEW_ACTIONS_LAYOUT = ['zoomIn', 'zoomOut', 'originalSize', 'rotateLeft', 'rotateRight', 'extra'];
@@ -25,7 +26,9 @@ const LocalImageView: React.FC<{
   // workspace = the agent cwd, and pass it as the fs sandbox workspace. Outside a
   // conversation (settings markdown) there is no workspace, so the src is sent
   // through unchanged — matching the previous default root of ''.
-  const root = useConversationContextSafe()?.workspace ?? '';
+  const conversation = useConversationContextSafe();
+  const root = conversation?.workspace ?? '';
+  const conversationId = conversation?.conversation_id;
 
   const absolutePath = useMemo(() => {
     if (!root) return src;
@@ -95,6 +98,15 @@ const LocalImageView: React.FC<{
         previewProps={{
           actionsLayout: PREVIEW_ACTIONS_LAYOUT,
           actions: [
+            {
+              key: 'quote',
+              name: t('common.reply'),
+              getContainer: (actionElement: React.ReactNode) => (
+                <span data-testid='local-image-quote'>{actionElement}</span>
+              ),
+              content: <Link theme='outline' />,
+              onClick: () => emitter.emit('sendbox.mention.files', [absolutePath], conversationId),
+            },
             {
               key: 'save',
               name: t('acp.image.download'),

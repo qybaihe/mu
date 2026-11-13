@@ -6,7 +6,8 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Added
 
-- **Images in a reply open the shared preview.** A local markdown image in a reply can be clicked: the preview zooms in and out, steps through the conversation's images, and saves the file from its toolbar. Images are also capped in height in the transcript, so a tall one no longer stretches the conversation ([#420](https://github.com/qybaihe/mu/pull/420) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
+- **Images in a reply open the shared preview.** A local markdown image in a reply can be clicked: the preview zooms in and out, steps through the conversation's images, and saves or quotes the file from its toolbar. Images are also capped in height in the transcript, so a tall one no longer stretches the conversation ([#420](https://github.com/qybaihe/mu/pull/420) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
+- **A reply's media can be saved or quoted from its hover bar.** A reply that embeds local images or videos gains two actions beside copy: one saves every embedded file, the other quotes them into the send box as attachment chips, like the file picker's attach ([#422](https://github.com/qybaihe/mu/pull/422) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
 
 ## [0.3.12] - 2026-11-13
 
