@@ -4,22 +4,22 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.12] - 2026-11-13
+
+**In 0.3.12 images and media in replies and deliverables cards are easier to inspect, save and quote back into the next message, while the judgment kernel closes a path-wrapper permission bypass and shows the judge long single-line test dumps.** The desktop app carries mu-agent 0.3.12.
+
 ### Added
 
 - **Images in a reply open the shared preview.** A local markdown image in a reply can be clicked: the preview zooms in and out, steps through the conversation's images, and saves or quotes the file from its toolbar. Images are also capped in height in the transcript, so a tall one no longer stretches the conversation ([#420](https://github.com/qybaihe/mu/pull/420) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
 - **A reply's media can be saved or quoted from its hover bar.** A reply that embeds local images or videos gains two actions beside copy: one saves every embedded file, the other quotes them into the send box as attachment chips, like the file picker's attach ([#422](https://github.com/qybaihe/mu/pull/422) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
-
-## [0.3.12] - 2026-11-13
-
-**0.3.12 shows image thumbnails in deliverables cards and fixes relative markdown images in native conversations.** The command line is unchanged from 0.3.11; the desktop app carries mu-agent 0.3.11.
-
-### Added
-
 - **Files `present` hands over show their pictures.** An image in a deliverables card is drawn as a thumbnail in its row, not only named; any other file keeps its row as it was ([#417](https://github.com/qybaihe/mu/issues/417), [#419](https://github.com/qybaihe/mu/pull/419) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
 
 ### Fixed
 
+- **No session grant for a wrapper named by its path, extension or quotes.** `commandPrefix` resolves the executable name past `/bin/bash`, `/usr/bin/sudo`, `C:\Windows\System32\cmd.exe`, `"bash"` and `/usr/bin/find . -delete`, so allowing such a command never grants a conversation-wide or `/evolve` prefix that could run arbitrary commands ([#429](https://github.com/qybaihe/mu/pull/429) by [@4n5rud](https://github.com/4n5rud)).
+- **Test-log admission shows the judge long single-line candidates.** `candidateView` now cuts inside a single long line (such as a JSON dump printed by a passing test) when no newline is near, showing its head and tail with `[N more characters not shown]` instead of hiding all of it behind the header, and stops candidate selection at the first unit over the state budget (`tool.admission.test-log` v4) ([#428](https://github.com/qybaihe/mu/pull/428) by [@4n5rud](https://github.com/4n5rud)).
 - **A markdown image in a reply of a native conversation renders again from its relative path.** The transcript now receives the conversation's workspace, so `![alt](out/card.png)` in a reply is resolved against the folder mu works in instead of collapsing into a broken image ([#416](https://github.com/qybaihe/mu/issues/416), [#418](https://github.com/qybaihe/mu/pull/418) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
+- **Korean README polish.** Natural Korean phrasing and translated benchmark rows in `docs/readme/README.ko.md` ([#426](https://github.com/qybaihe/mu/pull/426) by [@4n5rud](https://github.com/4n5rud)).
 
 ## [0.3.11] - 2026-11-11
 
