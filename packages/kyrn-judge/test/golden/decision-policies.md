@@ -602,7 +602,7 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: [{"kind":"unknown","drop":false},{"kind":"unknown","drop":false}]
 - the judge failed: [{"kind":"unknown","drop":false},{"kind":"unknown","drop":false}] (fallback)
 
-## tool.admission.test-log v3
+## tool.admission.test-log v4
 
 - `part_1` (choice), the others high:
   - needed: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
