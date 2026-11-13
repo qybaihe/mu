@@ -42,6 +42,9 @@ type Upgraded = {
 /** A link socket's largest frame unless `links.options` says otherwise: 1 MiB. */
 const DEFAULT_LINK_PAYLOAD = 1024 * 1024;
 
+/** mu: how long a socket that failed (an oversized frame) has to finish the close `ws` began, then terminated: 1 s. */
+const FAILED_CLOSE = 1_000;
+
 /** The upgraded connections of one HTTP component. */
 export class Upgrades {
 	readonly #open = new Set<Upgraded>();
@@ -140,10 +143,20 @@ export class Upgrades {
 		for (const upgraded of this.#open) end(upgraded);
 	}
 
-	/** Keeps `upgraded` until its socket closes; an error (an oversized frame) terminates only that socket. */
+	/**
+	 * Keeps `upgraded` until its socket closes; an error (an oversized frame) closes only that socket, terminated after
+	 * `FAILED_CLOSE` when its peer does not finish the close.
+	 */
 	#keep(upgraded: Upgraded): void {
 		const { socket } = upgraded;
-		socket.on("error", () => socket.terminate());
+		// mu: `ws` answered the error with a close frame (1009 for an oversized frame) and reads no more frames.
+		// Terminated at once, the connection is reset while the peer still sends (its socket fails EPIPE or ECONNRESET)
+		// and the peer can miss the close frame: it then sees 1006, most times on macOS for a frame of 1 MiB.
+		socket.on("error", () => {
+			const timer = setTimeout(() => socket.terminate(), FAILED_CLOSE);
+			timer.unref();
+			socket.once("close", () => clearTimeout(timer));
+		});
 		this.#open.add(upgraded);
 		socket.once("close", () => this.#open.delete(upgraded));
 	}

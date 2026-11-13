@@ -370,14 +370,15 @@ A `// mu:` comment next to a change in code says the same thing in place.
 - **Why**: In print, json and sub-agent runs, mu's welcome feature replaces pi's `<docs>` section with one line by giving a custom section the same name. The test pins what that relies on in `buildSystemPromptSections()`: a custom section with a built-in name takes the built-in's place, and an empty one leaves the built-in section.
 - **In a merge**: Keep the test. If upstream changes `buildSystemPromptSections()` so that it fails, adapt mu's welcome feature (`packages/kyrn-judge/src/extension/features/welcome.ts`) rather than the test.
 
-### M33 pi's tests pass in a long checkout path and beside a real sign-in
+### M33 pi's tests pass in a long checkout path, beside a real sign-in and in a linked temp folder
 
 - **Files**
   - `packages/coding-agent/test/external-editor.test.ts`
   - `packages/coding-agent/test/tool-execution-component.test.ts`
   - `packages/coding-agent/test/suite/agent-session-compaction.test.ts`
   - `packages/ai/test/openai-chatgpt-oauth.test.ts`
-- **Why**: These tests fail when the checkout path is long or has spaces, or when a real sign-in holds port 1455. The editor fixture is copied to a temp folder, tool rows render wide enough not to wrap a long path, the compaction threshold test uses a fixed system prompt (and expects exactly one compaction), and the ChatGPT OAuth tests listen on port 0.
+  - `packages/chord/test/next-node/plugins/build.test.ts`
+- **Why**: These tests fail when the checkout path is long or has spaces, when a real sign-in holds port 1455, or when the temp folder is a link, as it is on macOS (`/var/folders/…` is `/private/var/folders/…`). The editor fixture is copied to a temp folder, tool rows render wide enough not to wrap a long path, the compaction threshold test uses a fixed system prompt (and expects exactly one compaction), the ChatGPT OAuth tests listen on port 0, and Chord's build test compares the copied files with the real path of its temp root, as the other tests of that file do.
 - **In a merge**: Take upstream's changes to the tests and keep these adjustments in them.
 
 ### M34 The test harness streams at a set speed and cleans up on Windows
@@ -566,5 +567,26 @@ A `// mu:` comment next to a change in code says the same thing in place.
 - **In a merge**: Keep `!named &&` on the bare-id match in `resolveModelScopeFromModels()`.
 - **Tests**
   - `packages/coding-agent/test/enabled-models.test.ts`
+
+### M52 On macOS the plugin watcher marks what changed while it watches, no more and no less
+
+- **Files**
+  - `packages/chord/src/next-node/plugins/watcher.ts`
+- **Why**: The watcher puts Node's `fs.watch` on every directory, which on macOS goes through FSEvents, and there a watch is not exact around its start. It also gets the events still on their way when it starts, about 10 ms of them: a plugin written right before `createPlugins` was marked dirty, to install, and the set to discover again, with nothing changed. And a change in the first milliseconds after several watches start can get no event at all, because every watch added replaces the process's one event stream and an event delivered to the replaced stream is lost: in a plain Node script, a file written 0 to 5 ms after five watches started got no event in 5 of 75 tries. On macOS only (`SETTLES`), a tree's watches now settle: the watcher keeps what each entry showed when its watch started (`lstat`: inode, size, times; for a directory inode and mode), an event for an entry that still shows the same is dropped, after one second (`SETTLE_MS`) the tree is read once more and an entry that shows otherwise without an event is marked, and a second later what was kept is forgotten and every event marks as upstream's do. An entry that is gone, and one on a file system with coarse times, is never dropped. Linux and Windows run upstream's code unchanged. pi's own tests hold it when run on macOS, where eight of them failed at one time or another: four of `test/next-node/plugins/watcher.test.ts`, two of `test/next-node/plugins/plugins.test.ts` and two of `test/next-node/workers/workers.test.ts`.
+- **In a merge**: Keep `SETTLES`, `SETTLE_MS`, `#seen`, `#settling`, `#settle()`, `#readAgain()`, `#asSeen()`, `shown()` and `remember()`, the `tree` argument of `#watchDirs()` with the lines that fill `#seen` there, the `#asSeen()` call in `#changedIn()` (which takes the directory and the name, not the joined path), and the cleanup in `close()`, `#unwatchTree()` and `#unwatchDirs()`. If upstream watches each tree with one recursive watch on macOS, the lost events go away but the early ones stay: keep the comparison with what the watch started with. If upstream fixes both, take theirs and retire this entry.
+
+### M53 A lock path that is no socket fails closed on macOS
+
+- **Files**
+  - `packages/chord/src/next-node/workers/lock.ts`
+- **Why**: A process lock is a socket file on macOS and the BSDs (an abstract socket on Linux). When the path is taken, `waitWhileHeld()` connects to it and reads a refused connection as "nobody holds it", which `lockAt()` turns into the stale-lock error. For a path that is a file and no socket, Linux refuses the connection, but macOS answers `ENOTSOCK`, which was read as "held, try again": `lockAt()` then tried without end and without waiting. `ENOTSOCK` now counts as nobody accepting. pi's `test/next-node/workers/lock.test.ts` ("fail closed on a stale lock file") holds it when run on macOS, where it timed out before.
+- **In a merge**: Keep `ENOTSOCK` beside `ECONNREFUSED` in the error listener of `waitWhileHeld()`.
+
+### M54 A socket that sent an oversized frame gets its close frame before it is terminated
+
+- **Files**
+  - `packages/chord/src/next-node/http/upgrades.ts`
+- **Why**: For a frame above `maxPayload`, `ws` sends a close frame (1009), stops reading frames and emits `error`, and Chord's listener terminated the socket in the same turn. That resets the connection while the peer still sends, and the reset can overtake the close frame, so the peer sees 1006 where the README promises 1009: on macOS in 10 of 12 runs of pi's test with a frame of 1 MiB + 1 byte. The listener now leaves `ws` to finish the close (the peer answers, both ends close) and terminates the socket after one second (`FAILED_CLOSE`) if it is still open. The link on the socket ends at the `error` as before, and no frame is read from the socket after it. pi's `test/next-node/http/upgrades.test.ts` ("takes frames of at most 1 MiB") holds it when run on macOS.
+- **In a merge**: Keep the timer in the `error` listener of `Upgrades.#keep()` and `FAILED_CLOSE`. If upstream closes a failed socket in another way that lets the close frame arrive, take theirs and retire this entry.
 
 ## Retired

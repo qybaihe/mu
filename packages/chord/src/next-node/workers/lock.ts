@@ -91,7 +91,8 @@ function listened(server: Server, address: string): Promise<boolean> {
 
 /**
  * Connects to the holder of `address` and resolves when that connection closes or the address is gone (`true`: try
- * again), or with `false` when nobody accepts on it (a leftover socket file); `context`'s abort rejects.
+ * again), or with `false` when nobody accepts on it (a leftover socket file, a file that is no socket); `context`'s
+ * abort rejects.
  */
 function waitWhileHeld(address: string, context: Context): Promise<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
@@ -115,7 +116,9 @@ function waitWhileHeld(address: string, context: Context): Promise<boolean> {
 			connected = true;
 		});
 		socket.on("error", (error: NodeJS.ErrnoException) => {
-			if (!connected && error.code === "ECONNREFUSED") settle(false);
+			// mu: macOS answers ENOTSOCK for a path that is no socket, where Linux refuses the connection. Nobody accepts
+			// on it either way; taken as held, the lock would be tried again without end.
+			if (!connected && (error.code === "ECONNREFUSED" || error.code === "ENOTSOCK")) settle(false);
 		});
 		socket.once("close", () => settle(true));
 	});

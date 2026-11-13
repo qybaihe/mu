@@ -264,9 +264,11 @@ describe("building a facet: the import table", () => {
 			buildFacet(plugins.find((each) => each.name === name)!, "worker", { ...NODE, plugins }, context);
 		const user = await build("@test/user");
 		if (user.kind === "failed") throw new Error(user.errors.join("\n"));
-		expect(user.copied.map((file) => file.slice(second.length + 1)).sort()).toEqual([
-			"elsewhere/contract.ts",
-			"elsewhere/other.ts",
+		// mu: copied files are named by their real paths, and the temporary directory is a link on macOS (/var).
+		const real = await realpath(second);
+		expect([...user.copied].sort()).toEqual([
+			join(real, "elsewhere", "contract.ts"),
+			join(real, "elsewhere", "other.ts"),
 		]);
 		expect(errors(await build("@test/relative"))).toEqual([
 			'worker.ts:1:22: "../user/worker.ts": a relative path into plugin "@test/user" (import its files by name: "@test/user/…")',
