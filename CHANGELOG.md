@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.12] - 2026-11-13
+
+**0.3.12 shows image thumbnails in deliverables cards and fixes relative markdown images in native conversations.** The command line is unchanged from 0.3.11; the desktop app carries mu-agent 0.3.11.
+
 ### Added
 
 - **Files `present` hands over show their pictures.** An image in a deliverables card is drawn as a thumbnail in its row, not only named; any other file keeps its row as it was ([#417](https://github.com/qybaihe/mu/issues/417), [#419](https://github.com/qybaihe/mu/pull/419) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
