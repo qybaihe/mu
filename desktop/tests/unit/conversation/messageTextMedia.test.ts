@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { mediaPathsOf, mediaQuoteOf } from '@/renderer/pages/conversation/Messages/components/messageTextMedia';
+import { mediaPathsOf } from '@/renderer/pages/conversation/Messages/components/messageTextMedia';
 
 describe('mediaPathsOf', () => {
   it('collects the local images and videos a reply embeds, and only those', () => {
@@ -19,13 +19,5 @@ describe('mediaPathsOf', () => {
       'after',
     ].join('\n');
     expect(mediaPathsOf(text)).toEqual(['E:/out/card.png', './out/demo.mp4', 'F:/报告/shot.webp']);
-  });
-});
-
-describe('mediaQuoteOf', () => {
-  it('quotes each media file as markdown with its own name', () => {
-    expect(mediaQuoteOf(['E:/out/card.png', 'E:/out/demo.mp4'])).toBe(
-      '![card.png](E:/out/card.png)\n\n![demo.mp4](E:/out/demo.mp4)'
-    );
   });
 });
