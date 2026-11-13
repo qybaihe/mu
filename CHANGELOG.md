@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Fixed
+
+- **A markdown image in a reply of a native conversation renders again from its relative path.** The transcript now receives the conversation's workspace, so `![alt](out/card.png)` in a reply is resolved against the folder mu works in instead of collapsing into a broken image ([#416](https://github.com/qybaihe/mu/issues/416), [#418](https://github.com/qybaihe/mu/pull/418) by [@ChinaLinus-CRS](https://github.com/ChinaLinus-CRS)).
+
 ## [0.3.11] - 2026-11-11
 
 **In 0.3.11 runs keep moving when nobody is at the keyboard, `/waiting` gathers everything that waits for you in one place, and mu shows how far a task has got without interrupting the agent.** The plain-language board stays reliable across reasoning relays and reopened conversations, `/evolve` can keep a recurring project command allowed once you accept it, and `mu judge` switches judges without running full setup again. The desktop app carries mu-agent 0.3.11.

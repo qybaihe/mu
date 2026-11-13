@@ -14,6 +14,7 @@ import type { IMessageText } from '@/common/chat/chatLib';
 import type { NativeFailure } from '@/common/kyrn/nativeBridge';
 import { wordsOf } from '@/common/utils/nativeHost';
 import FlexFullContainer from '@/renderer/components/layout/FlexFullContainer';
+import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
 import MessageList from '@/renderer/pages/conversation/Messages/MessageList';
 import MuBrowserHost from '@/renderer/pages/conversation/Preview/browser/muBrowser/MuBrowserHost';
 import {
@@ -86,6 +87,13 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
   const conversation = useNativeConversation(id);
   const { view, loading, failure, outgoing } = conversation;
   const cwd = conversation.conversation?.cwd;
+  // The transcript reads the conversation's workspace from this context, the same one the send box has of its own
+  // below: a markdown image in a reply resolves its relative path against it (LocalImageView). The value holds only
+  // what changes with the conversation, so a streaming view never re-renders the rows through it.
+  const conversationContext = useMemo(
+    () => ({ conversation_id: conversation.id, workspace: cwd, type: 'acp' as const }),
+    [conversation.id, cwd]
+  );
   const updateList = useUpdateMessageList();
   const updateLoading = useUpdateMessageListLoading();
 
@@ -251,11 +259,13 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
         conversationId={conversation.id}
       />
       <div className={`${CHAT_SURFACE_CONTAINER_CLASS} flex-1 flex flex-col px-20px min-h-0`}>
-        <MessageListRunProvider value={run}>
-          <FlexFullContainer>
-            <MessageList className='flex-1' emptySlot={loading ? undefined : <Empty cwd={cwd} />} />
-          </FlexFullContainer>
-        </MessageListRunProvider>
+        <ConversationProvider value={conversationContext}>
+          <MessageListRunProvider value={run}>
+            <FlexFullContainer>
+              <MessageList className='flex-1' emptySlot={loading ? undefined : <Empty cwd={cwd} />} />
+            </FlexFullContainer>
+          </MessageListRunProvider>
+        </ConversationProvider>
         <NativeComposer key={conversation.key} conversation={conversation} />
       </div>
       {/* mu's browse loop opens its tabs in this conversation's browser panel and asks its questions here. */}
