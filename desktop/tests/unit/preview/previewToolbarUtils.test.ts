@@ -202,7 +202,7 @@ describe('classifySaveOutcome', () => {
 // that, never replace it. Filtering the escape-hatch states by content type leaves a
 // tab that says "open this in a system editor" above no button at all.
 describe('shouldOfferOpenInSystem', () => {
-  const BUILTIN = ['word', 'ppt', 'pdf', 'excel'] as const;
+  const BUILTIN = ['word', 'ppt', 'pdf', 'excel', 'html'] as const;
 
   describe('escape hatch — never filtered by type', () => {
     it('offers it for an oversized text file, which no whitelist would include', () => {
@@ -225,11 +225,11 @@ describe('shouldOfferOpenInSystem', () => {
   });
 
   describe('convenience — by type', () => {
-    it.each(['word', 'ppt', 'pdf', 'excel'])('offers it for %s, better handled by a real app', (type) => {
+    it.each(['word', 'ppt', 'pdf', 'excel', 'html'])('offers it for %s, better handled by a real app', (type) => {
       expect(shouldOfferOpenInSystem(type, false, BUILTIN)).toBe(true);
     });
 
-    it.each(['markdown', 'code', 'csv', 'image', 'diff', 'html'])(
+    it.each(['markdown', 'code', 'csv', 'image', 'diff'])(
       'does not offer it for %s, which renders fine here',
       (type) => {
         expect(shouldOfferOpenInSystem(type, false, BUILTIN)).toBe(false);
