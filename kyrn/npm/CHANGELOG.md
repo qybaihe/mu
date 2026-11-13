@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.3.12] - 2026-11-13
+
+**0.3.12 closes a path- and extension-based wrapper bypass in conversation command grants and ensures `tool.admission.test-log` (v4) shows the judge the head and tail of long single-line test-log candidates.**
+
+### Fixed
+
+- **Permission grants (`permissions/modes.ts`)**: `commandPrefix` strips leading paths, backslashes, `.exe`/`.com`/`.cmd`/`.bat` extensions and rejects leading quotes before checking `WRAPPER`, `find` action flags and `TWO_WORD`, preventing commands like `/bin/bash -c …`, `/usr/bin/sudo …`, `C:\Windows\System32\cmd.exe /c …`, `"bash" -c …` and `/usr/bin/find . -delete` from offering conversation-wide or `/evolve` grants ([#429](https://github.com/qybaihe/mu/pull/429) by [@4n5rud](https://github.com/4n5rud)).
+- **Test-log admission (`admission/test-log.ts`, `tool.admission.test-log` v4)**: `candidateView` slices inside a single long line when no newline is nearby, reporting `[N more characters not shown]` so the judge inspects the actual payload before deciding to omit it, and `planTestLog` stops at the first candidate exceeding `STATE_BUDGET_CHARS` rather than filling the remainder with small passing lines ([#428](https://github.com/qybaihe/mu/pull/428) by [@4n5rud](https://github.com/4n5rud)).
+
 ## [0.3.11] - 2026-11-11
 
 **0.3.11 lets unattended runs move past unanswered permission and `ask_user` prompts after a single wait (`/approve`, `/waiting`), answers mid-run status checks without spending an agent turn (`input.interjection` v2), surfaces checklist progress in the terminal footer and at run end, adds per-project command grants and run-end suggestions to `/evolve`, lets `mu judge` switch judges standalone, and hardens the plain-language board against reasoning-relay token starvation (`kyrn.board` v2).**
