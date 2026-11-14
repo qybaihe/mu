@@ -79,13 +79,15 @@ describe('PreviewToolbar save button', () => {
     expect(save.compareDocumentPosition(refresh) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('places the open-in-system button first, ahead of save, when both render', () => {
+  it('places open-in-system first and inspect second, ahead of save', () => {
     const { container } = render(
       <PreviewToolbar
         {...baseProps}
         content_type='html'
+        isHTML
         showOpenInSystemButton
         onOpenInSystem={vi.fn()}
+        onInspectModeToggle={vi.fn()}
         refreshState='idle'
         refreshActionable
         showSave
@@ -95,12 +97,13 @@ describe('PreviewToolbar save button', () => {
     );
 
     const openInSystem = container.querySelector(`[title="${'preview.openInSystemApp'}"]`)!;
+    const inspectBtn = screen.getByText('preview.html.inspectElement');
     const save = container.querySelector('[data-testid="preview-save"]')!;
 
-    // Open-in-system leads the cluster...
+    // Open-in-system leads the cluster, inspect follows, save comes third.
     expect(openInSystem.parentElement?.firstElementChild).toBe(openInSystem);
-    // ...and save comes right after it.
-    expect(openInSystem.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(openInSystem.compareDocumentPosition(inspectBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(inspectBtn.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 
