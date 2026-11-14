@@ -43,6 +43,7 @@ import {
   withFiles,
 } from './composer/composerModel';
 import { NativeAttachButton, NativeAttachmentList } from './composer/NativeAttachments';
+import VoiceInputButton from '@/renderer/components/chat/VoiceInputButton';
 import NativeJobs from './composer/NativeJobs';
 import NativeModelChip from './composer/NativeModelChip';
 import NativePermissionPill from './composer/NativePermissionPill';
@@ -398,6 +399,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
               // Left of the input: attachments, then what mu may do.
               <>
                 <NativeAttachButton onClick={() => picker.current?.click()} />
+                <VoiceInputButton />
                 <NativePermissionPill state={permissions} held={held} request={request} />
                 <NativeJobs jobs={view.host.jobs} cwd={cwd} refresh={ranLast} request={request} />
               </>
