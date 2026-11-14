@@ -23,7 +23,13 @@ vi.mock('@/renderer/pages/conversation/Messages/hooks', () => ({ useMessageListR
 
 const emitterMocks = vi.hoisted(() => ({ emit: vi.fn() }));
 const openFileMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const copyTextMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock('@/renderer/utils/emitter', () => ({ emitter: { emit: emitterMocks.emit } }));
+vi.mock('@/renderer/utils/ui/clipboard', () => ({ copyText: copyTextMock }));
+vi.mock('@arco-design/web-react', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@arco-design/web-react')>();
+  return { ...original, Message: { success: vi.fn(), error: vi.fn() } };
+});
 vi.mock('@/common', () => ({ ipcBridge: { shell: { openFile: { invoke: openFileMock } } } }));
 
 afterEach(() => {
@@ -31,6 +37,7 @@ afterEach(() => {
   opened.length = 0;
   emitterMocks.emit.mockClear();
   openFileMock.mockClear();
+  copyTextMock.mockClear();
 });
 
 const i18n = createInstance();
@@ -108,6 +115,13 @@ describe('the files mu’s present handed over', () => {
       </ConversationProvider>
     );
     expect(screen.getAllByTestId('message-deliverables-file')).toHaveLength(2);
+    // The copy-attachments action sits before the per-file quote/open pair.
+    const bar = screen.getByTestId('deliverables-copy-attachments').parentElement as HTMLElement;
+    expect(bar.firstElementChild).toBe(screen.getByTestId('deliverables-copy-attachments'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('deliverables-copy-attachments'));
+    });
+    expect(copyTextMock).toHaveBeenCalledWith('Files:\n- /work/out/page.html\n- /work/out/report.pdf');
     // Only the HTML row carries the actions.
     expect(screen.getAllByTestId('deliverables-quote')).toHaveLength(1);
     expect(screen.getAllByTestId('deliverables-open')).toHaveLength(1);

@@ -5,7 +5,7 @@
  * the native transcript passes on as the call's raw output.
  */
 import { Button, Message, Tooltip } from '@arco-design/web-react';
-import { FileSuccess, Link } from '@icon-park/react';
+import { CopyOne, FileSuccess, Link } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TMessage } from '@/common/chat/chatLib';
@@ -15,6 +15,7 @@ import LocalImageView from '@/renderer/components/media/LocalImageView';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { useMessageListRun } from '../hooks';
 import { emitter } from '@/renderer/utils/emitter';
+import { copyText } from '@/renderer/utils/ui/clipboard';
 import { iconColors } from '@/renderer/styles/colors';
 
 /** HTML rows carry the image/video-style hover actions; other rows stay plain. */
@@ -137,6 +138,20 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
           card's very bottom, revealed by hovering the card, never over a row. */}
       {delivered.files.some((file) => HTML_FILE_RE.test(file.name)) ? (
         <div className='flex justify-start items-center gap-8px pt-2px px-4px opacity-0 group-hover/delivcard:opacity-100 transition-opacity'>
+          <Tooltip content={t('messages.copyAttachments')}>
+            <div
+              data-testid='deliverables-copy-attachments'
+              className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors'
+              onClick={() => {
+                copyText(`${t('messages.copyFilesHeader')}\n${delivered.files.map((file) => `- ${file.path}`).join('\n')}`)
+                  .then(() => Message.success(t('common.copySuccess')))
+                  .catch(() => Message.error(t('common.copyFailed')));
+              }}
+              style={{ lineHeight: 0 }}
+            >
+              <CopyOne theme='outline' size='16' fill={iconColors.secondary} />
+            </div>
+          </Tooltip>
           {delivered.files
             .filter((file) => HTML_FILE_RE.test(file.name))
             .map((file) => (
