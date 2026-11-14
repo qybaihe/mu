@@ -95,6 +95,71 @@ describe('LocalVideoView', () => {
     expect(pause).not.toHaveBeenCalled();
   });
 
+  it('offers play/pause and a draggable progress bar under the video', async () => {
+    render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
+    const video = (await screen.findByTestId('local-video')) as HTMLVideoElement;
+    let isPlaying = false;
+    let time = 0;
+    const elPlay = vi.fn(() => {
+      isPlaying = true;
+      return Promise.resolve();
+    });
+    const elPause = vi.fn(() => {
+      isPlaying = false;
+    });
+    Object.defineProperty(video, 'play', { configurable: true, value: elPlay });
+    Object.defineProperty(video, 'pause', { configurable: true, value: elPause });
+    Object.defineProperty(video, 'paused', { configurable: true, get: () => !isPlaying });
+    Object.defineProperty(video, 'duration', { configurable: true, get: () => 10 });
+    Object.defineProperty(video, 'currentTime', { configurable: true, get: () => time, set: (v) => (time = v) });
+
+    fireEvent(video, new Event('loadedmetadata')); // metadata arrived: the clock shows up
+    expect(screen.getByTestId('local-video-controls')).toBeTruthy();
+    expect(screen.getByText('0:00 / 0:10')).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId('local-video-play'));
+    expect(elPlay).toHaveBeenCalled();
+    // After a manual play the hover preview no longer touches the video.
+    const wrap = screen.getByTestId('local-video-wrap');
+    fireEvent(wrap, new MouseEvent('mouseleave', { bubbles: false }));
+    expect(elPause).not.toHaveBeenCalled();
+
+    const rectMock = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ width: 200, height: 18, left: 0, top: 0, right: 200, bottom: 18, x: 0, y: 0 } as DOMRect);
+    try {
+      fireEvent.pointerDown(screen.getByTestId('local-video-seek'), { pointerId: 1, clientX: 100 }); // middle of the bar
+      expect(video.currentTime).toBe(5);
+      fireEvent.pointerMove(screen.getByTestId('local-video-seek'), { pointerId: 1, clientX: 50 });
+      expect(video.currentTime).toBe(2.5);
+      fireEvent.pointerUp(screen.getByTestId('local-video-seek'), { pointerId: 1 });
+    } finally {
+      rectMock.mockRestore();
+    }
+
+    time = 2.5;
+    fireEvent(video, new Event('timeupdate'));
+    expect(screen.getByTestId('local-video-fill').style.width).toBe('25%'); // the bar follows playback
+    expect(screen.getByText('0:02 / 0:10')).toBeTruthy();
+  });
+
+  it('a scrub ends the hover preview, but a play the user started runs through it', async () => {
+    render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
+    const video = (await screen.findByTestId('local-video')) as HTMLVideoElement;
+    const elPause = vi.fn();
+    Object.defineProperty(video, 'pause', { configurable: true, value: elPause });
+    Object.defineProperty(video, 'duration', { configurable: true, get: () => 10 });
+    const rectMock = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ width: 200, height: 18, left: 0, top: 0, right: 200, bottom: 18, x: 0, y: 0 } as DOMRect);
+    try {
+      fireEvent.pointerDown(screen.getByTestId('local-video-seek'), { pointerId: 1, clientX: 180 });
+      expect(elPause).toHaveBeenCalled(); // not manually playing yet: the scrub stands on its frame
+    } finally {
+      rectMock.mockRestore();
+    }
+  });
+
   it('offers copy / quote / both rotations / save under the video', async () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     await screen.findByTestId('local-video');

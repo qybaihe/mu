@@ -46,6 +46,11 @@ const CARD_BUTTON: React.CSSProperties = {
   justifyContent: 'center',
 };
 
+const fmtClock = (seconds: number): string => {
+  const total = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
+
 /** A local video of a reply: it plays while the pointer is over it, and a click opens it large
  *  (already playing) with zoom, rotation and a save button — the same gestures a local image of
  *  a reply has. The overlay is portaled to the body: a fixed layer inside the transcript is
@@ -63,6 +68,13 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   // Set once the user has touched the overlay video: after that a seek is theirs, and the
   // autoplay the overlay opened with must not keep running through it.
   const modalTouched = useRef(false);
+  // Once the user plays/pauses or scrubs with the controls under the card, the hover preview
+  // stops overriding their choice: leave no longer pauses what they started.
+  const manual = useRef(false);
+  const scrubbing = useRef(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [duration, setDuration] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   // The card's actions need the file where it really is; markdown may hand over a path
   // relative to the workspace, the same resolution a local image does.
@@ -114,15 +126,52 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     if (!video) return;
     const on = () => setPlaying(true);
     const off = () => setPlaying(false);
+    const onMeta = () => setDuration(Number.isFinite(video.duration) ? video.duration : 0);
+    const onTime = () => {
+      if (!scrubbing.current) setCurrent(video.currentTime);
+    };
     video.addEventListener('play', on);
     video.addEventListener('pause', off);
     video.addEventListener('ended', off);
+    video.addEventListener('loadedmetadata', onMeta);
+    video.addEventListener('durationchange', onMeta);
+    video.addEventListener('timeupdate', onTime);
     return () => {
       video.removeEventListener('play', on);
       video.removeEventListener('pause', off);
       video.removeEventListener('ended', off);
+      video.removeEventListener('loadedmetadata', onMeta);
+      video.removeEventListener('durationchange', onMeta);
+      video.removeEventListener('timeupdate', onTime);
     };
   }, [url]);
+
+  // The bar reads the element's own duration (the state one is only for the label), so a scrub
+  // works the moment the browser has metadata, whatever React has seen.
+  const seekFromEvent = useCallback((clientX: number) => {
+    const track = trackRef.current;
+    const video = inlineRef.current;
+    if (!track || !video) return;
+    const dur = video.duration;
+    if (!Number.isFinite(dur) || dur <= 0) return;
+    const rect = track.getBoundingClientRect();
+    const ratio = rect.width > 0 ? Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)) : 0;
+    video.currentTime = ratio * dur;
+    setCurrent(ratio * dur);
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    const video = inlineRef.current;
+    if (!video) return;
+    manual.current = true;
+    if (video.paused) {
+      video.muted = true;
+      video.defaultMuted = true;
+      void video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, []);
 
   // Opening the overlay plays the large video at once (it is muted, so autoplay is allowed) and
   // stops the small one; Esc closes.
@@ -173,6 +222,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   }, [absolutePath, conversationId]);
 
   const name = useMemo(() => src.split(/[/\\]/).pop() || 'video.mp4', [src]);
+  const ratio = duration > 0 ? Math.min(1, Math.max(0, current / duration)) : 0;
 
   // React's synthetic mouseenter never arrives in the transcript (its mouseover/out pairing
   // breaks there), while mousemove does; native listeners on the node are not affected.
@@ -180,8 +230,12 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   useEffect(() => {
     const node = wrapRef.current;
     if (!node) return;
-    const enter = () => startInline();
-    const leave = () => stopInline();
+    const enter = () => {
+      if (!manual.current) startInline();
+    };
+    const leave = () => {
+      if (!manual.current) stopInline();
+    };
     node.addEventListener('mouseenter', enter);
     node.addEventListener('mouseleave', leave);
     return () => {
@@ -381,6 +435,101 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
         />
         {overlay}
       </span>
+      <div
+        data-testid='local-video-controls'
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '100%' }}
+      >
+        <button
+          type='button'
+          style={CARD_BUTTON}
+          data-testid='local-video-play'
+          aria-label={playing ? t('common.pause', { defaultValue: '暂停' }) : t('common.play', { defaultValue: '播放' })}
+          onClick={togglePlay}
+        >
+          {playing ? <Pause theme='filled' size='14' fill='currentColor' /> : <PlayOne theme='filled' size='14' fill='currentColor' />}
+        </button>
+        <div
+          ref={trackRef}
+          data-testid='local-video-seek'
+          role='slider'
+          aria-label={t('acp.video.progress', { defaultValue: '播放进度' })}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(ratio * 100)}
+          style={{ flex: 1, minWidth: '120px', height: '18px', display: 'flex', alignItems: 'center', cursor: 'pointer', touchAction: 'none' }}
+          onPointerDown={(event) => {
+            // A scrub is the user's: it ends the hover preview's autoplay the same way a seek in
+            // the overlay does — the frame they picked stands still. A play they started
+            // themselves keeps running through it.
+            const wasManual = manual.current;
+            manual.current = true;
+            scrubbing.current = true;
+            try {
+              event.currentTarget.setPointerCapture(event.pointerId);
+            } catch {
+              // jsdom and odd engines: dragging then simply follows the pointer within the bar.
+            }
+            seekFromEvent(event.clientX);
+            if (!wasManual) inlineRef.current?.pause();
+          }}
+          onPointerMove={(event) => {
+            if (scrubbing.current) seekFromEvent(event.clientX);
+          }}
+          onPointerUp={() => {
+            scrubbing.current = false;
+          }}
+          onPointerCancel={() => {
+            scrubbing.current = false;
+          }}
+        >
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              height: '4px',
+              borderRadius: '999px',
+              background: 'var(--color-fill-2, rgba(120,120,120,.35))',
+            }}
+          >
+            <div
+              data-testid='local-video-fill'
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                height: '100%',
+                width: `${ratio * 100}%`,
+                borderRadius: '999px',
+                background: 'var(--color-primary-6, #165dff)',
+              }}
+            />
+            <span
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: `${ratio * 100}%`,
+                transform: 'translate(-50%, -50%)',
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: 'var(--color-primary-6, #165dff)',
+              }}
+            />
+          </div>
+        </div>
+        {duration > 0 ? (
+          <span
+            style={{
+              fontSize: '12px',
+              color: 'var(--color-text-3, inherit)',
+              fontVariantNumeric: 'tabular-nums',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {fmtClock(current)} / {fmtClock(duration)}
+          </span>
+        ) : null}
+      </div>
       <div
         data-testid='local-video-toolbar'
         style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}
