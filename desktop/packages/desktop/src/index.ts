@@ -264,18 +264,20 @@ function scheduleClipboardWorkerIdleKill(): void {
 function setClipboardFilesViaWorker(paths: string[]): Promise<boolean> {
   return new Promise((resolve) => {
     const worker = ensureClipboardWorker();
-    if (!worker) {
+    if (!worker || !worker.stdout || !worker.stdin) {
       resolve(false);
       return;
     }
     let settled = false;
+    const stdout = worker.stdout;
     const finish = (ok: boolean) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      worker.stdout.removeListener('data', onData);
+      stdout.removeListener('data', onData);
       worker.removeListener('exit', onExit);
       scheduleClipboardWorkerIdleKill();
+      console.log(`[clipboard:write-files] worker round-trip ${Date.now() - startedAt}ms ok=${ok}`);
       resolve(ok);
     };
     const onData = (chunk: Buffer): void => {
@@ -287,12 +289,18 @@ function setClipboardFilesViaWorker(paths: string[]): Promise<boolean> {
       finish(false);
     }, 10_000);
     timer.unref?.();
-    worker.stdout.on('data', onData);
+    stdout.on('data', onData);
     worker.on('exit', onExit);
     const payload = Buffer.from(paths.join('\t'), 'utf16le').toString('base64');
+    const startedAt = Date.now();
     worker.stdin.write(
-      `$p=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${payload}')).Split([char]9); ` +
-        `Set-Clipboard -LiteralPath $p; Write-Output '${CLIP_OK}'\n`,
+      `Add-Type -AssemblyName System.Windows.Forms; ` +
+        `$list = New-Object 'System.Collections.Generic.List[string]'; ` +
+        `[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${payload}')).Split([char]9) | ForEach-Object { [void]$list.Add($_) }; ` +
+        `$data = New-Object System.Windows.Forms.DataObject; ` +
+        `$data.SetFileDropList($list); ` +
+        `[System.Windows.Forms.Clipboard]::SetDataObject($data, $true); ` +
+        `Write-Output '${CLIP_OK}'\n`,
       (error: Error | null | undefined) => {
         if (error) finish(false);
       }
