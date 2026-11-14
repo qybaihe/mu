@@ -65,7 +65,7 @@ describe('PreviewToolbar save button', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('renders the save button last (rightmost) in the toolbar, after refresh', () => {
+  it('renders the save button first when no open-in-system button, before refresh', () => {
     const { container } = render(
       <PreviewToolbar {...baseProps} refreshState='idle' refreshActionable showSave saveActionable onSave={vi.fn()} />
     );
@@ -73,9 +73,57 @@ describe('PreviewToolbar save button', () => {
     const save = container.querySelector('[data-testid="preview-save"]')!;
     const refresh = container.querySelector('[data-testid="preview-refresh"]')!;
 
-    // Save must be the final child of the right-hand action group...
-    expect(save.parentElement?.lastElementChild).toBe(save);
-    // ...and it must come after the refresh control in DOM order.
-    expect(refresh.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Without the open-in-system button, save opens the left-aligned cluster...
+    expect(save.parentElement?.firstElementChild).toBe(save);
+    // ...and refresh comes after it in DOM order.
+    expect(save.compareDocumentPosition(refresh) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('places open-in-system first and inspect second, ahead of save', () => {
+    const { container } = render(
+      <PreviewToolbar
+        {...baseProps}
+        content_type='html'
+        isHTML
+        showOpenInSystemButton
+        onOpenInSystem={vi.fn()}
+        onInspectModeToggle={vi.fn()}
+        refreshState='idle'
+        refreshActionable
+        showSave
+        saveActionable
+        onSave={vi.fn()}
+      />
+    );
+
+    const openInSystem = container.querySelector(`[title="${'preview.openInSystemApp'}"]`)!;
+    const inspectBtn = screen.getByText('preview.html.inspectElement');
+    const save = container.querySelector('[data-testid="preview-save"]')!;
+
+    // Open-in-system leads the cluster, inspect follows, save comes third.
+    expect(openInSystem.parentElement?.firstElementChild).toBe(openInSystem);
+    expect(openInSystem.compareDocumentPosition(inspectBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(inspectBtn.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
+describe('PreviewToolbar view toggle', () => {
+  it('shows a single source toggle that flips back to preview, with no separate preview tab', () => {
+    const onViewModeChange = vi.fn();
+    const { rerender } = render(
+      <PreviewToolbar {...baseProps} content_type='html' isHTML viewMode='preview' onViewModeChange={onViewModeChange} />
+    );
+
+    // The old "preview" tab is gone; the code toggle is the only view switch.
+    expect(screen.queryByText('preview.preview')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('preview.code'));
+    expect(onViewModeChange).toHaveBeenCalledWith('source');
+
+    rerender(
+      <PreviewToolbar {...baseProps} content_type='html' isHTML viewMode='source' onViewModeChange={onViewModeChange} />
+    );
+    fireEvent.click(screen.getByText('preview.code'));
+    expect(onViewModeChange).toHaveBeenCalledWith('preview');
   });
 });
