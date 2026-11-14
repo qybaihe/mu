@@ -20,6 +20,7 @@ import React, { useCallback, useContext, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { convertLatexDelimiters } from '@renderer/utils/chat/latexDelimiters';
 import LocalImageView from '@renderer/components/media/LocalImageView';
+import LocalVideoView, { isVideoPath } from '@renderer/components/media/LocalVideoView';
 import CodeBlock from './CodeBlock';
 import LocalFileLink from './LocalFileLink';
 import ShadowView from './ShadowView';
@@ -179,6 +180,8 @@ const MarkdownView: React.FC<MarkdownViewProps> = React.memo(
           const imgProps = rest as React.ImgHTMLAttributes<HTMLImageElement>;
           if (isLocalFilePath(imgProps.src || '')) {
             const src = decodeURIComponent(imgProps.src || '');
+            // A video the same image syntax carries plays as a video instead of breaking the img.
+            if (isVideoPath(src)) return <LocalVideoView src={src} title={imgProps.alt || ''} />;
             return <LocalImageView src={src} alt={imgProps.alt || ''} className={imgProps.className} preview />;
           }
           return <img {...imgProps} alt={imgProps.alt || ''} />;

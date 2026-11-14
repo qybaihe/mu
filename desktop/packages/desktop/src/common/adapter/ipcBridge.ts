@@ -844,6 +844,10 @@ export const fs = {
   // receives the absolute path. Electron desktop-only (a remote WebUI must not use
   // it). Errors come back as codes only, never a message containing a path.
   copyAbsolutePath: httpPost<void, { pe_id: string; relative_path: string }>('/api/fs/copy-absolute-path'),
+  // Put a real file on the OS clipboard (paste it into Explorer/Finder). No web
+  // clipboard API writes files, so this one is true IPC to the desktop main
+  // process, which asks the OS shell utility; the HTTP backend has no such route.
+  copyFileToClipboard: bridge.buildProvider<boolean, { path: string }>('fs.copy-file-to-clipboard'),
   // Open a file in the OS default application, addressed by ChatFileRef so it
   // works for all three ref kinds (project / local / upload). The backend
   // resolves the ref and shells out; the front end never receives an absolute
