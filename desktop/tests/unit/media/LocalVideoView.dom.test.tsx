@@ -46,15 +46,15 @@ beforeEach(() => {
 });
 
 describe('LocalVideoView', () => {
-  it('plays on hover of the whole video area and pauses on leave, without opening anything', async () => {
+  it('shows the video without pointer autoplay: hovering alone plays nothing', async () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     await screen.findByTestId('local-video');
     expect(invoke).toHaveBeenCalledWith({ path: 'E:/out/demo.mp4', workspace: undefined });
-    const wrap = screen.getByTestId('local-video-wrap'); // the open button covers the video itself
-    fireEvent(wrap, new MouseEvent('mouseenter', { bubbles: false })); // native listeners, not React's synthetic pair
-    expect(play).toHaveBeenCalled();
+    const wrap = screen.getByTestId('local-video-wrap');
+    fireEvent(wrap, new MouseEvent('mouseenter', { bubbles: false }));
     fireEvent(wrap, new MouseEvent('mouseleave', { bubbles: false }));
-    expect(pause).toHaveBeenCalled();
+    expect(play).not.toHaveBeenCalled(); // only the button plays
+    expect(pause).not.toHaveBeenCalled();
     expect(screen.queryByTestId('local-video-modal')).toBeNull();
   });
 
@@ -134,12 +134,21 @@ describe('LocalVideoView', () => {
 
     fireEvent.click(screen.getByTestId('local-video-play'));
     expect(elPlay).toHaveBeenCalled();
-    // Hover stays in charge whatever was clicked: leave always stops, enter always starts.
+    // The pointer over the video does not start or stop anything on its own.
     const wrap = screen.getByTestId('local-video-wrap');
-    fireEvent(wrap, new MouseEvent('mouseleave', { bubbles: false }));
-    expect(elPause).toHaveBeenCalled();
     fireEvent(wrap, new MouseEvent('mouseenter', { bubbles: false }));
-    expect(elPlay).toHaveBeenCalledTimes(2);
+    fireEvent(wrap, new MouseEvent('mouseleave', { bubbles: false }));
+    expect(elPlay).toHaveBeenCalledTimes(1);
+    expect(elPause).not.toHaveBeenCalled();
+
+    // A play runs once by default; the loop button switches the mode on both videos.
+    const cardVideo = screen.getByTestId('local-video') as HTMLVideoElement;
+    expect(cardVideo.hasAttribute('loop')).toBe(false);
+    fireEvent.click(screen.getByTestId('local-video-loop'));
+    expect(cardVideo.hasAttribute('loop')).toBe(true);
+    expect(screen.getByTestId('local-video-loop').getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByTestId('local-video-loop'));
+    expect(cardVideo.hasAttribute('loop')).toBe(false);
 
     const rectMock = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')

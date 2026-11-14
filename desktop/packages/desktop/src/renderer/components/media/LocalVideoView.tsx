@@ -1,6 +1,6 @@
 import { ipcBridge } from '@/common';
 import { joinPath } from '@/common/chat/chatLib';
-import { Copy, Download, Link, LoadingTwo, Pause, PlayOne } from '@icon-park/react';
+import { Copy, Download, Link, LoadingTwo, Pause, PlayOne, Cycle } from '@icon-park/react';
 import { Message } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -74,6 +74,8 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const trackRef = useRef<HTMLDivElement>(null);
   const [duration, setDuration] = useState(0);
   const [current, setCurrent] = useState(0);
+  // A play from the button runs once by default; the loop button switches the mode.
+  const [looping, setLooping] = useState(false);
 
   // The card's actions need the file where it really is; markdown may hand over a path
   // relative to the workspace, the same resolution a local image does.
@@ -102,20 +104,6 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
       alive = false;
     };
   }, [src, root]);
-
-  // React's muted prop reaches the element inconsistently, and Chromium then treats the video
-  // as unmuted: play() without a user gesture — hover is none — is rejected, and the catch
-  // below swallows it. Setting muted imperatively right before play makes hover-play reliable.
-  const startInline = useCallback(() => {
-    const video = inlineRef.current;
-    if (!video) return;
-    video.muted = true;
-    video.defaultMuted = true;
-    void video.play().catch(() => {});
-  }, []);
-  const stopInline = useCallback(() => {
-    inlineRef.current?.pause();
-  }, []);
 
   // The badge follows the playback itself, not the pointer: native play/pause events say
   // what the video actually does, whatever started or stopped it.
@@ -222,24 +210,6 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
 
   const ratio = duration > 0 ? Math.min(1, Math.max(0, current / duration)) : 0;
 
-  // React's synthetic mouseenter never arrives in the transcript (its mouseover/out pairing
-  // breaks there), while mousemove does; native listeners on the node are not affected.
-  const wrapRef = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    const node = wrapRef.current;
-    if (!node) return;
-    const enter = () => startInline();
-    const leave = () => stopInline();
-    node.addEventListener('mouseenter', enter);
-    node.addEventListener('mouseleave', leave);
-    return () => {
-      node.removeEventListener('mouseenter', enter);
-      node.removeEventListener('mouseleave', leave);
-    };
-    // `url` re-runs this once the loading placeholder (which carries no wrapper node) gave
-    // way to the real one, so the listeners are attached to the node that is actually shown.
-  }, [startInline, stopInline, url]);
-
   if (url === null)
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -279,7 +249,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
               src={url}
               title={title}
               muted
-              loop
+              loop={looping}
               playsInline
               controls
               autoPlay
@@ -380,7 +350,6 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   return (
     <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '6px', maxWidth: '100%', verticalAlign: 'top' }}>
       <span
-        ref={wrapRef}
         data-testid='local-video-wrap'
         style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}
       >
@@ -389,7 +358,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
           src={url}
           title={title}
           muted
-          loop
+          loop={looping}
           playsInline
           preload='metadata'
           data-testid='local-video'
@@ -432,6 +401,19 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
           onClick={togglePlay}
         >
           {playing ? <Pause theme='filled' size='14' fill='currentColor' /> : <PlayOne theme='filled' size='14' fill='currentColor' />}
+        </button>
+        <button
+          type='button'
+          style={{
+            ...CARD_BUTTON,
+            ...(looping ? { color: 'var(--color-primary-6, #165dff)', borderColor: 'var(--color-primary-6, #165dff)' } : {}),
+          }}
+          data-testid='local-video-loop'
+          aria-pressed={looping}
+          title={t('acp.video.loop', { defaultValue: looping ? '循环播放：开' : '循环播放：关（点我切换）' })}
+          onClick={() => setLooping((v) => !v)}
+        >
+          <Cycle theme='outline' size='14' fill='currentColor' />
         </button>
         <div
           ref={trackRef}
