@@ -58,6 +58,9 @@ export interface IConfigStorageRefer {
   'system.keepAwakeWhileRunning'?: boolean;
   // A chime when a conversation finishes or needs the person; the system notification is silent while it is on
   'system.completionSound'?: boolean;
+  // 语音输入按钮触发的外部命令（如合成输入法语音热键的脚本）；留空则不显示按钮
+  // External command fired by the voice-input button (e.g. an IME voice-hotkey synthesizer); empty hides the button
+  'system.voiceInputCommand'?: string;
   // Automatically preview newly created Office files in the current workspace
   // Skills Market: whether the external skills market source is enabled
   'skillsMarket.enabled'?: boolean;

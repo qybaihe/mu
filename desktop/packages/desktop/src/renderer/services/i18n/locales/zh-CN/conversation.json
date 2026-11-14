@@ -594,6 +594,9 @@
     "hintWithSessions": "输入 / 唤起命令，@ 引用文件，@@ 引用会话，↑/↓ 切换历史消息",
     "stop": "停止回复",
     "openCommand": "从这台电脑附加文件",
+    "voiceInput": "语音输入",
+    "voiceInputStop": "正在录音，再点一次结束",
+    "voiceInputError": "语音输入失败：{{error}}",
     "copyCommand": "复制最后一条回复"
   },
   "composer": {

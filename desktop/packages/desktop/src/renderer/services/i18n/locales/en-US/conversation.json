@@ -594,6 +594,9 @@
     "hintWithSessions": "Type / for commands, @ for files, @@ for conversations, ↑/↓ for history",
     "stop": "Stop the reply",
     "openCommand": "Attach files from this computer",
+    "voiceInput": "Voice input",
+    "voiceInputStop": "Recording — click again to stop",
+    "voiceInputError": "Voice input failed: {{error}}",
     "copyCommand": "Copy the last reply"
   },
   "composer": {

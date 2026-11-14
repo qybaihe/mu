@@ -24,6 +24,8 @@ export type ConfigKeyMap = {
   'assistants.enabledOrder': string[] | undefined;
   'upload.saveToWorkspace': boolean | undefined;
   'system.closeToTray': boolean | undefined;
+  /** External command the input box's voice-input button fires; empty/undefined hides the button. */
+  'system.voiceInputCommand': string | undefined;
   'system.notificationEnabled': boolean | undefined;
   'system.cronNotificationEnabled': boolean | undefined;
   'system.keepAwake': boolean | undefined;

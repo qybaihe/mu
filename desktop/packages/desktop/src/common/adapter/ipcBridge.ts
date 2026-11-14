@@ -1536,6 +1536,10 @@ export const systemSettings = {
   /** Hold the computer awake (no idle sleep; the display may still turn off) while `on`, or let it sleep again. */
   keepAwakeWhileRunning: bridge.buildProvider<void, { on: boolean }>('system-settings:keep-awake-while-running'),
   setKeepAwake: httpPut<void, { enabled: boolean }>('/api/settings/client', (p) => ({ keepAwake: p.enabled })),
+  /** Runs the person's configured voice-input command (a hotkey synthesizer, a dictation script, ...). */
+  runVoiceCommand: bridge.buildProvider<{ ok: boolean; error?: string }, { command: string }>(
+    'system-settings:run-voice-command'
+  ),
   /**
    * Saves the language to the backend and makes the main process follow it (`syncMainLanguage`). The main process
    * registers its handler on `syncMainLanguage`; this `provider` is a no-op like every HTTP-backed entry.

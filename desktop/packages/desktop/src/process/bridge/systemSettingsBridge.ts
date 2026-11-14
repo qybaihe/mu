@@ -14,6 +14,7 @@
 
 import { ipcBridge } from '@/common';
 import { electronPowerSaveBlocker } from '@/common/electronSafe';
+import { exec } from 'node:child_process';
 import { applyAppLanguage } from '@process/services/i18n';
 import { createOrUpdateTray, destroyTray, setCloseToTrayEnabled } from '@process/utils/tray';
 import { readCloseToTraySetting, writeCloseToTraySetting } from '@process/utils/closeToTraySetting';
@@ -36,6 +37,20 @@ export function holdAwake(on: boolean): void {
 }
 
 export function initSystemSettingsBridge(): void {
+  // Voice input is delegated to whatever external command the person configured (Settings → System): the app itself
+  // only fires it and reports the exit status. A typical command synthesizes the IME's voice hotkey so the dictation
+  // text lands in the focused input (e.g. WeType's right-Ctrl hands-free key on Windows).
+  ipcBridge.systemSettings.runVoiceCommand.provider(async ({ command }) => {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        exec(command, { timeout: 60_000, windowsHide: true }, (error) => (error ? reject(error) : resolve()));
+      });
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
   ipcBridge.systemSettings.keepAwakeWhileRunning.provider(async ({ on }) => holdAwake(on === true));
 
   ipcBridge.systemSettings.getCloseToTray.provider(async () => readCloseToTraySetting());

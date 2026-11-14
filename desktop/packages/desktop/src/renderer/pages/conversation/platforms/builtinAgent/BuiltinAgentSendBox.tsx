@@ -20,6 +20,7 @@ import {
   thoughtLevelOptionLabel,
 } from '@/renderer/components/agent/runtimeSelectorOptions';
 import FileAttachButton from '@/renderer/components/media/FileAttachButton';
+import VoiceInputButton from '@/renderer/components/chat/VoiceInputButton';
 import FilePreview from '@/renderer/components/media/FilePreview';
 import HorizontalFileList from '@/renderer/components/media/HorizontalFileList';
 import { classifyConfigSetError, useAcpConfigOptions } from '@/renderer/hooks/agent/useAcpConfigOptions';
@@ -810,7 +811,12 @@ const BuiltinAgentSendBox: React.FC<{
         supportedExts={allSupportedExts}
         defaultMultiLine={!isMobile}
         lockMultiLine={!isMobile}
-        tools={<FileAttachButton openFileSelector={openFileSelector} loadedMcpStatuses={loadedMcpStatuses} />}
+        tools={
+          <>
+            <FileAttachButton openFileSelector={openFileSelector} loadedMcpStatuses={loadedMcpStatuses} />
+            <VoiceInputButton />
+          </>
+        }
         rightTools={
           <div className='flex items-center gap-8px min-w-0'>
             <AgentModeSelector

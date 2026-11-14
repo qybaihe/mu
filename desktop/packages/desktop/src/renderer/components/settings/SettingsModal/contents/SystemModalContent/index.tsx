@@ -12,7 +12,7 @@ import { COMPLETION_SOUND_SETTING, playAttentionSound } from '@/renderer/hooks/s
 import { useKeepAwakeSetting } from '@/renderer/hooks/system/useKeepAwakeWhileRunning';
 import { notifyManualRestartRequired } from '@/renderer/utils/appRestart';
 import { isElectronDesktop, isMacOS } from '@/renderer/utils/platform';
-import { Alert, Form, Message, Modal, Switch } from '@arco-design/web-react';
+import { Alert, Form, Input, Message, Modal, Switch } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
@@ -49,6 +49,8 @@ const SystemModalContent: React.FC = () => {
   const [cronNotificationEnabled, setCronNotificationEnabled] = useState(false);
   const keepAwakeWhileRunning = useKeepAwakeSetting();
   const [completionSound, setCompletionSound] = useState(false);
+  /** The external command the voice-input button fires; empty hides the button. */
+  const [voiceInputCommand, setVoiceInputCommand] = useState('');
 
   useEffect(() => {
     if (!isDesktop) {
@@ -76,6 +78,7 @@ const SystemModalContent: React.FC = () => {
 
   useEffect(() => {
     setCloseToTray(configService.get('system.closeToTray') ?? false);
+    setVoiceInputCommand(configService.get('system.voiceInputCommand') ?? '');
     if (isDesktop) {
       ipcBridge.systemSettings.getCloseToTray
         .invoke()
@@ -229,6 +232,15 @@ const SystemModalContent: React.FC = () => {
     }
   }, [systemInfo, form]);
 
+  /** Saved on blur: the command runs as-is in a shell, so a half-typed command is never persisted. */
+  const handleVoiceInputCommandBlur = useCallback(() => {
+    const trimmed = voiceInputCommand.trim();
+    configService.setLocal('system.voiceInputCommand', trimmed);
+    configService.set('system.voiceInputCommand', trimmed).catch(() => {
+      Message.error(t('settings.saveFailed', { defaultValue: 'Failed to save' }));
+    });
+  }, [voiceInputCommand, t]);
+
   const preferenceItems = [
     {
       key: 'startOnBoot',
@@ -357,6 +369,25 @@ const SystemModalContent: React.FC = () => {
                   checked={completionSound}
                   onChange={handleCompletionSoundChange}
                   data-testid='completion-sound-switch'
+                />
+              </PreferenceRow>
+            ) : null}
+            {isDesktop ? (
+              <PreferenceRow
+                label={t('settings.voiceInputCommand')}
+                description={t('settings.voiceInputCommandDesc', {
+                  defaultValue:
+                    'External command fired by the mic button in the input box (e.g. a script that presses the IME voice hotkey). Empty hides the button.',
+                })}
+              >
+                <Input
+                  allowClear
+                  style={{ width: 260 }}
+                  placeholder='python C:/tools/voice_hotkey.py'
+                  value={voiceInputCommand}
+                  onChange={setVoiceInputCommand}
+                  onBlur={handleVoiceInputCommandBlur}
+                  data-testid='voice-input-command-input'
                 />
               </PreferenceRow>
             ) : null}
