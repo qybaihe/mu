@@ -65,7 +65,7 @@ describe('PreviewToolbar save button', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('renders the save button first in the leftmost action cluster, before refresh', () => {
+  it('renders the save button first when no open-in-system button, before refresh', () => {
     const { container } = render(
       <PreviewToolbar {...baseProps} refreshState='idle' refreshActionable showSave saveActionable onSave={vi.fn()} />
     );
@@ -73,10 +73,34 @@ describe('PreviewToolbar save button', () => {
     const save = container.querySelector('[data-testid="preview-save"]')!;
     const refresh = container.querySelector('[data-testid="preview-refresh"]')!;
 
-    // Save opens the left-aligned action cluster...
+    // Without the open-in-system button, save opens the left-aligned cluster...
     expect(save.parentElement?.firstElementChild).toBe(save);
     // ...and refresh comes after it in DOM order.
     expect(save.compareDocumentPosition(refresh) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('places the open-in-system button first, ahead of save, when both render', () => {
+    const { container } = render(
+      <PreviewToolbar
+        {...baseProps}
+        content_type='html'
+        showOpenInSystemButton
+        onOpenInSystem={vi.fn()}
+        refreshState='idle'
+        refreshActionable
+        showSave
+        saveActionable
+        onSave={vi.fn()}
+      />
+    );
+
+    const openInSystem = container.querySelector(`[title="${'preview.openInSystemApp'}"]`)!;
+    const save = container.querySelector('[data-testid="preview-save"]')!;
+
+    // Open-in-system leads the cluster...
+    expect(openInSystem.parentElement?.firstElementChild).toBe(openInSystem);
+    // ...and save comes right after it.
+    expect(openInSystem.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 

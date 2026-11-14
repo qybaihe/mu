@@ -211,13 +211,32 @@ const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
   return (
     <div className='flex items-center justify-between h-32px px-10px bg-bg-2 flex-shrink-0 border-b border-border-1 overflow-x-auto'>
       <div className='flex items-center justify-between gap-8px w-full' style={{ minWidth: 'max-content' }}>
-        {/* 操作按钮前置为单一左侧组，按「保存 → 下载 → 在系统中打开 → 审核元素 → 刷新 → 分屏 → 代码/原文」排列；
+        {/* 操作按钮前置为单一左侧组，按「在系统中打开 → 保存 → 下载 → 审核元素 → 刷新 → 分屏 → 代码/原文」排列；
             预览是默认状态，不再单列「预览」按钮，「代码/原文」再点一次即回到预览。
-            Actions form one left-aligned cluster ordered save → download → open in
-            system → inspect → refresh → split → source toggle; the rendered preview
-            is the default state, so the separate "preview" tab is gone — clicking
-            the source toggle again returns to it. */}
+            Actions form one left-aligned cluster ordered open in system → save →
+            download → inspect → refresh → split → source toggle; the rendered
+            preview is the default state, so the separate "preview" tab is gone —
+            clicking the source toggle again returns to it. */}
         <div className='flex items-center h-full gap-8px'>
+          {showOpenInSystemButton && (
+            <div className={toolbarBtn} onClick={onOpenInSystem} title={t('preview.openInSystemApp')}>
+              <svg
+                width={toolbarIconSize}
+                height={toolbarIconSize}
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2'
+                className='text-t-secondary'
+              >
+                <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
+                <polyline points='15 3 21 3 21 9' />
+                <line x1='10' y1='14' x2='21' y2='3' />
+              </svg>
+              <span>{t('preview.openInSystemApp')}</span>
+            </div>
+          )}
+
           {showSave && (
             <div
               data-testid='preview-save'
@@ -258,25 +277,6 @@ const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
                 <line x1='12' y1='15' x2='12' y2='3' />
               </svg>
               <span>{t('common.download')}</span>
-            </div>
-          )}
-
-          {showOpenInSystemButton && (
-            <div className={toolbarBtn} onClick={onOpenInSystem} title={t('preview.openInSystemApp')}>
-              <svg
-                width={toolbarIconSize}
-                height={toolbarIconSize}
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='2'
-                className='text-t-secondary'
-              >
-                <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
-                <polyline points='15 3 21 3 21 9' />
-                <line x1='10' y1='14' x2='21' y2='3' />
-              </svg>
-              <span>{t('preview.openInSystemApp')}</span>
             </div>
           )}
 
