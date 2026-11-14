@@ -115,7 +115,6 @@
   },
   "optionNumber": "Option {{number}}",
   "copyAttachments": "Copy attachments",
-    "copyReplyText": "Copy text",
   "copyFilesHeader": "Files:",
   "exportHeaderLine": "{{label}}: {{value}}",
   "exportSpeakerLine": "{{speaker}}:",

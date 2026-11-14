@@ -269,7 +269,7 @@ describe('MessageText attachment paths', () => {
     expect(ipcBridge.shell.openFile.invoke).toHaveBeenCalledWith('E:/mu/preview_test.html');
   });
 
-  it('copies the reply text alone, and the attachment list through its own button', async () => {
+  it('copy keeps its original text-plus-files payload; the attachments button lists the files', async () => {
     renderMessageText(
       'Here is the page\n[[AION_FILES]]\nE:/mu/preview_test.html',
       { position: 'right' }
@@ -278,7 +278,7 @@ describe('MessageText attachment paths', () => {
     const copyControl = screen.getByTestId('copy-icon').parentElement;
     fireEvent.click(copyControl as HTMLElement);
     await waitFor(() => {
-      expect(copyText).toHaveBeenCalledWith('Here is the page');
+      expect(copyText).toHaveBeenCalledWith('messages.copyFilesHeader\n- E:/mu/preview_test.html\n\nHere is the page');
     });
 
     fireEvent.click(screen.getByTestId('message-copy-attachments'));

@@ -205,8 +205,12 @@ const MessageText: React.FC<{
 
   const handleCopy = () => {
     const baseText = shouldRenderPlainText ? renderedText : json ? JSON.stringify(data, null, 2) : renderedText;
-    // The reply's words only: attachments copy through their own button.
-    const textToCopy = turnTexts?.length ? buildTurnClipboardText(turnTexts) : baseText;
+    const fileList = files.length
+      ? `${t('messages.copyFilesHeader')}\n${files.map((path) => `- ${path}`).join('\n')}\n\n`
+      : '';
+    // An AI turn split by tool calls / thinking stores several text messages;
+    // the row sits on the last one but must copy the whole reply.
+    const textToCopy = turnTexts?.length ? buildTurnClipboardText(turnTexts) : fileList + baseText;
     copyText(textToCopy)
       .then(() => {
         setShowCopyAlert(true);
@@ -311,7 +315,7 @@ const MessageText: React.FC<{
     ) : null;
 
   const copyButton = (
-    <Tooltip content={t('messages.copyReplyText')}>
+    <Tooltip content={t('common.copy', { defaultValue: 'Copy' })}>
       <div
         className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
         onClick={handleCopy}
