@@ -23,6 +23,16 @@ const KEY_ID_KEY = 'system.voiceInputKey';
  * once, on press. The button never takes focus (`onPointerDown` preventDefault): the dictated text must land in
  * the textarea the person was typing in.
  */
+/** The IME types the transcript into whatever has focus, and a mouse user reaching for the mic often has none —
+ * so a press first focuses the send box's textarea (the usual flow needs no lookup: the person was typing). */
+const focusSendBoxTextarea = () => {
+  const active = document.activeElement;
+  const editable = active instanceof HTMLElement && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT' || active.isContentEditable);
+  if (editable) return;
+  const textarea = document.querySelector<HTMLTextAreaElement>('[data-testid="sendbox-input"], .sendbox-highlight-textarea');
+  textarea?.focus();
+};
+
 const VoiceInputButton: React.FC = () => {
   const { t } = useTranslation();
   const [pressed, setPressed] = useState(false);
@@ -56,6 +66,7 @@ const VoiceInputButton: React.FC = () => {
 
   const onPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     event.preventDefault(); // keep the textarea focused — the transcript types into it
+    focusSendBoxTextarea(); // a mouse press may carry no focus at all; the transcript needs the textarea
     event.currentTarget.setPointerCapture(event.pointerId); // release lands on us even if dragged away
     if (holdingRef.current) return;
     holdingRef.current = true;
