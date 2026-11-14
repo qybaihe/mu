@@ -159,6 +159,7 @@ vi.mock('@arco-design/web-react', () => ({
   Alert: () => null,
   Message: {
     error: vi.fn(),
+    success: vi.fn(),
   },
   Tooltip: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   Button: ({ icon, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon?: React.ReactNode }) => (
@@ -285,6 +286,21 @@ describe('MessageText attachment paths', () => {
     await waitFor(() => {
       expect(copyText).toHaveBeenCalledWith('messages.copyFilesHeader\n- E:/mu/preview_test.html');
     });
+  });
+
+  it('copy attachments puts the files on the OS clipboard when the electron bridge is present', async () => {
+    const writeFiles = vi.fn().mockResolvedValue(true);
+    (window as unknown as { electronAPI?: unknown }).electronAPI = { writeFilesToClipboard: writeFiles };
+    try {
+      renderMessageText('Here is the page\n[[AION_FILES]]\nE:/mu/preview_test.html', { position: 'right' });
+      fireEvent.click(screen.getByTestId('message-copy-attachments'));
+      await waitFor(() => {
+        expect(writeFiles).toHaveBeenCalledWith(['E:/mu/preview_test.html']);
+      });
+      expect(copyText).not.toHaveBeenCalled();
+    } finally {
+      delete (window as unknown as { electronAPI?: unknown }).electronAPI;
+    }
   });
 
   it('resolves relative attachment paths against the current workspace before previewing', () => {

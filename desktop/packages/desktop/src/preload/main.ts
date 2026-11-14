@@ -36,6 +36,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   // 获取拖拽文件/目录的绝对路径 / Get absolute path for dragged file/directory
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
+  // 把文件本体写入 OS 剪贴板，资源管理器/Finder 里可直接粘贴。
+  writeFilesToClipboard: (paths: string[]) => ipcRenderer.invoke('clipboard:write-files', paths) as Promise<boolean>,
   recoverCorruptedDatabase: () => ipcRenderer.invoke('backend:recover-corrupted-database'),
   openLogFolder: () => ipcRenderer.invoke('backend:open-log-folder'),
 });

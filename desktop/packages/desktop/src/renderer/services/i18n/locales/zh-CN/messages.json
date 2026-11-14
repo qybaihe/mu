@@ -115,6 +115,7 @@
   },
   "optionNumber": "选项 {{number}}",
   "copyAttachments": "复制附件",
+  "copyAttachmentsPasted": "已复制附件，可在文件夹中粘贴",
   "copyFilesHeader": "文件：",
   "exportHeaderLine": "{{label}}：{{value}}",
   "exportSpeakerLine": "{{speaker}}：",

@@ -7,6 +7,7 @@ import type { TMessage } from '@/common/chat/chatLib';
 import MessageDeliverables, {
   deliverables,
   fileSize,
+  type DeliveredFile,
 } from '@/renderer/pages/conversation/Messages/acp/MessageDeliverables';
 import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
 import enMessages from '@/renderer/services/i18n/locales/en-US/messages.json';
@@ -138,5 +139,30 @@ describe('the files mu’s present handed over', () => {
     // The card carries the hover scope: without group/delivcard the bottom row
     // stays opacity-0 forever, which is exactly the bug this guards against.
     expect(screen.getByTestId('message-deliverables')).toHaveClass('group/delivcard');
+  });
+
+  it('copy attachments puts the files on the OS clipboard when the electron bridge is present', async () => {
+    const writeFiles = vi.fn().mockResolvedValue(true);
+    (window as unknown as { electronAPI?: unknown }).electronAPI = { writeFilesToClipboard: writeFiles };
+    try {
+      const files: DeliveredFile[] = [
+        { path: '/work/out/page.html', name: 'page.html', bytes: 1024 },
+        { path: '/work/out/report.pdf', name: 'report.pdf', bytes: 2048 },
+      ];
+      render(
+        <ConversationProvider value={{ conversationId: 'c1', conversation_id: 'c1', workspace: '/work', type: 'acp' }}>
+          <I18nextProvider i18n={i18n}>
+            <MessageDeliverables delivered={{ files }} />
+          </I18nextProvider>
+        </ConversationProvider>
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('deliverables-copy-attachments'));
+      });
+      expect(writeFiles).toHaveBeenCalledWith(['/work/out/page.html', '/work/out/report.pdf']);
+      expect(copyTextMock).not.toHaveBeenCalled();
+    } finally {
+      delete (window as unknown as { electronAPI?: unknown }).electronAPI;
+    }
   });
 });

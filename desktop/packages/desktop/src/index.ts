@@ -12,7 +12,8 @@ import { describeUncaughtError } from './process/utils/describeUncaughtError';
 import type { UncaughtErrorDiagnostics } from './process/utils/describeUncaughtError';
 import { createRendererRecoveryPolicy } from './process/utils/rendererRecovery';
 import './process/utils/configureConsoleLog';
-import { app, BrowserWindow, ipcMain, nativeImage, powerMonitor, session, shell } from 'electron';
+import { app, BrowserWindow, clipboard, ipcMain, nativeImage, powerMonitor, session, shell } from 'electron';
+import { execFile, spawn } from 'child_process';
 import fixPath from 'fix-path';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -214,6 +215,55 @@ ipcMain.on('get-backend-startup-failure', (event) => {
 
 ipcMain.on('get-node-runtime-deferred', (event) => {
   event.returnValue = nodeRuntimeDeferred;
+});
+
+// 把文件本体写入 OS 剪贴板：在资源管理器/Finder 里打开任意文件夹即可粘贴。
+// Windows 上 Electron 无法按名字注册 CF_HDROP 格式，多/单文件统一借 PowerShell
+// Set-Clipboard 构造；macOS 仅单文件（public.file-url）；Linux 需 xclip。任何
+// 不支持或失败的情况 resolve false，前端回落为复制路径清单文本（含 WebUI）。
+ipcMain.handle('clipboard:write-files', async (_event, rawPaths: unknown): Promise<boolean> => {
+  const paths = (Array.isArray(rawPaths) ? rawPaths : []).filter(
+    (p): p is string => typeof p === 'string' && p.length > 0 && p.length < 4096
+  );
+  if (paths.length === 0 || paths.length > 64) return false;
+  const existing = paths.filter((p) => {
+    try {
+      return fs.statSync(p).isFile();
+    } catch {
+      return false;
+    }
+  });
+  if (existing.length === 0) return false;
+  try {
+    if (process.platform === 'win32') {
+      const list = existing.map((p) => `'${p.replace(/'/g, "''")}'`).join(', ');
+      await new Promise<void>((resolve, reject) => {
+        execFile(
+          'powershell.exe',
+          ['-NoProfile', '-NonInteractive', '-Command', `Set-Clipboard -LiteralPath @(${list})`],
+          { windowsHide: true, timeout: 10_000 },
+          (error) => (error ? reject(error) : resolve())
+        );
+      });
+      return true;
+    }
+    if (process.platform === 'darwin') {
+      if (existing.length !== 1) return false;
+      clipboard.writeBuffer('public.file-url', Buffer.concat([Buffer.from(`file://${existing[0]}`), Buffer.from([0])]));
+      return true;
+    }
+    const uris = `${existing.map((p) => `file://${p}`).join('\n')}\n`;
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn('xclip', ['-selection', 'clipboard', '-t', 'text/uri-list'], { stdio: ['pipe', 'ignore', 'ignore'] });
+      child.on('error', reject);
+      child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`xclip exited with ${code}`))));
+      child.stdin.end(uris);
+    });
+    return true;
+  } catch (error) {
+    console.error('[clipboard:write-files] failed:', error);
+    return false;
+  }
 });
 
 ipcMain.handle('backend:recover-corrupted-database', async () => {

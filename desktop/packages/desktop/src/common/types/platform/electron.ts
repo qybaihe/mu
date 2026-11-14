@@ -3,6 +3,9 @@ export interface ElectronBridgeAPI {
   on: (callback: (event: { value: string }) => void) => void;
   // 获取拖拽文件/目录的绝对路径 / Get absolute path for dragged file/directory
   getPathForFile?: (file: File) => string;
+  // 把文件本体写入 OS 剪贴板（资源管理器/Finder 里可直接粘贴）。Windows 多文件
+  // 与其他不支持的情况返回 false，前端回落为复制路径清单文本。
+  writeFilesToClipboard?: (paths: string[]) => Promise<boolean>;
   recoverCorruptedDatabase?: () => Promise<void>;
   /** Opens the folder the logs are written to, in the file manager. Needs no backend: it is what a failed start lacks. */
   openLogFolder?: () => Promise<void>;

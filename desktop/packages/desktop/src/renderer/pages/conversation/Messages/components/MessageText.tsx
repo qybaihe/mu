@@ -23,6 +23,7 @@ import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyText } from '@/renderer/utils/ui/clipboard';
+import { copyFilesToClipboard } from '@/renderer/utils/ui/clipboardFiles';
 import CollapsibleContent from '@renderer/components/chat/CollapsibleContent';
 import FilePreview from '@renderer/components/media/FilePreview';
 import HorizontalFileList from '@renderer/components/media/HorizontalFileList';
@@ -221,7 +222,14 @@ const MessageText: React.FC<{
       });
   };
 
-  const handleCopyAttachments = () => {
+  const handleCopyAttachments = async () => {
+    // 首选把文件本体写入 OS 剪贴板（资源管理器里可直接粘贴）；
+    // 不可用（WebUI/平台不支持）时回落为复制路径清单文本。
+    const targets = resolvedFiles.filter((path): path is string => typeof path === 'string' && path.length > 0);
+    if (targets.length > 0 && (await copyFilesToClipboard(targets))) {
+      Message.success(t('messages.copyAttachmentsPasted'));
+      return;
+    }
     const fileList = `${t('messages.copyFilesHeader')}\n${files.map((path) => `- ${path}`).join('\n')}`;
     copyText(fileList)
       .then(() => {

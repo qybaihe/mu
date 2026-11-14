@@ -16,6 +16,7 @@ import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Previ
 import { useMessageListRun } from '../hooks';
 import { emitter } from '@/renderer/utils/emitter';
 import { copyText } from '@/renderer/utils/ui/clipboard';
+import { copyFilesToClipboard } from '@/renderer/utils/ui/clipboardFiles';
 import { iconColors } from '@/renderer/styles/colors';
 
 /** HTML rows carry the image/video-style hover actions; other rows stay plain. */
@@ -143,9 +144,16 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
               data-testid='deliverables-copy-attachments'
               className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors'
               onClick={() => {
-                copyText(`${t('messages.copyFilesHeader')}\n${delivered.files.map((file) => `- ${file.path}`).join('\n')}`)
-                  .then(() => Message.success(t('common.copySuccess')))
-                  .catch(() => Message.error(t('common.copyFailed')));
+                // 首选把文件本体写入 OS 剪贴板；不可用时回落为复制路径清单文本。
+                void (async () => {
+                  if (await copyFilesToClipboard(delivered.files.map((file) => file.path))) {
+                    Message.success(t('messages.copyAttachmentsPasted'));
+                    return;
+                  }
+                  copyText(`${t('messages.copyFilesHeader')}\n${delivered.files.map((file) => `- ${file.path}`).join('\n')}`)
+                    .then(() => Message.success(t('common.copySuccess')))
+                    .catch(() => Message.error(t('common.copyFailed')));
+                })();
               }}
               style={{ lineHeight: 0 }}
             >
