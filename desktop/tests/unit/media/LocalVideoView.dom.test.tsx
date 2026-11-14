@@ -74,6 +74,28 @@ describe('LocalVideoView', () => {
     expect(screen.queryByTestId('local-video-modal')).toBeNull();
   });
 
+  it('plays loop and speed from the overlay toolbar, in step with the card', async () => {
+    render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
+    await screen.findByTestId('local-video');
+    const inline = screen.getByTestId('local-video');
+    fireEvent.click(screen.getByTestId('local-video-open'));
+    const large = screen.getByTestId('local-video-modal').querySelector('video') as HTMLVideoElement;
+    // loop toggles both videos at once
+    expect(large.hasAttribute('loop')).toBe(false);
+    fireEvent.click(screen.getByTestId('local-video-modal-loop'));
+    expect(large.hasAttribute('loop')).toBe(true);
+    expect(inline.hasAttribute('loop')).toBe(true);
+    fireEvent.click(screen.getByTestId('local-video-modal-loop'));
+    expect(large.hasAttribute('loop')).toBe(false);
+    // a speed pick from the overlay reaches both videos
+    fireEvent.click(screen.getByTestId('local-video-modal-rate'));
+    fireEvent.click(screen.getByTestId('local-video-modal-rate-2'));
+    expect(large.playbackRate).toBe(2);
+    expect(inline.playbackRate).toBe(2);
+    expect(screen.getByTestId('local-video-rate').textContent).toBe('2x');
+    expect(screen.queryByTestId('local-video-modal-rate-menu')).toBeNull(); // menu closes after the pick
+  });
+
   it('stops the overlay autoplay once the user moves the playhead', async () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     await screen.findByTestId('local-video');

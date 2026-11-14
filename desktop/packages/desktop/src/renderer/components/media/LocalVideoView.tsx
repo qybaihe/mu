@@ -57,6 +57,99 @@ const fmtClock = (seconds: number): string => {
  *  (already playing) with zoom, rotation and a save button — the same gestures a local image of
  *  a reply has. The overlay is portaled to the body: a fixed layer inside the transcript is
  *  trapped by its ancestors' transforms. */
+/** The speed menu lives wherever the video is watched: once under the card and once in the
+ *  overlay's toolbar. Both read the same rate, so a pick applies to both videos at once. */
+const RateMenu: React.FC<{
+  rate: number;
+  onPick: (value: number) => void;
+  variant: 'card' | 'overlay';
+  label: string;
+}> = ({ rate, onPick, variant, label }) => {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLSpanElement>(null);
+  const overlayLook = variant === 'overlay';
+  const button = overlayLook ? TOOL_BUTTON : CARD_BUTTON;
+  const testId = overlayLook ? 'local-video-modal-rate' : 'local-video-rate';
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (event: MouseEvent) => {
+      if (wrap.current && !wrap.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  return (
+    <span ref={wrap} style={{ position: 'relative', display: 'inline-flex' }}>
+      <button
+        type='button'
+        style={button}
+        data-testid={testId}
+        aria-haspopup='menu'
+        aria-expanded={open}
+        title={label}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {rate}x
+      </button>
+      {open ? (
+        <div
+          role='menu'
+          data-testid={`${testId}-menu`}
+          style={{
+            position: 'absolute',
+            bottom: '100%',
+            left: 0,
+            marginBottom: '4px',
+            zIndex: 20,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            padding: '4px',
+            borderRadius: '8px',
+            ...(overlayLook
+              ? { background: 'rgba(28,28,28,.96)', border: '1px solid rgba(255,255,255,.22)' }
+              : {
+                  background: 'var(--color-bg-2, #fff)',
+                  border: '1px solid var(--color-border-2, rgba(120,120,120,.35))',
+                }),
+            boxShadow: '0 4px 12px rgba(0,0,0,.18)',
+          }}
+        >
+          {RATES.map((value) => (
+            <button
+              key={value}
+              type='button'
+              role='menuitem'
+              data-testid={`${testId}-${value}`}
+              style={{
+                ...CARD_BUTTON,
+                border: 'none',
+                minWidth: '44px',
+                justifyContent: 'center',
+                ...(overlayLook ? { color: '#fff' } : {}),
+                ...(value === rate ? { color: 'var(--color-primary-6, #165dff)', fontWeight: 600 } : {}),
+              }}
+              onClick={() => {
+                onPick(value);
+                setOpen(false);
+              }}
+            >
+              {value}x
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </span>
+  );
+};
+
 const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }) => {
   const { t } = useTranslation();
   const conversation = useConversationContextSafe();
@@ -78,28 +171,10 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const [current, setCurrent] = useState(0);
   // A play from the button runs once by default; the loop button switches the mode.
   const [looping, setLooping] = useState(false);
-  // One speed for both videos of the card; picked from a small menu above the button.
+  // One speed for both videos of the card; picked from the menu under the card or in the overlay.
   const [rate, setRate] = useState(1);
-  const [rateOpen, setRateOpen] = useState(false);
-  const rateRef = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (!rateOpen) return;
-    const onDown = (event: MouseEvent) => {
-      if (rateRef.current && !rateRef.current.contains(event.target as Node)) setRateOpen(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setRateOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [rateOpen]);
   const pickRate = useCallback((value: number) => {
     setRate(value);
-    setRateOpen(false);
     if (inlineRef.current) inlineRef.current.playbackRate = value;
     if (modalRef.current) modalRef.current.playbackRate = value;
   }, []);
@@ -347,6 +422,22 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
             <button type='button' style={TOOL_BUTTON} onClick={() => setScale(1)}>
               {Math.round(scale * 100)}%
             </button>
+            {/* The playback controls of the card follow into the overlay: loop and speed read the
+                same state, so toggling either place switches both videos at once. */}
+            <button
+              type='button'
+              style={{
+                ...TOOL_BUTTON,
+                ...(looping ? { background: 'rgba(64,128,255,.85)', borderColor: 'rgba(255,255,255,.6)' } : {}),
+              }}
+              data-testid='local-video-modal-loop'
+              aria-pressed={looping}
+              title={t('acp.video.loop', { defaultValue: looping ? '循环播放：开' : '循环播放：关（点我切换）' })}
+              onClick={() => setLooping((v) => !v)}
+            >
+              <Cycle theme='outline' size='14' fill='currentColor' />
+            </button>
+            <RateMenu rate={rate} onPick={pickRate} variant='overlay' label={t('acp.video.speed', { defaultValue: '倍速' })} />
             <button
               type='button'
               style={TOOL_BUTTON}
@@ -526,59 +617,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
         >
           <Cycle theme='outline' size='14' fill='currentColor' />
         </button>
-        <span ref={rateRef} style={{ position: 'relative', display: 'inline-flex' }}>
-          <button
-            type='button'
-            style={CARD_BUTTON}
-            data-testid='local-video-rate'
-            aria-haspopup='menu'
-            aria-expanded={rateOpen}
-            title={t('acp.video.speed', { defaultValue: '倍速' })}
-            onClick={() => setRateOpen((v) => !v)}
-          >
-            {rate}x
-          </button>
-          {rateOpen ? (
-            <div
-              role='menu'
-              data-testid='local-video-rate-menu'
-              style={{
-                position: 'absolute',
-                bottom: '100%',
-                left: 0,
-                marginBottom: '4px',
-                zIndex: 20,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px',
-                padding: '4px',
-                borderRadius: '8px',
-                background: 'var(--color-bg-2, #fff)',
-                border: '1px solid var(--color-border-2, rgba(120,120,120,.35))',
-                boxShadow: '0 4px 12px rgba(0,0,0,.18)',
-              }}
-            >
-              {RATES.map((value) => (
-                <button
-                  key={value}
-                  type='button'
-                  role='menuitem'
-                  data-testid={`local-video-rate-${value}`}
-                  style={{
-                    ...CARD_BUTTON,
-                    border: 'none',
-                    minWidth: '44px',
-                    justifyContent: 'center',
-                    ...(value === rate ? { color: 'var(--color-primary-6, #165dff)', fontWeight: 600 } : {}),
-                  }}
-                  onClick={() => pickRate(value)}
-                >
-                  {value}x
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </span>
+        <RateMenu rate={rate} onPick={pickRate} variant='card' label={t('acp.video.speed', { defaultValue: '倍速' })} />
         <button
           type='button'
           style={CARD_BUTTON}
