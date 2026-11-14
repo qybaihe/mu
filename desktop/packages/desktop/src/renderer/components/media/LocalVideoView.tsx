@@ -393,28 +393,6 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
         data-testid='local-video-controls'
         style={{ display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '100%' }}
       >
-        <button
-          type='button'
-          style={CARD_BUTTON}
-          data-testid='local-video-play'
-          aria-label={playing ? t('common.pause', { defaultValue: '暂停' }) : t('common.play', { defaultValue: '播放' })}
-          onClick={togglePlay}
-        >
-          {playing ? <Pause theme='filled' size='14' fill='currentColor' /> : <PlayOne theme='filled' size='14' fill='currentColor' />}
-        </button>
-        <button
-          type='button'
-          style={{
-            ...CARD_BUTTON,
-            ...(looping ? { color: 'var(--color-primary-6, #165dff)', borderColor: 'var(--color-primary-6, #165dff)' } : {}),
-          }}
-          data-testid='local-video-loop'
-          aria-pressed={looping}
-          title={t('acp.video.loop', { defaultValue: looping ? '循环播放：开' : '循环播放：关（点我切换）' })}
-          onClick={() => setLooping((v) => !v)}
-        >
-          <Cycle theme='outline' size='14' fill='currentColor' />
-        </button>
         <div
           ref={trackRef}
           data-testid='local-video-seek'
@@ -498,6 +476,28 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
         data-testid='local-video-toolbar'
         style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}
       >
+        <button
+          type='button'
+          style={CARD_BUTTON}
+          data-testid='local-video-play'
+          aria-label={playing ? t('common.pause', { defaultValue: '暂停' }) : t('common.play', { defaultValue: '播放' })}
+          onClick={togglePlay}
+        >
+          {playing ? <Pause theme='filled' size='14' fill='currentColor' /> : <PlayOne theme='filled' size='14' fill='currentColor' />}
+        </button>
+        <button
+          type='button'
+          style={{
+            ...CARD_BUTTON,
+            ...(looping ? { color: 'var(--color-primary-6, #165dff)', borderColor: 'var(--color-primary-6, #165dff)' } : {}),
+          }}
+          data-testid='local-video-loop'
+          aria-pressed={looping}
+          title={t('acp.video.loop', { defaultValue: looping ? '循环播放：开' : '循环播放：关（点我切换）' })}
+          onClick={() => setLooping((v) => !v)}
+        >
+          <Cycle theme='outline' size='14' fill='currentColor' />
+        </button>
         <button
           type='button'
           style={CARD_BUTTON}
