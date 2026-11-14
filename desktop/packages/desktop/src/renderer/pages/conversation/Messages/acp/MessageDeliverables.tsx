@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import type { TMessage } from '@/common/chat/chatLib';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import LocalImageView from '@/renderer/components/media/LocalImageView';
-import LocalVideoView from '@/renderer/components/media/LocalVideoView';
+import LocalVideoView, { isVideoPath } from '@/renderer/components/media/LocalVideoView';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { useMessageListRun } from '../hooks';
 
@@ -64,9 +64,7 @@ const folderOf = (path: string): string => path.replace(/[\\/][^\\/]*$/, '') || 
 const IMAGE_PATH_RE = /\.(?:png|jpe?g|webp|gif|bmp)$/i;
 const isImagePath = (path: string): boolean => IMAGE_PATH_RE.test(path);
 
-/** A video `present` handed over: the row shows it as #421 shows a reply's video, playable right there. */
-const VIDEO_PATH_RE = /\.(?:mp4|m4v|webm|mov|ogv)$/i;
-const isVideoPath = (path: string): boolean => VIDEO_PATH_RE.test(path);
+/** A video `present` handed over: the row shows it as a reply's video, playable right there. */
 
 const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered }) => {
   const { t } = useTranslation();

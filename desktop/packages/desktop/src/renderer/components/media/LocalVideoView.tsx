@@ -48,6 +48,9 @@ const CARD_BUTTON: React.CSSProperties = {
 
 const RATES = [0.5, 1, 1.5, 2, 3];
 
+/** A video path the markdown image syntax may carry — shared with the deliverables card. */
+export const isVideoPath = (path: string): boolean => /\.(?:mp4|m4v|webm|mov|ogv)$/i.test(path);
+
 const fmtClock = (seconds: number): string => {
   const total = Math.max(0, Math.floor(seconds));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
