@@ -150,6 +150,14 @@ describe('LocalVideoView', () => {
     fireEvent.click(screen.getByTestId('local-video-loop'));
     expect(cardVideo.hasAttribute('loop')).toBe(false);
 
+    // The speed button offers rates; picking one changes the video and the button's label.
+    fireEvent.click(screen.getByTestId('local-video-rate'));
+    expect(screen.getByTestId('local-video-rate-menu')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('local-video-rate-2'));
+    expect(cardVideo.playbackRate).toBe(2);
+    expect(screen.getByTestId('local-video-rate').textContent).toBe('2x');
+    expect(screen.queryByTestId('local-video-rate-menu')).toBeNull(); // picked: the menu closes
+
     const rectMock = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
       .mockReturnValue({ width: 200, height: 18, left: 0, top: 0, right: 200, bottom: 18, x: 0, y: 0 } as DOMRect);

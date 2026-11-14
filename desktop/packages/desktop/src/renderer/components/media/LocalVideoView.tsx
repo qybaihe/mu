@@ -46,6 +46,8 @@ const CARD_BUTTON: React.CSSProperties = {
   justifyContent: 'center',
 };
 
+const RATES = [0.5, 1, 1.5, 2, 3];
+
 const fmtClock = (seconds: number): string => {
   const total = Math.max(0, Math.floor(seconds));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
@@ -76,6 +78,31 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const [current, setCurrent] = useState(0);
   // A play from the button runs once by default; the loop button switches the mode.
   const [looping, setLooping] = useState(false);
+  // One speed for both videos of the card; picked from a small menu above the button.
+  const [rate, setRate] = useState(1);
+  const [rateOpen, setRateOpen] = useState(false);
+  const rateRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!rateOpen) return;
+    const onDown = (event: MouseEvent) => {
+      if (rateRef.current && !rateRef.current.contains(event.target as Node)) setRateOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setRateOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [rateOpen]);
+  const pickRate = useCallback((value: number) => {
+    setRate(value);
+    setRateOpen(false);
+    if (inlineRef.current) inlineRef.current.playbackRate = value;
+    if (modalRef.current) modalRef.current.playbackRate = value;
+  }, []);
 
   // The card's actions need the file where it really is; markdown may hand over a path
   // relative to the workspace, the same resolution a local image does.
@@ -170,6 +197,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     if (large) {
       large.muted = true;
       large.defaultMuted = true;
+      large.playbackRate = rate;
       void large.play().catch(() => {});
     }
     const onKey = (event: KeyboardEvent) => {
@@ -177,7 +205,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+  }, [open, rate]);
 
   const save = useCallback(async (): Promise<void> => {
     const name = src.split(/[/\\]/).pop() || 'video.mp4';
@@ -498,6 +526,59 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
         >
           <Cycle theme='outline' size='14' fill='currentColor' />
         </button>
+        <span ref={rateRef} style={{ position: 'relative', display: 'inline-flex' }}>
+          <button
+            type='button'
+            style={CARD_BUTTON}
+            data-testid='local-video-rate'
+            aria-haspopup='menu'
+            aria-expanded={rateOpen}
+            title={t('acp.video.speed', { defaultValue: '倍速' })}
+            onClick={() => setRateOpen((v) => !v)}
+          >
+            {rate}x
+          </button>
+          {rateOpen ? (
+            <div
+              role='menu'
+              data-testid='local-video-rate-menu'
+              style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: 0,
+                marginBottom: '4px',
+                zIndex: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px',
+                padding: '4px',
+                borderRadius: '8px',
+                background: 'var(--color-bg-2, #fff)',
+                border: '1px solid var(--color-border-2, rgba(120,120,120,.35))',
+                boxShadow: '0 4px 12px rgba(0,0,0,.18)',
+              }}
+            >
+              {RATES.map((value) => (
+                <button
+                  key={value}
+                  type='button'
+                  role='menuitem'
+                  data-testid={`local-video-rate-${value}`}
+                  style={{
+                    ...CARD_BUTTON,
+                    border: 'none',
+                    minWidth: '44px',
+                    justifyContent: 'center',
+                    ...(value === rate ? { color: 'var(--color-primary-6, #165dff)', fontWeight: 600 } : {}),
+                  }}
+                  onClick={() => pickRate(value)}
+                >
+                  {value}x
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </span>
         <button
           type='button'
           style={CARD_BUTTON}
