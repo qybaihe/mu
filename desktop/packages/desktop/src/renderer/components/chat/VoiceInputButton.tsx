@@ -10,73 +10,65 @@ import { Button, Tooltip } from '@arco-design/web-react';
 import { Microphone } from '@icon-park/react';
 import { iconColors } from '@/renderer/styles/colors';
 import { isElectronDesktop } from '@/renderer/utils/platform';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const SETTING_KEY = 'system.voiceInputCommand';
-/** How long the mic stays "listening": a hands-free IME keeps recording until the key fires again, so the click
- * that stops it goes through the same button. Purely cosmetic — recording is owned by the external command. */
-const LISTENING_MS = 60_000;
+const COMMAND_KEY = 'system.voiceInputCommand';
+const KEY_ID_KEY = 'system.voiceInputKey';
 
 /**
- * Fires the person's configured voice-input command (Settings → System). The command typically synthesizes the
- * IME's voice hotkey, so the dictated text lands in the focused input box — keep the textarea focused by never
- * taking focus on click (`onMouseDown` preventDefault).
+ * Push-to-talk mic for the send box. Press-and-hold presses the IME voice hotkey (right Ctrl by default: WeType
+ * and most Chinese IMEs ship with it), release lifts it — so the IME records exactly while the button is down and
+ * types the transcript into the focused textarea. A configured external command (Settings → System) runs instead,
+ * once, on press. The button never takes focus (`onPointerDown` preventDefault): the dictated text must land in
+ * the textarea the person was typing in.
  */
 const VoiceInputButton: React.FC = () => {
   const { t } = useTranslation();
-  const [command, setCommand] = useState<string | null>(null);
-  const [listening, setListening] = useState(false);
+  const [pressed, setPressed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const holdingRef = useRef(false); // refuse releases we did not initiate (pointerup without a press)
 
-  useEffect(() => {
-    const read = () => {
-      const value = configService.get(SETTING_KEY);
-      setCommand(typeof value === 'string' && value.trim() ? value.trim() : null);
-    };
-    read();
-    // The backend's settings may still be loading when this mounts; re-read once they arrive (initialize itself
-    // does not notify subscribers — only later writes do).
-    let cancelled = false;
-    void configService.whenReady().then(() => {
-      if (!cancelled) read();
-    });
-    const unsubscribe = configService.subscribe(SETTING_KEY, read);
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, []);
-
-  const trigger = useCallback(async () => {
-    // Hands-free IMEs record until the hotkey fires again: one click starts, the next stops. The command itself
-    // knows which half it is sending; the button only mirrors it.
-    setListening((was) => !was);
-    setError(null);
+  const fire = useCallback(async (action: 'down' | 'up') => {
     try {
-      const keyId = configService.get('system.voiceInputKey') ?? undefined;
-      const result = await ipcBridge.systemSettings.runVoiceCommand.invoke({ command: command ?? undefined, keyId });
+      const command = configService.get(COMMAND_KEY);
+      const keyId = configService.get(KEY_ID_KEY);
+      const result = await ipcBridge.systemSettings.runVoiceCommand.invoke({
+        command: typeof command === 'string' && command.trim() ? command : undefined,
+        keyId: typeof keyId === 'string' ? keyId : undefined,
+        action,
+      });
       if (!result.ok) setError(result.error ?? 'command failed');
+      else setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [command]);
+  }, []);
 
-  // Safety net: never leave the button stuck "listening" (a pure click-to-talk command needs no stop click).
-  useEffect(() => {
-    if (!listening) return;
-    const timer = setTimeout(() => setListening(false), LISTENING_MS);
-    return () => clearTimeout(timer);
-  }, [listening]);
+  // Settings (command / key) are read at press time, so nothing to subscribe to: the button reads fresh every press.
 
-  // The mic always shows on desktop: with no configured command it taps right Ctrl (the IME voice hotkey).
+  // The mic always shows on desktop: with no configured command it presses the configured key (the IME voice hotkey).
   if (!isElectronDesktop()) return null;
 
   const tooltip = error
     ? t('conversation.sendbox.voiceInputError', { defaultValue: 'Voice input failed: {{error}}', error })
-    : listening
-      ? t('conversation.sendbox.voiceInputStop', { defaultValue: 'Voice input is running — click again to stop' })
-      : t('conversation.sendbox.voiceInput', { defaultValue: 'Voice input' });
+    : t('conversation.sendbox.voiceInputHold', { defaultValue: 'Hold to talk, release to send' });
+
+  const onPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault(); // keep the textarea focused — the transcript types into it
+    event.currentTarget.setPointerCapture(event.pointerId); // release lands on us even if dragged away
+    if (holdingRef.current) return;
+    holdingRef.current = true;
+    setPressed(true);
+    void fire('down');
+  };
+
+  const release = () => {
+    if (!holdingRef.current) return;
+    holdingRef.current = false;
+    setPressed(false);
+    void fire('up');
+  };
 
   return (
     <Tooltip content={tooltip} position='top'>
@@ -84,9 +76,10 @@ const VoiceInputButton: React.FC = () => {
         shape='circle'
         type='text'
         className='sendbox-voice-input-button'
-        icon={<Microphone theme={listening ? 'filled' : 'outline'} size='18' fill={listening ? '#f53f3f' : iconColors.secondary} />}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={trigger}
+        icon={<Microphone theme={pressed ? 'filled' : 'outline'} size='18' fill={pressed ? '#f53f3f' : iconColors.secondary} />}
+        onPointerDown={onPointerDown}
+        onPointerUp={release}
+        onPointerCancel={release}
         data-testid='sendbox-voice-input-btn'
         aria-label={tooltip}
       />

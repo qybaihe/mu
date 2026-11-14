@@ -595,7 +595,7 @@
     "stop": "停止回复",
     "openCommand": "从这台电脑附加文件",
     "voiceInput": "语音输入",
-    "voiceInputStop": "正在录音，再点一次结束",
+    "voiceInputHold": "按住说话，松开结束",
     "voiceInputError": "语音输入失败：{{error}}",
     "copyCommand": "复制最后一条回复"
   },
