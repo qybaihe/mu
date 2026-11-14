@@ -1536,8 +1536,9 @@ export const systemSettings = {
   /** Hold the computer awake (no idle sleep; the display may still turn off) while `on`, or let it sleep again. */
   keepAwakeWhileRunning: bridge.buildProvider<void, { on: boolean }>('system-settings:keep-awake-while-running'),
   setKeepAwake: httpPut<void, { enabled: boolean }>('/api/settings/client', (p) => ({ keepAwake: p.enabled })),
-  /** Runs the person's configured voice-input command (a hotkey synthesizer, a dictation script, ...). */
-  runVoiceCommand: bridge.buildProvider<{ ok: boolean; error?: string }, { command: string }>(
+  /** Runs the person's configured voice-input command (a hotkey synthesizer, a dictation script, ...); with no
+   * command it taps the configured voice key (right Ctrl by default) on Windows — the common IME voice hotkey. */
+  runVoiceCommand: bridge.buildProvider<{ ok: boolean; error?: string }, { command?: string; keyId?: string }>(
     'system-settings:run-voice-command'
   ),
   /**

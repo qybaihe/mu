@@ -9,6 +9,7 @@ import { configService } from '@/common/config/configService';
 import { Button, Tooltip } from '@arco-design/web-react';
 import { Microphone } from '@icon-park/react';
 import { iconColors } from '@/renderer/styles/colors';
+import { isElectronDesktop } from '@/renderer/utils/platform';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -48,13 +49,13 @@ const VoiceInputButton: React.FC = () => {
   }, []);
 
   const trigger = useCallback(async () => {
-    if (!command) return;
     // Hands-free IMEs record until the hotkey fires again: one click starts, the next stops. The command itself
     // knows which half it is sending; the button only mirrors it.
     setListening((was) => !was);
     setError(null);
     try {
-      const result = await ipcBridge.systemSettings.runVoiceCommand.invoke({ command });
+      const keyId = configService.get('system.voiceInputKey') ?? undefined;
+      const result = await ipcBridge.systemSettings.runVoiceCommand.invoke({ command: command ?? undefined, keyId });
       if (!result.ok) setError(result.error ?? 'command failed');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -68,7 +69,8 @@ const VoiceInputButton: React.FC = () => {
     return () => clearTimeout(timer);
   }, [listening]);
 
-  if (!command) return null;
+  // The mic always shows on desktop: with no configured command it taps right Ctrl (the IME voice hotkey).
+  if (!isElectronDesktop()) return null;
 
   const tooltip = error
     ? t('conversation.sendbox.voiceInputError', { defaultValue: 'Voice input failed: {{error}}', error })

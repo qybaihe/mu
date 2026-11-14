@@ -14,7 +14,9 @@
 
 import { ipcBridge } from '@/common';
 import { electronPowerSaveBlocker } from '@/common/electronSafe';
-import { exec } from 'node:child_process';
+import { resolveVoiceInputKey } from '@/common/config/voiceInputKeys';
+import { exec, execFile } from 'node:child_process';
+import { platform } from 'node:os';
 import { applyAppLanguage } from '@process/services/i18n';
 import { createOrUpdateTray, destroyTray, setCloseToTrayEnabled } from '@process/utils/tray';
 import { readCloseToTraySetting, writeCloseToTraySetting } from '@process/utils/closeToTraySetting';
@@ -36,20 +38,66 @@ export function holdAwake(on: boolean): void {
   }
 }
 
-export function initSystemSettingsBridge(): void {
-  // Voice input is delegated to whatever external command the person configured (Settings → System): the app itself
-  // only fires it and reports the exit status. A typical command synthesizes the IME's voice hotkey so the dictation
-  // text lands in the focused input (e.g. WeType's right-Ctrl hands-free key on Windows).
-  ipcBridge.systemSettings.runVoiceCommand.provider(async ({ command }) => {
-    try {
+/** Taps a key system-wide via SendInput — used for the IME's voice hotkey (right Ctrl by default: WeType and
+ * several other Chinese IMEs ship with it). PowerShell is the only dependency-free way to reach the Win32 API from
+ * the main process. INPUT must be 40 bytes on x64: explicit layout pins the union (largest member MOUSEINPUT) while
+ * the struct only names the KEYBDINPUT arm. */
+const TAP_KEY_PS = `
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class MuTap {
+  [StructLayout(LayoutKind.Sequential)]
+  struct KEYBDINPUT { public ushort wVk; public ushort wScan; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+  [StructLayout(LayoutKind.Explicit, Size = 40)]
+  struct INPUT { [FieldOffset(0)] public uint type; [FieldOffset(8)] public KEYBDINPUT ki; }
+  [DllImport("user32.dll", SetLastError = true)]
+  static extern uint SendInput(uint n, INPUT[] inputs, int size);
+  public static void Tap(ushort vk, bool extended) {
+    uint flag = extended ? 0x0001u : 0u;
+    INPUT[] x = new INPUT[2];
+    x[0].type = 1; x[0].ki.wVk = vk; x[0].ki.dwFlags = flag;
+    x[1].type = 1; x[1].ki.wVk = vk; x[1].ki.dwFlags = flag | 0x0002u;
+    SendInput(2, x, Marshal.SizeOf(typeof(INPUT)));
+  }
+}
+'@
+[MuTap]::Tap({vk}, {ext})
+`;
+
+const tapKeyScript = (vk: number, extended: boolean) => TAP_KEY_PS.replace('{vk}', `0x${vk.toString(16)}`).replace('{ext}', extended ? '$true' : '$false');
+
+/** Runs the person's configured voice-input command, or — with no command configured — taps right Ctrl on Windows
+ * (the IME voice hotkey). Returns ok:false instead of throwing so the button can surface the error in its tooltip. */
+async function fireVoiceInput(command: string | undefined, keyId: string | undefined): Promise<{ ok: boolean; error?: string }> {
+  try {
+    if (command && command.trim()) {
       await new Promise<void>((resolve, reject) => {
         exec(command, { timeout: 60_000, windowsHide: true }, (error) => (error ? reject(error) : resolve()));
       });
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    } else if (platform() === 'win32') {
+      const { vk, extended } = resolveVoiceInputKey(keyId);
+      await new Promise<void>((resolve, reject) => {
+        execFile(
+          'powershell.exe',
+          ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', tapKeyScript(vk, extended)],
+          { timeout: 15_000, windowsHide: true },
+          (error) => (error ? reject(error) : resolve())
+        );
+      });
+    } else {
+      return { ok: false, error: 'No voice input command configured (the built-in key tap is Windows-only)' };
     }
-  });
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+export function initSystemSettingsBridge(): void {
+  // Voice input: the mic button in the send box fires this. With a configured command it runs that; otherwise it
+  // taps right Ctrl so the IME's dictation (e.g. WeType's voice hotkey) starts and types into the focused input.
+  ipcBridge.systemSettings.runVoiceCommand.provider(async ({ command, keyId }) => fireVoiceInput(command, keyId));
 
   ipcBridge.systemSettings.keepAwakeWhileRunning.provider(async ({ on }) => holdAwake(on === true));
 
