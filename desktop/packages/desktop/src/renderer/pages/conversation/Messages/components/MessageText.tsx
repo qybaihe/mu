@@ -311,7 +311,7 @@ const MessageText: React.FC<{
     ) : null;
 
   const copyButton = (
-    <Tooltip content={t('common.copy', { defaultValue: 'Copy' })}>
+    <Tooltip content={t('messages.copyReplyText')}>
       <div
         className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
         onClick={handleCopy}

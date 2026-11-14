@@ -121,5 +121,8 @@ describe('the files mu’s present handed over', () => {
     expect(openFileMock).toHaveBeenCalledWith('/work/out/page.html');
     // The actions never open the preview themselves.
     expect(opened).toEqual([]);
+    // The card carries the hover scope: without group/delivcard the bottom row
+    // stays opacity-0 forever, which is exactly the bug this guards against.
+    expect(screen.getByTestId('message-deliverables')).toHaveClass('group/delivcard');
   });
 });

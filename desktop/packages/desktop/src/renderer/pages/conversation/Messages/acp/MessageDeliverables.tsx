@@ -87,7 +87,7 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
   };
   return (
     <div
-      className='rd-10px border border-solid border-[var(--color-border-2)] bg-fill-1 p-10px flex flex-col gap-6px max-w-560px'
+      className='group/delivcard rd-10px border border-solid border-[var(--color-border-2)] bg-fill-1 p-10px flex flex-col gap-6px max-w-560px'
       data-testid='message-deliverables'
     >
       <div className='flex items-center gap-6px px-4px text-12.5px font-500 text-t-secondary'>
