@@ -34,7 +34,17 @@ const VoiceInputButton: React.FC = () => {
       setCommand(typeof value === 'string' && value.trim() ? value.trim() : null);
     };
     read();
-    return configService.subscribe(SETTING_KEY, read);
+    // The backend's settings may still be loading when this mounts; re-read once they arrive (initialize itself
+    // does not notify subscribers — only later writes do).
+    let cancelled = false;
+    void configService.whenReady().then(() => {
+      if (!cancelled) read();
+    });
+    const unsubscribe = configService.subscribe(SETTING_KEY, read);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   const trigger = useCallback(async () => {
