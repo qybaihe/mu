@@ -136,7 +136,7 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
       {/* HTML deliverables join the message bar style: their actions sit at the
           card's very bottom, revealed by hovering the card, never over a row. */}
       {delivered.files.some((file) => HTML_FILE_RE.test(file.name)) ? (
-        <div className='flex justify-end items-center gap-4px pt-2px pr-4px opacity-0 group-hover/delivcard:opacity-100 transition-opacity'>
+        <div className='flex justify-start items-center gap-8px pt-2px px-4px opacity-0 group-hover/delivcard:opacity-100 transition-opacity'>
           {delivered.files
             .filter((file) => HTML_FILE_RE.test(file.name))
             .map((file) => (
@@ -151,7 +151,7 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
                       quoteFile(file.path);
                     }}
                   >
-                    <Link theme='outline' size='14' fill={iconColors.secondary} />
+                    <Link theme='outline' size='16' fill={iconColors.secondary} />
                   </div>
                 </Tooltip>
                 <Tooltip content={`${t('preview.openInSystemApp')} · ${file.name}`}>
@@ -164,7 +164,7 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
                       openInSystem(file.path);
                     }}
                   >
-                    <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                    <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
                       <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
                       <polyline points='15 3 21 3 21 9' />
                       <line x1='10' y1='14' x2='21' y2='3' />
