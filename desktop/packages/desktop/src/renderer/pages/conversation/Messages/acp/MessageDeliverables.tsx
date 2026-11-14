@@ -104,7 +104,7 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
       ) : null}
       <div className='flex flex-col gap-2px'>
         {delivered.files.map((file) => (
-          <div key={file.path} className='relative group/delivrow'>
+          <div key={file.path} className='group/delivrow'>
             <Button
               type='text'
               className='!h-auto !px-8px !py-5px !rd-6px hover:!bg-fill-2 !text-left !justify-start transition-colors'
@@ -131,7 +131,7 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
               </span>
             </Button>
             {HTML_FILE_RE.test(file.name) ? (
-              <div className='absolute end-6px top-1/2 -translate-y-1/2 z-10 flex gap-4px opacity-0 group-hover/delivrow:opacity-100 transition-opacity'>
+              <div className='hidden group-hover/delivrow:flex justify-end items-center gap-4px pt-2px pr-8px'>
                 <Tooltip content={t('common.reply')}>
                   <div
                     data-testid='deliverables-quote'
