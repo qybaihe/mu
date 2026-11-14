@@ -13,7 +13,7 @@ import type { UncaughtErrorDiagnostics } from './process/utils/describeUncaughtE
 import { createRendererRecoveryPolicy } from './process/utils/rendererRecovery';
 import './process/utils/configureConsoleLog';
 import { app, BrowserWindow, clipboard, ipcMain, nativeImage, powerMonitor, session, shell } from 'electron';
-import { execFile, spawn } from 'child_process';
+import { execFile, spawn, type ChildProcess } from 'child_process';
 import fixPath from 'fix-path';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -217,6 +217,89 @@ ipcMain.on('get-node-runtime-deferred', (event) => {
   event.returnValue = nodeRuntimeDeferred;
 });
 
+// Windows：常驻 PowerShell 工作进程避免每次复制付出 ~1s 冷启动。进程保持 stdin 打开，
+// 每次复制只写一行命令（base64(UTF-16LE) 避开控制台编码坑），等 stdout 出现完成标记；
+// 闲置 2 分钟自动回收，下次用时重建（启动时预热一次，首次点击也能瞬时）。
+const CLIP_OK = '__MU_CLIP_OK__';
+let clipWorker: ChildProcess | null = null;
+let clipWorkerIdleTimer: NodeJS.Timeout | null = null;
+
+function killClipboardWorker(): void {
+  if (clipWorkerIdleTimer) {
+    clearTimeout(clipWorkerIdleTimer);
+    clipWorkerIdleTimer = null;
+  }
+  if (clipWorker) {
+    clipWorker.removeAllListeners();
+    clipWorker.kill();
+    clipWorker = null;
+  }
+}
+
+function ensureClipboardWorker(): ChildProcess | null {
+  if (process.platform !== 'win32') return null;
+  if (clipWorker && !clipWorker.killed) return clipWorker;
+  clipWorker = spawn(
+    'powershell.exe',
+    ['-NoProfile', '-NonInteractive', '-Command', '-'],
+    { windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'] }
+  );
+  clipWorker.on('exit', () => {
+    clipWorker = null;
+    if (clipWorkerIdleTimer) {
+      clearTimeout(clipWorkerIdleTimer);
+      clipWorkerIdleTimer = null;
+    }
+  });
+  clipWorker.on('error', () => killClipboardWorker());
+  return clipWorker;
+}
+
+function scheduleClipboardWorkerIdleKill(): void {
+  if (clipWorkerIdleTimer) clearTimeout(clipWorkerIdleTimer);
+  clipWorkerIdleTimer = setTimeout(killClipboardWorker, 2 * 60 * 1000);
+  clipWorkerIdleTimer.unref?.();
+}
+
+function setClipboardFilesViaWorker(paths: string[]): Promise<boolean> {
+  return new Promise((resolve) => {
+    const worker = ensureClipboardWorker();
+    if (!worker) {
+      resolve(false);
+      return;
+    }
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      worker.stdout.removeListener('data', onData);
+      worker.removeListener('exit', onExit);
+      scheduleClipboardWorkerIdleKill();
+      resolve(ok);
+    };
+    const onData = (chunk: Buffer): void => {
+      if (chunk.toString('utf8').includes(CLIP_OK)) finish(true);
+    };
+    const onExit = (): void => finish(false);
+    const timer = setTimeout(() => {
+      killClipboardWorker();
+      finish(false);
+    }, 10_000);
+    timer.unref?.();
+    worker.stdout.on('data', onData);
+    worker.on('exit', onExit);
+    const payload = Buffer.from(paths.join('\t'), 'utf16le').toString('base64');
+    worker.stdin.write(
+      `$p=[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${payload}')).Split([char]9); ` +
+        `Set-Clipboard -LiteralPath $p; Write-Output '${CLIP_OK}'\n`,
+      (error: Error | null | undefined) => {
+        if (error) finish(false);
+      }
+    );
+  });
+}
+
 // 把文件本体写入 OS 剪贴板：在资源管理器/Finder 里打开任意文件夹即可粘贴。
 // Windows 上 Electron 无法按名字注册 CF_HDROP 格式，多/单文件统一借 PowerShell
 // Set-Clipboard 构造；macOS 仅单文件（public.file-url）；Linux 需 xclip。任何
@@ -236,16 +319,7 @@ ipcMain.handle('clipboard:write-files', async (_event, rawPaths: unknown): Promi
   if (existing.length === 0) return false;
   try {
     if (process.platform === 'win32') {
-      const list = existing.map((p) => `'${p.replace(/'/g, "''")}'`).join(', ');
-      await new Promise<void>((resolve, reject) => {
-        execFile(
-          'powershell.exe',
-          ['-NoProfile', '-NonInteractive', '-Command', `Set-Clipboard -LiteralPath @(${list})`],
-          { windowsHide: true, timeout: 10_000 },
-          (error) => (error ? reject(error) : resolve())
-        );
-      });
-      return true;
+      return await setClipboardFilesViaWorker(existing);
     }
     if (process.platform === 'darwin') {
       if (existing.length !== 1) return false;
@@ -913,6 +987,8 @@ const handleAppReady = async (): Promise<void> => {
     createWindow({ showOnReady: showMainWindowOnReady });
     appReadyDone = true;
     mark('createWindow');
+    // 预热剪贴板工作进程：首次「复制附件」即可瞬时完成（仅 Windows，闲置自动回收）
+    ensureClipboardWorker();
 
     // mu updates itself from the releases of github.com/qybaihe/mu (process/services/update): a check a little after
     // the start and then every 6 hours, besides the one on 关于 (About). A build run from its sources and automated
