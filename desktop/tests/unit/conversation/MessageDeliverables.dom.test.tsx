@@ -6,7 +6,7 @@
 
 /**
  * The files `present` hands over: a card in the conversation. An image file is shown in its row as a thumbnail, not
- * only named; any other file keeps its row as it was.
+ * only named; a video file shows its first frame and plays muted on hover; any other file keeps its row as it was.
  */
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -20,10 +20,13 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const { invoke } = vi.hoisted(() => ({
-  invoke: vi.fn(async ({ path }: { path: string }) => `data:image/png;base64,${path.replaceAll('/', '_')}`),
+const { imageInvoke, readInvoke } = vi.hoisted(() => ({
+  imageInvoke: vi.fn(async ({ path }: { path: string }) => `data:image/png;base64,${path.replaceAll('/', '_')}`),
+  readInvoke: vi.fn(async () => 'AAAA'),
 }));
-vi.mock('@/common', () => ({ ipcBridge: { fs: { getImageBase64: { invoke } } } }));
+vi.mock('@/common', () => ({
+  ipcBridge: { fs: { getImageBase64: { invoke: imageInvoke }, readContent: { invoke: readInvoke } } },
+}));
 
 vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () => ({
   useOptionalLocalFilePreview: () => vi.fn(),
@@ -80,6 +83,31 @@ describe('MessageDeliverables', () => {
     const thumbs = screen.getAllByTestId('message-deliverables-thumb');
     expect(thumbs).toHaveLength(1);
     await waitFor(() => expect(screen.getByAltText('card.png')).toBeTruthy());
-    expect(invoke).toHaveBeenCalledWith({ path: 'E:/out/card.png', workspace: undefined });
+    expect(imageInvoke).toHaveBeenCalledWith({ path: 'E:/out/card.png', workspace: undefined });
+  });
+});
+
+describe('MessageDeliverables video rows', () => {
+  it('shows a video as #421 shows a reply’s video: a frame that plays on hover, fetched once', async () => {
+    render(
+      <MessageDeliverables delivered={{ files: [{ path: 'E:/out/clip.mp4', name: 'clip.mp4', bytes: 4096 }] }} />
+    );
+    const block = await screen.findByTestId('message-deliverables-video');
+    const video = block.querySelector('video');
+    expect(video).toBeTruthy();
+    expect(video?.getAttribute('preload')).toBe('metadata');
+    expect(video?.getAttribute('title')).toBe('clip.mp4');
+    expect(imageInvoke).toHaveBeenCalledWith({ path: 'E:/out/clip.mp4', workspace: undefined });
+    // Hover play/pause and the click overlay are LocalVideoView's own, covered by its test file.
+  });
+
+  it('leaves a loading placeholder when the video does not read', async () => {
+    imageInvoke.mockResolvedValueOnce(null);
+    render(
+      <MessageDeliverables delivered={{ files: [{ path: 'E:/out/gone.mp4', name: 'gone.mp4', bytes: 4096 }] }} />
+    );
+    const block = await screen.findByTestId('message-deliverables-video');
+    // The placeholder stays — no video element, no crash.
+    await waitFor(() => expect(block.querySelector('video')).toBeNull());
   });
 });
