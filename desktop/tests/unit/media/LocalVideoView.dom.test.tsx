@@ -96,6 +96,29 @@ describe('LocalVideoView', () => {
     expect(screen.queryByTestId('local-video-modal-rate-menu')).toBeNull(); // menu closes after the pick
   });
 
+  it('keeps looping: the restart seek back to the start is playback, not a pick', async () => {
+    render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
+    await screen.findByTestId('local-video');
+    fireEvent.click(screen.getByTestId('local-video-open'));
+    const large = screen.getByTestId('local-video-modal').querySelector('video') as HTMLVideoElement;
+    fireEvent.click(screen.getByTestId('local-video-modal-loop'));
+    pause.mockClear(); // the open effect's pauses; only the loop restart counts now
+    large.currentTime = 10.4; // the last timeupdate before the end
+    fireEvent(large, new Event('timeupdate'));
+    large.currentTime = 0; // the loop restarts — a seek the playback itself caused
+    fireEvent(large, new Event('seeking'));
+    fireEvent(large, new Event('seeked'));
+    expect(pause).not.toHaveBeenCalled(); // the loop runs on instead of parking on frame 0
+    // without loop the same seek is a user pick and does stop the video
+    fireEvent.click(screen.getByTestId('local-video-modal-loop'));
+    large.currentTime = 4.5;
+    fireEvent(large, new Event('timeupdate'));
+    large.currentTime = 0;
+    fireEvent(large, new Event('seeking'));
+    fireEvent(large, new Event('seeked'));
+    expect(pause).toHaveBeenCalled();
+  });
+
   it('stops the overlay autoplay once the user moves the playhead', async () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     await screen.findByTestId('local-video');

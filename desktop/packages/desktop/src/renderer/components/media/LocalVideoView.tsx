@@ -372,11 +372,13 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
               }}
               onSeeked={(event) => {
                 // The user moved the playhead: the autoplay that opened the overlay is over —
-                // the video stands on the frame they chose instead of running on.
-                if (modalTouched.current) {
+                // the video stands on the frame they chose instead of running on. But a looping
+                // video also seeks — every restart jumps back to the start, and that seek is
+                // playback, not a pick: in loop mode a seek never pauses, it just jumps.
+                if (modalTouched.current && !looping) {
                   event.currentTarget.pause();
-                  modalTouched.current = false;
                 }
+                modalTouched.current = false;
               }}
               // A quarter turn swaps the video's axes: keep it inside the view, so a turned
               // wide video cannot reach the toolbar the way it otherwise would.
