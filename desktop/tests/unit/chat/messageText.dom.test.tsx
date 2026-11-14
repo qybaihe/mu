@@ -20,6 +20,9 @@ import { copyText } from '@/renderer/utils/ui/clipboard';
 const previewMocks = vi.hoisted(() => ({
   openPreview: vi.fn(),
 }));
+const emitterMocks = vi.hoisted(() => ({
+  emit: vi.fn(),
+}));
 const localFileLinkMocks = vi.hoisted(() => ({
   payload: {
     path: '/missing/report.xlsx',
@@ -52,6 +55,9 @@ vi.mock('@/common', () => ({
       getContentMetadata: { invoke: vi.fn() },
       readContent: { invoke: vi.fn() },
     },
+    shell: {
+      openFile: { invoke: vi.fn().mockResolvedValue(undefined) },
+    },
     conversation: {
       fork: { invoke: forkMocks.fork },
       ensureRuntime: { invoke: forkMocks.ensureRuntime },
@@ -77,6 +83,10 @@ vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
 vi.mock('@/renderer/components/chat/CollapsibleContent', () => ({
   __esModule: true,
   default: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock('@/renderer/utils/emitter', () => ({
+  emitter: { emit: emitterMocks.emit },
 }));
 
 vi.mock('@/renderer/components/media/FilePreview', () => ({
@@ -161,6 +171,7 @@ vi.mock('@arco-design/web-react', () => ({
 vi.mock('@icon-park/react', () => ({
   Copy: () => <span data-testid='copy-icon' />,
   Undo: () => <span data-testid='undo-icon' />,
+  Link: () => <span data-testid='link-icon' />,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -208,7 +219,7 @@ describe('MessageText attachment paths', () => {
     };
 
     render(
-      <ConversationProvider value={{ conversationId: 'conv-1', workspace: '/workspace/demo', type: 'acp' }}>
+      <ConversationProvider value={{ conversationId: 'conv-1', conversation_id: 'conv-1', workspace: '/workspace/demo', type: 'acp' }}>
         <MessageText message={message} />
       </ConversationProvider>
     );
@@ -234,11 +245,28 @@ describe('MessageText attachment paths', () => {
     };
 
     render(
-      <ConversationProvider value={{ conversationId: 'conv-1', workspace: '/workspace/demo', type: 'acp' }}>
+      <ConversationProvider value={{ conversationId: 'conv-1', conversation_id: 'conv-1', workspace: '/workspace/demo', type: 'acp' }}>
         <MessageText message={message} />
       </ConversationProvider>
     );
   };
+
+  it('gives HTML file chips hover actions: quote into the sendbox and open with the system browser', () => {
+    renderMessageText(
+      'Here is the page\n[[AION_FILES]]\nE:/mu/preview_test.html',
+      { position: 'right' }
+    );
+
+    // The HTML chip carries both hover buttons...
+    const quote = screen.getByTestId('html-chip-quote');
+    const open = screen.getByTestId('html-chip-open');
+
+    fireEvent.click(quote);
+    expect(emitterMocks.emit).toHaveBeenCalledWith('sendbox.mention.files', ['E:/mu/preview_test.html'], 'conv-1');
+
+    fireEvent.click(open);
+    expect(ipcBridge.shell.openFile.invoke).toHaveBeenCalledWith('E:/mu/preview_test.html');
+  });
 
   it('resolves relative attachment paths against the current workspace before previewing', () => {
     const message: IMessageText = {

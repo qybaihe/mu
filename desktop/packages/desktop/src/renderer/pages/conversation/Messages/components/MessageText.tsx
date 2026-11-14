@@ -5,6 +5,7 @@
  */
 
 import type { IMessageText } from '@/common/chat/chatLib';
+import { ipcBridge } from '@/common';
 import { parseFileMarker, resolveMessageFilePath } from './fileMarker';
 import SessionMentionAction from './SessionMentionAction';
 import { parseSessionMessageBlock, parseSessionsBlock } from './sessionMarkers';
@@ -31,6 +32,9 @@ import MessageImages from './MessageImages';
 import { closeOpenFence } from './streamMarkdown';
 import { stripThinkTags, hasThinkTags } from '@renderer/utils/chat/thinkTagFilter';
 import { buildTurnClipboardText } from '@renderer/utils/chat/turnCopy';
+
+/** 对话 chips 里的 HTML 附件走图/视频同款悬停交互（引用 + 默认浏览器打开）。 */
+const HTML_FILE_RE = /\.x?html?$/i;
 import { stripSkillSuggest, hasSkillSuggest } from '@renderer/utils/chat/skillSuggestParser';
 import { isForkEnabled } from '@/common/chat/forkConversation';
 import { useForkConversation } from '@/renderer/hooks/chat/useForkConversation';
@@ -236,6 +240,57 @@ const MessageText: React.FC<{
   const quoteMedia = () => {
     emitter.emit('sendbox.mention.files', mediaPaths, conversationContext?.conversation_id);
   };
+  const quoteFile = (path: string) => emitter.emit('sendbox.mention.files', [path], conversationContext?.conversation_id);
+  const openHtmlInSystem = (path: string) => {
+    void ipcBridge.shell.openFile.invoke(path).catch((error) => {
+      console.error('[MessageText] open in system failed:', { path, error });
+      try {
+        Message.error(t('preview.openInSystemFailed'));
+      } catch {
+        /* context holder may be unmounted */
+      }
+    });
+  };
+  // HTML chips carry the image/video-style hover actions (quote into the sendbox,
+  // open with the system default browser); other files stay plain chips.
+  const renderFileChip = (path: string) =>
+    HTML_FILE_RE.test(path) ? (
+      <div key={path} className='relative group/htmlchip inline-block'>
+        <FilePreview path={path} onRemove={() => undefined} readonly />
+        <div className='absolute -top-8px -end-8px z-10 flex gap-4px opacity-0 group-hover/htmlchip:opacity-100 transition-opacity'>
+          <Tooltip content={t('common.reply')}>
+            <div
+              data-testid='html-chip-quote'
+              className='w-20px h-20px rd-50% bg-bg-2 shadow-md border-1 border-solid b-color-border-2 flex items-center justify-center cursor-pointer hover:bg-bg-3'
+              onClick={(e) => {
+                e.stopPropagation();
+                quoteFile(path);
+              }}
+            >
+              <Link theme='outline' size='12' fill={iconColors.secondary} />
+            </div>
+          </Tooltip>
+          <Tooltip content={t('preview.openInSystemApp')}>
+            <div
+              data-testid='html-chip-open'
+              className='w-20px h-20px rd-50% bg-bg-2 shadow-md border-1 border-solid b-color-border-2 flex items-center justify-center cursor-pointer hover:bg-bg-3 text-t-secondary'
+              onClick={(e) => {
+                e.stopPropagation();
+                openHtmlInSystem(path);
+              }}
+            >
+              <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
+                <polyline points='15 3 21 3 21 9' />
+                <line x1='10' y1='14' x2='21' y2='3' />
+              </svg>
+            </div>
+          </Tooltip>
+        </div>
+      </div>
+    ) : (
+      <FilePreview key={path} path={path} onRemove={() => undefined} readonly />
+    );
 
   const copyButton = (
     <Tooltip content={t('common.copy', { defaultValue: 'Copy' })}>
@@ -356,15 +411,9 @@ const MessageText: React.FC<{
         {files.length > 0 && (
           <div className={classNames('mt-6px min-w-0 max-w-full', { 'self-end': isUserMessage })}>
             {resolvedFiles.length === 1 ? (
-              <div className='flex items-center'>
-                <FilePreview path={resolvedFiles[0]} onRemove={() => undefined} readonly />
-              </div>
+              <div className='flex items-center'>{renderFileChip(resolvedFiles[0])}</div>
             ) : (
-              <HorizontalFileList>
-                {resolvedFiles.map((path) => (
-                  <FilePreview key={path} path={path} onRemove={() => undefined} readonly />
-                ))}
-              </HorizontalFileList>
+              <HorizontalFileList>{resolvedFiles.map((path) => renderFileChip(path))}</HorizontalFileList>
             )}
           </div>
         )}
