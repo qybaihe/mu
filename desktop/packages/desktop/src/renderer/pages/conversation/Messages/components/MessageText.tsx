@@ -18,7 +18,7 @@ import { mediaPathsOf } from './messageTextMedia';
 import { formatDateTime, formatTime } from '@/renderer/services/i18n/format';
 import { iconColors } from '@/renderer/styles/colors';
 import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
-import { Copy, Download, Link, Undo } from '@icon-park/react';
+import { Copy, CopyOne, Download, Link, Undo } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -205,13 +205,21 @@ const MessageText: React.FC<{
 
   const handleCopy = () => {
     const baseText = shouldRenderPlainText ? renderedText : json ? JSON.stringify(data, null, 2) : renderedText;
-    const fileList = files.length
-      ? `${t('messages.copyFilesHeader')}\n${files.map((path) => `- ${path}`).join('\n')}\n\n`
-      : '';
-    // An AI turn split by tool calls / thinking stores several text messages;
-    // the row sits on the last one but must copy the whole reply.
-    const textToCopy = turnTexts?.length ? buildTurnClipboardText(turnTexts) : fileList + baseText;
+    // The reply's words only: attachments copy through their own button.
+    const textToCopy = turnTexts?.length ? buildTurnClipboardText(turnTexts) : baseText;
     copyText(textToCopy)
+      .then(() => {
+        setShowCopyAlert(true);
+        setTimeout(() => setShowCopyAlert(false), 2000);
+      })
+      .catch(() => {
+        Message.error(t('common.copyFailed'));
+      });
+  };
+
+  const handleCopyAttachments = () => {
+    const fileList = `${t('messages.copyFilesHeader')}\n${files.map((path) => `- ${path}`).join('\n')}`;
+    copyText(fileList)
       .then(() => {
         setShowCopyAlert(true);
         setTimeout(() => setShowCopyAlert(false), 2000);
@@ -251,46 +259,56 @@ const MessageText: React.FC<{
       }
     });
   };
-  // HTML chips carry the image/video-style hover actions (quote into the sendbox,
-  // open with the system default browser); other files stay plain chips.
-  const renderFileChip = (path: string) =>
-    HTML_FILE_RE.test(path) ? (
-      <div key={path} className='relative group/htmlchip inline-block'>
-        <FilePreview path={path} onRemove={() => undefined} readonly />
-        <div className='absolute -top-8px -end-8px z-10 flex gap-4px opacity-0 group-hover/htmlchip:opacity-100 transition-opacity'>
-          <Tooltip content={t('common.reply')}>
-            <div
-              data-testid='html-chip-quote'
-              className='w-20px h-20px rd-50% bg-bg-2 shadow-md border-1 border-solid b-color-border-2 flex items-center justify-center cursor-pointer hover:bg-bg-3'
-              onClick={(e) => {
-                e.stopPropagation();
-                quoteFile(path);
-              }}
-            >
-              <Link theme='outline' size='12' fill={iconColors.secondary} />
-            </div>
-          </Tooltip>
-          <Tooltip content={t('preview.openInSystemApp')}>
-            <div
-              data-testid='html-chip-open'
-              className='w-20px h-20px rd-50% bg-bg-2 shadow-md border-1 border-solid b-color-border-2 flex items-center justify-center cursor-pointer hover:bg-bg-3 text-t-secondary'
-              onClick={(e) => {
-                e.stopPropagation();
-                openHtmlInSystem(path);
-              }}
-            >
-              <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
-                <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
-                <polyline points='15 3 21 3 21 9' />
-                <line x1='10' y1='14' x2='21' y2='3' />
-              </svg>
-            </div>
-          </Tooltip>
-        </div>
-      </div>
-    ) : (
-      <FilePreview key={path} path={path} onRemove={() => undefined} readonly />
+  // HTML attachments join the media actions in the bottom bar (quote into the
+  // sendbox, open with the system default browser); chips themselves stay plain.
+  const htmlFiles = resolvedFiles.filter((path) => HTML_FILE_RE.test(path));
+  const htmlFileActions = htmlFiles.map((path) => {
+    const name = path.split(/[/\\]/).pop() || path;
+    return (
+      <React.Fragment key={path}>
+        <Tooltip content={`${t('common.reply')} · ${name}`}>
+          <div
+            className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+            onClick={() => quoteFile(path)}
+            style={{ lineHeight: 0 }}
+            data-testid='message-quote-html'
+            data-path={path}
+          >
+            <Link theme='outline' size='16' fill={iconColors.secondary} />
+          </div>
+        </Tooltip>
+        <Tooltip content={`${t('preview.openInSystemApp')} · ${name}`}>
+          <div
+            className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto text-t-secondary'
+            onClick={() => openHtmlInSystem(path)}
+            style={{ lineHeight: 0 }}
+            data-testid='message-open-html'
+            data-path={path}
+          >
+            <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+              <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
+              <polyline points='15 3 21 3 21 9' />
+              <line x1='10' y1='14' x2='21' y2='3' />
+            </svg>
+          </div>
+        </Tooltip>
+      </React.Fragment>
     );
+  });
+
+  const copyAttachmentsButton =
+    files.length > 0 ? (
+      <Tooltip content={t('messages.copyAttachments')}>
+        <div
+          className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+          onClick={handleCopyAttachments}
+          style={{ lineHeight: 0 }}
+          data-testid='message-copy-attachments'
+        >
+          <CopyOne theme='outline' size='16' fill={iconColors.secondary} />
+        </div>
+      </Tooltip>
+    ) : null;
 
   const copyButton = (
     <Tooltip content={t('common.copy', { defaultValue: 'Copy' })}>
@@ -411,9 +429,15 @@ const MessageText: React.FC<{
         {files.length > 0 && (
           <div className={classNames('mt-6px min-w-0 max-w-full', { 'self-end': isUserMessage })}>
             {resolvedFiles.length === 1 ? (
-              <div className='flex items-center'>{renderFileChip(resolvedFiles[0])}</div>
+              <div className='flex items-center'>
+                <FilePreview path={resolvedFiles[0]} onRemove={() => undefined} readonly />
+              </div>
             ) : (
-              <HorizontalFileList>{resolvedFiles.map((path) => renderFileChip(path))}</HorizontalFileList>
+              <HorizontalFileList>
+                {resolvedFiles.map((path) => (
+                  <FilePreview key={path} path={path} onRemove={() => undefined} readonly />
+                ))}
+              </HorizontalFileList>
             )}
           </div>
         )}
@@ -504,7 +528,9 @@ const MessageText: React.FC<{
                 </Tooltip>
               </>
             ) : null}
+            {htmlFileActions}
             {copyButton}
+            {copyAttachmentsButton}
             {forkButton}
             {rewindButton}
             {message.created_at && (

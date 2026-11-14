@@ -170,6 +170,7 @@ vi.mock('@arco-design/web-react', () => ({
 
 vi.mock('@icon-park/react', () => ({
   Copy: () => <span data-testid='copy-icon' />,
+  CopyOne: () => <span data-testid='copy-one-icon' />,
   Undo: () => <span data-testid='undo-icon' />,
   Link: () => <span data-testid='link-icon' />,
 }));
@@ -251,21 +252,39 @@ describe('MessageText attachment paths', () => {
     );
   };
 
-  it('gives HTML file chips hover actions: quote into the sendbox and open with the system browser', () => {
+  it('puts HTML attachment actions in the bottom bar: quote into the sendbox and open with the system browser', () => {
     renderMessageText(
       'Here is the page\n[[AION_FILES]]\nE:/mu/preview_test.html',
       { position: 'right' }
     );
 
-    // The HTML chip carries both hover buttons...
-    const quote = screen.getByTestId('html-chip-quote');
-    const open = screen.getByTestId('html-chip-open');
+    // The message bar carries both actions next to the copy button...
+    const quote = screen.getByTestId('message-quote-html');
+    const open = screen.getByTestId('message-open-html');
 
     fireEvent.click(quote);
     expect(emitterMocks.emit).toHaveBeenCalledWith('sendbox.mention.files', ['E:/mu/preview_test.html'], 'conv-1');
 
     fireEvent.click(open);
     expect(ipcBridge.shell.openFile.invoke).toHaveBeenCalledWith('E:/mu/preview_test.html');
+  });
+
+  it('copies the reply text alone, and the attachment list through its own button', async () => {
+    renderMessageText(
+      'Here is the page\n[[AION_FILES]]\nE:/mu/preview_test.html',
+      { position: 'right' }
+    );
+
+    const copyControl = screen.getByTestId('copy-icon').parentElement;
+    fireEvent.click(copyControl as HTMLElement);
+    await waitFor(() => {
+      expect(copyText).toHaveBeenCalledWith('Here is the page');
+    });
+
+    fireEvent.click(screen.getByTestId('message-copy-attachments'));
+    await waitFor(() => {
+      expect(copyText).toHaveBeenCalledWith('messages.copyFilesHeader\n- E:/mu/preview_test.html');
+    });
   });
 
   it('resolves relative attachment paths against the current workspace before previewing', () => {

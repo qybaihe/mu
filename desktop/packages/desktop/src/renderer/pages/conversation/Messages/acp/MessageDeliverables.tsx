@@ -104,67 +104,77 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
       ) : null}
       <div className='flex flex-col gap-2px'>
         {delivered.files.map((file) => (
-          <div key={file.path} className='group/delivrow'>
-            <Button
-              type='text'
-              className='!h-auto !px-8px !py-5px !rd-6px hover:!bg-fill-2 !text-left !justify-start transition-colors'
-              disabled={!open}
-              title={file.path}
-              aria-label={t('messages.deliverables.open', { name: file.name })}
-              data-testid='message-deliverables-file'
-              data-path={file.path}
-              onClick={() => void open?.(file.path)}
-            >
-              <span className='flex w-full items-center gap-8px min-w-0'>
-                {isImagePath(file.path) ? (
-                  <span
-                    className='flex-none size-40px rd-6px overflow-hidden flex items-center justify-center bg-fill-2'
-                    data-testid='message-deliverables-thumb'
-                  >
-                    <LocalImageView src={file.path} alt={file.name} className='size-full object-cover' />
-                  </span>
-                ) : null}
-                <span className='flex flex-1 items-baseline gap-8px min-w-0'>
+          <Button
+            key={file.path}
+            type='text'
+            className='!h-auto !px-8px !py-5px !rd-6px hover:!bg-fill-2 !text-left !justify-start transition-colors'
+            disabled={!open}
+            title={file.path}
+            aria-label={t('messages.deliverables.open', { name: file.name })}
+            data-testid='message-deliverables-file'
+            data-path={file.path}
+            onClick={() => void open?.(file.path)}
+          >
+            <span className='flex w-full items-center gap-8px min-w-0'>
+              {isImagePath(file.path) ? (
+                <span
+                  className='flex-none size-40px rd-6px overflow-hidden flex items-center justify-center bg-fill-2'
+                  data-testid='message-deliverables-thumb'
+                >
+                  <LocalImageView src={file.path} alt={file.name} className='size-full object-cover' />
+                </span>
+              ) : null}
+              <span className='flex flex-1 items-baseline gap-8px min-w-0'>
                 <span className='text-13px font-500 text-t-primary truncate'>{file.name}</span>
                 <span className='text-12px text-t-tertiary truncate flex-1 min-w-0'>{folderOf(file.path)}</span>
                 <span className='text-11.5px font-mono text-t-tertiary flex-none'>{fileSize(file.bytes)}</span>
               </span>
-            </Button>
-            {HTML_FILE_RE.test(file.name) ? (
-              <div className='hidden group-hover/delivrow:flex justify-end items-center gap-4px pt-2px pr-8px'>
-                <Tooltip content={t('common.reply')}>
+            </span>
+          </Button>
+        ))}
+      </div>
+      {/* HTML deliverables join the message bar style: their actions sit at the
+          card's very bottom, revealed by hovering the card, never over a row. */}
+      {delivered.files.some((file) => HTML_FILE_RE.test(file.name)) ? (
+        <div className='flex justify-end items-center gap-4px pt-2px pr-4px opacity-0 group-hover/delivcard:opacity-100 transition-opacity'>
+          {delivered.files
+            .filter((file) => HTML_FILE_RE.test(file.name))
+            .map((file) => (
+              <React.Fragment key={file.path}>
+                <Tooltip content={`${t('common.reply')} · ${file.name}`}>
                   <div
                     data-testid='deliverables-quote'
-                    className='w-20px h-20px rd-50% bg-bg-2 shadow-md border-1 border-solid b-color-border-2 flex items-center justify-center cursor-pointer hover:bg-bg-3'
+                    data-path={file.path}
+                    className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors'
                     onClick={(e) => {
                       e.stopPropagation();
                       quoteFile(file.path);
                     }}
                   >
-                    <Link theme='outline' size='12' fill={iconColors.secondary} />
+                    <Link theme='outline' size='14' fill={iconColors.secondary} />
                   </div>
                 </Tooltip>
-                <Tooltip content={t('preview.openInSystemApp')}>
+                <Tooltip content={`${t('preview.openInSystemApp')} · ${file.name}`}>
                   <div
                     data-testid='deliverables-open'
-                    className='w-20px h-20px rd-50% bg-bg-2 shadow-md border-1 border-solid b-color-border-2 flex items-center justify-center cursor-pointer hover:bg-bg-3 text-t-secondary'
+                    data-path={file.path}
+                    className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors text-t-secondary'
                     onClick={(e) => {
                       e.stopPropagation();
                       openInSystem(file.path);
                     }}
                   >
-                    <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                    <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
                       <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
                       <polyline points='15 3 21 3 21 9' />
                       <line x1='10' y1='14' x2='21' y2='3' />
                     </svg>
                   </div>
                 </Tooltip>
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </div>
+              </React.Fragment>
+            ))}
+        </div>
+      ) : null}
     </div>
   );
 };

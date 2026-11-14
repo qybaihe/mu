@@ -114,6 +114,7 @@
     "tool": "工具"
   },
   "optionNumber": "选项 {{number}}",
+  "copyAttachments": "复制附件",
   "copyFilesHeader": "文件：",
   "exportHeaderLine": "{{label}}：{{value}}",
   "exportSpeakerLine": "{{speaker}}：",
