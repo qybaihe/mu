@@ -66,11 +66,10 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const [scale, setScale] = useState(1);
   const [turns, setTurns] = useState(0);
   // Set once the user has touched the overlay video: after that a seek is theirs, and the
-  // autoplay the overlay opened with must not keep running through it.
+  // autoplay the overlay opened with must not keep running through it. The native controls
+  // swallow pointer events, so a user's pick is recognized by the playhead jumping instead.
   const modalTouched = useRef(false);
-  // Once the user plays/pauses or scrubs with the controls under the card, the hover preview
-  // stops overriding their choice: leave no longer pauses what they started.
-  const manual = useRef(false);
+  const modalLastTime = useRef(0);
   const scrubbing = useRef(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const [duration, setDuration] = useState(0);
@@ -163,7 +162,6 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const togglePlay = useCallback(() => {
     const video = inlineRef.current;
     if (!video) return;
-    manual.current = true;
     if (video.paused) {
       video.muted = true;
       video.defaultMuted = true;
@@ -179,6 +177,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     if (!open) return;
     inlineRef.current?.pause();
     modalTouched.current = false;
+    modalLastTime.current = 0;
     const large = modalRef.current;
     if (large) {
       large.muted = true;
@@ -221,7 +220,6 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     emitter.emit('sendbox.mention.files', [absolutePath], conversationId);
   }, [absolutePath, conversationId]);
 
-  const name = useMemo(() => src.split(/[/\\]/).pop() || 'video.mp4', [src]);
   const ratio = duration > 0 ? Math.min(1, Math.max(0, current / duration)) : 0;
 
   // React's synthetic mouseenter never arrives in the transcript (its mouseover/out pairing
@@ -230,12 +228,8 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   useEffect(() => {
     const node = wrapRef.current;
     if (!node) return;
-    const enter = () => {
-      if (!manual.current) startInline();
-    };
-    const leave = () => {
-      if (!manual.current) stopInline();
-    };
+    const enter = () => startInline();
+    const leave = () => stopInline();
     node.addEventListener('mouseenter', enter);
     node.addEventListener('mouseleave', leave);
     return () => {
@@ -292,6 +286,16 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
               preload='metadata'
               onPointerDown={() => {
                 modalTouched.current = true;
+              }}
+              onTimeUpdate={(event) => {
+                modalLastTime.current = event.currentTarget.currentTime;
+              }}
+              onSeeking={(event) => {
+                // A click on the native progress bar moves the playhead further than playback
+                // itself ever advances between two timeupdates — that jump is the user picking
+                // a frame (the controls emit no pointer events of their own).
+                const video = event.currentTarget;
+                if (Math.abs(video.currentTime - modalLastTime.current) > 0.4) modalTouched.current = true;
               }}
               onSeeked={(event) => {
                 // The user moved the playhead: the autoplay that opened the overlay is over —
@@ -399,25 +403,6 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
             transition: 'transform .2s ease',
           }}
         />
-        <span
-          aria-hidden='true'
-          style={{
-            position: 'absolute',
-            inset: 'auto auto 8px 8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '2px 8px',
-            borderRadius: '999px',
-            background: 'rgba(0,0,0,.55)',
-            color: '#fff',
-            fontSize: '12px',
-            pointerEvents: 'none',
-          }}
-        >
-          {playing ? <Pause theme='filled' size='12' fill='#fff' /> : <PlayOne theme='filled' size='12' fill='#fff' />}
-          {name}
-        </span>
         <button
           type='button'
           aria-label={t('common.open', { defaultValue: 'Open' })}
@@ -458,11 +443,8 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
           aria-valuenow={Math.round(ratio * 100)}
           style={{ flex: 1, minWidth: '120px', height: '18px', display: 'flex', alignItems: 'center', cursor: 'pointer', touchAction: 'none' }}
           onPointerDown={(event) => {
-            // A scrub is the user's: it ends the hover preview's autoplay the same way a seek in
-            // the overlay does — the frame they picked stands still. A play they started
-            // themselves keeps running through it.
-            const wasManual = manual.current;
-            manual.current = true;
+            // A pick on the bar is the user's frame, whatever is playing: the video stops
+            // right on it — the same promise the overlay makes.
             scrubbing.current = true;
             try {
               event.currentTarget.setPointerCapture(event.pointerId);
@@ -470,7 +452,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
               // jsdom and odd engines: dragging then simply follows the pointer within the bar.
             }
             seekFromEvent(event.clientX);
-            if (!wasManual) inlineRef.current?.pause();
+            inlineRef.current?.pause();
           }}
           onPointerMove={(event) => {
             if (scrubbing.current) seekFromEvent(event.clientX);

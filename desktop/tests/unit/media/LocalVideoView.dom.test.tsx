@@ -85,6 +85,21 @@ describe('LocalVideoView', () => {
     expect(pause).toHaveBeenCalled(); // the frame the user picked stands still
   });
 
+  it('recognizes a click on the native progress bar by the playhead jumping, and pauses there', async () => {
+    render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
+    await screen.findByTestId('local-video');
+    fireEvent.click(screen.getByTestId('local-video-open'));
+    pause.mockClear();
+    const large = screen.getByTestId('local-video-modal').querySelector('video')! as HTMLVideoElement;
+    let time = 1.5;
+    Object.defineProperty(large, 'currentTime', { configurable: true, get: () => time, set: (v) => (time = v) });
+    fireEvent(large, new Event('timeupdate')); // playback was here a moment ago
+    time = 8.2; // a click on the native bar: the playhead jumps far beyond playback's reach
+    fireEvent(large, new Event('seeking'));
+    fireEvent(large, new Event('seeked'));
+    expect(pause).toHaveBeenCalled();
+  });
+
   it('keeps playing through a seek it caused itself (autoplay untouched)', async () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     await screen.findByTestId('local-video');
@@ -119,10 +134,12 @@ describe('LocalVideoView', () => {
 
     fireEvent.click(screen.getByTestId('local-video-play'));
     expect(elPlay).toHaveBeenCalled();
-    // After a manual play the hover preview no longer touches the video.
+    // Hover stays in charge whatever was clicked: leave always stops, enter always starts.
     const wrap = screen.getByTestId('local-video-wrap');
     fireEvent(wrap, new MouseEvent('mouseleave', { bubbles: false }));
-    expect(elPause).not.toHaveBeenCalled();
+    expect(elPause).toHaveBeenCalled();
+    fireEvent(wrap, new MouseEvent('mouseenter', { bubbles: false }));
+    expect(elPlay).toHaveBeenCalledTimes(2);
 
     const rectMock = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
@@ -143,7 +160,7 @@ describe('LocalVideoView', () => {
     expect(screen.getByText('0:02 / 0:10')).toBeTruthy();
   });
 
-  it('a scrub ends the hover preview, but a play the user started runs through it', async () => {
+  it('a pick on the bar stops the video on that frame, playing or not', async () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     const video = (await screen.findByTestId('local-video')) as HTMLVideoElement;
     const elPause = vi.fn();
@@ -154,7 +171,8 @@ describe('LocalVideoView', () => {
       .mockReturnValue({ width: 200, height: 18, left: 0, top: 0, right: 200, bottom: 18, x: 0, y: 0 } as DOMRect);
     try {
       fireEvent.pointerDown(screen.getByTestId('local-video-seek'), { pointerId: 1, clientX: 180 });
-      expect(elPause).toHaveBeenCalled(); // not manually playing yet: the scrub stands on its frame
+      expect(video.currentTime).toBe(9);
+      expect(elPause).toHaveBeenCalled(); // it stands on the frame the user picked
     } finally {
       rectMock.mockRestore();
     }
