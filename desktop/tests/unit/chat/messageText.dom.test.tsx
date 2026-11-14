@@ -20,6 +20,9 @@ import { copyText } from '@/renderer/utils/ui/clipboard';
 const previewMocks = vi.hoisted(() => ({
   openPreview: vi.fn(),
 }));
+const emitterMocks = vi.hoisted(() => ({
+  emit: vi.fn(),
+}));
 const localFileLinkMocks = vi.hoisted(() => ({
   payload: {
     path: '/missing/report.xlsx',
@@ -52,6 +55,9 @@ vi.mock('@/common', () => ({
       getContentMetadata: { invoke: vi.fn() },
       readContent: { invoke: vi.fn() },
     },
+    shell: {
+      openFile: { invoke: vi.fn().mockResolvedValue(undefined) },
+    },
     conversation: {
       fork: { invoke: forkMocks.fork },
       ensureRuntime: { invoke: forkMocks.ensureRuntime },
@@ -77,6 +83,10 @@ vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
 vi.mock('@/renderer/components/chat/CollapsibleContent', () => ({
   __esModule: true,
   default: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock('@/renderer/utils/emitter', () => ({
+  emitter: { emit: emitterMocks.emit },
 }));
 
 vi.mock('@/renderer/components/media/FilePreview', () => ({
@@ -149,6 +159,7 @@ vi.mock('@arco-design/web-react', () => ({
   Alert: () => null,
   Message: {
     error: vi.fn(),
+    success: vi.fn(),
   },
   Tooltip: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   Button: ({ icon, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon?: React.ReactNode }) => (
@@ -160,7 +171,9 @@ vi.mock('@arco-design/web-react', () => ({
 
 vi.mock('@icon-park/react', () => ({
   Copy: () => <span data-testid='copy-icon' />,
+  CopyOne: () => <span data-testid='copy-one-icon' />,
   Undo: () => <span data-testid='undo-icon' />,
+  Link: () => <span data-testid='link-icon' />,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -208,7 +221,7 @@ describe('MessageText attachment paths', () => {
     };
 
     render(
-      <ConversationProvider value={{ conversationId: 'conv-1', workspace: '/workspace/demo', type: 'acp' }}>
+      <ConversationProvider value={{ conversationId: 'conv-1', conversation_id: 'conv-1', workspace: '/workspace/demo', type: 'acp' }}>
         <MessageText message={message} />
       </ConversationProvider>
     );
@@ -234,11 +247,61 @@ describe('MessageText attachment paths', () => {
     };
 
     render(
-      <ConversationProvider value={{ conversationId: 'conv-1', workspace: '/workspace/demo', type: 'acp' }}>
+      <ConversationProvider value={{ conversationId: 'conv-1', conversation_id: 'conv-1', workspace: '/workspace/demo', type: 'acp' }}>
         <MessageText message={message} />
       </ConversationProvider>
     );
   };
+
+  it('puts HTML attachment actions in the bottom bar: quote into the sendbox and open with the system browser', () => {
+    renderMessageText(
+      'Here is the page\n[[AION_FILES]]\nE:/mu/preview_test.html',
+      { position: 'right' }
+    );
+
+    // The message bar carries both actions next to the copy button...
+    const quote = screen.getByTestId('message-quote-html');
+    const open = screen.getByTestId('message-open-html');
+
+    fireEvent.click(quote);
+    expect(emitterMocks.emit).toHaveBeenCalledWith('sendbox.mention.files', ['E:/mu/preview_test.html'], 'conv-1');
+
+    fireEvent.click(open);
+    expect(ipcBridge.shell.openFile.invoke).toHaveBeenCalledWith('E:/mu/preview_test.html');
+  });
+
+  it('copy keeps its original text-plus-files payload; the attachments button lists the files', async () => {
+    renderMessageText(
+      'Here is the page\n[[AION_FILES]]\nE:/mu/preview_test.html',
+      { position: 'right' }
+    );
+
+    const copyControl = screen.getByTestId('copy-icon').parentElement;
+    fireEvent.click(copyControl as HTMLElement);
+    await waitFor(() => {
+      expect(copyText).toHaveBeenCalledWith('messages.copyFilesHeader\n- E:/mu/preview_test.html\n\nHere is the page');
+    });
+
+    fireEvent.click(screen.getByTestId('message-copy-attachments'));
+    await waitFor(() => {
+      expect(copyText).toHaveBeenCalledWith('messages.copyFilesHeader\n- E:/mu/preview_test.html');
+    });
+  });
+
+  it('copy attachments puts the files on the OS clipboard when the electron bridge is present', async () => {
+    const writeFiles = vi.fn().mockResolvedValue(true);
+    (window as unknown as { electronAPI?: unknown }).electronAPI = { writeFilesToClipboard: writeFiles };
+    try {
+      renderMessageText('Here is the page\n[[AION_FILES]]\nE:/mu/preview_test.html', { position: 'right' });
+      fireEvent.click(screen.getByTestId('message-copy-attachments'));
+      await waitFor(() => {
+        expect(writeFiles).toHaveBeenCalledWith(['E:/mu/preview_test.html']);
+      });
+      expect(copyText).not.toHaveBeenCalled();
+    } finally {
+      delete (window as unknown as { electronAPI?: unknown }).electronAPI;
+    }
+  });
 
   it('resolves relative attachment paths against the current workspace before previewing', () => {
     const message: IMessageText = {

@@ -5,6 +5,7 @@
  */
 
 import type { IMessageText } from '@/common/chat/chatLib';
+import { ipcBridge } from '@/common';
 import { parseFileMarker, resolveMessageFilePath } from './fileMarker';
 import SessionMentionAction from './SessionMentionAction';
 import { parseSessionMessageBlock, parseSessionsBlock } from './sessionMarkers';
@@ -17,11 +18,12 @@ import { mediaPathsOf } from './messageTextMedia';
 import { formatDateTime, formatTime } from '@/renderer/services/i18n/format';
 import { iconColors } from '@/renderer/styles/colors';
 import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
-import { Copy, Download, Link, Undo } from '@icon-park/react';
+import { Copy, CopyOne, Download, Link, Undo } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyText } from '@/renderer/utils/ui/clipboard';
+import { copyFilesToClipboard } from '@/renderer/utils/ui/clipboardFiles';
 import CollapsibleContent from '@renderer/components/chat/CollapsibleContent';
 import FilePreview from '@renderer/components/media/FilePreview';
 import HorizontalFileList from '@renderer/components/media/HorizontalFileList';
@@ -31,6 +33,9 @@ import MessageImages from './MessageImages';
 import { closeOpenFence } from './streamMarkdown';
 import { stripThinkTags, hasThinkTags } from '@renderer/utils/chat/thinkTagFilter';
 import { buildTurnClipboardText } from '@renderer/utils/chat/turnCopy';
+
+/** 对话 chips 里的 HTML 附件走图/视频同款悬停交互（引用 + 默认浏览器打开）。 */
+const HTML_FILE_RE = /\.x?html?$/i;
 import { stripSkillSuggest, hasSkillSuggest } from '@renderer/utils/chat/skillSuggestParser';
 import { isForkEnabled } from '@/common/chat/forkConversation';
 import { useForkConversation } from '@/renderer/hooks/chat/useForkConversation';
@@ -217,6 +222,25 @@ const MessageText: React.FC<{
       });
   };
 
+  const handleCopyAttachments = async () => {
+    // 首选把文件本体写入 OS 剪贴板（资源管理器里可直接粘贴）；
+    // 不可用（WebUI/平台不支持）时回落为复制路径清单文本。
+    const targets = resolvedFiles.filter((path): path is string => typeof path === 'string' && path.length > 0);
+    if (targets.length > 0 && (await copyFilesToClipboard(targets))) {
+      Message.success(t('messages.copyAttachmentsPasted'));
+      return;
+    }
+    const fileList = `${t('messages.copyFilesHeader')}\n${files.map((path) => `- ${path}`).join('\n')}`;
+    copyText(fileList)
+      .then(() => {
+        setShowCopyAlert(true);
+        setTimeout(() => setShowCopyAlert(false), 2000);
+      })
+      .catch(() => {
+        Message.error(t('common.copyFailed'));
+      });
+  };
+
   // The reply's own embedded media: the hover bar can hand them over (save) or quote them
   // (attach them as chips in the send box for the next message).
   const mediaPaths = useMemo(
@@ -236,6 +260,67 @@ const MessageText: React.FC<{
   const quoteMedia = () => {
     emitter.emit('sendbox.mention.files', mediaPaths, conversationContext?.conversation_id);
   };
+  const quoteFile = (path: string) => emitter.emit('sendbox.mention.files', [path], conversationContext?.conversation_id);
+  const openHtmlInSystem = (path: string) => {
+    void ipcBridge.shell.openFile.invoke(path).catch((error) => {
+      console.error('[MessageText] open in system failed:', { path, error });
+      try {
+        Message.error(t('preview.openInSystemFailed'));
+      } catch {
+        /* context holder may be unmounted */
+      }
+    });
+  };
+  // HTML attachments join the media actions in the bottom bar (quote into the
+  // sendbox, open with the system default browser); chips themselves stay plain.
+  const htmlFiles = resolvedFiles.filter((path) => HTML_FILE_RE.test(path));
+  const htmlFileActions = htmlFiles.map((path) => {
+    const name = path.split(/[/\\]/).pop() || path;
+    return (
+      <React.Fragment key={path}>
+        <Tooltip content={`${t('common.reply')} · ${name}`}>
+          <div
+            className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+            onClick={() => quoteFile(path)}
+            style={{ lineHeight: 0 }}
+            data-testid='message-quote-html'
+            data-path={path}
+          >
+            <Link theme='outline' size='16' fill={iconColors.secondary} />
+          </div>
+        </Tooltip>
+        <Tooltip content={`${t('preview.openInSystemApp')} · ${name}`}>
+          <div
+            className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto text-t-secondary'
+            onClick={() => openHtmlInSystem(path)}
+            style={{ lineHeight: 0 }}
+            data-testid='message-open-html'
+            data-path={path}
+          >
+            <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+              <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
+              <polyline points='15 3 21 3 21 9' />
+              <line x1='10' y1='14' x2='21' y2='3' />
+            </svg>
+          </div>
+        </Tooltip>
+      </React.Fragment>
+    );
+  });
+
+  const copyAttachmentsButton =
+    files.length > 0 ? (
+      <Tooltip content={t('messages.copyAttachments')}>
+        <div
+          className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
+          onClick={handleCopyAttachments}
+          style={{ lineHeight: 0 }}
+          data-testid='message-copy-attachments'
+        >
+          <CopyOne theme='outline' size='16' fill={iconColors.secondary} />
+        </div>
+      </Tooltip>
+    ) : null;
 
   const copyButton = (
     <Tooltip content={t('common.copy', { defaultValue: 'Copy' })}>
@@ -455,7 +540,9 @@ const MessageText: React.FC<{
                 </Tooltip>
               </>
             ) : null}
+            {htmlFileActions}
             {copyButton}
+            {copyAttachmentsButton}
             {forkButton}
             {rewindButton}
             {message.created_at && (

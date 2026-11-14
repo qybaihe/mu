@@ -4,15 +4,23 @@
  * carries them as its result's details (packages/kyrn-judge/src/extension/features/present.ts `PresentDetails`), which
  * the native transcript passes on as the call's raw output.
  */
-import { Button } from '@arco-design/web-react';
-import { FileSuccess } from '@icon-park/react';
+import { Button, Message, Tooltip } from '@arco-design/web-react';
+import { CopyOne, FileSuccess, Link } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TMessage } from '@/common/chat/chatLib';
+import { ipcBridge } from '@/common';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import LocalImageView from '@/renderer/components/media/LocalImageView';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { useMessageListRun } from '../hooks';
+import { emitter } from '@/renderer/utils/emitter';
+import { copyText } from '@/renderer/utils/ui/clipboard';
+import { copyFilesToClipboard } from '@/renderer/utils/ui/clipboardFiles';
+import { iconColors } from '@/renderer/styles/colors';
+
+/** HTML rows carry the image/video-style hover actions; other rows stay plain. */
+const HTML_FILE_RE = /\.x?html?$/i;
 
 export type DeliveredFile = { path: string; name: string; bytes: number };
 export type Deliverables = { files: DeliveredFile[]; note?: string };
@@ -68,9 +76,20 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
   const conversation = useConversationContextSafe();
   const run = useMessageListRun();
   const open = useOptionalLocalFilePreview(conversation?.workspace ?? run?.workspace);
+  const quoteFile = (path: string) => emitter.emit('sendbox.mention.files', [path], conversation?.conversation_id);
+  const openInSystem = (path: string) => {
+    void ipcBridge.shell.openFile.invoke(path).catch((error) => {
+      console.error('[MessageDeliverables] open in system failed:', { path, error });
+      try {
+        Message.error(t('preview.openInSystemFailed'));
+      } catch {
+        /* context holder may be unmounted */
+      }
+    });
+  };
   return (
     <div
-      className='rd-10px border border-solid border-[var(--color-border-2)] bg-fill-1 p-10px flex flex-col gap-6px max-w-560px'
+      className='group/delivcard rd-10px border border-solid border-[var(--color-border-2)] bg-fill-1 p-10px flex flex-col gap-6px max-w-560px'
       data-testid='message-deliverables'
     >
       <div className='flex items-center gap-6px px-4px text-12.5px font-500 text-t-secondary'>
@@ -116,6 +135,71 @@ const MessageDeliverables: React.FC<{ delivered: Deliverables }> = ({ delivered 
           </Button>
         ))}
       </div>
+      {/* HTML deliverables join the message bar style: their actions sit at the
+          card's very bottom, revealed by hovering the card, never over a row. */}
+      {delivered.files.some((file) => HTML_FILE_RE.test(file.name)) ? (
+        <div className='flex justify-start items-center gap-8px pt-2px px-4px opacity-0 group-hover/delivcard:opacity-100 transition-opacity'>
+          <Tooltip content={t('messages.copyAttachments')}>
+            <div
+              data-testid='deliverables-copy-attachments'
+              className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors'
+              onClick={() => {
+                // 首选把文件本体写入 OS 剪贴板；不可用时回落为复制路径清单文本。
+                void (async () => {
+                  if (await copyFilesToClipboard(delivered.files.map((file) => file.path))) {
+                    Message.success(t('messages.copyAttachmentsPasted'));
+                    return;
+                  }
+                  copyText(`${t('messages.copyFilesHeader')}\n${delivered.files.map((file) => `- ${file.path}`).join('\n')}`)
+                    .then(() => Message.success(t('common.copySuccess')))
+                    .catch(() => Message.error(t('common.copyFailed')));
+                })();
+              }}
+              style={{ lineHeight: 0 }}
+            >
+              <CopyOne theme='outline' size='16' fill={iconColors.secondary} />
+            </div>
+          </Tooltip>
+          {delivered.files
+            .filter((file) => HTML_FILE_RE.test(file.name))
+            .map((file) => (
+              <React.Fragment key={file.path}>
+                <Tooltip content={`${t('common.reply')} · ${file.name}`}>
+                  <div
+                    data-testid='deliverables-quote'
+                    data-path={file.path}
+                    className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      quoteFile(file.path);
+                    }}
+                    style={{ lineHeight: 0 }}
+                  >
+                    <Link theme='outline' size='16' fill={iconColors.secondary} />
+                  </div>
+                </Tooltip>
+                <Tooltip content={`${t('preview.openInSystemApp')} · ${file.name}`}>
+                  <div
+                    data-testid='deliverables-open'
+                    data-path={file.path}
+                    className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors text-t-secondary'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openInSystem(file.path);
+                    }}
+                    style={{ lineHeight: 0 }}
+                  >
+                    <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                      <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' />
+                      <polyline points='15 3 21 3 21 9' />
+                      <line x1='10' y1='14' x2='21' y2='3' />
+                    </svg>
+                  </div>
+                </Tooltip>
+              </React.Fragment>
+            ))}
+        </div>
+      ) : null}
     </div>
   );
 };

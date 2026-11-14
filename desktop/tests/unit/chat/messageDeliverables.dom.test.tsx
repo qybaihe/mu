@@ -7,7 +7,9 @@ import type { TMessage } from '@/common/chat/chatLib';
 import MessageDeliverables, {
   deliverables,
   fileSize,
+  type DeliveredFile,
 } from '@/renderer/pages/conversation/Messages/acp/MessageDeliverables';
+import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
 import enMessages from '@/renderer/services/i18n/locales/en-US/messages.json';
 
 /** The files mu's present handed over, as the conversation's card: what it shows, and what a click opens. */
@@ -20,9 +22,23 @@ vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () =>
 }));
 vi.mock('@/renderer/pages/conversation/Messages/hooks', () => ({ useMessageListRun: () => ({ workspace: '/work' }) }));
 
+const emitterMocks = vi.hoisted(() => ({ emit: vi.fn() }));
+const openFileMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const copyTextMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+vi.mock('@/renderer/utils/emitter', () => ({ emitter: { emit: emitterMocks.emit } }));
+vi.mock('@/renderer/utils/ui/clipboard', () => ({ copyText: copyTextMock }));
+vi.mock('@arco-design/web-react', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@arco-design/web-react')>();
+  return { ...original, Message: { success: vi.fn(), error: vi.fn() } };
+});
+vi.mock('@/common', () => ({ ipcBridge: { shell: { openFile: { invoke: openFileMock } } } }));
+
 afterEach(() => {
   cleanup();
   opened.length = 0;
+  emitterMocks.emit.mockClear();
+  openFileMock.mockClear();
+  copyTextMock.mockClear();
 });
 
 const i18n = createInstance();
@@ -85,5 +101,68 @@ describe('the files mu’s present handed over', () => {
     expect(fileSize(512)).toBe('512 B');
     expect(fileSize(1536)).toBe('1.5 KB');
     expect(fileSize(20 * 1024 * 1024)).toBe('20 MB');
+  });
+
+  it('give HTML rows hover actions that quote the file and open it with the system browser', async () => {
+    const files = [
+      { path: '/work/out/page.html', name: 'page.html', bytes: 879 },
+      { path: '/work/out/report.pdf', name: 'report.pdf', bytes: 2048 },
+    ];
+    render(
+      <ConversationProvider value={{ conversationId: 'c1', conversation_id: 'c1', workspace: '/work', type: 'acp' }}>
+        <I18nextProvider i18n={i18n}>
+          <MessageDeliverables delivered={{ files }} />
+        </I18nextProvider>
+      </ConversationProvider>
+    );
+    expect(screen.getAllByTestId('message-deliverables-file')).toHaveLength(2);
+    // The copy-attachments action sits before the per-file quote/open pair.
+    const bar = screen.getByTestId('deliverables-copy-attachments').parentElement as HTMLElement;
+    expect(bar.firstElementChild).toBe(screen.getByTestId('deliverables-copy-attachments'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('deliverables-copy-attachments'));
+    });
+    expect(copyTextMock).toHaveBeenCalledWith('Files:\n- /work/out/page.html\n- /work/out/report.pdf');
+    // Only the HTML row carries the actions.
+    expect(screen.getAllByTestId('deliverables-quote')).toHaveLength(1);
+    expect(screen.getAllByTestId('deliverables-open')).toHaveLength(1);
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('deliverables-quote'));
+    });
+    expect(emitterMocks.emit).toHaveBeenCalledWith('sendbox.mention.files', ['/work/out/page.html'], 'c1');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('deliverables-open'));
+    });
+    expect(openFileMock).toHaveBeenCalledWith('/work/out/page.html');
+    // The actions never open the preview themselves.
+    expect(opened).toEqual([]);
+    // The card carries the hover scope: without group/delivcard the bottom row
+    // stays opacity-0 forever, which is exactly the bug this guards against.
+    expect(screen.getByTestId('message-deliverables')).toHaveClass('group/delivcard');
+  });
+
+  it('copy attachments puts the files on the OS clipboard when the electron bridge is present', async () => {
+    const writeFiles = vi.fn().mockResolvedValue(true);
+    (window as unknown as { electronAPI?: unknown }).electronAPI = { writeFilesToClipboard: writeFiles };
+    try {
+      const files: DeliveredFile[] = [
+        { path: '/work/out/page.html', name: 'page.html', bytes: 1024 },
+        { path: '/work/out/report.pdf', name: 'report.pdf', bytes: 2048 },
+      ];
+      render(
+        <ConversationProvider value={{ conversationId: 'c1', conversation_id: 'c1', workspace: '/work', type: 'acp' }}>
+          <I18nextProvider i18n={i18n}>
+            <MessageDeliverables delivered={{ files }} />
+          </I18nextProvider>
+        </ConversationProvider>
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('deliverables-copy-attachments'));
+      });
+      expect(writeFiles).toHaveBeenCalledWith(['/work/out/page.html', '/work/out/report.pdf']);
+      expect(copyTextMock).not.toHaveBeenCalled();
+    } finally {
+      delete (window as unknown as { electronAPI?: unknown }).electronAPI;
+    }
   });
 });

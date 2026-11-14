@@ -12,7 +12,8 @@ import { describeUncaughtError } from './process/utils/describeUncaughtError';
 import type { UncaughtErrorDiagnostics } from './process/utils/describeUncaughtError';
 import { createRendererRecoveryPolicy } from './process/utils/rendererRecovery';
 import './process/utils/configureConsoleLog';
-import { app, BrowserWindow, ipcMain, nativeImage, powerMonitor, session, shell } from 'electron';
+import { app, BrowserWindow, clipboard, ipcMain, nativeImage, powerMonitor, session, shell } from 'electron';
+import { execFile, spawn, type ChildProcess } from 'child_process';
 import fixPath from 'fix-path';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -214,6 +215,137 @@ ipcMain.on('get-backend-startup-failure', (event) => {
 
 ipcMain.on('get-node-runtime-deferred', (event) => {
   event.returnValue = nodeRuntimeDeferred;
+});
+
+// Windows：常驻 PowerShell 工作进程避免每次复制付出 ~1s 冷启动。进程保持 stdin 打开，
+// 每次复制只写一行命令（base64(UTF-16LE) 避开控制台编码坑），等 stdout 出现完成标记；
+// 闲置 2 分钟自动回收，下次用时重建（启动时预热一次，首次点击也能瞬时）。
+const CLIP_OK = '__MU_CLIP_OK__';
+let clipWorker: ChildProcess | null = null;
+let clipWorkerIdleTimer: NodeJS.Timeout | null = null;
+
+function killClipboardWorker(): void {
+  if (clipWorkerIdleTimer) {
+    clearTimeout(clipWorkerIdleTimer);
+    clipWorkerIdleTimer = null;
+  }
+  if (clipWorker) {
+    clipWorker.removeAllListeners();
+    clipWorker.kill();
+    clipWorker = null;
+  }
+}
+
+function ensureClipboardWorker(): ChildProcess | null {
+  if (process.platform !== 'win32') return null;
+  if (clipWorker && !clipWorker.killed) return clipWorker;
+  clipWorker = spawn(
+    'powershell.exe',
+    ['-NoProfile', '-NonInteractive', '-Command', '-'],
+    { windowsHide: true, stdio: ['pipe', 'pipe', 'ignore'] }
+  );
+  clipWorker.on('exit', () => {
+    clipWorker = null;
+    if (clipWorkerIdleTimer) {
+      clearTimeout(clipWorkerIdleTimer);
+      clipWorkerIdleTimer = null;
+    }
+  });
+  clipWorker.on('error', () => killClipboardWorker());
+  return clipWorker;
+}
+
+function scheduleClipboardWorkerIdleKill(): void {
+  if (clipWorkerIdleTimer) clearTimeout(clipWorkerIdleTimer);
+  clipWorkerIdleTimer = setTimeout(killClipboardWorker, 2 * 60 * 1000);
+  clipWorkerIdleTimer.unref?.();
+}
+
+function setClipboardFilesViaWorker(paths: string[]): Promise<boolean> {
+  return new Promise((resolve) => {
+    const worker = ensureClipboardWorker();
+    if (!worker || !worker.stdout || !worker.stdin) {
+      resolve(false);
+      return;
+    }
+    let settled = false;
+    const stdout = worker.stdout;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      stdout.removeListener('data', onData);
+      worker.removeListener('exit', onExit);
+      scheduleClipboardWorkerIdleKill();
+      console.log(`[clipboard:write-files] worker round-trip ${Date.now() - startedAt}ms ok=${ok}`);
+      resolve(ok);
+    };
+    const onData = (chunk: Buffer): void => {
+      if (chunk.toString('utf8').includes(CLIP_OK)) finish(true);
+    };
+    const onExit = (): void => finish(false);
+    const timer = setTimeout(() => {
+      killClipboardWorker();
+      finish(false);
+    }, 10_000);
+    timer.unref?.();
+    stdout.on('data', onData);
+    worker.on('exit', onExit);
+    const payload = Buffer.from(paths.join('\t'), 'utf16le').toString('base64');
+    const startedAt = Date.now();
+    worker.stdin.write(
+      `Add-Type -AssemblyName System.Windows.Forms; ` +
+        `$list = New-Object 'System.Collections.Generic.List[string]'; ` +
+        `[Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${payload}')).Split([char]9) | ForEach-Object { [void]$list.Add($_) }; ` +
+        `$data = New-Object System.Windows.Forms.DataObject; ` +
+        `$data.SetFileDropList($list); ` +
+        `[System.Windows.Forms.Clipboard]::SetDataObject($data, $true); ` +
+        `Write-Output '${CLIP_OK}'\n`,
+      (error: Error | null | undefined) => {
+        if (error) finish(false);
+      }
+    );
+  });
+}
+
+// 把文件本体写入 OS 剪贴板：在资源管理器/Finder 里打开任意文件夹即可粘贴。
+// Windows 上 Electron 无法按名字注册 CF_HDROP 格式，多/单文件统一借 PowerShell
+// Set-Clipboard 构造；macOS 仅单文件（public.file-url）；Linux 需 xclip。任何
+// 不支持或失败的情况 resolve false，前端回落为复制路径清单文本（含 WebUI）。
+ipcMain.handle('clipboard:write-files', async (_event, rawPaths: unknown): Promise<boolean> => {
+  const paths = (Array.isArray(rawPaths) ? rawPaths : []).filter(
+    (p): p is string => typeof p === 'string' && p.length > 0 && p.length < 4096
+  );
+  if (paths.length === 0 || paths.length > 64) return false;
+  const existing = paths.filter((p) => {
+    try {
+      return fs.statSync(p).isFile();
+    } catch {
+      return false;
+    }
+  });
+  if (existing.length === 0) return false;
+  try {
+    if (process.platform === 'win32') {
+      return await setClipboardFilesViaWorker(existing);
+    }
+    if (process.platform === 'darwin') {
+      if (existing.length !== 1) return false;
+      clipboard.writeBuffer('public.file-url', Buffer.concat([Buffer.from(`file://${existing[0]}`), Buffer.from([0])]));
+      return true;
+    }
+    const uris = `${existing.map((p) => `file://${p}`).join('\n')}\n`;
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn('xclip', ['-selection', 'clipboard', '-t', 'text/uri-list'], { stdio: ['pipe', 'ignore', 'ignore'] });
+      child.on('error', reject);
+      child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`xclip exited with ${code}`))));
+      child.stdin.end(uris);
+    });
+    return true;
+  } catch (error) {
+    console.error('[clipboard:write-files] failed:', error);
+    return false;
+  }
 });
 
 ipcMain.handle('backend:recover-corrupted-database', async () => {
@@ -863,6 +995,8 @@ const handleAppReady = async (): Promise<void> => {
     createWindow({ showOnReady: showMainWindowOnReady });
     appReadyDone = true;
     mark('createWindow');
+    // 预热剪贴板工作进程：首次「复制附件」即可瞬时完成（仅 Windows，闲置自动回收）
+    ensureClipboardWorker();
 
     // mu updates itself from the releases of github.com/qybaihe/mu (process/services/update): a check a little after
     // the start and then every 6 hours, besides the one on 关于 (About). A build run from its sources and automated

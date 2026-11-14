@@ -114,6 +114,8 @@
     "tool": "Tool"
   },
   "optionNumber": "Option {{number}}",
+  "copyAttachments": "Copy attachments",
+  "copyAttachmentsPasted": "Attachments copied — paste into any folder",
   "copyFilesHeader": "Files:",
   "exportHeaderLine": "{{label}}: {{value}}",
   "exportSpeakerLine": "{{speaker}}:",
