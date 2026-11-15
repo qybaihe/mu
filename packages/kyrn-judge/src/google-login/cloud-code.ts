@@ -8,6 +8,7 @@ import {
 	getInitialSystemMessage,
 	type Model,
 	type SimpleStreamOptions,
+	type StopReason,
 	type StreamOptions,
 	type TextContent,
 	type ThinkingContent,
@@ -20,7 +21,6 @@ import {
 	type GoogleApiThinkingLevel,
 	getDisabledGoogleThinkingConfig,
 	isThinkingPart,
-	mapStopReasonString,
 	mapToolChoice,
 	resolveGoogleThinkingLevel,
 	retainThoughtSignature,
@@ -247,6 +247,18 @@ function credentialsOf(apiKey: string | undefined): { token: string; projectId: 
 		// Falls through.
 	}
 	throw new Error("The Google sign-in is incomplete (no token or project): run /login again.");
+}
+
+function mapStopReasonString(reason: string): StopReason {
+	switch (reason) {
+		case "STOP":
+			return "stop";
+		case "MAX_TOKENS":
+		case "CONTINUATION":
+			return "length";
+		default:
+			return "error";
+	}
 }
 
 const emptyUsage = () => ({

@@ -34,8 +34,9 @@
  * or when the script diverges: it makes another call, or calls in another order, than the journal says. Each ends the
  * call with an error result.
  */
-import { type Context, copyJson, type JsonValue } from "@earendil-works/chord";
+import type { Context } from "@earendil-works/chord/context";
 import { ownedSlice } from "@earendil-works/chord/delta";
+import { copyJson, type JsonValue } from "@earendil-works/chord/json";
 import type { TextContent } from "@earendil-works/pi-ai";
 import { toCodemodeIdentifier } from "@earendil-works/pi-codemode/declarations";
 import type {
@@ -62,11 +63,11 @@ import type {
 import { rankDocuments } from "../search.ts";
 import type { JsonObject } from "../types.ts";
 import {
-	type CodemodeNamespace,
 	codemodeDescription,
 	codemodeSection,
 	DEFAULT_CODEMODE_INLINE_BUDGET,
-	namespaceOf,
+	declaredNamespaces,
+	namespacesOf,
 	sampleOf,
 } from "./describe.ts";
 import {
@@ -106,7 +107,10 @@ type Start = {
 	/** `startedAt + timeout_ms` when the script set one. */
 	deadline?: number;
 	tools: DeclaredTool[];
-	/** The namespaces of the tools, as `describeNamespace()` and `searchTools()` see them. */
+	/**
+	 * The namespaces the selected extensions declare (`Extension.namespace`), with their tools, as `describeNamespace()`
+	 * and `searchTools()` see them; a namespace without tools yet is listed too.
+	 */
 	namespaces: { name: string; description?: string; instructions?: string; tools: string[] }[];
 	globals: { name: string; spread: boolean }[];
 	/** `max_output_tokens` of the script's options line, or the default. */
@@ -217,8 +221,6 @@ export type CodemodeToolInput = Static<typeof codemodeSchema>;
 export type CodemodeToolOptions = {
 	/** Runs the scripts: `CodemodeSandbox` on Node, `RemoteCodemodeSandbox` on Cloudflare. */
 	readonly sandbox: CodemodeSandboxBase;
-	/** Groups of tools by name prefix, such as MCP servers, for the `codemode` section and tool search. */
-	readonly namespaces?: readonly CodemodeNamespace[];
 	/** Estimated tokens the tool declarations in the `codemode` section may use. Default 3000. */
 	readonly inlineBudget?: number;
 	/** Give scripts `models.*`: the model catalog, classifiers, and image generation. Default true. */
@@ -263,7 +265,7 @@ export function createCodemodeExtension(options: CodemodeToolOptions): Extension
 					input.agent.callable.filter(
 						(tool) => !tool.name.startsWith(CODEMODE_INTERNAL_PREFIX) && tool.deferred !== true,
 					),
-					options.namespaces ?? [],
+					input.agent.extensions,
 					options.inlineBudget ?? DEFAULT_CODEMODE_INLINE_BUDGET,
 				),
 			),
@@ -386,22 +388,15 @@ class CodemodeCall {
 			...models.map((name) => ({ name, spread: true })),
 			...(this.options.globals ?? []).map((global) => ({ name: global.name, spread: global.spread === true })),
 		];
-		const namespaces: Start["namespaces"] = [];
-		for (const tool of callable) {
-			const namespace = namespaceOf(tool.name, this.options.namespaces ?? []);
-			if (namespace === undefined) continue;
-			let entry = namespaces.find((candidate) => candidate.name === namespace.name);
-			if (entry === undefined) {
-				entry = {
-					name: namespace.name,
-					...(namespace.description === undefined ? {} : { description: namespace.description }),
-					...(namespace.instructions === undefined ? {} : { instructions: namespace.instructions }),
-					tools: [],
-				};
-				namespaces.push(entry);
-			}
-			entry.tools.push(tool.name);
-		}
+		const toolNamespaces = namespacesOf(agent.extensions);
+		const namespaces: Start["namespaces"] = declaredNamespaces(agent.extensions).map((namespace) => ({
+			name: namespace.name,
+			description: namespace.description,
+			...(namespace.instructions === undefined ? {} : { instructions: namespace.instructions }),
+			tools: callable
+				.filter((tool) => toolNamespaces.get(tool.name)?.name === namespace.name)
+				.map((tool) => tool.name),
+		}));
 		const now = api.now();
 		const seed = crypto.getRandomValues(new Uint32Array(1))[0]!;
 		type Found =

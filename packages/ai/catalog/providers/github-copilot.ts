@@ -1,4 +1,4 @@
-import type { Api, Model, ThinkingLevelMap } from "../../src/types.ts";
+import type { Api, ClassifierModel, Model, ThinkingLevelMap } from "../../src/types.ts";
 import { addMissing, type ChatModel, defineProvider, mergeCompat, mergeThinking, modelsDevModels } from "../define.ts";
 import { claude55ThinkingLevels, supportsClaudeMidConvoSystemMessages } from "../families/anthropic.ts";
 import {
@@ -67,6 +67,22 @@ const GPT_6_LUNA: Model<"openai-responses"> = {
 	headers: { ...STATIC_HEADERS },
 };
 
+// The authenticated Copilot catalog lists this decision model on /v1/systemone (checked 2026-11-02) without
+// a context window or price, and GitHub's Copilot pricing page does not list it. These are Azure's values,
+// which OpenRouter and Vercel AI Gateway also list.
+const MICROSOFT_DECISION_1: ClassifierModel<"typesafe-system-one"> = {
+	type: "classifier",
+	id: "microsoft-decision-1",
+	name: "Microsoft-Decision-1",
+	api: "typesafe-system-one",
+	provider: "github-copilot",
+	baseUrl: BASE_URL,
+	input: ["text"],
+	cost: { input: 0.042, output: 0, cacheRead: 0, cacheWrite: 0 },
+	contextWindow: 32768,
+	headers: { ...STATIC_HEADERS },
+};
+
 export default defineProvider({
 	id: "github-copilot",
 	models: (ctx) =>
@@ -78,14 +94,15 @@ export default defineProvider({
 				skipDeprecated: true,
 				defaultContextWindow: 128000,
 				defaultMaxTokens: 8192,
-				map: (model): ChatModel => {
+				map: (model, source): ChatModel => {
 					const api = copilotApi(model.id);
 					const result: ChatModel = { ...model, api };
 					if (api === "openai-completions") {
 						result.compat = {
 							supportsStore: false,
 							supportsDeveloperRole: false,
-							supportsReasoningEffort: false,
+							supportsReasoningEffort:
+								source.reasoningOptions?.some((option) => option.type === "effort") ?? false,
 						};
 					}
 					if (model.id === "claude-opus-5.5") mergeThinking(result, claude55ThinkingLevels(model.id));
@@ -94,6 +111,7 @@ export default defineProvider({
 			}),
 			[GPT_6_LUNA],
 		).map((model) => (EXTENDED_CONTEXT_MODEL_IDS.has(model.id) ? { ...model, contextWindow: 1000000 } : model)),
+	classifiers: () => [MICROSOFT_DECISION_1],
 	compat: { "openai-completions": { supportsStrictMode: true } },
 	finalize: (model) => {
 		if (model.id.startsWith("gpt-5")) mergeThinking(model, { minimal: "low" });

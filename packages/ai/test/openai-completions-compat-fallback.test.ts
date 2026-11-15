@@ -444,13 +444,18 @@ describe("openai-completions compat fallback", () => {
 				body: { error: { message: "prompt_cache_retention is not supported", type: "invalid_request_error" } },
 			},
 		]);
-		const result = await send(relayModel(), fetch, { cacheRetention: "long", sessionId: "session-1" });
+		const model = relayModel({ compat: { promptCacheKeyMode: "enabled" } });
+		const result = await send(model, fetch, { cacheRetention: "long", sessionId: "session-1" });
 
 		expect(result.stopReason).toBe("stop");
 		expect(bodies[0].prompt_cache_key).toBe("session-1");
 		expect(bodies[0].prompt_cache_retention).toBe("24h");
 		expect(bodies[1]).not.toHaveProperty("prompt_cache_key");
 		expect(bodies[1]).not.toHaveProperty("prompt_cache_retention");
+
+		const later = fakeFetch();
+		await send(model, later.fetch, { sessionId: "session-1" });
+		expect(later.bodies[0]).not.toHaveProperty("prompt_cache_key");
 	});
 
 	it("fixes several rejected fields in turn, each once", async () => {

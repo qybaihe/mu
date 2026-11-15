@@ -66,7 +66,7 @@ describe("Nebius Token Factory models", () => {
 	});
 
 	it("sends no reasoning parameter to models without models.dev effort values", async () => {
-		const model = getModel("nebius", "Qwen/Qwen3.5-397B-A17B");
+		const model = getModel("nebius", "MiniMaxAI/MiniMax-M3");
 		expect(model.reasoning).toBe(true);
 		expect(model.compat?.supportsReasoningEffort).toBe(false);
 

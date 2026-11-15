@@ -968,6 +968,10 @@ export const MODEL_KEY_VARIABLES = [
 	// Anthropic's workload identity federation needs three variables together; its rule id stands for them.
 	"ANTHROPIC_FEDERATION_RULE_ID",
 	"ANT_LING_API_KEY",
+	"QWEN_TOKEN_PLAN_TEAM_API_KEY",
+	"QWEN_TOKEN_PLAN_TEAM_CN_API_KEY",
+	"QWEN_TOKEN_PLAN_INDIVIDUAL_API_KEY",
+	"QWEN_TOKEN_PLAN_INDIVIDUAL_CN_API_KEY",
 	"QWEN_TOKEN_PLAN_API_KEY",
 	"QWEN_TOKEN_PLAN_CN_API_KEY",
 	"OPENAI_API_KEY",

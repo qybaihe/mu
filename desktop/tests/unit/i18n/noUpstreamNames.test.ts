@@ -96,6 +96,8 @@ const WIRE_NAMES: RegExp[] = [
   /\$AionUiSession\w+/g,
   /\bAionLabs\b(?::\s*Aion [\d.]+(?: Mini)?)?/g,
   /\bAion-[\d.]+(?:-Mini)?\b/g,
+  // Base64-encoded binary assets (such as embedded woff2 fonts) whose bytes happen to spell the four letters.
+  /\bdata:[\w/+.-]+;base64,[A-Za-z0-9+/=]+/g,
 ];
 
 /**

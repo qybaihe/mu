@@ -14,7 +14,8 @@ const mockState = vi.hoisted(() => ({
 					prompt_tokens: number;
 					completion_tokens: number;
 					prompt_tokens_details: { cached_tokens: number; cache_write_tokens?: number };
-					completion_tokens_details: { reasoning_tokens: number };
+					completion_tokens_details?: { reasoning_tokens: number };
+					reasoning_tokens?: number;
 				};
 		  }>
 		| undefined,
@@ -1243,7 +1244,12 @@ describe("openai-completions tool_choice", () => {
 	});
 
 	it("stores Qwen Token Plan reasoning replay compat in built-in metadata", () => {
-		const providers = ["qwen-token-plan", "qwen-token-plan-cn", "qwen-token-plan-individual"] as const;
+		const providers = [
+			"qwen-token-plan",
+			"qwen-token-plan-cn",
+			"qwen-token-plan-individual",
+			"qwen-token-plan-individual-cn",
+		] as const;
 
 		for (const provider of providers) {
 			const model = getModel(provider, "qwen3.7-max")!;
@@ -1405,6 +1411,8 @@ describe("openai-completions tool_choice", () => {
 				maxTokensField: "max_completion_tokens",
 				requiresToolResultName: false,
 				requiresAssistantAfterToolResult: false,
+				requiresNonNullAssistantContent: false,
+				requiresToolsWithToolHistory: false,
 				requiresThinkingAsText: false,
 				requiresReasoningContentOnAssistantMessages: false,
 				thinkingFormat: "openai",
@@ -1758,6 +1766,52 @@ describe("openai-completions tool_choice", () => {
 		expect(response.usage.cacheRead).toBe(50);
 		expect(response.usage.cacheWrite).toBe(30);
 		expect(response.usage.totalTokens).toBe(105);
+	});
+
+	// #12019
+	it("reads top-level reasoning_tokens when completion_tokens_details has none", async () => {
+		mockState.chunks = [
+			{
+				id: "chatcmpl-copilot-reasoning",
+				choices: [{ delta: { content: "OK" }, finish_reason: null }],
+			},
+			{
+				id: "chatcmpl-copilot-reasoning",
+				choices: [{ delta: {}, finish_reason: "stop" }],
+				usage: {
+					prompt_tokens: 10,
+					completion_tokens: 40,
+					prompt_tokens_details: { cached_tokens: 0 },
+					reasoning_tokens: 30,
+				},
+			},
+		];
+
+		const model = getModel("github-copilot", "gemini-4-argon")!;
+		const response = await streamSimple(
+			model,
+			{
+				messages: [
+					{
+						role: "user",
+						content: "Reply with exactly OK",
+						timestamp: Date.now(),
+					},
+				],
+			},
+			{ apiKey: "test" },
+		).result();
+
+		expect(response.usage.reasoning).toBe(30);
+		expect(response.usage.output).toBe(40);
+	});
+
+	// #12019
+	it("sends reasoning_effort for GitHub Copilot completions models with effort levels", async () => {
+		const model = getModel("github-copilot", "gemini-4-argon")!;
+
+		expect((await captureSimpleParams(model, "low")).reasoning_effort).toBe("low");
+		expect((await captureSimpleParams(model, "high")).reasoning_effort).toBe("high");
 	});
 
 	it("uses OpenRouter reasoning object instead of reasoning_effort", async () => {

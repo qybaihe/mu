@@ -390,13 +390,6 @@ A `// mu:` comment next to a change in code says the same thing in place.
   - `packages/kyrn-judge/test/watchdog.test.ts`
   - `packages/kyrn-judge/test/monitor.test.ts`
 
-### M35 The kernel-lock manager test gets 20 seconds
-
-- **Files**
-  - `packages/chord/test/manager.test.ts`
-- **Why**: "a child-owned kernel lock admits one live process" starts four child processes in a row, and on slow CI runners each start can take over a second, past the 5-second default test timeout.
-- **In a merge**: Upstream's main deletes this file in its Chord v2 restructure. Take the deletion and retire this entry.
-
 ### M36 CHANGELOG lines for mu's changes to pi's packages
 
 - **Files**
@@ -449,7 +442,7 @@ A `// mu:` comment next to a change in code says the same thing in place.
   - `.github/workflows/issue-gate.yml`
   - `.github/workflows/issue-analysis.yml`
   - `.github/workflows/issue-triage-labels.yml`
-  - `.github/workflows/remove-inprogress-on-close.yml`
+  - `.github/workflows/remove-labels-on-close.yml`
 - **Why**: These gate issues and pull requests to pi's approved contributors and triage pi's issues. In mu's repository they would act on mu's issues, auto-closing them among other things.
 - **In a merge**: Keep them deleted. An upstream edit to one is a modify/delete conflict, resolved with `git rm`; a new upstream workflow of this kind stays out too.
 
@@ -458,6 +451,7 @@ A `// mu:` comment next to a change in code says the same thing in place.
 - **Files**
   - `.github/workflows/build-binaries.yml`
   - `.github/workflows/nix.yml`
+  - `.github/workflows/p2-cloud-bundle.yml`
   - `.github/workflows/preview-packages.yml`
   - `.github/workflows/publish-model-catalog.yml`
 - **Why**: They build and publish pi's releases: its binaries, Nix package, preview packages and model catalog. None of that is mu's, and pi's preview registry refuses mu's repository (its cleanup job gets 403 "Repository owner not allowed"); mu's own workflows (M43) build and release mu. The scripts they run, such as `scripts/preview-packages.mjs`, and `nix/` stay as upstream's, so upstream's changes to them merge cleanly.
@@ -507,8 +501,9 @@ A `// mu:` comment next to a change in code says the same thing in place.
 
 - **Files**
   - `package-lock.json`
-- **Why**: The lockfile also resolves mu's workspace package `packages/kyrn-judge` (`@kyrn/judge`) and its dependencies, such as `shx` and `shelljs`, which pi's lockfile does not have.
-- **In a merge**: Keep mu's lockfile and refresh it, as the sync workflow does: `git checkout --ours package-lock.json`, then `npm install --package-lock-only --ignore-scripts`. Keeping mu's side keeps mu's resolved versions where upstream raised them, for a security advisory among other reasons: compare the versions upstream's side changed (`git diff <base> upstream/main -- package-lock.json`) and raise those in mu's lockfile too.
+  - `packages/coding-agent/install-lock/package-lock.json`
+- **Why**: The lockfile also resolves mu's workspace package `packages/kyrn-judge` (`@kyrn/judge`) and its dependencies, such as `shx` and `shelljs`, which pi's lockfile does not have, and `packages/coding-agent/install-lock/package-lock.json` is generated from its resolved transitive versions (`npm run install-lock:coding-agent`).
+- **In a merge**: Keep mu's lockfile and refresh it, as the sync workflow does: `git checkout --ours package-lock.json`, then `npm install --package-lock-only --ignore-scripts` and `npm run install-lock:coding-agent`. Keeping mu's side keeps mu's resolved versions where upstream raised them, for a security advisory among other reasons: compare the versions upstream's side changed (`git diff <base> upstream/main -- package-lock.json`) and raise those in mu's lockfile too.
 
 ### M48 One account's models are chosen for /model and the app's model menus
 
@@ -568,3 +563,5 @@ A `// mu:` comment next to a change in code says the same thing in place.
   - `packages/coding-agent/test/enabled-models.test.ts`
 
 ## Retired
+
+- **M35**: Upstream deleted `packages/chord/test/manager.test.ts` in its Chord v2 restructure.

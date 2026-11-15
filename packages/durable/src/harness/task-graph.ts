@@ -1,6 +1,7 @@
-import { type Context, type JsonValue, Watch, type WatchCall, type WatchHandle } from "@earendil-works/chord";
-import { BACKGROUND_CONTEXT, withoutAbortSignal } from "@earendil-works/chord/context";
+import { BACKGROUND_CONTEXT, type Context, withoutAbortSignal } from "@earendil-works/chord/context";
 import { applyImmutable, type Op } from "@earendil-works/chord/delta";
+import type { JsonValue } from "@earendil-works/chord/json";
+import { Watch, type WatchCall, type WatchHandle } from "@earendil-works/chord/watch";
 import {
 	closeEndOf,
 	closeEnds,
@@ -32,8 +33,13 @@ export type TaskGraphState =
 			readonly on: readonly TaskId[];
 			readonly policy: JoinPolicy;
 	  }
-	/** Asleep until the Harness clock reaches `until`. */
-	| { readonly status: "sleeping"; readonly phase: string; readonly until: number }
+	/** Asleep until the Harness clock reaches `until`, or one of `signals` holds a value no wake used. */
+	| {
+			readonly status: "sleeping";
+			readonly phase: string;
+			readonly until?: number;
+			readonly signals?: readonly { readonly signal: string; readonly key: string }[];
+	  }
 	/** Outcome held until its ordinary owned work drains. */
 	| { readonly status: "completing"; readonly outcome: TaskOutcome<JsonValue>["status"] };
 
@@ -299,7 +305,14 @@ function stateOf(record: AnyTaskRecord): TaskGraphState {
 		case "waiting":
 			return { status: "waiting", phase: phaseOf(state.checkpoint), on: [...state.on], policy: state.policy };
 		case "sleeping":
-			return { status: "sleeping", phase: phaseOf(state.checkpoint), until: state.until };
+			return {
+				status: "sleeping",
+				phase: phaseOf(state.checkpoint),
+				...(state.until === undefined ? {} : { until: state.until }),
+				...(state.signals === undefined
+					? {}
+					: { signals: state.signals.map(({ signal, key }) => ({ signal, key })) }),
+			};
 		// Terminal records never reach here: they leave the graph.
 		case "completing":
 		case "terminal":

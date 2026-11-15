@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test, vi } from "vitest";
+import { findMatchingProviders } from "../src/core/provider-matching.ts";
 import { initTheme } from "../src/modes/interactive/theme/theme.ts";
 
 // Under another name than pi, as mu runs it (kyrn/bin/mu.mjs gives the package piConfig.name "mu").
@@ -85,10 +86,11 @@ describe("/login under mu's name", () => {
 	});
 
 	test("/login anthropic finds only the API key", () => {
-		const options = (InteractiveMode as any).prototype.findLoginProviderOptions.call(
-			{ ...fakeThis(), getLoginProviderOptions: (InteractiveMode as any).prototype.getLoginProviderOptions },
-			"anthropic",
-		) as Array<{ authType: string }>;
-		expect(options.map((option) => option.authType)).toEqual(["api_key"]);
+		const options = (InteractiveMode as any).prototype.getLoginProviderOptions.call(fakeThis()) as Array<{
+			id: string;
+			name: string;
+			authType: string;
+		}>;
+		expect(findMatchingProviders(options, "anthropic").map((option) => option.authType)).toEqual(["api_key"]);
 	});
 });

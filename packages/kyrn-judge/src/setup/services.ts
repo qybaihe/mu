@@ -106,7 +106,7 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 		// platform.moonshot.cn issues keys for the first address, platform.moonshot.ai for the second.
 		baseUrls: ["https://api.moonshot.cn/v1", "https://api.moonshot.ai/v1"],
 		api: "openai-completions",
-		models: ["kimi-k2.6"],
+		models: ["kimi-k2.7-code"],
 		// 48 letters and digits, but not SiliconFlow's 48 lowercase letters nor an OpenAI key (its T3BlbkFJ).
 		keyShape: /^sk-(?![a-z]{48}$)(?![A-Za-z0-9]*T3BlbkFJ)[A-Za-z0-9]{48}$/,
 		// platform.moonshot.cn/console/api-keys redirects here.
@@ -165,7 +165,7 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 		name: "OpenRouter",
 		baseUrls: ["https://openrouter.ai/api/v1"],
 		api: "openai-completions",
-		models: ["moonshotai/kimi-k2.6"],
+		models: ["moonshotai/kimi-k2.7-code"],
 		keyShape: /^sk-or-/,
 		keyPage: "https://openrouter.ai/keys",
 		providers: ["openrouter"],
@@ -177,7 +177,7 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 		name: "OpenCode Zen",
 		baseUrls: ["https://opencode.ai/inference/openai/v1"],
 		api: "openai-completions",
-		models: ["kimi-k2.6"],
+		models: ["kimi-k2.7-code"],
 		keyPage: "https://opencode.ai/auth",
 		providers: ["opencode"],
 		builtIn: true,
@@ -199,7 +199,7 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 		name: "Anthropic",
 		baseUrls: ["https://api.anthropic.com"],
 		api: "anthropic-messages",
-		models: ["claude-opus-4-8"],
+		models: ["claude-opus-5-5"],
 		keyShape: /^sk-ant-/,
 		// console.anthropic.com/settings/keys redirects here.
 		keyPage: "https://platform.claude.com/settings/keys",
@@ -211,7 +211,7 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 		name: "Google Gemini",
 		baseUrls: ["https://generativelanguage.googleapis.com/v1beta"],
 		api: "google-generative-ai",
-		models: ["gemini-3.1-pro-preview"],
+		models: ["gemini-4-argon"],
 		keyShape: /^AIza[0-9A-Za-z_-]{35}$/,
 		keyPage: "https://aistudio.google.com/apikey",
 		providers: ["google"],

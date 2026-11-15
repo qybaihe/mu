@@ -143,7 +143,7 @@ describe("the services table", () => {
 		expect(chatModels(["nomic-embed-text:latest", "qwen2.5-coder:7b", "whisper-1"])).toEqual(["qwen2.5-coder:7b"]);
 		expect(chatModels(["text-embedding-3-small"])).toEqual(["text-embedding-3-small"]);
 		// A service that lists nothing starts on the model it names.
-		expect(namedModel(service("openrouter"))).toBe("moonshotai/kimi-k2.6");
+		expect(namedModel(service("openrouter"))).toBe("moonshotai/kimi-k2.7-code");
 		expect(namedModel(service("glm"))).toBeUndefined();
 		expect(namedModel(service("glm-coding"))).toBe("glm-5.3");
 	});
@@ -222,13 +222,13 @@ describe("the check", () => {
 		expect(
 			listedModels("google-models", {
 				models: [
-					{ name: "models/gemini-3.1-pro-preview", supportedGenerationMethods: ["generateContent"] },
+					{ name: "models/gemini-4-argon", supportedGenerationMethods: ["generateContent"] },
 					{ name: "models/text-embedding-004", supportedGenerationMethods: ["embedContent"] },
 				],
 			}),
-		).toEqual(["gemini-3.1-pro-preview"]);
-		expect(listedModels("anthropic-models", { data: [{ id: "claude-opus-4-8", type: "model" }] })).toEqual([
-			"claude-opus-4-8",
+		).toEqual(["gemini-4-argon"]);
+		expect(listedModels("anthropic-models", { data: [{ id: "claude-opus-5-5", type: "model" }] })).toEqual([
+			"claude-opus-5-5",
 		]);
 		// Ollama's own /api/tags shape, and a plain list of names.
 		expect(listedModels("openai-models", { models: [{ name: "qwen2.5-coder:7b" }] })).toEqual(["qwen2.5-coder:7b"]);
@@ -333,7 +333,7 @@ describe("the check", () => {
 				urls.push(url);
 				return url.endsWith("/systemone")
 					? new Response(JSON.stringify({ answers: { check: { type: "noul", noul: 0.9 } } }), { status: 200 })
-					: new Response(JSON.stringify({ data: [{ id: "kimi-k2.6" }] }), { status: 200 });
+					: new Response(JSON.stringify({ data: [{ id: "kimi-k2.7-code" }] }), { status: 200 });
 			}) as typeof fetch,
 		});
 		expect(result.ok).toBe(true);
@@ -547,14 +547,14 @@ describe("the language", () => {
 class FakePi implements PiAccess {
 	catalog: Record<string, { baseUrl: string; models: string[] }> = {
 		deepseek: { baseUrl: "https://api.deepseek.com", models: ["deepseek-v4-pro", "deepseek-chat"] },
-		"moonshotai-cn": { baseUrl: "https://api.moonshot.cn/v1", models: ["kimi-k2.6"] },
-		moonshotai: { baseUrl: "https://api.moonshot.ai/v1", models: ["kimi-k2.6"] },
+		"moonshotai-cn": { baseUrl: "https://api.moonshot.cn/v1", models: ["kimi-k2.7-code"] },
+		moonshotai: { baseUrl: "https://api.moonshot.ai/v1", models: ["kimi-k2.7-code"] },
 		"zai-coding-cn": { baseUrl: "https://open.bigmodel.cn/api/coding/paas/v4", models: ["glm-5.3"] },
-		openrouter: { baseUrl: "https://openrouter.ai/api/v1", models: ["moonshotai/kimi-k2.6"] },
-		opencode: { baseUrl: "https://opencode.ai/zen/v1", models: ["kimi-k2.6", "claude-opus-4-8"] },
+		openrouter: { baseUrl: "https://openrouter.ai/api/v1", models: ["moonshotai/kimi-k2.7-code"] },
+		opencode: { baseUrl: "https://opencode.ai/zen/v1", models: ["kimi-k2.7-code", "claude-opus-5-5"] },
 		openai: { baseUrl: "https://api.openai.com/v1", models: ["gpt-6.1-sol"] },
-		anthropic: { baseUrl: "https://api.anthropic.com", models: ["claude-opus-4-8"] },
-		google: { baseUrl: "https://generativelanguage.googleapis.com/v1beta", models: ["gemini-3.1-pro-preview"] },
+		anthropic: { baseUrl: "https://api.anthropic.com", models: ["claude-opus-5-5"] },
+		google: { baseUrl: "https://generativelanguage.googleapis.com/v1beta", models: ["gemini-4-argon"] },
 		xai: { baseUrl: "https://api.x.ai/v1", models: ["grok-4.7"] },
 	};
 	credentials: Record<string, "api_key" | "oauth"> = {};
@@ -694,7 +694,7 @@ describe("mu setup, asking in a terminal", () => {
 			// Paste a key: a token from claude setup-token first, then an Anthropic API key.
 			answers: ["1"],
 			secrets: [token, KEYS.anthropic],
-			respond: () => listing("claude-opus-4-8"),
+			respond: () => listing("claude-opus-5-5"),
 		});
 		const refused = run.at("warn", "That's a Claude subscription token (from claude setup-token), not an API key.");
 		expect(refused).toBeGreaterThan(-1);
@@ -751,7 +751,7 @@ describe("mu setup, asking in a terminal", () => {
 				if (url === "https://api.moonshot.cn/v1/models") {
 					return answer(401, { error: { message: "Invalid Authentication" } });
 				}
-				if (url === "https://api.moonshot.ai/v1/models") return listing("kimi-k2.6", "moonshot-v1-8k");
+				if (url === "https://api.moonshot.ai/v1/models") return listing("kimi-k2.7-code", "moonshot-v1-8k");
 				return new Error(`unexpected ${url}`);
 			},
 		});
@@ -763,7 +763,7 @@ describe("mu setup, asking in a terminal", () => {
 		]);
 		// The address that took the key is the one kept: pi's provider there.
 		expect((run.pi as FakePi).stored).toEqual([{ provider: "moonshotai", key: KEYS.kimi }]);
-		expect((run.pi as FakePi).defaults).toEqual([{ provider: "moonshotai", model: "kimi-k2.6" }]);
+		expect((run.pi as FakePi).defaults).toEqual([{ provider: "moonshotai", model: "kimi-k2.7-code" }]);
 		// pi's own provider and a model pi knows: models.json is not needed.
 		expect(run.read("models.json")).toBeUndefined();
 	});
@@ -802,7 +802,7 @@ describe("mu setup, asking in a terminal", () => {
 			// "2", "1": More judges, then Jev with a key of one's own, the first one there.
 			answers: ["1", "2", "1", "n"],
 			secrets: [KEYS.anthropic, KEYS.jev],
-			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }, { id: "claude-sonnet-5" }] }),
+			respond: () => answer(200, { data: [{ id: "claude-opus-5-5" }, { id: "claude-sonnet-5" }] }),
 		});
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.said).toContain("This is an Anthropic key.");
@@ -813,14 +813,14 @@ describe("mu setup, asking in a terminal", () => {
 		expect(readFileSync(join(backup, ".env"), "utf8")).toBe("# mine\nOTHER=1\n");
 		expect(JSON.parse(readFileSync(join(backup, "mu.json"), "utf8")).tiers).toEqual(["clm"]);
 		expect(run.printed).toContain(`Backed up the previous files to ${join("~", "backups", "2026-09-27T12-00-00")}`);
-		expect(run.said).toContain("Done. mu will start on Anthropic · claude-opus-4-8. Judge: Jev.");
+		expect(run.said).toContain("Done. mu will start on Anthropic · claude-opus-5-5. Judge: Jev.");
 	});
 
 	it("does not take the model's key, nor another vendor's without a yes, as the Jev key", async () => {
 		const run = await wizard({
 			answers: ["1", "2", "1", "n", "n"],
 			secrets: [KEYS.anthropic, KEYS.anthropic, KEYS.openaiProject, KEYS.jev],
-			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }] }),
+			respond: () => answer(200, { data: [{ id: "claude-opus-5-5" }] }),
 		});
 		expect(run.printed).toContain("That's the key you gave for the model.");
 		expect(run.at("ask", "This looks like an OpenAI key, not a Jev key")).toBeGreaterThan(-1);
@@ -865,7 +865,7 @@ describe("mu setup, asking in a terminal", () => {
 		const model = await wizard({
 			answers: ["1", "2", "", "2", "3", "n"],
 			secrets: [KEYS.anthropic],
-			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }] }),
+			respond: () => answer(200, { data: [{ id: "claude-opus-5-5" }] }),
 		});
 		expect(listed(model, QUESTION)[1]).toBe(
 			"2) More judges: Jev with your own key, OpenAI's decision model, the model you just set up",
@@ -873,13 +873,13 @@ describe("mu setup, asking in a terminal", () => {
 		expect(listed(model, "More judges:")).toEqual([
 			"1) Jev with your own key: about 0.3 s per question, billed per call. Get a key from TypeSafe: https://typesafe.ai",
 			"2) OpenAI's decision model, gpt-6-luna, with an OpenAI API key, billed per input token: https://platform.openai.com/api-keys",
-			"3) The model you just set up (anthropic/claude-opus-4-8): slower, and every verdict costs tokens",
+			"3) The model you just set up (anthropic/claude-opus-5-5): slower, and every verdict costs tokens",
 			"4) Back",
 		]);
 		// Back is what Enter takes there, and it shows the first list again, as it was.
 		expect(model.at("ask", "Choose 1-4 [4]: ")).toBeGreaterThan(-1);
 		expect(model.said.filter((line) => line === QUESTION)).toHaveLength(2);
-		expect(model.json("mu.json")).toEqual({ tiers: ["llm:anthropic/claude-opus-4-8"] });
+		expect(model.json("mu.json")).toEqual({ tiers: ["llm:anthropic/claude-opus-5-5"] });
 
 		// A Jev key is set already: that Jev is the first offer, and a new key or the free Jev are under More judges.
 		const keyed = await wizard({ answers: ["3", "", "n"], env: { TYPESAFE_API_KEY: KEYS.jev } });
@@ -1046,7 +1046,7 @@ describe("mu setup, asking in a terminal", () => {
 		expect(run.calls.map((call) => new URL(call.url).host)).toEqual(["api.anthropic.com"]);
 		// Anthropic listed nothing: it starts on the model it names.
 		expect(run.said).toContain("It works: 0 models available.");
-		expect(run.said).toContain("Model to start with: claude-opus-4-8");
+		expect(run.said).toContain("Model to start with: claude-opus-5-5");
 	});
 
 	it("sets up Ollama without a key, and says when it is not ready", async () => {
@@ -1232,7 +1232,7 @@ describe("mu setup in a script", () => {
 		expect(run.calls).toEqual([]);
 		const yes = await stdinRun(["--service", "anthropic", "--yes"], `${KEYS.anthropic}\n`, {
 			pi,
-			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }] }),
+			respond: () => answer(200, { data: [{ id: "claude-opus-5-5" }] }),
 		});
 		expect(yes.code).toBe(SETUP_EXIT.done);
 		expect(pi.stored).toEqual([{ provider: "anthropic", key: KEYS.anthropic }]);
@@ -1253,7 +1253,7 @@ describe("mu setup in a script", () => {
 		const run = await stdinRun(
 			["--service", "anthropic", "--base-url", "https://relay.example.test/"],
 			`${KEYS.kimi}\n`,
-			{ respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }] }) },
+			{ respond: () => answer(200, { data: [{ id: "claude-opus-5-5" }] }) },
 		);
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.warned).toEqual([]);
@@ -1287,7 +1287,7 @@ describe("mu setup in a script", () => {
 			url: "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000",
 			headers: { accept: "application/json", "x-goog-api-key": KEYS.google },
 		});
-		expect((run.pi as FakePi).defaults).toEqual([{ provider: "google", model: "gemini-3.1-pro-preview" }]);
+		expect((run.pi as FakePi).defaults).toEqual([{ provider: "google", model: "gemini-4-argon" }]);
 	});
 
 	it("checks an OpenCode key with free Jev, whose answer a wrong key does not get, and makes Jev there the judge", async () => {
@@ -1298,7 +1298,7 @@ describe("mu setup in a script", () => {
 					? answer(200, { answers: { check: { type: "noul", noul: 0.9 } } })
 					: answer(401, { type: "error", error: { type: "AuthError", message: "Invalid API key." } })
 				: url === "https://opencode.ai/zen/v1/models"
-					? listing("kimi-k2.6", "claude-opus-4-8")
+					? listing("kimi-k2.7-code", "claude-opus-5-5")
 					: new Error(url);
 		const wrong = await stdinRun(["--service", "opencode"], "sk-opencode-wrong-key-0123456789\n", { respond });
 		expect(wrong.code).toBe(SETUP_EXIT.failed);
@@ -1307,9 +1307,9 @@ describe("mu setup in a script", () => {
 		const run = await stdinRun(["--service", "opencode", "--judge", "opencode"], `${good}\n`, { respond });
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect((run.pi as FakePi).stored).toEqual([{ provider: "opencode", key: good }]);
-		expect((run.pi as FakePi).defaults).toEqual([{ provider: "opencode", model: "kimi-k2.6" }]);
+		expect((run.pi as FakePi).defaults).toEqual([{ provider: "opencode", model: "kimi-k2.7-code" }]);
 		expect(run.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
-		expect(run.said).toContain("Done. mu will start on OpenCode Zen · kimi-k2.6. Judge: Jev on OpenCode Zen.");
+		expect(run.said).toContain("Done. mu will start on OpenCode Zen · kimi-k2.7-code. Judge: Jev on OpenCode Zen.");
 
 		// In a terminal, Jev on OpenCode Zen comes first once there is an OpenCode key.
 		const asked = await wizard({ answers: ["2", "6", "", "", "n"], secrets: [good], respond });
@@ -1439,7 +1439,7 @@ describe("mu setup in a script", () => {
 		});
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.said).toContain("The key works.");
-		expect((run.pi as FakePi).defaults).toEqual([{ provider: "openrouter", model: "moonshotai/kimi-k2.6" }]);
+		expect((run.pi as FakePi).defaults).toEqual([{ provider: "openrouter", model: "moonshotai/kimi-k2.7-code" }]);
 	});
 
 	it("needs a terminal for its questions", async () => {
