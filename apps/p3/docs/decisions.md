@@ -335,3 +335,41 @@ older entries that say `docs/<file>` or `apps/p3/docs/<file>` now are `apps/p3/d
   the footguns. It is its own slice (23, after locks), written as the API settles and kept current with every slice. It is also
   the test of whether Chord apps are easy to reason about: a fresh agent given only the guide writes a few plugins
   (a private journal, a sidebar grouping, a shared board), and the lines, concepts and mistakes are counted.
+- **Pluggable worker runners (owner, 2026-11-15):** where a session's worker runs is a plugin: a runner registry in
+  p3's kit, local fork the default, remote machines next, Durable Objects once their profile is decided. A runner is
+  easy to write and gets everything from the server (the full worker bundle, then changed plugin bundles as rollout
+  steps, start data). One runner may host several sessions. The server as the hub is the scale-up bottleneck; a
+  solution is wanted later, not now. Slice 24.
+- **Stale workers are Chord's problem (owner, 2026-11-15):** no plugin checks whether a call comes from a worker that
+  is gone. The workers component closes a worker's link and aborts its calls before it publishes the exit or starts a
+  successor, and records each running worker's incarnation before its first call. p2's hand-written generation
+  checks become unnecessary (bookkeeping that is not a staleness check stays).
+- **The p3 kit, slice 1 redo (owner, 2026-11-15, decisions A to F):** the kit copied into p3 is typed to p3 (no
+  principal parameter; it imports p3's name, API, kinds and principals; `startServer` takes only `dataDir`, `root`,
+  `listen`, the session worker kind and `onError`) and keeps only what slice 1 uses (later slices add back what they
+  need). `forward(store, Remote, variant, own?)` takes the members a view implements itself as a fourth argument. A
+  session's state and last touch have no writer before the harness (slice 3). p3's own names in the kit (`p3.info`,
+  `p3.sign-ins`, cookie `p3-sign-in`, `/_p3/owner`): a browser shares cookies across ports of one host. p3's default
+  data directory is `~/.pi/p3`. `forward` reads a contract's member names through Chord's `memberNames(contract,
+  variant)`.
+- **p2's plugin patterns, fixed (owner, 2026-11-15; reviewed by Fable, Sol and Astra):** views of a store are
+  explicit remote contracts filled by `forward` (never a public contract derived from a store); a contribution that
+  needs a reference or a native uses p3's `contribute` helper; one audience per contract (workers and the server get
+  their own contracts; variants are levels of one audience); `useVariant(ref, variant)` in `chord/react` and the
+  terminal scope, typed, the UI's way to read a variant (a UI-only exception to Chord's C15); stale-worker checks are
+  Chord's (decision "Stale workers are Chord's problem").
+- **Chord is cut down at the end, if needed (owner, 2026-11-15):** no removal of Chord parts (jobs, sync, telemetry
+  ingest) now; a size audit only once p3 is built, and only where needed.
+- **Walkthroughs make the owner the owner (owner, 2026-11-15):** a slice's walkthrough exists so the owner understands
+  what was built, how and why, in full: self-contained (no source access assumed), code over prose, the list of every
+  file created and touched first, creative where that explains better (`workflow.md`, step 7).
+- **p3's practices on Chord (owner, 2026-11-15):** `chord-practices.md` holds the shape of a p3 plugin, the rules and
+  the mistakes made with their fixes; it is read before every slice and in every handoff, and kept current.
+- **The builder (owner, 2026-11-15):** the p3 session is the builder from here on; subagents review (and research).
+- **Sign-in with Radius comes right after slice 1 (owner, 2026-11-15):** its own slice (25), with a small web and
+  terminal scaffold and its own plain styles until Elanor's components arrive; the research is private
+  (`/home/badlogic/chord-notes/research/p3-radius-signin.md`).
+- **Slice 1's review round 1 (owner, 2026-11-15):** the p3 kit has exactly one worker kind, sessions
+  (`src/kit/session-workers.ts`). A sign-in that ends (revoked, or expired unused) closes its own links at once,
+  through the close function Chord's HTTP component now hands `links.opened(request, principal, close)`; not through
+  `host.revoke`, which ends objects by principal and so would end the owner's shared objects for every device.

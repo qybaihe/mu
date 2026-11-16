@@ -47,7 +47,8 @@ final class BrainPage: NSObject, WKNavigationDelegate, WKUIDelegate, WKDownloadD
 		webView = ChromeWebView(frame: .zero, configuration: configuration)
 		webView.isInspectable = true
 		webView.allowsBackForwardNavigationGestures = true
-		webView.allowsMagnification = true
+		// Pinch and smart zoom off: zoom is pageZoom only, through View > Zoom In and Zoom Out (cmd+/-).
+		webView.allowsMagnification = false
 		super.init()
 		if brain.isDirect {
 			ChromeScript.install(in: configuration.userContentController) { [weak webView] rects in
@@ -105,6 +106,12 @@ final class BrainPage: NSObject, WKNavigationDelegate, WKUIDelegate, WKDownloadD
 	func appearanceChanged(_ preference: Appearance) {
 		guard let url = webView.url, owns(url) else { return }
 		HostBridge.themeChanged(preference, in: webView)
+	}
+
+	/// Hands a menu item p2 carries out (Settings…) to the page, if a page of this Pi is loaded.
+	func menuChosen(_ item: String) {
+		guard let url = webView.url, owns(url) else { return }
+		HostBridge.menuChosen(item, in: webView)
 	}
 
 	/// Opens `path` on a remote Pi through a fresh grant.
@@ -330,7 +337,7 @@ final class BrainPage: NSObject, WKNavigationDelegate, WKUIDelegate, WKDownloadD
 		guard bare, let window, !window.styleMask.contains(.fullScreen),
 			let zoom = window.standardWindowButton(.zoomButton), let frame = zoom.superview?.convert(zoom.frame, to: nil)
 		else { return ChromeScript.setInset(0, in: webView) }
-		ChromeScript.setInset((frame.maxX + 12) / (webView.pageZoom * webView.magnification), in: webView)
+		ChromeScript.setInset((frame.maxX + 12) / webView.pageZoom, in: webView)
 	}
 
 	private static func path(of url: URL) -> String {
