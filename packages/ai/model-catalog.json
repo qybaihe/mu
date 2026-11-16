@@ -14957,9 +14957,9 @@
         "image"
       ],
       "cost": {
-        "input": 3,
-        "output": 15,
-        "cacheRead": 0.3,
+        "input": 2,
+        "output": 10,
+        "cacheRead": 0.2,
         "cacheWrite": 0
       },
       "contextWindow": 1048576,
@@ -24540,48 +24540,6 @@
       "type": "chat"
     },
     {
-      "id": "meta/llama-3.2-90b-vision-instruct",
-      "name": "Llama-3.2-90B-Vision-Instruct",
-      "api": "openai-completions",
-      "provider": "nvidia",
-      "baseUrl": "https://integrate.api.nvidia.com/v1",
-      "reasoning": false,
-      "input": [
-        "text",
-        "image"
-      ],
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cacheRead": 0,
-        "cacheWrite": 0
-      },
-      "contextWindow": 128000,
-      "maxTokens": 8192,
-      "headers": {
-        "NVCF-POLL-SECONDS": "3600"
-      },
-      "compat": {
-        "supportsStore": false,
-        "supportsDeveloperRole": false,
-        "supportsReasoningEffort": false,
-        "maxTokensField": "max_tokens",
-        "supportsLongCacheRetention": false,
-        "supportsStrictMode": false
-      },
-      "inputLimits": {
-        "images": {
-          "resize": {
-            "maxWidth": 2000,
-            "maxHeight": 2000,
-            "maxBytes": 4718592,
-            "jpegQuality": 80
-          }
-        }
-      },
-      "type": "chat"
-    },
-    {
       "id": "meta/muse-glimmer-30b",
       "name": "Muse Glimmer 30B",
       "api": "openai-completions",
@@ -24666,79 +24624,6 @@
       "type": "chat"
     },
     {
-      "id": "mistralai/mistral-7b-instruct-v0.3",
-      "name": "Mistral-7B-Instruct-v0.3",
-      "api": "openai-completions",
-      "provider": "nvidia",
-      "baseUrl": "https://integrate.api.nvidia.com/v1",
-      "reasoning": false,
-      "input": [
-        "text"
-      ],
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cacheRead": 0,
-        "cacheWrite": 0
-      },
-      "contextWindow": 65536,
-      "maxTokens": 65536,
-      "headers": {
-        "NVCF-POLL-SECONDS": "3600"
-      },
-      "compat": {
-        "supportsStore": false,
-        "supportsDeveloperRole": false,
-        "supportsReasoningEffort": false,
-        "maxTokensField": "max_tokens",
-        "supportsLongCacheRetention": false,
-        "supportsStrictMode": false
-      },
-      "type": "chat"
-    },
-    {
-      "id": "moonshotai/kimi-k2.6",
-      "name": "Kimi K2.6",
-      "api": "openai-completions",
-      "provider": "nvidia",
-      "baseUrl": "https://integrate.api.nvidia.com/v1",
-      "reasoning": true,
-      "input": [
-        "text",
-        "image"
-      ],
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cacheRead": 0,
-        "cacheWrite": 0
-      },
-      "contextWindow": 262144,
-      "maxTokens": 262144,
-      "headers": {
-        "NVCF-POLL-SECONDS": "3600"
-      },
-      "compat": {
-        "supportsStore": false,
-        "supportsDeveloperRole": false,
-        "supportsReasoningEffort": false,
-        "maxTokensField": "max_tokens",
-        "supportsLongCacheRetention": false,
-        "supportsStrictMode": false
-      },
-      "inputLimits": {
-        "images": {
-          "resize": {
-            "maxWidth": 2000,
-            "maxHeight": 2000,
-            "maxBytes": 4718592,
-            "jpegQuality": 80
-          }
-        }
-      },
-      "type": "chat"
-    },
-    {
       "id": "nvidia/cosmos-reason2-8b",
       "name": "Cosmos Reason2 8B",
       "api": "openai-completions",
@@ -24777,68 +24662,6 @@
             "jpegQuality": 80
           }
         }
-      },
-      "type": "chat"
-    },
-    {
-      "id": "nvidia/llama-3.1-nemotron-70b-instruct",
-      "name": "Llama 3.1 Nemotron 70B Instruct",
-      "api": "openai-completions",
-      "provider": "nvidia",
-      "baseUrl": "https://integrate.api.nvidia.com/v1",
-      "reasoning": false,
-      "input": [
-        "text"
-      ],
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cacheRead": 0,
-        "cacheWrite": 0
-      },
-      "contextWindow": 128000,
-      "maxTokens": 8192,
-      "headers": {
-        "NVCF-POLL-SECONDS": "3600"
-      },
-      "compat": {
-        "supportsStore": false,
-        "supportsDeveloperRole": false,
-        "supportsReasoningEffort": false,
-        "maxTokensField": "max_tokens",
-        "supportsLongCacheRetention": false,
-        "supportsStrictMode": false
-      },
-      "type": "chat"
-    },
-    {
-      "id": "nvidia/llama-3.1-nemotron-ultra-253b-v1",
-      "name": "Llama 3.1 Nemotron Ultra 253B",
-      "api": "openai-completions",
-      "provider": "nvidia",
-      "baseUrl": "https://integrate.api.nvidia.com/v1",
-      "reasoning": true,
-      "input": [
-        "text"
-      ],
-      "cost": {
-        "input": 0,
-        "output": 0,
-        "cacheRead": 0,
-        "cacheWrite": 0
-      },
-      "contextWindow": 128000,
-      "maxTokens": 16384,
-      "headers": {
-        "NVCF-POLL-SECONDS": "3600"
-      },
-      "compat": {
-        "supportsStore": false,
-        "supportsDeveloperRole": false,
-        "supportsReasoningEffort": false,
-        "maxTokensField": "max_tokens",
-        "supportsLongCacheRetention": false,
-        "supportsStrictMode": false
       },
       "type": "chat"
     },
@@ -30429,6 +30252,52 @@
       "type": "chat"
     },
     {
+      "id": "hy4-flash-free",
+      "name": "Hy4 flash Free",
+      "api": "openai-completions",
+      "provider": "opencode",
+      "baseUrl": "https://opencode.ai/inference/openai/v1",
+      "reasoning": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "contextWindow": 1048576,
+      "maxTokens": 65536,
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsStrictMode": true,
+        "maxTokensField": "max_tokens"
+      },
+      "thinkingLevelMap": {
+        "off": "none",
+        "minimal": null,
+        "low": null,
+        "medium": null,
+        "high": "high",
+        "xhigh": null,
+        "max": null
+      },
+      "inputLimits": {
+        "images": {
+          "resize": {
+            "maxWidth": 2000,
+            "maxHeight": 2000,
+            "maxBytes": 4718592,
+            "jpegQuality": 80
+          }
+        }
+      },
+      "type": "chat"
+    },
+    {
       "id": "iceman-free",
       "name": "Iceman Free",
       "api": "openai-completions",
@@ -31917,6 +31786,52 @@
       "type": "chat"
     },
     {
+      "id": "hy4-flash-free",
+      "name": "Hy4 flash Free",
+      "api": "openai-completions",
+      "provider": "opencode-go",
+      "baseUrl": "https://opencode.ai/inference/go/openai/v1",
+      "reasoning": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "cost": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "contextWindow": 1048576,
+      "maxTokens": 65536,
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsStrictMode": true,
+        "maxTokensField": "max_tokens"
+      },
+      "thinkingLevelMap": {
+        "off": "none",
+        "minimal": null,
+        "low": null,
+        "medium": null,
+        "high": "high",
+        "xhigh": null,
+        "max": null
+      },
+      "inputLimits": {
+        "images": {
+          "resize": {
+            "maxWidth": 2000,
+            "maxHeight": 2000,
+            "maxBytes": 4718592,
+            "jpegQuality": 80
+          }
+        }
+      },
+      "type": "chat"
+    },
+    {
       "id": "hy4-preview",
       "name": "Hy4 preview",
       "api": "openai-completions",
@@ -32588,6 +32503,37 @@
       "type": "chat"
     },
     {
+      "id": "qwen4-max",
+      "name": "Qwen4 Max",
+      "api": "anthropic-messages",
+      "provider": "opencode-go",
+      "baseUrl": "https://opencode.ai/inference/go/anthropic",
+      "reasoning": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "cost": {
+        "input": 1.5,
+        "output": 4.5,
+        "cacheRead": 0.075,
+        "cacheWrite": 1.875
+      },
+      "contextWindow": 1000000,
+      "maxTokens": 262144,
+      "inputLimits": {
+        "images": {
+          "resize": {
+            "maxWidth": 2000,
+            "maxHeight": 2000,
+            "maxBytes": 4718592,
+            "jpegQuality": 80
+          }
+        }
+      },
+      "type": "chat"
+    },
+    {
       "id": "step-5-preview",
       "name": "Step 5 Preview",
       "api": "openai-completions",
@@ -32838,13 +32784,13 @@
         "image"
       ],
       "cost": {
-        "input": 0.02,
-        "output": 0.108,
-        "cacheRead": 0.007,
+        "input": 0.036,
+        "output": 0.5,
+        "cacheRead": 0.01,
         "cacheWrite": 0
       },
       "contextWindow": 1048576,
-      "maxTokens": 384000,
+      "maxTokens": 943718,
       "compat": {
         "supportsDeveloperRole": false,
         "thinkingFormat": "openrouter",
@@ -35892,13 +35838,13 @@
         "text"
       ],
       "cost": {
-        "input": 0.0434,
-        "output": 0.3,
-        "cacheRead": 0.035,
+        "input": 0.06,
+        "output": 0.18,
+        "cacheRead": 0.015,
         "cacheWrite": 0
       },
       "contextWindow": 1048576,
-      "maxTokens": 943718,
+      "maxTokens": 384000,
       "compat": {
         "supportsDeveloperRole": false,
         "thinkingFormat": "openrouter",
@@ -36084,9 +36030,9 @@
         "image"
       ],
       "cost": {
-        "input": 0.0507,
-        "output": 0.2028,
-        "cacheRead": 0.001014,
+        "input": 0.14,
+        "output": 0.42,
+        "cacheRead": 0.0042,
         "cacheWrite": 0
       },
       "contextWindow": 1048576,
@@ -36178,8 +36124,8 @@
         "image"
       ],
       "cost": {
-        "input": 0.038,
-        "output": 0.333,
+        "input": 0.037,
+        "output": 0.33,
         "cacheRead": 0.004,
         "cacheWrite": 0
       },
@@ -37846,9 +37792,9 @@
         "image"
       ],
       "cost": {
-        "input": 0.0675,
-        "output": 0.225,
-        "cacheRead": 0.0375,
+        "input": 0.09,
+        "output": 0.3,
+        "cacheRead": 0.05,
         "cacheWrite": 0
       },
       "contextWindow": 262144,
@@ -38003,7 +37949,7 @@
       ],
       "cost": {
         "input": 0.06,
-        "output": 0.25,
+        "output": 0.15,
         "cacheRead": 0.015,
         "cacheWrite": 0
       },
@@ -38934,13 +38880,13 @@
         "text"
       ],
       "cost": {
-        "input": 0.27,
-        "output": 0.95,
-        "cacheRead": 0.03,
+        "input": 0.295,
+        "output": 1.2,
+        "cacheRead": 0.06,
         "cacheWrite": 0
       },
-      "contextWindow": 198000,
-      "maxTokens": 32768,
+      "contextWindow": 196608,
+      "maxTokens": 176947,
       "compat": {
         "supportsDeveloperRole": false,
         "thinkingFormat": "openrouter",
@@ -42895,17 +42841,17 @@
         "image"
       ],
       "cost": {
-        "input": 4.4,
-        "output": 22,
-        "cacheRead": 0.44,
-        "cacheWrite": 5.5,
+        "input": 4,
+        "output": 20,
+        "cacheRead": 0.4,
+        "cacheWrite": 5,
         "tiers": [
           {
             "inputTokensAbove": 272000,
-            "input": 8.8,
-            "output": 33,
-            "cacheRead": 0.88,
-            "cacheWrite": 11
+            "input": 8,
+            "output": 30,
+            "cacheRead": 0.8,
+            "cacheWrite": 10
           }
         ]
       },
@@ -44567,9 +44513,9 @@
         "text"
       ],
       "cost": {
-        "input": 0.03,
-        "output": 0.13,
-        "cacheRead": 0.03,
+        "input": 0.018,
+        "output": 0.09,
+        "cacheRead": 0.009,
         "cacheWrite": 0
       },
       "contextWindow": 131072,
@@ -45689,46 +45635,6 @@
     },
     {
       "type": "chat",
-      "id": "qwen/qwen3-vl-30b-a3b-thinking",
-      "name": "Qwen: Qwen3 VL 30B A3B Thinking",
-      "api": "openai-completions",
-      "baseUrl": "https://openrouter.ai/api/v1",
-      "provider": "openrouter",
-      "reasoning": true,
-      "thinkingLevelMap": {
-        "off": null
-      },
-      "input": [
-        "text",
-        "image"
-      ],
-      "cost": {
-        "input": 0.29,
-        "output": 1,
-        "cacheRead": 0,
-        "cacheWrite": 0
-      },
-      "contextWindow": 262144,
-      "maxTokens": 235929,
-      "compat": {
-        "supportsDeveloperRole": false,
-        "thinkingFormat": "openrouter",
-        "supportsStrictMode": true,
-        "sendSessionAffinityHeaders": true
-      },
-      "inputLimits": {
-        "images": {
-          "resize": {
-            "maxWidth": 2000,
-            "maxHeight": 2000,
-            "maxBytes": 4718592,
-            "jpegQuality": 80
-          }
-        }
-      }
-    },
-    {
-      "type": "chat",
       "id": "qwen/qwen3-vl-8b-instruct",
       "name": "Qwen: Qwen3 VL 8B Instruct",
       "api": "openai-completions",
@@ -45888,13 +45794,13 @@
         "image"
       ],
       "cost": {
-        "input": 0.6,
-        "output": 3.6,
-        "cacheRead": 0.12,
+        "input": 0.45,
+        "output": 3,
+        "cacheRead": 0.22,
         "cacheWrite": 0
       },
-      "contextWindow": 256000,
-      "maxTokens": 64000,
+      "contextWindow": 262144,
+      "maxTokens": 81920,
       "compat": {
         "supportsDeveloperRole": false,
         "thinkingFormat": "openrouter",
@@ -45925,9 +45831,9 @@
         "image"
       ],
       "cost": {
-        "input": 0.022,
-        "output": 0.032,
-        "cacheRead": 0.02,
+        "input": 0.17,
+        "output": 0.25,
+        "cacheRead": 0.153,
         "cacheWrite": 0
       },
       "contextWindow": 262144,
@@ -46747,6 +46653,52 @@
     },
     {
       "type": "chat",
+      "id": "qwen/qwen4-max",
+      "name": "Qwen: Qwen4 Max",
+      "api": "openai-completions",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "provider": "openrouter",
+      "reasoning": true,
+      "thinkingLevelMap": {
+        "off": "none",
+        "minimal": null,
+        "low": "low",
+        "medium": null,
+        "high": "high",
+        "xhigh": "xhigh",
+        "max": null
+      },
+      "input": [
+        "text",
+        "image"
+      ],
+      "cost": {
+        "input": 1.5,
+        "output": 4.5,
+        "cacheRead": 0.075,
+        "cacheWrite": 1.875
+      },
+      "contextWindow": 1000000,
+      "maxTokens": 131072,
+      "compat": {
+        "supportsDeveloperRole": false,
+        "thinkingFormat": "openrouter",
+        "supportsStrictMode": true,
+        "sendSessionAffinityHeaders": true
+      },
+      "inputLimits": {
+        "images": {
+          "resize": {
+            "maxWidth": 2000,
+            "maxHeight": 2000,
+            "maxBytes": 4718592,
+            "jpegQuality": 80
+          }
+        }
+      }
+    },
+    {
+      "type": "chat",
       "id": "recursive/flint-v1.0:free",
       "name": "Recursive: Flint (free)",
       "api": "openai-completions",
@@ -47098,35 +47050,6 @@
             "jpegQuality": 80
           }
         }
-      }
-    },
-    {
-      "type": "chat",
-      "id": "stepfun/step-3.5-flash",
-      "name": "StepFun: Step 3.5 Flash",
-      "api": "openai-completions",
-      "baseUrl": "https://openrouter.ai/api/v1",
-      "provider": "openrouter",
-      "reasoning": true,
-      "thinkingLevelMap": {
-        "off": null
-      },
-      "input": [
-        "text"
-      ],
-      "cost": {
-        "input": 0.1,
-        "output": 0.3,
-        "cacheRead": 0,
-        "cacheWrite": 0
-      },
-      "contextWindow": 262144,
-      "maxTokens": 65536,
-      "compat": {
-        "supportsDeveloperRole": false,
-        "thinkingFormat": "openrouter",
-        "supportsStrictMode": true,
-        "sendSessionAffinityHeaders": true
       }
     },
     {
@@ -48512,9 +48435,9 @@
         "text"
       ],
       "cost": {
-        "input": 0.2,
-        "output": 1.1,
-        "cacheRead": 0.03,
+        "input": 0.13,
+        "output": 0.85,
+        "cacheRead": 0.025,
         "cacheWrite": 0
       },
       "contextWindow": 131072,
@@ -48812,9 +48735,9 @@
         "text"
       ],
       "cost": {
-        "input": 0.084,
-        "output": 3.6,
-        "cacheRead": 0.079,
+        "input": 0.0699,
+        "output": 1.4,
+        "cacheRead": 0.0689,
         "cacheWrite": 0
       },
       "contextWindow": 1048576,
@@ -49066,13 +48989,13 @@
         "text"
       ],
       "cost": {
-        "input": 0.386,
-        "output": 1.187,
-        "cacheRead": 0.13,
+        "input": 0.45,
+        "output": 2,
+        "cacheRead": 0.1,
         "cacheWrite": 0
       },
       "contextWindow": 1048576,
-      "maxTokens": 943718,
+      "maxTokens": 131072,
       "compat": {
         "supportsDeveloperRole": false,
         "thinkingFormat": "openrouter",
@@ -58087,6 +58010,40 @@
       "type": "chat"
     },
     {
+      "id": "alibaba/qwen4-max",
+      "name": "Qwen 4 Max",
+      "api": "anthropic-messages",
+      "baseUrl": "https://ai-gateway.vercel.sh",
+      "provider": "vercel-ai-gateway",
+      "reasoning": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "compat": {
+        "allowEmptySignature": true
+      },
+      "cost": {
+        "input": 1.5,
+        "output": 4.5,
+        "cacheRead": 0.075,
+        "cacheWrite": 1.875
+      },
+      "contextWindow": 1000000,
+      "maxTokens": 384000,
+      "inputLimits": {
+        "images": {
+          "resize": {
+            "maxWidth": 2000,
+            "maxHeight": 2000,
+            "maxBytes": 4718592,
+            "jpegQuality": 80
+          }
+        }
+      },
+      "type": "chat"
+    },
+    {
       "id": "amazon/nova-2-lite",
       "name": "Nova 2 Lite",
       "api": "anthropic-messages",
@@ -67006,6 +66963,40 @@
         "input": 0.417,
         "output": 1.2505,
         "cacheRead": 0.021,
+        "cacheWrite": 0
+      },
+      "contextWindow": 1024000,
+      "maxTokens": 64000,
+      "inputLimits": {
+        "images": {
+          "resize": {
+            "maxWidth": 2000,
+            "maxHeight": 2000,
+            "maxBytes": 4718592,
+            "jpegQuality": 80
+          }
+        }
+      },
+      "type": "chat"
+    },
+    {
+      "id": "tencent/hy4-flash",
+      "name": "Tencent Hy4 Flash",
+      "api": "anthropic-messages",
+      "baseUrl": "https://ai-gateway.vercel.sh",
+      "provider": "vercel-ai-gateway",
+      "reasoning": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "compat": {
+        "allowEmptySignature": true
+      },
+      "cost": {
+        "input": 0.035,
+        "output": 0.1405,
+        "cacheRead": 0.0015,
         "cacheWrite": 0
       },
       "contextWindow": 1024000,
