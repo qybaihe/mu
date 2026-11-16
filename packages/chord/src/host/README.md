@@ -358,7 +358,9 @@ server.accept(webSocketLink(ws), { principal, limits: { part: 16 * MiB, decoded:
   hosts of `Kind`.
   `authorize(principal, address)` runs for every hold routed over it with the hold's principal, before anything
   starts (`false`: broken `forbidden`; a throw: broken with that error). `resolve(address, context)` returns `{ link,
-  principal, trusted?, codec? }`, the address's link (role `route`); it runs at most once at a time per address, later
+  principal, trusted?, codec?, opened? }`, the address's link (role `route`; `opened(incarnation)` is called once at
+  its handshake with the incarnation of the host at the other end, before anything else that host sent is handled:
+  the workers component records it); it runs at most once at a time per address, later
   holds wait for it, and `context` is aborted only when the host closes (a link it returns later is closed at once). A
   `resolve` whose holds were all released meanwhile finishes and its link is kept. A route has no timer (slice 10
   R2): a rejection (`resolve_failed`), a link closed already, or a link closing before its handshake fails the
@@ -413,6 +415,28 @@ server.accept(webSocketLink(ws), { principal, limits: { part: 16 * MiB, decoded:
   read of the store each; the last page is open at its end while no row is known behind it. Pages split and merge
   in the adoption of their runs; a run belongs to the interval it read. The object keeps a list's bookmarks by its
   name across attempts (`ChordObject.listMemory`), so a reload opens the pages the list had. One source for now.
+- Admission (slice 14; `admission.ts`, `route-admission.ts`): a remote contract may declare `admission: schema`;
+  its type is served with `host.serve(Type, (params, principal, admitted, self) => …, { admit })`. `admit(params,
+  principal, self)` runs first in every attempt, declares what it reads (`self.get` with `at(key)`,
+  `self.registry`, `self.derive`, `self.liveQuery`) and returns a watchable of `allow(value)` or `deny(reason)`.
+  The attempt parks on those requests, and on a denial showing `failed { denied }` (`forbidden(reason)`; getters
+  reject at once, dependents show the denial and heal with it, no `parked_long`). From its allow on it follows the
+  decision in the flush of the batch that changed it: an equal value (canonical JSON) changes nothing, a source that
+  only loads keeps the last decision, another value seals the attempt (calls `unavailable`) and a new one admits, a
+  denial seals it (calls `forbidden/revoked`, no value kept: reads throw `forbidden`, `ref.variant` is
+  `undefined`), a failed source or a decision that throws seals it and the new attempt parks `failed { waiting }`.
+  A rebuild keeps the admission's requests until the next attempt's bound. A failed admitted object still follows
+  a denial (`failed { denied }` in place of its failure, no value, out of presence, its factory not run) and is
+  retried by another allowed value. `self.job` is refused in an admitted factory. Presence lists a holder from its first allow until a denial; a lingering object whose decision changes
+  ends. A reload's staging runs the new `admit` and rehearses the new factory only with a value of an equal
+  admission fingerprint. `host.route(Kind, { authorize, resolve, admit })`: a route asks one decision per principal
+  key and address with holds before it resolves or forwards anything (a verdict is told only when nothing it
+  reads changed while it was settled); a failed source leaves the holds bound on the address's link alone and
+  forwards none on a new link until it recovers; a denial releases the holds upstream, an allow shows them `loading` and
+  forwards them again behind a `ping`/`pong` fence (which relies on `resolve` returning the link to the
+  final provider of the address); its `admit` reads only contracts the app's API owns.
+- `host.deleteHostData(address, ctx, { plugin })` (slice 14) deletes only what that plugin's objects own of the
+  address, in one commit: the documents and tables of the types the plugin serves now.
 - A table or document the code cannot read (a newer version, a history edited in place, a failed `rows` step or
   `migrate`) fails the object `broken`; a live object whose read fails so fails while live (`object_failed`), keeping
   its documents for the next attempt.
