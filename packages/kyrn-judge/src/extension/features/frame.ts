@@ -216,11 +216,16 @@ export function registerFrame(runtime: KyrnRuntime): void {
 			if (at === epoch) create(ask);
 			return;
 		}
-		const decision = await runtime.engine.decide(taskFrame, {
-			userMessage: clip(judgedText(ask.words, pi.getCommands()) ?? ask.words, 600),
-			frame: compactFrame({ frame: before.frame, unmerged: failedOf(before) }) ?? { goal: before.frame.goal },
-			recentTurns: runtime.ctx ? recentTurnDigests(runtime.ctx, 2) : [],
-		});
+		const decision = await runtime.engine.decide(
+			taskFrame,
+			{
+				userMessage: clip(judgedText(ask.words, pi.getCommands()) ?? ask.words, 600),
+				frame: compactFrame({ frame: before.frame, unmerged: failedOf(before) }) ?? { goal: before.frame.goal },
+				recentTurns: runtime.ctx ? recentTurnDigests(runtime.ctx, 2) : [],
+			},
+			// The turn waits for the update until then (the `input` handler below); the update is used whenever it lands.
+			{ neededBy: ask.startedAt + options.waitMs },
+		);
 		if (at !== epoch) return;
 
 		// Read again: an item may have been ticked while the judge was thinking.

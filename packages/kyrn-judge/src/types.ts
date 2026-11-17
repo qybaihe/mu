@@ -43,6 +43,11 @@ export interface AnswerSignals {
 	readonly confidence?: number;
 	/** Which judge produced this answer, when several are chained. */
 	readonly judge?: string;
+	/**
+	 * The probability as the judge gave it (for a choice: of the option it picked), when its calibration reads it as
+	 * another one. That reading is what the answer then holds, and what policies act on (calibration.ts).
+	 */
+	readonly said?: number;
 }
 
 export interface BooleanAnswer extends AnswerSignals {

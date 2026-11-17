@@ -100,7 +100,7 @@ These fields are added to `VerdictData`:
   - `{ type: "choice", choice, probabilities? }`
   - `{ type: "score", score, probabilities? }`
 
-  The question ids are `turn_type`, `is_side_question`, `needs_clarification`, `needs_files_changed`, `needs_memory`, `swarm_worthy`, `plan_first`, `task_complexity`, `reasoning_depth` and `tool_complexity`.
+  The question ids are `turn_type`, `is_side_question`, `needs_clarification`, `needs_files_changed`, `swarm_worthy`, `plan_first`, `task_complexity`, `reasoning_depth` and `tool_complexity`. Records written up to preflight version 4 also carry `needs_memory`, a question that is no longer asked: keep its words, so an old session still reads.
 
 ## Sub-agents (delegate and hive snapshots)
 
@@ -290,13 +290,15 @@ A new event (2026-10-05), sent when the injection screen withheld passages of a 
 
 ## judge.notice
 
-A new event (2026-10-05) about where the judge's questions go: `{ code, reason?, judge?, message }`. `message` is the line the terminal shows, already in Chinese or English; the same line is sent with `notify` right after, so an app that words the notice by its code can drop that line.
+A new event (2026-10-05) about where the judge's questions go: `{ code, reason?, judge?, service?, said?, message }`. `message` is the line the terminal shows, already in Chinese or English; the same line is sent with `notify` right after, so an app that words the notice by its code can drop that line.
 
 | code | reason | when | English |
 | --- | --- | --- | --- |
-| `free_jev` | | the `jev` judge answered with the free Jev on OpenCode Zen because no key is set; once a day (`<agentDir>/mu/notices.json`) | no Jev key is set, so the judge uses Jev 1.13 on OpenCode Zen, free for a limited time. What it judges is sent to OpenCode, which does not train on it. To use a key of your own, run mu setup, or fill one in under Settings → Judges in the desktop app |
+| `free_jev` | | the `jev` judge answered with the free Jev on OpenCode Zen because no key is set, or the services whose keys are set turned them down (`judge_refused` says which); once a day (`<agentDir>/mu/notices.json`) | no usable Jev key is set, so the judge uses Jev 1.13 on OpenCode Zen, free for a limited time. What it judges is sent to OpenCode, which does not train on it. To use a key of your own, run mu setup, or fill one in under Settings → Judges in the desktop app |
 | `free_jev_unavailable` | `paid` | the free Jev answered 401/402/403: it asks for a key or payment now; once per session | the free Jev on OpenCode Zen now asks for a key or payment, so plain rules decide for now. Set a Jev key to get the judge back: … |
 | `free_jev_unavailable` | `gone` | the model is no longer offered (a 4xx, or gone from the catalog); once per session | OpenCode Zen no longer offers the free Jev, so plain rules decide for now. … |
+| `judge_refused` | `auth` | a judge's service turned its key down twice in a row, and mu stopped asking it (one call a minute tries again); once per session for each service. `judge` is the judge by its name in the order (`jev`, `relay`), `service` the service as the ledger names it (`typesafe:jev-latest`), `said` what the service answered, cut to 160 characters: data, shown as it is | typesafe:jev-latest turned down the key of the jev judge ("…"), so mu is asking Jev through its next service (or: the next judge is answering for it; or: mu is using its fallbacks). To bring it back, set a working key with mu setup or in the desktop app under Settings → Judges, or pick another judge with /mu judge |
+| `judge_refused` | `payment_required` | the same, when the service says the account behind the key cannot pay (402, or a 403 about credit, payment, billing or quota) | gateway:typesafe-ai/jev can't charge the account behind the jev judge ("…"), so … To bring it back, add a payment method or credit there, or pick another judge with /mu judge |
 | `laya_removed` | | the configuration named Laya, which mu no longer has; `judge` is the judge in its place (`mude`, `jev`, …). Said at the first message a person sends after mu took Laya out of mu.json, in that session or a later one: the notice waits in `<agentDir>/mu/notices.json` until then, so a session that gets no message (the desktop backend's health check) leaves it. With laya in MU_JUDGE, at the first message of each such session | Laya is no longer built in, so your judge is now mude 1.0. To use another decision model, add it from Hugging Face: … (MU_JUDGE: … so mu skips laya in MU_JUDGE and your judge is now …) |
 
 ## checkpoint.off

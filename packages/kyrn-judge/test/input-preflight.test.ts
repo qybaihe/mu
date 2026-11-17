@@ -28,7 +28,6 @@ describe("input preflight", () => {
 			is_side_question: yes,
 			needs_clarification: no,
 			needs_files_changed: no,
-			needs_memory: no,
 			swarm_worthy: no,
 			plan_first: no,
 			task_complexity: { type: "score", score: 0.8 },
@@ -43,7 +42,6 @@ describe("input preflight", () => {
 			turnType: "chat_question",
 			gear: "chat",
 			sideQuestion: "yes",
-			needsMemory: "no",
 			swarmWorthy: "no",
 		});
 		// The judge sees a digest with named fields, never the raw session.
@@ -99,7 +97,6 @@ describe("input preflight", () => {
 			is_side_question: no,
 			needs_clarification: no,
 			needs_files_changed: yes,
-			needs_memory: yes,
 			swarm_worthy: yes,
 			plan_first: yes,
 			task_complexity: { type: "score", score: 2.9 },
@@ -136,12 +133,22 @@ describe("input preflight", () => {
 		expect(decision.outcome).toMatchObject({ turnType: "unknown", gear: "standard" });
 	});
 
-	it("asks every question in a single request", async () => {
+	it("asks every question in a single request, each one about the message and none a forecast", async () => {
 		const { engine, provider } = activeEngine({});
 		await engine.decide(inputPreflight, sideQuestion);
 
 		expect(provider.calls).toHaveLength(1);
-		expect(Object.keys(provider.calls[0].questions)).toHaveLength(10);
+		expect(Object.keys(provider.calls[0].questions)).toEqual([
+			"turn_type",
+			"is_side_question",
+			"needs_clarification",
+			"needs_files_changed",
+			"swarm_worthy",
+			"plan_first",
+			"task_complexity",
+			"reasoning_depth",
+			"tool_complexity",
+		]);
 	});
 });
 

@@ -15,7 +15,7 @@ hand; run the test with `-u`.
 
 ## a question, answered without tools, interactive
 
-- 2 requests to the judge, 3130 characters of state and questions
+- 2 requests to the judge, 3006 characters of state and questions
 - 2 decisions, 2 of them inline (the agent waits for them)
 
 | decision | latency | judge answered | decided without it |
@@ -34,7 +34,7 @@ hand; run the test with `-u`.
 
 ## a look at two files, interactive
 
-- 2 requests to the judge, 3148 characters of state and questions
+- 2 requests to the judge, 3024 characters of state and questions
 - 2 decisions, 2 of them inline (the agent waits for them)
 
 | decision | latency | judge answered | decided without it |
@@ -55,7 +55,7 @@ hand; run the test with `-u`.
 
 ## a fix: test, edit, test again, interactive
 
-- 5 requests to the judge, 4967 characters of state and questions
+- 5 requests to the judge, 4843 characters of state and questions
 - 5 decisions, 5 of them inline (the agent waits for them)
 
 | decision | latency | judge answered | decided without it |

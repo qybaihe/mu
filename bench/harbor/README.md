@@ -52,6 +52,30 @@ python3 bench/harbor/tb21_summary.py my-run.csv --jobs jobs --dataset tb21/termi
   --config mu_jev_attempts=tb21-mu-jev,tb21-mu-jev-k23 --config pi_attempts=tb21-pi,tb21-pi-k23
 ```
 
+## What the judge adds
+
+The published comparison is mu against pi, and mu is more than its judge. Its kernel also has features that follow fixed rules and ask no judge: in today's builds the opening snapshot, the reply watchdog, the time budget and the loop rule, among others. So "mu passed more than pi" doesn't say how much of that the verdicts did. Two more configurations, run on the same tasks at the same time as the others, tell the parts apart:
+
+- **mu on its rules** (`--ak judge_mode=off`): every feature of the kernel runs, every decision point takes its fallback, and no judge is asked. mu with a judge, compared with this, is what the verdicts add.
+- **mu without its kernel** (`--ak judge=off`): mu's command line and permission mode, and none of the kernel's features. Compared with pi, this is what mu's packaging adds, such as the pi version it is built on. It should be close to nothing.
+
+```bash
+PYTHONPATH=. harbor run -p tb21/terminal-bench-2-1 -a bench.harbor.mu_agent:Mu --ak tarball=/path/to/mu-agent.tgz \
+  --ak judge_mode=off -m xiaomi/mimo-v2.6-pro -k 1 -n 2 -e docker --env-file bench.env -o jobs \
+  --job-name tb21-mu-rules --plugin bench.harbor.kill_on_timeout:KillAgentAtPhaseEnd
+```
+
+Give each configuration its own column, then compare the columns with the rules column as well as with pi:
+
+```bash
+python3 bench/harbor/tb21_summary.py my-run.csv --jobs jobs --dataset tb21/terminal-bench-2-1 \
+  --config mu_jev_attempts=tb21-mu-jev,tb21-mu-jev-k23 --config mu_rules_attempts=tb21-mu-rules,tb21-mu-rules-k23 \
+  --config pi_attempts=tb21-pi,tb21-pi-k23
+python3 bench/harbor/tb21_summary.py my-run.csv --baseline mu_rules_attempts
+```
+
+Neither configuration has been run yet, so the published table has no column for them. In a mu session, `mu ledger --tally` gives the same question a cheaper first answer: for each decision point, how often its verdict was something else than the rule it replaces.
+
 ## Notes
 
 - `--ak version=<x>` installs a published mu-agent from npm instead of a tarball. From 0.1.13, mu reads `MU_TIME_BUDGET_S`, which the adapter sets to the trial's time limit, and paces itself; 0.1.12 and pi don't know their limit.

@@ -1,3 +1,4 @@
+import type { Asking } from "../../decision.ts";
 import { DESCRIPTION_THRESHOLD } from "../../decisions/tool-description.ts";
 import {
 	holdsProse,
@@ -9,7 +10,7 @@ import {
 	toolInjectionBatch,
 	WITHHELD_NOTE,
 } from "../../decisions/tool-injection.ts";
-import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
+import { clip, failOpen, type KyrnRuntime, textOf, waitFor } from "../runtime.ts";
 import { UNTRUSTED } from "./browser.ts";
 import type { RecallDetails } from "./recall.ts";
 import { registerToolDescriptions } from "./tool-descriptions.ts";
@@ -145,17 +146,13 @@ export function registerInjection(runtime: KyrnRuntime): void {
 	};
 
 	/** One probability per passage, in order; null where the judge gave none. */
-	const judge = async (
-		source: string,
-		list: readonly string[],
-		signal: AbortSignal | undefined,
-	): Promise<InjectionOutcome[]> => {
+	const judge = async (source: string, list: readonly string[], asking: Asking): Promise<InjectionOutcome[]> => {
 		if (list.length === 0) return [];
 		if (!runtime.answersInBatches(toolInjection.id, "screen")) {
 			const decisions = await runtime.engine.decideMany(
 				toolInjection,
 				list.map((passage) => ({ source, passage })),
-				{ signal, concurrency: options.concurrency },
+				{ ...asking, concurrency: options.concurrency },
 			);
 			return decisions.map((decision) => (decision.source === "judge" ? decision.outcome : null));
 		}
@@ -165,7 +162,7 @@ export function registerInjection(runtime: KyrnRuntime): void {
 			batches.push({ source, passages: list.slice(start, start + size) });
 		}
 		const decisions = await runtime.engine.decideMany(toolInjectionBatch, batches, {
-			signal,
+			...asking,
 			concurrency: options.concurrency,
 		});
 		return decisions.flatMap((decision) =>
@@ -177,7 +174,7 @@ export function registerInjection(runtime: KyrnRuntime): void {
 	 * The plain passages and the ones a phrase raised, each set in requests of its own; verdicts back in order. A plain
 	 * passage with no prose in it is not asked about: its verdict stays null, and the rules read it.
 	 */
-	const judgeAll = async (source: string, pieces: readonly string[], signal: AbortSignal | undefined) => {
+	const judgeAll = async (source: string, pieces: readonly string[], asking: Asking) => {
 		const asked = pieces.slice(0, Math.max(0, options.maxPassages));
 		const raised = asked.map(looksInjected);
 		const plain = asked.flatMap((piece, index) =>
@@ -188,12 +185,12 @@ export function registerInjection(runtime: KyrnRuntime): void {
 			judge(
 				source,
 				plain.map((index) => asked[index]),
-				signal,
+				asking,
 			),
 			judge(
 				source,
 				flagged.map((index) => asked[index]),
-				signal,
+				asking,
 			),
 		]);
 		const outcomes: InjectionOutcome[] = pieces.map(() => null);
@@ -233,11 +230,12 @@ export function registerInjection(runtime: KyrnRuntime): void {
 					? `output of the shell command \`${clip(command, 160)}\`, fetched from outside this machine`
 					: `result of the ${toolName} tool, from outside this machine`;
 			if (mode !== "active") {
-				void judgeAll(source, pieces, undefined).catch(() => {});
+				void judgeAll(source, pieces, {}).catch(() => {});
 				return undefined;
 			}
 			const outcomes =
-				(await within(judgeAll(source, pieces, ctx.signal), options.waitMs)) ?? pieces.map(() => null);
+				(await waitFor((neededBy) => judgeAll(source, pieces, { signal: ctx.signal, neededBy }), options.waitMs)) ??
+				pieces.map(() => null);
 			const withheld = pieces.map((piece, index) => {
 				const probability = outcomes[index];
 				// Over the threshold: an answer of exactly 0.5 is a judge with no opinion, and withholds nothing.

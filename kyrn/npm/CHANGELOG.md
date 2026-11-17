@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`mu ledger --tally [n] [--json]`**: each decision point over the n most recent sessions (20 by default): asks, verdicts, why the rest had none (`timeout`, `abstain`, `auth`), verdicts that were something else than the fallback, verdicts that came late, asks that waited in a judge's line with the median wait, median latency, input tokens, and the labels joined to its records (`kyrn.outcome`, `kyrn.skill-read`). It ends with the points worth a look and the rule that put each there: no verdict for half the asks or more (from 10), 20 or more verdicts and none that differed (`tool.risk`, `tool.injection` and `tool.description` are exempt), half the verdicts or more late (from 10), or half the nudges or more ended without a tool call (from 5). mu changes no mode by itself.
+- **Ledger records (`kyrn.decision` v2)**: `differs` (the verdict is something else than the decision's fallback; `batch.differs` counts a batch's items), `queuedMs` (time in a judge's line; a batch records the longest, a tier report its own), `late` (the answer came after the caller's `neededBy`; never set in shadow), and `said` beside `probability` in an answer read through a calibration curve. `kyrn.verdict` v2, the preflight verdict line, carries `said` in its answers too.
+- **`concurrency` in a judge's entry, and `JudgeQueue`** (`src/queue.ts`): a judge that answers only a few requests at a time gets them from a line mu keeps. At most `concurrency` are in flight; the next is the most urgent waiting request, by the decision's `latency` (`inline`, `parallel`, `background`; a verdict that is only recorded asks as `background`), then the smaller request, then arrival. A request past its caller's `neededBy` ranks as `background`. A request still in line after the judge's `timeoutMs` fails as `timeout` without being sent, and `timeoutMs` counts from the send, so a call can take up to twice `timeoutMs`. A request with the judge is not taken back. One line per server (`baseUrl`), shared by the tiers and every route (`JudgeHost.queues`), and kept per mu process. The built-in `mude` and the entries `mu judge model` writes say `1`; an entry written by 0.3.12 or earlier gets it from `mu judge model use <name>`. `DecisionEngine.decide` and `decideMany` take `neededBy`, and the features with a bounded wait pass it (`waitFor`, `runtime.turnDeadline`). Not measured on real sessions yet.
+- **`profile.calibration`** (`src/calibration.ts`): measured curves of `[said, was]` points by decision point and question (`*` for every question of a point), used on the answers of the model they were measured on (`model`). Each answer is read through its curve before the policy sees it. A curve that can't be read is left out and named in `/status` and `/doctor`. `scripts/fit-calibration.ts` fits curves from labelled answers, with at least 20 answers behind each point. No curves ship.
+- **Benchmark control arms** (`bench/harbor`): `--ak judge_mode=off` (every decision point takes its fallback and no judge is asked), `--ak judge=off` (mu without the kernel) and `tb21_summary.py --baseline <column>`. Neither arm has been run yet.
+
+### Changed
+
+- **`CascadeJudge` is a fallback order.** A later judge answers only what an earlier one failed on (down, slow, no key) or isn't trusted with (`profile.capabilities`). An answer stands as given, sure or not: a yes/no answer between 0.2 and 0.8 or a choice below 0.6 is no longer passed on. `profile.thresholds` and `profile.minChoiceProbability` are no longer read, `isUncertain` is removed, and a tier report's `kept` is all it was asked or none.
+- **`input.preflight` v5**: the `needs_memory` question and `needsMemory` in the verdict are gone, and `memory.recall` is asked whatever preflight says.
+- **A judge call of several requests stops at the first failure.** The other requests of the call are aborted, and the call reports the first failure.
+
+### Fixed
+
+- **A service that refuses a judge's key** (auth or payment, answered by the service itself) is left alone after two refusals in a row: calls fail at once, and one call a minute asks again. A key that is missing locally is no refusal. The `jev` judge is the list of Jev's services in order (TypeSafe, OpenRouter, the Vercel gateway, OpenCode, Cloudflare, then the free Jev), each with its own key; a call moves on only past a service that can't answer for a lasting reason, and a slow or unreachable service still fails the call. `judge.notice` code `judge_refused` says so once per session and service. The welcome screen and `/doctor` check the judge of every route, TypeSafe's reason under `detail.message` is read, and the ledger's `providerId` names the service that answered.
+- **`skills.disclosure` after the first message** asks only about the hidden skills that share a term with the message, at most 8, asks nothing when none does, and stops the question when the turn's wait is up.
+- **`mu ledger <n>`**: a session count given as the first argument was ignored.
+
 ## [0.3.12] - 2026-11-13
 
 **0.3.12 closes a path- and extension-based wrapper bypass in conversation command grants and ensures `tool.admission.test-log` (v4) shows the judge the head and tail of long single-line test-log candidates.**

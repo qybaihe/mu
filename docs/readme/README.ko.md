@@ -74,7 +74,7 @@ mu                  # 현재 디렉터리에서 세션 시작
 
 ## 판정 지점
 
-판정 지점마다 `active`(켬, 기본값), `shadow`(묻고 기록하지만 아무것도 바꾸지 않음. 판정기를 켜기 전에 비교해 보는 용도), `off`(끔) 중 하나로 둘 수 있고, 판정기도 따로 지정할 수 있어요: `jev`, `mude`(로컬), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, 또는 `mude,jev` 같은 캐스케이드.
+판정 지점마다 `active`(켬, 기본값), `shadow`(묻고 기록하지만 아무것도 바꾸지 않음. 판정기를 켜기 전에 비교해 보는 용도), `off`(끔) 중 하나로 둘 수 있고, 판정기도 따로 지정할 수 있어요: `jev`, `mude`(로컬), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, 또는 `mude,jev`처럼 순서대로 나열한 여러 판정기(앞의 판정기가 답하지 못할 때만 다음 판정기가 답해요).
 
 **입력**
 
@@ -205,6 +205,7 @@ mubench는 mu가 의사결정 모델을 위해 만든 벤치마크예요. 메인
 - Terminal-Bench 2.1을 Harbor 0.24.0으로 돌렸고, 작업마다 정해진 제한 시간을 썼어요. 에이전트가 시간을 다 써도 Harbor는 남은 상태로 테스트를 돌리기 때문에, 시간 초과가 되고도 통과하는 시도가 있어요. pytorch-model-recovery는 합계에서 뺐어요. 처음 실행에서 테스트 환경이 그 지시문을 pi와 mu에 전달하지 않았기 때문이에요. 기록된 세 번의 시도에서는 모든 구성이 이 작업을 매번 통과했으니, 빼도 비교는 달라지지 않아요.
 - 모든 구성이 MiMo v2.6 Pro, 추론 수준 high예요. 대조군은 pi 1.4.0이에요. mu는 mu-agent 0.1.12(pi 1.3.0 기반)이고 기본 설정 그대로예요. Jev는 1.14 버전이에요. mude 열은 24층짜리 프리릴리스 빌드로, 같은 Mac에서 돌렸어요. mude 1.0은 이 빌드로 만든 20층 모델이고 Terminal-Bench에서는 아직 돌리지 않았어요. 0.1.12 이후의 mu도 마찬가지예요.
 - 작업마다 세 번, 2026-10-22부터 2026-10-24까지, Apple 실리콘 16GB Mac 한 대에서 돌렸어요. 재실행은 인프라 장애일 때만 했고, 규칙은 미리 정했어요. Rosetta 때문에 작업 4개는 어떤 구성으로도 풀 수 없어서, 절대 통과율은 x86_64보다 약 4.5%p 낮고 공개 리더보드와 비교할 수 없어요.
+- 비교한 것은 mu 전체와 pi예요. 판정기의 판정과, mu에서 판정기에 묻지 않는 부분이 함께 들어 있어요. 이 차이 중 판정이 얼마를 차지하는지는 아직 측정하지 않았어요. 측정하려면 판정 지점을 모두 끈 mu로 한 번 더 돌려야 해요. 명령은 [bench/harbor/](../../bench/harbor/README.md#what-the-judge-adds)(영어)에 있어요.
 
 시도별 결과는 [docs/benchmarks/terminal-bench-2.1.csv](../benchmarks/terminal-bench-2.1.csv)에, 방법은 [docs/benchmarks/terminal-bench-2.1.md](../benchmarks/terminal-bench-2.1.md)(영어)에 있어요. mu와 pi를 돌린 Harbor 어댑터와, CSV로 이 표를 다시 계산하는 스크립트는 [bench/harbor/](../../bench/harbor/)에 있어요.
 

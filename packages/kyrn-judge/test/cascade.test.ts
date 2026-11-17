@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { CascadeJudge, isUncertain } from "../src/cascade.ts";
+import { CascadeJudge } from "../src/cascade.ts";
 import { DEFAULT_CONFIG, loadConfig, parseConfig } from "../src/config.ts";
 import { DecisionEngine, defineDecision } from "../src/decision.ts";
 import { JudgeError } from "../src/errors.ts";
-import { Judge } from "../src/judge.ts";
+import { Judge, type JudgeCall, type JudgeLike, type JudgeResult } from "../src/judge.ts";
 import { MemoryLedger } from "../src/ledger.ts";
 import { threeZone } from "../src/policy.ts";
 import { LlmJudgeProvider } from "../src/providers/llm.ts";
@@ -29,7 +29,7 @@ const failing: JudgeProvider = {
 };
 
 describe("CascadeJudge", () => {
-	it("asks the next tier only what the first one left uncertain or is not trusted on", async () => {
+	it("asks the next judge only what the first one is not trusted on: an answer it is unsure of stands", async () => {
 		const local = named("small", {
 			edit: { type: "boolean", probability: 0.95 },
 			vague: { type: "boolean", probability: 0.5 },
@@ -48,32 +48,37 @@ describe("CascadeJudge", () => {
 
 		// The score never reached the local judge: it is not trusted to rate.
 		expect(Object.keys(local.calls[0].questions)).toEqual(["edit", "vague"]);
-		expect(Object.keys(strong.calls[0].questions).sort()).toEqual(["size", "vague"]);
+		// Its 0.5 on `vague` is an answer: a policy reads it as unsure and the decision takes its fallback. The judge
+		// behind it, which would have said a confident no, is not asked (docs/nebius.md: 68.2 alone, 20.0 passing on).
+		expect(Object.keys(strong.calls[0].questions)).toEqual(["size"]);
 		expect(result.answers.edit).toMatchObject({ probability: 0.95, judge: "small" });
-		expect(result.answers.vague).toMatchObject({ probability: 0.03, judge: "jev" });
+		expect(result.answers.vague).toMatchObject({ probability: 0.5, judge: "small" });
 		expect(result.answers.size).toMatchObject({ score: 0.2, judge: "jev" });
 		expect(result.tiers).toMatchObject([
-			{ judgeId: "small", asked: 2, kept: 1 },
-			{ judgeId: "jev", asked: 2, kept: 2 },
+			{ judgeId: "small", asked: 2, kept: 2 },
+			{ judgeId: "jev", asked: 1, kept: 1 },
 		]);
 		expect(result.providerId).toBe("cascade(small>jev)");
 	});
 
-	it("keeps an uncertain answer when the stronger tier is down", async () => {
+	it("does not ask the judge behind one that answered everything, however unsure it was", async () => {
 		const local = named("small", {
-			edit: { type: "boolean", probability: 0.95 },
+			edit: { type: "boolean", probability: 0.55 },
 			vague: { type: "boolean", probability: 0.5 },
 			size: { type: "score", score: 1.5 },
 		});
+		const hosted = named("jev", {});
 		const cascade = new CascadeJudge([
 			{ judge: new Judge({ provider: local }) },
-			{ judge: new Judge({ provider: failing }) },
+			{ judge: new Judge({ provider: hosted }) },
 		]);
 
 		const result = await cascade.evaluate({ state: "x", questions });
 
-		expect(result.answers.vague).toMatchObject({ probability: 0.5, judge: "small" });
-		expect(result.tiers?.[1]).toMatchObject({ judgeId: "down", error: "unreachable" });
+		// Nothing the first judge read went on to the hosted one.
+		expect(hosted.calls).toEqual([]);
+		expect(result.tiers).toMatchObject([{ judgeId: "small", asked: 3, kept: 3 }]);
+		expect(result.requests).toBe(1);
 	});
 
 	it("skips a dead first tier and fails only when nobody answers", async () => {
@@ -143,14 +148,77 @@ describe("CascadeJudge", () => {
 		expect(result.answers.size).toMatchObject({ score: 1, judge: "untrusted" });
 	});
 
-	it("treats a confident 'other' as settled and a weak pick as uncertain", () => {
-		const choice = { type: "choice", instructions: "Kind?", criteria: { edit: null, other: null } } as const;
-		expect(isUncertain(choice, { type: "choice", choice: "other", probabilities: { other: 0.9, edit: 0.1 } })).toBe(
-			false,
-		);
-		expect(isUncertain(choice, { type: "choice", choice: "edit", probabilities: { edit: 0.55, other: 0.45 } })).toBe(
-			true,
-		);
+	it("hands a question on when the judge it went to failed, and says so by tier", async () => {
+		const strong = named("jev", { size: { type: "score", score: 2 } });
+		const cascade = new CascadeJudge([
+			// Trusted with everything but the score, and down.
+			{ judge: new Judge({ provider: failing }), profile: { capabilities: { rate: false } } },
+			{ judge: new Judge({ provider: strong }) },
+		]);
+
+		const result = await cascade.evaluate({ state: "x", questions });
+
+		// What the dead judge was asked goes to the next one with what it was never trusted on.
+		expect(Object.keys(strong.calls[0].questions).sort()).toEqual(["edit", "size", "vague"]);
+		expect(result.tiers).toMatchObject([
+			{ judgeId: "down", asked: 2, kept: 0, error: "unreachable" },
+			{ judgeId: "jev", asked: 3, kept: 3 },
+		]);
+	});
+});
+
+describe("CascadeJudge and a judge's line", () => {
+	/** A judge that answers every question with a sure yes, says what it was asked with, and how long that stood in line. */
+	function lined(id: string, queuedMs: number | undefined, seen: JudgeCall<Questions>[]): JudgeLike {
+		return {
+			id,
+			evaluate: async <const Qs extends Questions>(request: JudgeCall<Qs>) => {
+				seen.push(request);
+				const answers = Object.fromEntries(
+					Object.entries(request.questions).map(([questionId, question]): [string, Answer] => [
+						questionId,
+						question.type === "score" ? { type: "score", score: 1 } : { type: "boolean", probability: 0.95 },
+					]),
+				);
+				return {
+					answers,
+					usage: {},
+					latencyMs: 40,
+					requests: 1,
+					providerId: id,
+					warnings: [],
+					...(queuedMs === undefined ? {} : { queuedMs }),
+				} as unknown as JudgeResult<Qs>;
+			},
+		};
+	}
+
+	it("tells each judge how soon the answer is needed, and adds up the time the request stood in their lines", async () => {
+		const seen: JudgeCall<Questions>[] = [];
+		const cascade = new CascadeJudge([
+			{ judge: lined("local", 300, seen), profile: { capabilities: { rate: false } } },
+			{ judge: lined("hosted", 20, seen) },
+		]);
+		const neededBy = Date.now() + 3000;
+
+		const result = await cascade.evaluate({ state: "rename cnt", questions, latency: "background", neededBy });
+
+		expect(seen.map((request) => [request.latency, request.neededBy])).toEqual([
+			["background", neededBy],
+			["background", neededBy],
+		]);
+		expect(result.queuedMs).toBe(320);
+		expect(result.tiers).toMatchObject([
+			{ judgeId: "local", queuedMs: 300 },
+			{ judgeId: "hosted", queuedMs: 20 },
+		]);
+	});
+
+	it("says nothing of a line when no judge kept its request in one", async () => {
+		const cascade = new CascadeJudge([{ judge: lined("hosted", undefined, []) }]);
+		const result = await cascade.evaluate({ state: "rename cnt", questions });
+		expect(result.queuedMs).toBeUndefined();
+		expect(result.tiers?.[0]).not.toHaveProperty("queuedMs");
 	});
 });
 

@@ -96,7 +96,7 @@ Then use the built-in `nemotron-local` judge:
 { "tiers": ["nemotron-local"] }
 ```
 
-Where it is unsure, mu does what it does without a judge. You can put Ultra behind it, `"tiers": ["nemotron-local", "nemotron"]`: then a yes/no answer between 0.2 and 0.8, or a choice below 0.6, goes on to Ultra. That helped on the hardest development requests but did worse on real requests in the held-out test (below), so the local judge on its own is the recommended setup.
+Where it is unsure, mu does what it does without a judge. You can put Ultra behind it, `"tiers": ["nemotron-local", "nemotron"]`: Ultra then answers when the local server isn't running. Up to mu 0.3.12 the judge behind also got what the first one was unsure of: a yes/no answer between 0.2 and 0.8, or a choice below 0.6. That helped on the hardest development requests but did worse on real requests in the held-out test (below), so mu no longer passes an unsure answer on.
 
 ## Run commands in a Token Factory sandbox
 
@@ -141,6 +141,6 @@ The fine-tuned 4B judge scored above Ultra:
 | --- | --- | --- | --- | --- |
 | Nemotron 3 Nano 4B, fine-tuned (`nemotron-local`) | **62.3** | 45.0 | **68.2** (61.0–76.0) | **59.9** (51.5–68.3) |
 | Nemotron 3 Ultra (`nemotron`) | 47.3 | 47.7 | 54.7 (44.6–64.0) | 48.4 (35.8–59.8) |
-| The 4B judge, then Ultra for what it is unsure of | 63.1 | 44.1 | 20.0 (−74.6–69.7) | 55.7 (44.8–66.4) |
+| The 4B judge, then Ultra for what it is unsure of (how mu ordered judges up to 0.3.12) | 63.1 | 44.1 | 20.0 (−74.6–69.7) | 55.7 (44.8–66.4) |
 
-On test the 4B judge is ahead of Ultra by 13.6 on real requests (paired interval +8.1 to +20.7) and by 11.5 on constructed ones (+1.5 to +22.6). On 112 author-written development requests, hard by design, it is clearly weaker (19.6 against Ultra's 52.3). With Ultra behind it, a few of Ultra's confident answers in costly places (letting a tool's output into the context, keeping a memory) cost more on real test requests than the 4B judge's doubt. Details: [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron#results).
+On test the 4B judge is ahead of Ultra by 13.6 on real requests (paired interval +8.1 to +20.7) and by 11.5 on constructed ones (+1.5 to +22.6). On 112 author-written development requests, hard by design, it is clearly weaker (19.6 against Ultra's 52.3). With Ultra behind it, a few of Ultra's confident answers in costly places (letting a tool's output into the context, keeping a memory) cost more on real test requests than the 4B judge's doubt. That is why an unsure answer now stays with the judge that gave it, and a judge behind another only answers when the first one fails. Details: [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron#results).

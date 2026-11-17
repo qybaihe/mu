@@ -52,7 +52,7 @@ const USAGE = `mu judge mude: mude 1.0, mu's own decision model optimized for co
   mu judge mude status                   what is installed, running and enabled
   mu judge mude uninstall                disable it and delete the model and its Python environment
 
-What mude 1.0 cannot answer, because its server is not running or it is unsure, goes to the judges that were there
+What mude 1.0 cannot answer, because its server is not running or takes too long, goes to the judges that were there
 before it (Jev by default): those are hosted, so what they read leaves this machine. With --local-only, it is the
 only judge, and such a decision takes its fallback instead. Add --json for one JSON object per line.
 `;

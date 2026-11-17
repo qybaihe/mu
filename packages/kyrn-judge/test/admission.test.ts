@@ -12,6 +12,7 @@ import { chunkLines, describeCall, printsFile } from "../src/extension/features/
 import { FULL_OUTPUT_ENTRY, type FullOutputRecord } from "../src/extension/full-output.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { Judge } from "../src/judge.ts";
+import type { LedgerRecord } from "../src/ledger.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
 
@@ -65,6 +66,14 @@ function kindJudge(): MockJudgeProvider {
 /** The requests that classified chunks. */
 const admissionCalls = (provider: MockJudgeProvider) =>
 	provider.calls.filter((call) => Object.keys(call.questions).some((id) => id === "kind" || /^k\d+$/.test(id)));
+
+/** The ledger's records of the chunk verdicts. */
+const admissionRecords = (harness: Harness): LedgerRecord[] =>
+	harness.sessionManager
+		.getEntries()
+		.flatMap((entry) => (entry.type === "custom" && entry.customType === "kyrn.decision" ? [entry.data] : []))
+		.map((data) => data as LedgerRecord)
+		.filter((record) => record.specId === toolAdmission.id || record.specId === toolAdmissionBatch.id);
 
 /** The chunks between the first and the last, which are the ones put to the judge. */
 const middleChunks = chunkLines(output, 1200).length - 2;
@@ -136,6 +145,9 @@ describe("tool output admission", () => {
 		expect(readFileSync(archive, "utf8")).toBe(output);
 
 		expect(text).toContain("of warning output omitted");
+		// The verdict came while the result waited for it.
+		expect(admissionRecords(harness)).toMatchObject([{ source: "judge" }]);
+		expect(admissionRecords(harness)[0].late).toBeUndefined();
 
 		// A hosted judge saw every middle chunk in one request, with the call that produced them, not the conversation.
 		const calls = admissionCalls(provider);
@@ -170,6 +182,8 @@ describe("tool output admission", () => {
 		expect(Date.now() - startedAt).toBeLessThan(2000);
 		expect(admissionCalls(slow)).toHaveLength(1);
 		release();
+		// The verdict lands in the ledger all the same, and says it came after the result had stopped waiting for it.
+		await vi.waitFor(() => expect(admissionRecords(harness)).toMatchObject([{ source: "judge", late: true }]));
 	});
 
 	it("holds a result at most 2 s by default for a verdict that has not come", async () => {

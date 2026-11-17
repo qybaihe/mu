@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { visibleWidth } from "@earendil-works/pi-tui";
 import { describe, expect, it } from "vitest";
 import { parseConfig } from "../src/config.ts";
@@ -14,6 +15,7 @@ import {
 	VERSIONS,
 	type WelcomeView,
 } from "../src/extension/features/welcome.ts";
+import { KyrnRuntime } from "../src/extension/runtime.ts";
 import { Judge } from "../src/judge.ts";
 import { MemoryLedger } from "../src/ledger.ts";
 import { threeZone } from "../src/policy.ts";
@@ -26,6 +28,7 @@ const view: WelcomeView = {
 	piVersion: "0.86.0",
 	judge: "jev",
 	health: { ok: true, latencyMs: 95 },
+	routesDown: [],
 	mode: "active",
 	model: "openai-codex/gpt-5.6-sol",
 	thinking: "medium",
@@ -81,6 +84,25 @@ describe("welcome screen", () => {
 		expect(off.join("\n")).toContain("off · every decision point uses its fallback");
 		expect(fresh.join("\n")).toContain("none yet · run /login, or mu setup in a terminal");
 		expect(fresh.join("\n")).toContain("checking");
+	});
+
+	it("names a decision point's own judge when that one is not answering, under the shared judge's line", () => {
+		const routesDown = [
+			{
+				points: ["tool.injection", "tool.description"],
+				providerId: "typesafe:jev-latest",
+				ok: false,
+				latencyMs: 900,
+				error: "auth",
+			},
+		];
+		const lines = renderWelcome({ ...view, judge: "mude", routesDown }, 120, plain);
+		const judge = lines.findIndex((line) => line.includes("mude · answering in 95 ms"));
+		expect(lines[judge + 1]).toContain(
+			"route  tool.injection, tool.description: Jev · no usable key (run mu setup); using the fallbacks",
+		);
+		// With every route answering there is no such line.
+		expect(renderWelcome(view, 120, plain).join("\n")).not.toContain("route");
 	});
 
 	// mu 0.1.3 from npm greeted with "v0.1.0 · built on pi 0.1.3": the judgment layer's own version, and pi's
@@ -165,5 +187,49 @@ describe("per-decision judges", () => {
 		expect((await engine.probe()).ok).toBe(true);
 		expect(engine.stats.calls).toBe(0);
 		expect(ledger.records).toHaveLength(0);
+	});
+
+	it("probes the judge of a decision point that has one of its own, and the shared one for any other point", async () => {
+		const shared = new MockJudgeProvider(undefined, "small");
+		const own = new MockJudgeProvider(undefined, "capable");
+		const engine = new DecisionEngine({ judge: new Judge({ provider: shared }) });
+		engine.setJudgeFor("browser.step", new Judge({ provider: own }));
+
+		expect((await engine.probe(undefined, "browser.step")).ok).toBe(true);
+		expect([shared.calls.length, own.calls.length]).toEqual([0, 1]);
+		// Only the shared judge's connection is the one kept warm.
+		expect(engine.lastUsedAt).toBe(0);
+		expect((await engine.probe(undefined, "input.preflight")).ok).toBe(true);
+		expect([shared.calls.length, own.calls.length]).toEqual([1, 1]);
+		expect(engine.lastUsedAt).toBeGreaterThan(0);
+		expect(engine.stats.probes).toBe(2);
+	});
+
+	it("checks each route's judge once, whatever the shared judge says, and leaves out the points that are off", async () => {
+		const pi = { on: () => {}, appendEntry: () => {}, getCommands: () => [] } as unknown as ExtensionAPI;
+		const config = parseConfig({
+			// A judge with no key on this machine: it fails before any request is sent.
+			judges: {
+				keyless: { type: "typesafe", baseUrl: "http://127.0.0.1:9/v1/systemone", apiKeyEnv: "MU_TEST_NO_KEY" },
+			},
+			routes: {
+				"tool.injection": ["keyless"],
+				"browser.step": ["mock"],
+				"tool.description": ["keyless"],
+				"turn.drift": ["keyless"],
+			},
+			modes: { "turn.drift": "off" },
+		});
+		const shared = new MockJudgeProvider();
+		const runtime = new KyrnRuntime(pi, config, new Judge({ provider: shared }));
+
+		expect((await runtime.engine.probe()).ok).toBe(true);
+		const routes = await runtime.routeHealth();
+		expect(routes.map((route) => [route.points, route.providerId, route.ok, route.error])).toEqual([
+			[["tool.injection", "tool.description"], "127.0.0.1:9:jev-latest", false, "auth"],
+			[["browser.step"], "mock", true, undefined],
+		]);
+		// One question to the shared judge and one to each route's, not one per point.
+		expect([shared.calls.length, runtime.engine.stats.probes]).toEqual([1, 3]);
 	});
 });

@@ -2,7 +2,7 @@ import type { ExtensionContext, InputEvent } from "@earendil-works/pi-coding-age
 import { duration } from "../../board/narrate.ts";
 import { inputInterjection } from "../../decisions/interjection.ts";
 import { count, say } from "../../language.ts";
-import { clip, failOpen, type KyrnRuntime, within } from "../runtime.ts";
+import { clip, failOpen, type KyrnRuntime, waitFor } from "../runtime.ts";
 
 type Delivery = "steer" | "followUp";
 
@@ -165,7 +165,10 @@ export function registerInterjection(runtime: KyrnRuntime): void {
 			void runtime.engine.decide(inputInterjection, input).catch(() => {});
 			return undefined;
 		}
-		const decision = await within(runtime.engine.decide(inputInterjection, input), options.waitMs);
+		const decision = await waitFor(
+			(neededBy) => runtime.engine.decide(inputInterjection, input, { neededBy }),
+			options.waitMs,
+		);
 		if (!decision || decision.source !== "judge") return undefined;
 		if (decision.outcome === "answer") return answersStatus && ctx.hasUI ? "answer" : undefined;
 		if (decision.outcome === "keep" || decision.outcome === sent) return undefined;

@@ -32,3 +32,19 @@ export class JudgeError extends Error {
 export function isJudgeError(error: unknown): error is JudgeError {
 	return error instanceof JudgeError;
 }
+
+/**
+ * A failure that lasts until the user sets something up: no usable key (`auth`), or an account that cannot pay
+ * (`payment_required`). Asking again gets the same answer, where a judge that is slow or down may answer the next call.
+ */
+export function isLasting(error: unknown): error is JudgeError {
+	return error instanceof JudgeError && (error.kind === "auth" || error.kind === "payment_required");
+}
+
+/**
+ * A lasting failure the service itself gave: its answer came back with an HTTP status. A key that is missing on this
+ * machine fails before any request is sent, and has none.
+ */
+export function isRefusal(error: unknown): error is JudgeError {
+	return isLasting(error) && error.status !== undefined;
+}

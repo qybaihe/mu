@@ -37,10 +37,10 @@ mu reads only your own `mu.json`. A project can't change the judge, its endpoint
 
 | Key | Meaning | Default |
 | --- | --- | --- |
-| `tiers` | The judges that answer, in order. A later judge only sees what the earlier ones left uncertain: `["mude", "jev"]` asks mude 1.0, on your Mac, first. | `["jev"]` |
+| `tiers` | The judges that answer, in order. A later judge answers only what the ones before it couldn't, because they failed or aren't trusted with that kind of question: `["mude", "jev"]` asks mude 1.0, on your Mac, and Jev when mude is down. An unsure answer stays with the judge that gave it. | `["jev"]` |
 | `modes` | `default`, plus one entry per decision point: `active` (verdicts take effect), `shadow` (asked and logged, nothing changes) or `off` (not asked). | `{ "default": "active" }` |
 | `routes` | Gives a decision point its own judges, in place of `tiers`. | none |
-| `judges` | Your own named judges, added to the built-in ones. See [Judges](judges.md#your-own-judge). | none |
+| `judges` | Your own named judges, added to the built-in ones. See [Judges](judges.md#your-own-judge). A judge's `profile.calibration` holds the measured curves its probabilities are read through ([Reading a judge's probabilities](judges.md#reading-a-judges-probabilities)), and its `concurrency` says how many requests it answers at a time ([A judge that answers one request at a time](judges.md#a-judge-that-answers-one-request-at-a-time)). | none |
 | `features` | Per-feature switches and options: `false` turns a feature off, and an object overrides its options. Every feature and option is listed in [reference/features.md](reference/features.md). | Each feature's defaults |
 | `writer` | `provider/model-id` of a small generative model for the things a judge can't do: writing the task frame and lessons. If empty, the session's model is used. | none |
 | `recordState` | Keep each judge request in the ledger (the state and the questions, secrets redacted), not just the verdict. You need this to train a local judge on your sessions. Off by default because the states contain your content. | `false` |
@@ -52,7 +52,8 @@ If mu doesn't understand part of the file, that part falls back to its default a
 
 - 34 of the 41 points act from the start: `context.compact` and `output.drift` are off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing`, `turn.drift` and `context.preload` are in shadow. With `capability.disclosure` off, packs and MCP servers stay hidden and the model opens one with `find_capability`; `"capability.disclosure": "active"` in `modes` has the judge open them again. To try out a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active once its verdicts look right.
 - `/mu mode <point> <off|shadow|active>` switches one point for the current session, and `/mu mode default shadow` switches all of them. To make a mode stick, put it in `mu.json`; the app's settings turn points on or off.
-- `MU_JUDGE_MODE=shadow mu` sets the default mode for one run.
+- `MU_JUDGE_MODE=shadow mu` sets the default mode for one run. `MU_JUDGE_MODE=off mu` runs mu's features on their fixed rules and asks no judge, which is the run to compare with when you want to know what the verdicts add.
+- `mu ledger --tally` says, for each point, how often it was asked, how often its verdict was something else than what mu does with no judge, and what that cost ([Judges](judges.md#what-each-decision-point-costs-and-what-comes-of-it)).
 
 Every decision point, with what it decides: [reference/decision-points.md](reference/decision-points.md).
 

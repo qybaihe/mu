@@ -4,6 +4,24 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- **`mu ledger --tally` says what each decision point costs, and what comes of it.** It adds up your recent sessions by decision point: how often it was asked, how often a verdict came, how often that verdict was something else than what mu does with no judge, how many verdicts came after mu had stopped waiting, and how many tokens the judge read. It ends with the points worth a look, each with the rule that put it there. The ledger now records whether a verdict differed from the fallback, so a point that spends judge calls and changes nothing shows as one.
+- **A judge can say how many requests it answers at a time (`concurrency`).** A model on your own machine answers one request at a time, and a message asks several things at once: in the authors' sessions with mude, the task frame's small question stood behind the skills question and came after its 3 s wait 48 times in 57. mu now keeps the line for such a judge itself: the question the turn is waiting for goes first, then the smaller of two, and a request that waited too long is dropped without being sent. `mude` and the decision models that `mu judge model` adds are set to one at a time. How much this cuts the late verdicts is not measured yet.
+- **Measured curves for a judge's probabilities (`profile.calibration`).** A chat model says 0.9 for most things it leans to, and a decision point acts on a yes from 0.8 whichever judge answered. With curves you measured, mu reads a judge's probabilities as what they turned out to be worth before any decision point acts on them. mu ships no curves; `packages/kyrn-judge/scripts/fit-calibration.ts` fits them from answers whose right answer you know.
+- **Benchmark runs that tell the judge from the rest of mu.** `--ak judge_mode=off` runs mu on its fixed rules with no judge asked, and `--ak judge=off` runs it without the kernel ([bench/harbor](bench/harbor/README.md#what-the-judge-adds)). Neither has been run yet.
+
+### Changed
+
+- **An unsure answer stays with the judge that gave it.** With several judges in order (`"tiers": ["mude", "jev"]`), a later judge now answers only when an earlier one fails or isn't trusted with that kind of question. Until now a yes/no answer between 0.2 and 0.8 went on to the next judge, and that was measured to do harm: a fine-tuned 4B judge alone scored 68.2 on real held-out requests, and 20.0 with a larger model answering what it was unsure of ([docs/nebius.md](docs/nebius.md)). With mude first, what it is unsure of no longer goes to a hosted judge.
+- **Lessons are recalled by the recall verdict alone.** Preflight no longer asks whether notes from past sessions would help. It asked without the notes, and a sure no kept the turn from lessons that the recall question, which reads them, had found to apply.
+
+### Fixed
+
+- **A judge whose key is refused no longer costs every decision a round trip.** After two refusals in a row (a revoked key, a closed account, no payment method), mu stops asking that service, tells you once, and tries again once a minute. The `jev` judge moves on to the next Jev service whose key is set, and last to the free Jev. The welcome screen and `/doctor` check the judge of every route.
+- **Later messages ask the judge about fewer skills.** After the first message, a message asks only about the hidden skills that share a term with it (at most 8), and asks nothing when none does.
+- **`mu ledger <n>` reads n sessions.** A number given as the first argument was ignored, and the last 5 sessions were read.
+
 ## [0.3.12] - 2026-11-13
 
 **In 0.3.12 images and media in replies and deliverables cards are easier to inspect, save and quote back into the next message, while the judgment kernel closes a path-wrapper permission bypass and shows the judge long single-line test dumps.** The desktop app carries mu-agent 0.3.12.

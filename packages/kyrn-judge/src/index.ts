@@ -23,12 +23,12 @@ export {
 	thisBrowserHost,
 } from "./browser/chrome.ts";
 export { type ActionKind, BrowserSession, type PageAction, type PageState, StalePage } from "./browser/session.ts";
+export type { Calibration, Curve } from "./calibration.ts";
 export {
 	CascadeJudge,
 	type CascadeTier,
 	capabilityOf,
 	isTrusted,
-	isUncertain,
 	type JudgeProfile,
 	type TierReport,
 } from "./cascade.ts";
@@ -45,6 +45,7 @@ export {
 export {
 	ABSTAIN,
 	type Abstain,
+	type Asking,
 	type CacheImpact,
 	type Decision,
 	DecisionEngine,
@@ -53,7 +54,6 @@ export {
 	type DecisionSpec,
 	defineDecision,
 	type EngineStats,
-	type LatencyClass,
 } from "./decision.ts";
 export {
 	type BrowserStepInput,
@@ -143,6 +143,7 @@ export {
 	TypeSafeJudgeProvider,
 	type TypeSafeJudgeProviderOptions,
 } from "./providers/typesafe.ts";
+export { JudgeQueue, type LatencyClass, type Place } from "./queue.ts";
 export { type BuiltJudge, buildJudge, type JudgeHost, resolveJudgeConfig } from "./registry.ts";
 export type {
 	Answer,

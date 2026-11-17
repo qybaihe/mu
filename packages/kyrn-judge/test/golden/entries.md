@@ -436,7 +436,7 @@ A entry, read by another program:
 
 A message. No schema: no other program reads it.
 
-## kyrn.decision v1
+## kyrn.decision v2
 
 A entry, read by another program:
 
@@ -503,6 +503,9 @@ A entry, read by another program:
 			"type": "string"
 		},
 		"judged": {},
+		"differs": {
+			"type": "boolean"
+		},
 		"answers": {
 			"type": "object",
 			"patternProperties": {
@@ -527,6 +530,9 @@ A entry, read by another program:
 								},
 								"judge": {
 									"type": "string"
+								},
+								"said": {
+									"type": "number"
 								}
 							}
 						},
@@ -557,6 +563,9 @@ A entry, read by another program:
 								},
 								"judge": {
 									"type": "string"
+								},
+								"said": {
+									"type": "number"
 								}
 							}
 						},
@@ -587,6 +596,9 @@ A entry, read by another program:
 								},
 								"judge": {
 									"type": "string"
+								},
+								"said": {
+									"type": "number"
 								}
 							}
 						}
@@ -596,6 +608,12 @@ A entry, read by another program:
 		},
 		"latencyMs": {
 			"type": "number"
+		},
+		"queuedMs": {
+			"type": "number"
+		},
+		"late": {
+			"type": "boolean"
 		},
 		"usage": {
 			"type": "object",
@@ -656,6 +674,9 @@ A entry, read by another program:
 					"latencyMs": {
 						"type": "number"
 					},
+					"queuedMs": {
+						"type": "number"
+					},
 					"error": {
 						"type": "string"
 					}
@@ -673,6 +694,9 @@ A entry, read by another program:
 					"type": "number"
 				},
 				"failures": {
+					"type": "number"
+				},
+				"differs": {
 					"type": "number"
 				},
 				"answers": {
@@ -703,6 +727,9 @@ A entry, read by another program:
 													},
 													"judge": {
 														"type": "string"
+													},
+													"said": {
+														"type": "number"
 													}
 												}
 											},
@@ -733,6 +760,9 @@ A entry, read by another program:
 													},
 													"judge": {
 														"type": "string"
+													},
+													"said": {
+														"type": "number"
 													}
 												}
 											},
@@ -763,6 +793,9 @@ A entry, read by another program:
 													},
 													"judge": {
 														"type": "string"
+													},
+													"said": {
+														"type": "number"
 													}
 												}
 											}
@@ -1425,7 +1458,7 @@ A message. No schema: no other program reads it.
 
 A entry. No schema: no other program reads it.
 
-## kyrn.verdict v1
+## kyrn.verdict v2
 
 A entry, read by another program:
 
@@ -1576,6 +1609,9 @@ A entry, read by another program:
 								},
 								"judge": {
 									"type": "string"
+								},
+								"said": {
+									"type": "number"
 								}
 							}
 						},
@@ -1606,6 +1642,9 @@ A entry, read by another program:
 								},
 								"judge": {
 									"type": "string"
+								},
+								"said": {
+									"type": "number"
 								}
 							}
 						},
@@ -1636,6 +1675,9 @@ A entry, read by another program:
 								},
 								"judge": {
 									"type": "string"
+								},
+								"said": {
+									"type": "number"
 								}
 							}
 						}

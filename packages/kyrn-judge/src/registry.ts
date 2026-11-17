@@ -1,11 +1,13 @@
-import { CascadeJudge, type CascadeTier } from "./cascade.ts";
+import { checkCalibration } from "./calibration.ts";
+import { CascadeJudge, type CascadeTier, type JudgeProfile } from "./cascade.ts";
 import { BUILT_IN_JUDGES, type JudgeConfig, type KyrnConfig, LAYA } from "./config.ts";
-import { JudgeError } from "./errors.ts";
+import { JudgeError, type JudgeErrorKind } from "./errors.ts";
 import { Judge, type JudgeLike } from "./judge.ts";
 import { type ClassifierCall, ClassifierJudgeProvider } from "./providers/classifier.ts";
-import { FreeJevFallback, type FreeJevOutcome } from "./providers/free-jev.ts";
+import { FreeJev, type FreeJevOutcome } from "./providers/free-jev.ts";
 import { type ApiKeyResolver, GatewayJudgeProvider } from "./providers/gateway.ts";
 import { HttpJudgeProvider } from "./providers/http-judge.ts";
+import { JevRoutes } from "./providers/jev-routes.ts";
 import { type LlmCompletion, LlmJudgeProvider } from "./providers/llm.ts";
 import { LogprobJudgeProvider } from "./providers/logprob.ts";
 import { MockJudgeProvider } from "./providers/mock.ts";
@@ -15,8 +17,22 @@ import {
 	OpenAIDecisionsJudgeProvider,
 	type OpenAIKeyProblem,
 } from "./providers/openai-decisions.ts";
+import { RefusalGuard } from "./providers/refusal-guard.ts";
 import { CLM_DEFAULT_MODEL, clmEndpoint, TypeSafeJudgeProvider } from "./providers/typesafe.ts";
+import { JudgeQueue } from "./queue.ts";
 import type { JudgeProvider } from "./types.ts";
+
+/** A judge's service that turned its key down, or cannot charge the account behind it (`RefusalGuard`). */
+export interface JudgeRefusal {
+	/** The judge by its name in the order (`jev`, `relay`). */
+	readonly judge: string;
+	/** The service that refused, as the ledger names it (`typesafe:jev-latest`). */
+	readonly service: string;
+	/** `auth`: the service turned the key down. `payment_required`: the account behind it cannot pay. */
+	readonly kind: JudgeErrorKind;
+	/** What the service said. */
+	readonly message: string;
+}
 
 /** What only the host application can supply: credentials and generative models. */
 export interface JudgeHost {
@@ -36,6 +52,14 @@ export interface JudgeHost {
 	classify?: (model: string) => ClassifierCall | undefined;
 	/** How each call to the free Jev went, when the `jev` judge falls back to it (no key for any of Jev's services). */
 	freeJev?: (outcome: FreeJevOutcome) => void;
+	/** Told when a judge's service turned its key down, or cannot charge the account, and is left alone for now. */
+	refused?: (refusal: JudgeRefusal) => void;
+	/**
+	 * The lines of the judges that answer only a few requests at a time (`JudgeConfig.concurrency`), by server. A host
+	 * that builds judges more than once (the tiers, each route, a switch at runtime) passes the same map every time,
+	 * so that a server has one line however many orders name it. Without it, each build keeps its own.
+	 */
+	queues?: Map<string, JudgeQueue>;
 	env?: Readonly<Record<string, string | undefined>>;
 }
 
@@ -90,7 +114,51 @@ export function resolveJudgeConfig(name: string, config: KyrnConfig): JudgeConfi
 	return config.judges[name] ?? BUILT_IN_JUDGES[name];
 }
 
+/**
+ * A judge's provider. Each service is asked through a `RefusalGuard`, and `host.refused` hears when one starts to be
+ * left alone. Not from OpenAI's judge, which reports its key itself (`host.openaiKeyProblem`).
+ */
 function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): JudgeProvider {
+	if (judge.type === "jev") return jevRoutes(name, judge, host);
+	const provider = connect(name, judge, host);
+	if (judge.type === "openai") return new RefusalGuard(provider);
+	return new RefusalGuard(provider, (refusal) =>
+		host.refused?.({ judge: name, service: provider.id, kind: refusal.kind, message: refusal.message }),
+	);
+}
+
+/**
+ * The `jev` judge's services, in the order `JevRoutes` asks them. A TypeSafe key is the direct route, a key for Jev on
+ * OpenRouter the next, then a Vercel AI Gateway key, an OpenCode key (the paid Jev) and Cloudflare's key and account.
+ * After them: the Vercel AI Gateway with the key pi keeps for it, and last Jev 1.13 on OpenCode Zen, free for a limited
+ * time, with no key at all. Each service names the model its own way: a model set here is TypeSafe's ("jev-latest"),
+ * and reaches the gateway only when it is written the gateway's way ("typesafe-ai/jev").
+ */
+function jevRoutes(name: string, judge: JudgeConfig, host: JudgeHost): JudgeProvider {
+	const env = host.env ?? {};
+	const keyed: JudgeProvider[] = [];
+	if (env[judge.apiKeyEnv ?? "TYPESAFE_API_KEY"])
+		keyed.push(createProvider(name, { ...judge, type: "typesafe" }, host));
+	const openRouter = BUILT_IN_JUDGES["jev-openrouter"];
+	if (openRouter.apiKeyEnv && env[openRouter.apiKeyEnv]) keyed.push(createProvider(name, openRouter, host));
+	// The judge's own key variable and address are TypeSafe's: the gateway gets neither, only its own key.
+	const model = judge.model?.includes("/") ? judge.model : "typesafe-ai/jev";
+	const gateway = createProvider(name, { type: "gateway", model }, host);
+	const gatewayKeyed = Boolean(env.AI_GATEWAY_API_KEY);
+	if (gatewayKeyed) keyed.push(gateway);
+	// Outside a mu session there is no catalog to reach OpenCode or Cloudflare with: the gateway is the last route.
+	if (!host.classify) return new JevRoutes(gatewayKeyed ? keyed : [...keyed, gateway], keyed[0] ?? gateway);
+	if (env.OPENCODE_API_KEY) keyed.push(createProvider(name, BUILT_IN_JUDGES["jev-opencode"], host));
+	if (env.CLOUDFLARE_API_KEY && env.CLOUDFLARE_ACCOUNT_ID) {
+		keyed.push(createProvider(name, BUILT_IN_JUDGES["jev-cloudflare"], host));
+	}
+	// The free Jev's end has a notice of its own (`host.freeJev`): its guard reports nothing.
+	const free = new FreeJev(new RefusalGuard(connect(name, BUILT_IN_JUDGES["jev-opencode-free"], host)), host.freeJev);
+	return new JevRoutes(gatewayKeyed ? [...keyed, free] : [...keyed, gateway, free], keyed[0] ?? free);
+}
+
+/** The provider that speaks to a judge's service, for every type but `jev`, which is several of them (`jevRoutes`). */
+function connect(name: string, judge: JudgeConfig, host: JudgeHost): JudgeProvider {
 	switch (judge.type) {
 		case "mock":
 			return new MockJudgeProvider();
@@ -198,34 +266,6 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 				onKeyProblem: host.openaiKeyProblem,
 			});
 		}
-		case "jev": {
-			// A TypeSafe key is the direct route, a key for Jev on OpenRouter the next, then a Vercel AI Gateway key, an
-			// OpenCode key (the paid Jev) and Cloudflare's key and account. Without any of them: the Vercel AI Gateway
-			// when pi keeps a key for it, else Jev 1.13 on OpenCode Zen, free for a limited time, with no key at all.
-			// Each service names the model its own way: a model set here is TypeSafe's ("jev-latest"), and reaches the
-			// gateway only when it is written the gateway's way ("typesafe-ai/jev").
-			const env = host.env ?? {};
-			if (env[judge.apiKeyEnv ?? "TYPESAFE_API_KEY"])
-				return createProvider(name, { ...judge, type: "typesafe" }, host);
-			const openRouter = BUILT_IN_JUDGES["jev-openrouter"];
-			if (openRouter.apiKeyEnv && env[openRouter.apiKeyEnv]) return createProvider(name, openRouter, host);
-			const model = judge.model?.includes("/") ? judge.model : "typesafe-ai/jev";
-			const gateway: JudgeConfig = { ...judge, type: "gateway", model };
-			if (env.AI_GATEWAY_API_KEY) return createProvider(name, gateway, host);
-			if (host.classify) {
-				if (env.OPENCODE_API_KEY) return createProvider(name, BUILT_IN_JUDGES["jev-opencode"], host);
-				if (env.CLOUDFLARE_API_KEY && env.CLOUDFLARE_ACCOUNT_ID) {
-					return createProvider(name, BUILT_IN_JUDGES["jev-cloudflare"], host);
-				}
-				return new FreeJevFallback({
-					gateway: createProvider(name, gateway, host),
-					free: createProvider(name, BUILT_IN_JUDGES["jev-opencode-free"], host),
-					gatewayKey: host.gatewayApiKey ?? (() => env.AI_GATEWAY_API_KEY),
-					onFree: host.freeJev,
-				});
-			}
-			return createProvider(name, gateway, host);
-		}
 		default:
 			return new GatewayJudgeProvider({
 				apiKey: judge.apiKeyEnv
@@ -257,6 +297,7 @@ function knownJudges(config: KyrnConfig): string {
 export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge {
 	const tiers: CascadeTier[] = [];
 	const problems: string[] = [];
+	const queues = host.queues ?? new Map<string, JudgeQueue>();
 	for (const name of config.tiers) {
 		const judgeConfig = resolveJudgeConfig(name, config);
 		if (!judgeConfig) {
@@ -270,7 +311,10 @@ export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge
 		try {
 			const provider = createProvider(name, judgeConfig, host);
 			const timeoutMs = judgeConfig.timeoutMs ?? DEFAULT_TIMEOUT_MS[judgeConfig.type];
-			tiers.push({ judge: new Judge({ provider, timeoutMs }), profile: judgeConfig.profile });
+			tiers.push({
+				judge: new Judge({ provider, timeoutMs, queue: queueOf(name, judgeConfig, queues, problems) }),
+				profile: readableProfile(name, judgeConfig, problems),
+			});
 		} catch (error) {
 			problems.push(error instanceof Error ? error.message : String(error));
 		}
@@ -280,6 +324,43 @@ export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge
 		tiers.push({ judge: new Judge({ provider: new UnavailableJudgeProvider() }) });
 	}
 	return { judge: new CascadeJudge(tiers), problems };
+}
+
+/**
+ * The line of a judge that says how many requests it answers at a time, undefined for one that does not. A server has
+ * one line: judges at the same address share it, and a judge without an address goes by its name. `concurrency` is
+ * mu.json's text: one that is no whole number of at least 1 is named in `problems`, and the judge gets no line.
+ */
+function queueOf(
+	name: string,
+	judge: JudgeConfig,
+	queues: Map<string, JudgeQueue>,
+	problems: string[],
+): JudgeQueue | undefined {
+	const concurrency: unknown = judge.concurrency;
+	if (concurrency === undefined) return undefined;
+	if (typeof concurrency !== "number" || !Number.isInteger(concurrency) || concurrency < 1) {
+		problems.push(
+			`judge "${name}": concurrency is not a whole number of 1 or more, so its requests are not lined up`,
+		);
+		return undefined;
+	}
+	const server = judge.baseUrl ?? name;
+	const queue = queues.get(server) ?? new JudgeQueue(concurrency);
+	queues.set(server, queue);
+	return queue;
+}
+
+/**
+ * A judge's profile with the calibration curves that can be read. The profile is mu.json's text: a curve that cannot
+ * be read is left out and named in `problems`, and the judge's answers to that question are read as it gives them.
+ */
+function readableProfile(name: string, judge: JudgeConfig, problems: string[]): JudgeProfile | undefined {
+	const profile = judge.profile;
+	if (profile?.calibration === undefined) return profile;
+	const { calibration, rejected } = checkCalibration(profile.calibration);
+	for (const what of rejected) problems.push(`judge "${name}": ${what}, so it is not used`);
+	return { ...profile, calibration };
 }
 
 /** No judge at all fails as a judge without a key does: nothing answers until the user sets one up. */

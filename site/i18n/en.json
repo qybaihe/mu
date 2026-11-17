@@ -177,7 +177,7 @@
     "other_link": "Using mude 1.0 with mu, on its model card",
     "local_h2": "What stays on your machine",
     "local": [
-      { "h3": "With a fallback (the default)", "p": "The judge you used before stays on as mude's fallback. It answers what mude can't (when mude's server isn't running or mude is unsure) and always handles the two injection screens: tool descriptions and tool output. When that judge is hosted, what goes to it leaves your machine.", "code": "mu judge mude install" },
+      { "h3": "With a fallback (the default)", "p": "The judge you used before stays on as mude's fallback. It answers when mude can't (its server isn't running or is too slow) and always handles the two injection screens: tool descriptions and tool output. What mude is unsure of isn't passed on. When that judge is hosted, what goes to it leaves your machine.", "code": "mu judge mude install" },
       { "h3": "Local only", "p": "mude is the only judge, and nothing goes to a hosted judge. When mude can't answer, the decision point does what it would do without a judge.", "code": "mu judge mude enable --local-only" }
     ],
     "jev_h2": "mude 1.0 and Jev",

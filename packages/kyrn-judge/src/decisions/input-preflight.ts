@@ -6,8 +6,13 @@ import { pickChoice, threeZone, type Verdict } from "../policy.ts";
  * model runs. Output is free and questions are answered in parallel, so the
  * whole triage costs about one small request.
  *
- * It decides the "gear" for the turn: what gets loaded around the main model
- * (memory, skills, swarm, plan step, thinking level).
+ * It decides the "gear" for the turn, which sets the hints the main model is given and, where the user turned that on,
+ * the thinking level.
+ *
+ * Every question here is read off the message. Up to version 4 one was a forecast: "Would notes from past sessions in
+ * this project help?", asked without the notes, and a sure no kept the turn from its lessons. `memory.recall` asks
+ * the same thing with each lesson in front of it, at the same moment, so the forecast saved no judge call and could
+ * only drop a lesson that the question which read it had found to apply. It is gone, and recall answers for itself.
  *
  * Wording rules, measured with kyrn/spikes/judge-bench on a small local judge
  * (see kyrn/docs/03-local-judge.md): one short concrete predicate per question,
@@ -51,7 +56,6 @@ export type PreflightOutcome = {
 	readonly sideQuestion: Verdict;
 	readonly needsClarification: Verdict;
 	readonly needsFilesChanged: Verdict;
-	readonly needsMemory: Verdict;
 	readonly swarmWorthy: Verdict;
 	readonly planFirst: Verdict;
 	/** Zero-based rubric positions; see the score questions for the levels. */
@@ -64,7 +68,6 @@ const UNKNOWN_OUTCOME: PreflightOutcome = {
 	sideQuestion: "unsure",
 	needsClarification: "unsure",
 	needsFilesChanged: "unsure",
-	needsMemory: "unsure",
 	swarmWorthy: "unsure",
 	planFirst: "unsure",
 	complexity: { task: 1.5, reasoning: 1.5, tools: 1.5 },
@@ -107,7 +110,7 @@ function gearFor(turnType: TurnType | "unknown", filesChanged: Verdict, peakComp
 
 export const inputPreflight = defineDecision({
 	id: "input.preflight",
-	version: 4,
+	version: 5,
 	// Acting on the gear only changes what gets appended for this turn.
 	cacheImpact: "append-only",
 	// Everything else is a classification of the message; the three scores default to `rate`.
@@ -139,10 +142,6 @@ export const inputPreflight = defineDecision({
 		needs_files_changed: {
 			type: "boolean",
 			instructions: "Does `user_message` request a code change?",
-		},
-		needs_memory: {
-			type: "boolean",
-			instructions: "Would notes from past sessions in this project help with `user_message`?",
 		},
 		swarm_worthy: {
 			type: "boolean",
@@ -204,7 +203,6 @@ export const inputPreflight = defineDecision({
 			sideQuestion: hasMainLine ? threeZone(answers.is_side_question) : ("no" as const),
 			needsClarification: threeZone(answers.needs_clarification),
 			needsFilesChanged,
-			needsMemory: threeZone(answers.needs_memory),
 			swarmWorthy: threeZone(answers.swarm_worthy),
 			planFirst: threeZone(answers.plan_first),
 		};

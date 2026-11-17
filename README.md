@@ -65,7 +65,7 @@ You don't need a judge key to start: until you set one, the free Jev on OpenCode
 
 ## Decision points
 
-Each decision point is `active` (the default), `shadow` (asked and logged, but changes nothing; useful for comparing judges before you switch one on) or `off`. Each can also name its own judge: `jev`, `mude` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>` or a cascade such as `mude,jev`.
+Each decision point is `active` (the default), `shadow` (asked and logged, but changes nothing; useful for comparing judges before you switch one on) or `off`. Each can also name its own judge: `jev`, `mude` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>` or several in order, such as `mude,jev`.
 
 The 41 points fall into five groups:
 
@@ -172,12 +172,12 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
 
-Judges can be chained in tiers, cheapest first:
+Judges can be put in order. The first one answers, and a later one stands in only when it fails or isn't trusted with a kind of question. An unsure answer is not passed on: the decision point then does what mu does without a judge.
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/tiers-dark.svg">
-    <img src="docs/readme/tiers-light.svg" width="880" alt="Judges in tiers, for a cascade such as mude,jev. All questions go to mude 1.0 first, local, about 0.1 seconds. What it is sure of becomes a verdict; a yes/no answer between 0.2 and 0.8 is uncertain and goes on to Jev, hosted, about 0.3 seconds. What is still uncertain, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer and which judge gave it. A question a judge isn't trusted on skips it and goes on to the next.">
+    <img src="docs/readme/tiers-light.svg" width="880" alt="Judges in order, for a setup such as mude,jev. All questions go to mude 1.0 first, local, about 0.1 seconds. Its answer stands, sure or not: a yes/no answer between 0.2 and 0.8 is unsure, and mu then does what it would do without a judge. Jev, hosted, about 0.3 seconds, answers only when mude fails, and the fallback is used when Jev fails too. The ledger records every answer and which judge gave it. A question a judge isn't trusted on skips it and goes on to the next.">
   </picture>
 </p>
 
@@ -195,7 +195,7 @@ mu judge mude uninstall             # remove the model and its Python environmen
 
 On a Mac that can run it, mude 1.0 is the recommended judge. `mu setup` offers it first, and in the desktop app the first-run guide's judge step has it preselected: one click installs it. Later, the Judges page in Settings installs, starts, stops and uninstalls mude, and its "Local only" switch is the same as `--local-only`. An install that stops (Ctrl-C, a lost connection, a power cut, quitting the app) picks up where it left off: run `mu judge mude install` again, or click "Continue installing".
 
-By default, the judge you had before stays on as mude's fallback. What mude can't answer (its server is stopped, or it's unsure) goes to that judge, and so do two injection checks mude isn't trusted with yet. If that judge is hosted, as the default Jev is, what it reads leaves your machine. While it runs, mude's server uses about 4 GB of memory; `mu judge mude stop` stops it. On other platforms, you can serve the [full model](https://huggingface.co/qybaihe/mude-1.0) (bf16, PyTorch; a CUDA GPU is recommended) with its own System One server and add it to `mu.json` as a `typesafe` judge, as its model card shows.
+By default, the judge you had before stays on as mude's fallback. When mude can't answer (its server is stopped or too slow), that judge does, and it handles two injection checks mude isn't trusted with yet. What mude is unsure of isn't passed on: the decision point then does what it does without a verdict. If that judge is hosted, as the default Jev is, what it reads leaves your machine. While it runs, mude's server uses about 4 GB of memory; `mu judge mude stop` stops it. On other platforms, you can serve the [full model](https://huggingface.co/qybaihe/mude-1.0) (bf16, PyTorch; a CUDA GPU is recommended) with its own System One server and add it to `mu.json` as a `typesafe` judge, as its model card shows.
 
 ### mubench 1.0: how decision models compare
 
@@ -268,6 +268,7 @@ What this run is and isn't:
 - Terminal-Bench 2.1 through Harbor 0.24.0, at each task's own time limit. Harbor runs a task's tests even when the agent runs out of time, so an attempt can hit the limit and still pass. pytorch-model-recovery is left out of the totals, because the harness didn't pass its instruction to pi or mu in the first runs. Every configuration passed it in all three attempts on record, so leaving it out doesn't change the comparison.
 - MiMo v2.6 Pro with reasoning effort high, everywhere. pi 1.4.0 is the control. mu is mu-agent 0.1.12, built on pi 1.3.0, with its defaults; Jev is version 1.14. The mude column is a pre-release build with 24 layers, served on the same Mac. mude 1.0 is the 20-layer model made from it and hasn't been run on Terminal-Bench; neither has any mu release after 0.1.12.
 - Three attempts per task, from 2026-10-22 to 2026-10-24, on one 16 GB Mac with Apple silicon. Attempts were rerun only for infrastructure failures, by rules set beforehand. Rosetta breaks four tasks for every configuration, so absolute pass rates are about 4.5 points lower than on x86_64 and can't be compared with the public leaderboard.
+- It compares all of mu with pi: the judge's verdicts together with what mu adds that asks no judge. How much of the difference the verdicts make hasn't been measured. That takes a run of mu with every decision point off, which [bench/harbor/](bench/harbor/README.md#what-the-judge-adds) has the command for.
 
 Every attempt's result is in [docs/benchmarks/terminal-bench-2.1.csv](docs/benchmarks/terminal-bench-2.1.csv), and the method is in [docs/benchmarks/terminal-bench-2.1.md](docs/benchmarks/terminal-bench-2.1.md). The Harbor adapter that ran mu and pi, and a script that recomputes this table from the CSV, are in [bench/harbor/](bench/harbor/).
 

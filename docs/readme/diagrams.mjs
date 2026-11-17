@@ -364,9 +364,9 @@ function tiers(c) {
   const W = 880;
   const H = 330;
   const out = [`<defs>${arrowHead('a', c.faint)}${arrowHead('p', c.pink)}</defs>`];
-  out.push(text(0, 22, 'Judges in tiers', { size: 18, weight: 600, fill: c.text }));
+  out.push(text(0, 22, 'Judges in order', { size: 18, weight: 600, fill: c.text }));
   out.push(
-    text(0, 46, 'A cascade such as mude,jev: each judge only sees the questions the one before it wasn’t sure about.', {
+    text(0, 46, 'An order such as mude,jev: the first judge answers, and the next one stands in only when it fails.', {
       size: 13.5,
       fill: c.muted,
     })
@@ -387,21 +387,21 @@ function tiers(c) {
     out.push(text(b.x + (b.judge ? 32 : 16), y + 29, b.name, { size: 14.5, weight: 600, fill: c.text }));
     b.lines.forEach((line, i) => out.push(text(b.x + 16, y + 52 + i * 18, line, { size: 12.5, fill: c.muted })));
   }
-  // Between the boxes: what passes on.
+  // Between the boxes: what passes on. A judge that answered keeps its questions, sure of them or not.
   const pass = [
     [150, 214, 'all'],
-    [404, 468, 'unsure'],
-    [658, 722, 'unsure'],
+    [404, 468, 'failed'],
+    [658, 722, 'failed'],
   ];
   for (const [from, to, what] of pass) {
     out.push(path(`M${from + 4},${y + h / 2} L${to - 5},${y + h / 2}`, c.faint, { marker: 'a' }));
     out.push(text((from + to) / 2, y + h / 2 - 8, what, { size: 11.5, fill: c.faint, anchor: 'middle', mono: true }));
   }
-  // What a judge is sure of is settled there and goes to the ledger.
+  // What a judge answers is settled there and goes to the ledger.
   const rail = y + h + 64;
   for (const b of boxes.filter((box) => box.judge)) {
     out.push(path(`M${b.x + b.w / 2},${y + h + 4} L${b.x + b.w / 2},${rail - 6}`, c.pink, { marker: 'p' }));
-    out.push(text(b.x + b.w / 2 + 8, y + h + 36, 'sure: a verdict', { size: 12, fill: c.pink }));
+    out.push(text(b.x + b.w / 2 + 8, y + h + 36, 'its answer stands', { size: 12, fill: c.pink }));
   }
   out.push(path(`M${722 + 79},${y + h + 4} L${722 + 79},${rail - 6}`, c.faint, { marker: 'a' }));
   out.push(rect(200, rail, W - 200, 34, { fill: c.box, stroke: c.boxLine, r: 8 }));
@@ -419,7 +419,7 @@ function tiers(c) {
   out.push(text(x2, by + 34, '0.2', { size: 11, fill: c.faint, anchor: 'middle', mono: true }));
   out.push(text(x8, by + 34, '0.8', { size: 11, fill: c.faint, anchor: 'middle', mono: true }));
   out.push(
-    text(0, H - 6, 'A judge’s known weakness never decides: a question a judge isn’t trusted on skips it and goes on to the next.', {
+    text(0, H - 6, 'An unsure answer isn’t passed on: mu then does what it does without a judge. A question a judge isn’t trusted on skips it.', {
       size: 12,
       fill: c.faint,
     })
@@ -428,8 +428,8 @@ function tiers(c) {
     {
       width: W,
       height: H,
-      title: 'Judges in tiers',
-      desc: 'A cascade such as mude,jev. All questions go to mude 1.0 first: local, about 0.1 seconds, and nothing leaves your Mac. What mude is sure of becomes a verdict; a yes/no answer is unsure when its probability is between 0.2 and 0.8, and unsure questions go on to Jev, hosted, about 0.3 seconds. What Jev is sure of becomes a verdict; what is still unsure, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer, which judge gave it or why the fallback was used, and the time. A question a judge isn’t trusted on skips it and goes on to the next one.',
+      title: 'Judges in order',
+      desc: 'An order such as mude,jev. All questions go to mude 1.0 first: local, about 0.1 seconds, and nothing leaves your Mac. Its answer stands, sure or not. A yes/no answer is unsure when its probability is between 0.2 and 0.8, and mu then does what it would do without a judge; the question is not passed on. Jev, hosted, about 0.3 seconds, answers only when mude fails, and when Jev fails too the fallback is used. The ledger records every answer, which judge gave it or why the fallback was used, and the time. A question a judge isn’t trusted on skips it and goes on to the next one.',
     },
     out
   );

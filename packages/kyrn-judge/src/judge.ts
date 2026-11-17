@@ -1,4 +1,5 @@
 import { JudgeError } from "./errors.ts";
+import type { JudgeQueue, LatencyClass } from "./queue.ts";
 import type {
 	Answer,
 	AnswersFor,
@@ -7,6 +8,7 @@ import type {
 	JudgeProvider,
 	JudgeUsage,
 	JudgeWarning,
+	ProviderResponse,
 	Question,
 	Questions,
 } from "./types.ts";
@@ -17,16 +19,31 @@ const DEFAULT_MAX_QUESTIONS_PER_REQUEST = 32;
 
 export interface JudgeOptions {
 	provider: JudgeProvider;
+	/**
+	 * How long the judge has for one request, counted from when it is sent. A request that stands in a line (`queue`)
+	 * may wait there as long again first, so a call can take up to twice this.
+	 */
 	timeoutMs?: number;
 	maxQuestionsPerRequest?: number;
+	/**
+	 * The line its requests stand in, for a judge that answers only a few at a time (`JudgeConfig.concurrency`). One
+	 * line per server: every `Judge` that asks the same one shares it. Without one, each request is sent at once.
+	 */
+	queue?: JudgeQueue;
 }
 
 /** Per-tier accounting when the judge is a cascade. Declared here to keep `JudgeResult` self-contained. */
 export interface JudgeTierReport {
 	readonly judgeId: string;
 	readonly asked: number;
+	/**
+	 * How many of them it answered: all, or none when it failed. In records up to mu 0.3.12 it can be fewer: a judge
+	 * then passed the questions it was unsure of on to the next.
+	 */
 	readonly kept: number;
 	readonly latencyMs?: number;
+	/** How long its request stood in this judge's line first (`JudgeResult.queuedMs`). */
+	readonly queuedMs?: number;
 	readonly error?: string;
 }
 
@@ -37,6 +54,15 @@ export interface JudgeCall<Qs extends Questions> {
 	signal?: AbortSignal;
 	/** What each question takes to answer. A cascade routes on it; a single judge ignores it. */
 	capabilities?: Readonly<Record<string, Capability>>;
+	/** The decision point that asks, by its id. A cascade reads each judge's answers by it; a single judge ignores it. */
+	decision?: string;
+	/**
+	 * How soon the asker needs the answer. A judge that keeps a line orders its requests by it (`JudgeQueue`); any
+	 * other ignores it. Not set: as for `inline`, the asker is held up.
+	 */
+	latency?: LatencyClass;
+	/** When the asker stops waiting for the answer (`Date.now()`'s scale), read like `latency`. Not set: it waits. */
+	neededBy?: number;
 }
 
 export interface JudgeLike {
@@ -47,7 +73,13 @@ export interface JudgeLike {
 export interface JudgeResult<Qs extends Questions> {
 	readonly answers: AnswersFor<Qs>;
 	readonly usage: JudgeUsage;
+	/** From the ask to the answer, the wait in line included. */
 	readonly latencyMs: number;
+	/**
+	 * How long the request stood in the judge's line before the first of it was sent (`JudgeQueue`). Not set when it
+	 * went at once.
+	 */
+	readonly queuedMs?: number;
 	readonly requests: number;
 	readonly providerId: string;
 	/** The model the provider says it used, when it reports one. */
@@ -115,6 +147,15 @@ function answerProblem(question: Question, answer: Answer | undefined): string |
 	return undefined;
 }
 
+/** One request as the provider answered it, and how long it stood in line first. */
+interface Sent {
+	readonly response: ProviderResponse;
+	readonly queuedMs: number;
+}
+
+/** What a request gives the judge to read, in characters. */
+const sizeOf = (part: JudgeInput | Questions): number => JSON.stringify(part).length;
+
 /**
  * One judge model behind a timeout, with request fan-out and answer validation.
  *
@@ -124,6 +165,7 @@ export class Judge implements JudgeLike {
 	readonly provider: JudgeProvider;
 	private readonly timeoutMs: number;
 	private readonly maxQuestionsPerRequest: number;
+	private readonly queue: JudgeQueue | undefined;
 
 	get id(): string {
 		return this.provider.id;
@@ -133,6 +175,7 @@ export class Judge implements JudgeLike {
 		this.provider = options.provider;
 		this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 		this.maxQuestionsPerRequest = options.maxQuestionsPerRequest ?? DEFAULT_MAX_QUESTIONS_PER_REQUEST;
+		this.queue = options.queue;
 	}
 
 	async evaluate<const Qs extends Questions>(request: JudgeCall<Qs>): Promise<JudgeResult<Qs>> {
@@ -145,36 +188,30 @@ export class Judge implements JudgeLike {
 			chunks.push(Object.fromEntries(chunkIds.map((id) => [id, request.questions[id]])));
 		}
 
-		const timeout = AbortSignal.timeout(this.timeoutMs);
-		const signal = request.signal ? AbortSignal.any([timeout, request.signal]) : timeout;
 		const startedAt = performance.now();
+		// One request that fails fails the call: the others are then worth neither the judge's time nor a place in line.
+		const rest = new AbortController();
+		let failure: unknown;
+		const fail = (error: unknown) => {
+			failure ??= error;
+			rest.abort();
+		};
+		const signal = request.signal ? AbortSignal.any([request.signal, rest.signal]) : rest.signal;
 
-		let responses: Awaited<ReturnType<JudgeProvider["evaluate"]>>[];
+		let sent: Sent[];
 		try {
-			const requests = Promise.all(
-				chunks.map((questions) => this.provider.evaluate({ state: request.state, questions, signal })),
-			);
-			// An external provider is expected to honor AbortSignal, but a broken or
-			// third-party implementation may not. Race the provider work itself so the
-			// judge still fails open at the configured deadline instead of hanging.
-			const deadline = new Promise<never>((_, reject) => {
-				const timer = setTimeout(
-					() => reject(new JudgeError("timeout", `Judge call exceeded ${this.timeoutMs} ms`)),
-					this.timeoutMs,
-				);
-				requests.finally(() => clearTimeout(timer)).catch(() => undefined);
-			});
 			// Questions are answered in isolation, so chunks can run concurrently over the same state.
-			responses = await Promise.race([requests, deadline]);
+			sent = await Promise.all(chunks.map((questions) => this.send(request, questions, signal, fail)));
 		} catch (error) {
-			if (request.signal?.aborted) throw new JudgeError("aborted", "Judge call was aborted", { cause: error });
-			if (timeout.aborted) {
-				throw new JudgeError("timeout", `Judge call exceeded ${this.timeoutMs} ms`, { cause: error });
-			}
-			if (error instanceof JudgeError) throw error;
-			throw new JudgeError("unreachable", "Judge provider failed", { cause: error });
+			// The requests dropped for a failure fail as aborted: the call reports what failed first.
+			fail(error);
+			if (request.signal?.aborted) throw new JudgeError("aborted", "Judge call was aborted", { cause: failure });
+			if (failure instanceof JudgeError) throw failure;
+			throw new JudgeError("unreachable", "Judge provider failed", { cause: failure });
 		}
 
+		const responses = sent.map((one) => one.response);
+		const queuedMs = Math.min(...sent.map((one) => one.queuedMs));
 		const answers: Record<string, Answer> = {};
 		const usage: JudgeUsage = { inputTokens: 0, outputTokens: 0 };
 		const warnings: JudgeWarning[] = [];
@@ -197,6 +234,59 @@ export class Judge implements JudgeLike {
 			providerId: this.provider.id,
 			modelId: responses.find((response) => response.modelId)?.modelId,
 			warnings,
+			...(queuedMs > 0 ? { queuedMs } : {}),
 		};
+	}
+
+	/**
+	 * One request to the provider: its wait in line, when the judge keeps one, then the answer within the time limit.
+	 * `fail` hears of a failure at once, while the request still has its place: the rest of the call must not get it.
+	 */
+	private async send(
+		request: JudgeCall<Questions>,
+		questions: Questions,
+		signal: AbortSignal,
+		fail: (error: unknown) => void,
+	): Promise<Sent> {
+		const ask = () =>
+			this.ask(request.state, questions, signal).catch((error: unknown) => {
+				fail(error);
+				throw error;
+			});
+		if (!this.queue) return { response: await ask(), queuedMs: 0 };
+		const place = {
+			latency: request.latency ?? "inline",
+			neededBy: request.neededBy,
+			// Its size only tells it from others that wait: a request that goes at once is not measured.
+			size: this.queue.busy ? sizeOf(request.state) + sizeOf(questions) : 0,
+			signal,
+		};
+		// It may wait for as long as the judge would have had to answer it: after that the answer would come too late.
+		const { value, queuedMs } = await this.queue.run(place, this.timeoutMs, ask);
+		return { response: value, queuedMs };
+	}
+
+	/** The provider's answer within the time limit, which counts from now. */
+	private async ask(state: JudgeInput, questions: Questions, signal: AbortSignal): Promise<ProviderResponse> {
+		const timeout = AbortSignal.timeout(this.timeoutMs);
+		const work = this.provider.evaluate({ state, questions, signal: AbortSignal.any([timeout, signal]) });
+		// An external provider is expected to honor AbortSignal, but a broken or third-party implementation may not.
+		// Race the provider work itself so the judge still fails open at the time limit instead of hanging.
+		const limit = new Promise<never>((_, reject) => {
+			const timer = setTimeout(
+				() => reject(new JudgeError("timeout", `Judge call exceeded ${this.timeoutMs} ms`)),
+				this.timeoutMs,
+			);
+			work.finally(() => clearTimeout(timer)).catch(() => undefined);
+		});
+		try {
+			return await Promise.race([work, limit]);
+		} catch (error) {
+			// Whatever a provider makes of its signal going off, a call that ran out of time is a timeout.
+			if (timeout.aborted && !signal.aborted) {
+				throw new JudgeError("timeout", `Judge call exceeded ${this.timeoutMs} ms`, { cause: error });
+			}
+			throw error;
+		}
 	}
 }

@@ -88,6 +88,15 @@ function kindOf(message: string): JudgeErrorKind {
 }
 
 /**
+ * The status of a call the service turned down (401, 402, 403), read from the same words: with it the failure counts as
+ * the service's own refusal (`isRefusal`), which a key missing on this machine is not.
+ */
+function refusalStatus(message: string): number | undefined {
+	const status = /\b(40[123])\b/.exec(message)?.[1];
+	return status === undefined ? undefined : Number(status);
+}
+
+/**
  * A classifier model from the host's catalog as a judge: Jev on OpenCode Zen or Cloudflare Workers AI, Cloudflare's
  * Clef, the System One models on OpenRouter and the Vercel AI Gateway, a llama.cpp server's classifier, one of the
  * user's models.json. The host reaches it with its own credentials (`mu auth`, /login, the provider's variable).
@@ -114,7 +123,7 @@ export class ClassifierJudgeProvider implements JudgeProvider {
 		}
 		if (outcome.stopReason === "error") {
 			const message = (outcome.errorMessage ?? "The classifier call failed").slice(0, 300);
-			throw new JudgeError(kindOf(message), message);
+			throw new JudgeError(kindOf(message), message, { status: refusalStatus(message) });
 		}
 		const answers: Record<string, Answer> = {};
 		for (const [id, question] of Object.entries(request.questions)) {

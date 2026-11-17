@@ -6,6 +6,9 @@
 //   kyrn/bin/kyrn-ledger --json       one JSON object per decision, for scripts
 //   kyrn/bin/kyrn-ledger --timeline   the most recent session, step by step: messages, model replies, tool calls,
 //                                     verdicts and mu's own messages in the order they happened
+//   kyrn/bin/kyrn-ledger --tally      each decision point over the 20 most recent sessions: how often it was asked,
+//                                     how often a verdict came, came late, and differed from what mu does with no
+//                                     judge, what that cost, and what happened next
 //
 // Reads the `kyrn.decision` entries the kernel appends to pi session files and
 // pairs each with the user message it judged, with what the user answered when
@@ -32,15 +35,25 @@ if (args.includes("--help") || args.includes("-h")) {
 			"      one session step by step: your messages, the model's replies (how long, how many tokens, which tools),",
 			"      each verdict where the judge gave it, each tool result (how long, whether it failed) and mu's own",
 			"      messages. Default: the most recent session. With --json, one JSON object per step.",
+			"",
+			"  mu ledger --tally [n]",
+			"      each decision point over the n most recent sessions (default 20): how often it was asked, how often a",
+			"      verdict came, how often that verdict was something else than what mu does with no judge, the judge's",
+			"      median time and the tokens it read, how many verdicts came after mu had stopped waiting, how often a",
+			"      request waited in a judge's line, and what happened next: your marks and answers, nudges that led",
+			"      nowhere, left-out parts the model read back. Ends with the points worth a look, each with the rule",
+			"      that put it there. With --json, one JSON object per decision point.",
 		].join("\n"),
 	);
 	process.exit(0);
 }
 const asJson = args.includes("--json");
 const asTimeline = args.includes("--timeline");
+const asTally = args.includes("--tally");
 const sessionAt = args.indexOf("--session");
 const sessionWanted = sessionAt >= 0 ? args[sessionAt + 1] : undefined;
-const limit = Number(args.find((arg, index) => /^\d+$/.test(arg) && index !== sessionAt + 1) ?? 5);
+// A tally says little about a point that was asked a handful of times: it reads more sessions unless told how many.
+const limit = Number(args.find((arg, index) => /^\d+$/.test(arg) && (sessionAt < 0 || index !== sessionAt + 1)) ?? (asTally ? 20 : 5));
 /** `MU_<name>`, or the `KYRN_<name>` spelling from before the rename. */
 const env = (name) => process.env[`MU_${name}`] || process.env[`KYRN_${name}`];
 // Until ~/.kyrn is moved to ~/.mu by hand, the old home stays in use.
@@ -233,6 +246,236 @@ const files = sessionFiles(sessionsDir)
 	.slice(0, limit)
 	.reverse();
 
+/** A point is worth a look once this many of its verdicts say whether they differed, and none did. */
+const NEVER_DIFFERED_FROM = 20;
+/**
+ * The safety checks (kyrn/docs/features/self-evolution.md). Each is asked for the rare call it stops, so verdicts that
+ * never differed say nothing against it. One that brings no verdict is still worth a look.
+ */
+const SAFETY_CHECKS = new Set(["tool.risk", "tool.injection", "tool.description"]);
+/** ... once it was asked this often, and half of the asks or more brought no verdict. */
+const NO_VERDICT_FROM = 10;
+/** ... once this many of its nudges were answered, and half of them or more ended again without a tool call. */
+const NUDGES_FROM = 5;
+/** ... once it brought this many verdicts, and half of them or more came after mu had stopped waiting. */
+const LATE_FROM = 10;
+
+/** Why a record has no verdict, in the engine's words: "abstain", or "error:<kind>". */
+function noVerdictReason(record) {
+	// A batch in shadow says "shadow" whatever happened to its items: its failure count tells.
+	if (record.batch) return record.batch.failures >= record.batch.size ? "error:all" : "abstain";
+	return record.reason && record.reason !== "shadow" ? record.reason : "abstain";
+}
+
+/**
+ * Every decision point of these sessions: what asking it cost, how often a verdict came and was something else than the
+ * fallback (`differs` in the record), and the labels joined to its records (`kyrn.outcome`, `kyrn.skill-read`).
+ */
+function tally(sessions) {
+	const points = new Map();
+	const pointOf = (specId) => {
+		if (!points.has(specId)) {
+			points.set(specId, {
+				specId,
+				modes: new Set(),
+				asked: 0,
+				verdicts: 0,
+				noVerdict: {},
+				differed: 0,
+				saidWhether: 0,
+				actedOn: 0,
+				late: 0,
+				latencies: [],
+				queued: [],
+				inputTokens: 0,
+				// What happened after its verdicts. Not `then`: `await` takes an object with one for a promise.
+				after: { markedWrong: 0, sentToYou: 0, allowed: 0, denied: 0, nudgesActed: 0, nudgesEnded: 0, readBack: 0, hiddenSkillsRead: 0, filesForecast: 0, filesUsed: 0 },
+			});
+		}
+		return points.get(specId);
+	};
+	for (const session of sessions) {
+		const entries = readEntries(session.path);
+		const custom = (type) => entries.filter((entry) => entry.type === "custom" && entry.customType === type).map((entry) => entry.data ?? {});
+		const specOf = new Map();
+		for (const record of custom("kyrn.decision")) {
+			if (typeof record.specId !== "string") continue;
+			specOf.set(record.id, record.specId);
+			const point = pointOf(record.specId);
+			point.asked++;
+			point.modes.add(record.mode);
+			point.inputTokens += record.usage?.inputTokens ?? 0;
+			if (typeof record.latencyMs === "number") point.latencies.push(record.latencyMs);
+			// Only a judge that answers a few requests at a time keeps a line, and only a request that waited says so.
+			if (typeof record.queuedMs === "number") point.queued.push(record.queuedMs);
+			const hasVerdict = record.batch ? Array.isArray(record.judged) && record.judged.some((item) => item !== null) : record.judged !== undefined;
+			if (!hasVerdict) {
+				const reason = noVerdictReason(record);
+				point.noVerdict[reason] = (point.noVerdict[reason] ?? 0) + 1;
+				continue;
+			}
+			point.verdicts++;
+			if (record.late === true) point.late++;
+			// Records written up to mu 0.3.12 do not say.
+			if (typeof record.differs !== "boolean") continue;
+			point.saidWhether++;
+			if (!record.differs) continue;
+			point.differed++;
+			if (record.source === "judge") point.actedOn++;
+		}
+		// A label counts for the point whose record it names.
+		const labelled = (ledgerId, specId) => {
+			const named = specOf.get(ledgerId) ?? specId;
+			return typeof named === "string" ? pointOf(named).after : undefined;
+		};
+		const { answers, marks, followed } = userSaid(entries);
+		for (const id of marks.keys()) {
+			const after = labelled(id);
+			if (after) after.markedWrong++;
+		}
+		for (const [id, answer] of answers) {
+			const after = labelled(id);
+			if (!after) continue;
+			after.sentToYou++;
+			if (answer === "once" || answer === "session") after.allowed++;
+			else if (answer === "deny") after.denied++;
+		}
+		for (const [id, how] of followed) {
+			const after = labelled(id);
+			if (!after) continue;
+			if (how.outcome === "acted") after.nudgesActed++;
+			else after.nudgesEnded++;
+		}
+		for (const outcome of custom("kyrn.outcome")) {
+			if (!outcome.ledgerId) continue;
+			const after = labelled(outcome.ledgerId, outcome.specId);
+			if (!after) continue;
+			if (outcome.kind === "refetch") after.readBack++;
+			else if (outcome.kind === "preload") {
+				after.filesForecast += outcome.predicted ?? 0;
+				after.filesUsed += outcome.hits ?? 0;
+			}
+		}
+		// A skill the first verdict kept out of the prompt, and the model read anyway.
+		for (const read of custom("kyrn.skill-read")) {
+			const after = read.hid === true && read.verdict ? labelled(read.verdict) : undefined;
+			if (after) after.hiddenSkillsRead++;
+		}
+	}
+	return [...points.values()]
+		.sort((a, b) => b.asked - a.asked || a.specId.localeCompare(b.specId))
+		.map((point) => {
+			const { latencies, queued, modes, ...rest } = point;
+			const tallied = {
+				...rest,
+				modes: [...modes].sort(),
+				medianLatencyMs: median(latencies),
+				inLine: queued.length,
+				medianInLineMs: median(queued),
+			};
+			return { ...tallied, look: worthALook(tallied) };
+		});
+}
+
+/** The middle value, the lower of the two in the middle of an even count; undefined of none. */
+function median(values) {
+	const sorted = [...values].sort((a, b) => a - b);
+	return sorted.length === 0 ? undefined : sorted[Math.floor((sorted.length - 1) / 2)];
+}
+
+/** Why a point is worth a look, one sentence per rule it meets. */
+function worthALook(point) {
+	const found = [];
+	const missing = point.asked - point.verdicts;
+	if (point.asked >= NO_VERDICT_FROM && missing * 2 >= point.asked) {
+		found.push(`no verdict ${missing} of ${point.asked} times (${reasonsLine(point.noVerdict)}): mu waited for the judge and went on as with none.`);
+	}
+	if (point.saidWhether >= NEVER_DIFFERED_FROM && point.differed === 0 && !SAFETY_CHECKS.has(point.specId)) {
+		found.push(`${point.saidWhether} verdicts, none of them different from what mu does with no judge: asking it changed nothing.`);
+	}
+	if (point.verdicts >= LATE_FROM && point.late * 2 >= point.verdicts) {
+		found.push(`${point.late} of ${point.verdicts} verdicts came after mu had stopped waiting for them: it waited the whole time and went on without.`);
+	}
+	const nudges = point.after.nudgesActed + point.after.nudgesEnded;
+	if (nudges >= NUDGES_FROM && point.after.nudgesEnded * 2 >= nudges) {
+		found.push(`${point.after.nudgesEnded} of ${nudges} nudges ended again without a tool call: the agent was sent back for nothing.`);
+	}
+	return found;
+}
+
+const reasonsLine = (reasons) =>
+	Object.entries(reasons)
+		.sort((a, b) => b[1] - a[1])
+		// "error:all" is a batch none of whose items was answered.
+		.map(([reason, times]) => `${times} ${reason === "error:all" ? "failed" : reason.replace(/^error:/, "")}`)
+		.join(", ");
+
+const thousands = (value) => (value < 1000 ? String(value) : value < 1_000_000 ? `${(value / 1000).toFixed(1)}k` : `${(value / 1_000_000).toFixed(1)}M`);
+
+/** What happened after a point's verdicts, as the labels say it; empty when there is none. */
+function afterParts({ after }) {
+	const nudges = after.nudgesActed + after.nudgesEnded;
+	return [
+		after.sentToYou > 0 ? `sent to you ${after.sentToYou} (${after.allowed} allowed, ${after.denied} denied)` : "",
+		after.markedWrong > 0 ? `${after.markedWrong} marked wrong` : "",
+		nudges > 0 ? `${after.nudgesEnded} of ${nudges} nudges ended without a tool call` : "",
+		after.readBack > 0 ? `${after.readBack} left-out ${after.readBack === 1 ? "part" : "parts"} read back` : "",
+		after.hiddenSkillsRead > 0 ? `${after.hiddenSkillsRead} hidden ${after.hiddenSkillsRead === 1 ? "skill" : "skills"} read` : "",
+		after.filesForecast > 0 ? `${after.filesUsed} of ${after.filesForecast} forecast files used` : "",
+	].filter(Boolean);
+}
+
+if (asTally) {
+	const points = tally(files);
+	if (asJson) {
+		for (const point of points) console.log(JSON.stringify(point));
+		process.exit(0);
+	}
+	if (points.length === 0) {
+		console.log(`No verdicts found under ${tilde(sessionsDir)}`);
+		process.exit(0);
+	}
+	const asks = points.reduce((sum, point) => sum + point.asked, 0);
+	const tokens = points.reduce((sum, point) => sum + point.inputTokens, 0);
+	console.log(`Decision points in the ${files.length} most recent ${files.length === 1 ? "session" : "sessions"}: asked ${asks} times, ${thousands(tokens)} tokens read by the judge\n`);
+	const width = Math.max(5, ...points.map((point) => point.specId.length));
+	const row = (cells) => `${cells[0].padEnd(width)}  ${cells[1].padEnd(13)}  ${cells[2].padStart(5)}  ${cells[3].padStart(8)}  ${cells[4].padStart(8)}  ${cells[5].padStart(6)}  ${cells[6].padStart(6)}`;
+	console.log(row(["point", "mode", "asked", "verdicts", "differed", "median", "tokens"]));
+	for (const point of points) {
+		console.log(row([point.specId, point.modes.join("+"), String(point.asked), String(point.verdicts), point.saidWhether > 0 ? `${point.differed}/${point.saidWhether}` : "-", seconds(point.medianLatencyMs) || "-", thousands(point.inputTokens)]));
+		const missing = point.asked - point.verdicts;
+		if (missing > 0) console.log(`    no verdict ${missing}: ${reasonsLine(point.noVerdict)}`);
+		if (point.late > 0) console.log(`    late ${point.late} of ${point.verdicts} ${point.verdicts === 1 ? "verdict" : "verdicts"}`);
+		if (point.inLine > 0) console.log(`    in line ${point.inLine} ${point.inLine === 1 ? "time" : "times"}, median wait ${seconds(point.medianInLineMs)}`);
+		const after = afterParts(point);
+		if (after.length > 0) console.log(`    then: ${after.join(", ")}`);
+	}
+	console.log(
+		[
+			"",
+			"differed: verdicts that were something else than what mu does with no judge, of the verdicts whose record says",
+			"(records written up to mu 0.3.12 do not). Only such a verdict can have changed anything. In shadow mode it",
+			"would have.",
+			"abstain: an answer came, and it was not sure enough to act on.",
+			// Only a point with a bounded wait and a judge that keeps a line say these: no legend for what is not shown.
+			...(points.some((point) => point.late > 0) ? ["late: verdicts that came after mu had stopped waiting for them."] : []),
+			...(points.some((point) => point.inLine > 0)
+				? [
+						"in line: times the request waited its turn at a judge that answers only a few at a time (`concurrency` in",
+						"mu.json). That wait is part of the median.",
+					]
+				: []),
+		].join("\n"),
+	);
+	const look = points.filter((point) => point.look.length > 0);
+	if (look.length > 0) {
+		console.log("\nWorth a look");
+		for (const point of look) for (const why of point.look) console.log(`  ${point.specId}: ${why}`);
+		console.log("\n/mu mode <point> off stops asking a point, shadow records its verdicts without acting on them.");
+	}
+	process.exit(0);
+}
+
 let count = 0;
 for (const file of files) {
 	let lastUserMessage = "";
@@ -267,7 +510,8 @@ for (const file of files) {
 		const head = `${when}  [${record.providerId} ${record.mode} v${record.specVersion}${timing}]`;
 		const verdict =
 			judged && typeof judged === "object" && "turnType" in judged
-				? `${judged.turnType} -> ${judged.gear}  files=${judged.needsFilesChanged} side=${judged.sideQuestion} clarify=${judged.needsClarification} memory=${judged.needsMemory} swarm=${judged.swarmWorthy} plan=${judged.planFirst}`
+				? // Preflight asked about memory up to its version 4: records from then still say.
+					`${judged.turnType} -> ${judged.gear}  files=${judged.needsFilesChanged} side=${judged.sideQuestion} clarify=${judged.needsClarification}${judged.needsMemory === undefined ? "" : ` memory=${judged.needsMemory}`} swarm=${judged.swarmWorthy} plan=${judged.planFirst}`
 				: judged === undefined
 					? `no verdict (${record.reason ?? "unknown"})`
 					: JSON.stringify(judged);

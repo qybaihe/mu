@@ -180,7 +180,7 @@ Nothing reads `refetch` and `returned` back yet. They are what calibrating `tool
 
 - No measurement of any of this on real sessions or on Terminal-Bench.
 - The desktop app does not know `context.preload`, the new outcome kinds or `memory.standing` yet, and has no page for `/evolve`.
-- `mu ledger` does not print the new outcome kinds.
+- `mu ledger` does not print the new outcome kinds verdict by verdict. `mu ledger --tally` counts two of them by decision point: left-out parts read back (`refetch`) and forecast files used (`preload`).
 - A subagent does not check standing rules: it keeps no lessons, and its parent hands down only the task's own constraints.
 - Forgetting still rewrites old results while the prompt cache is warm. At MiMo's list prices cached input costs about 1/120 of uncached input, so one rewrite early in a long context can cost more than it saves for the rest of the session. Deferring it to the first request after the cache has expired is the obvious next step, and needs the numbers first.
 - A command compatibility layer (GNU tools first on the agent's PATH) is not built; the snapshot only tells the model where the machine differs.

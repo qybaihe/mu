@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { ABSTAIN, DecisionEngine, defineDecision } from "../src/decision.ts";
 import { JudgeError } from "../src/errors.ts";
-import { Judge } from "../src/judge.ts";
+import { Judge, type JudgeCall, type JudgeLike, type JudgeResult } from "../src/judge.ts";
 import { type LedgerSink, MemoryLedger } from "../src/ledger.ts";
 import { threeZone } from "../src/policy.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
-import type { Answer, JudgeProvider } from "../src/types.ts";
+import type { Answer, JudgeProvider, Questions } from "../src/types.ts";
 
 /** Keep a tool output chunk, or drop it. Without a judge, everything is kept. */
 const keepChunk = defineDecision({
@@ -306,6 +306,158 @@ describe("DecisionEngine", () => {
 
 		await expect(engine.decide(keepChunk, input)).resolves.toMatchObject({ outcome: "drop", source: "judge" });
 		expect(ledger.records[0].origin).toBeUndefined();
+	});
+});
+
+describe("what the ledger says a verdict changed", () => {
+	const recordOf = async (probability: number, mode: "shadow" | "active") => {
+		const ledger = new MemoryLedger();
+		await engineWith(probability, mode, ledger).engine.decide(keepChunk, input);
+		return ledger.records[0];
+	};
+
+	it("says a verdict differs from the fallback only when it is something else: asked and agreed is not a change", async () => {
+		// "drop", where mu keeps everything without a judge.
+		expect(await recordOf(0.03, "active")).toMatchObject({ source: "judge", outcome: "drop", differs: true });
+		// "keep", which is what mu does anyway: the judge was asked, answered, and nothing is different for it.
+		expect(await recordOf(0.97, "active")).toMatchObject({ source: "judge", outcome: "keep", differs: false });
+		// No verdict: nothing to differ.
+		expect(await recordOf(0.5, "active")).toMatchObject({ source: "fallback", reason: "abstain", differs: false });
+	});
+
+	it("says in shadow what the verdict would have changed", async () => {
+		expect(await recordOf(0.03, "shadow")).toMatchObject({ source: "fallback", outcome: "keep", differs: true });
+		expect(await recordOf(0.97, "shadow")).toMatchObject({ source: "fallback", outcome: "keep", differs: false });
+	});
+
+	it("counts the items of a batch whose verdicts differ", async () => {
+		const ledger = new MemoryLedger();
+		const provider = new MockJudgeProvider((request) => ({
+			relevant: {
+				type: "boolean",
+				probability: String((request.state as { chunk: string }).chunk).startsWith("npm warn") ? 0.03 : 0.97,
+			},
+		}));
+		const engine = new DecisionEngine({ judge: new Judge({ provider }), defaultMode: "active", ledger });
+		const chunks = ["npm warn deprecated glob@7", "FAIL login.test.ts", "npm warn old lockfile"];
+
+		await engine.decideMany(
+			keepChunk,
+			chunks.map((chunk) => ({ intent: input.intent, chunk })),
+		);
+		await engine.decideMany(keepChunk, [{ intent: input.intent, chunk: "FAIL login.test.ts" }]);
+
+		expect(ledger.records[0]).toMatchObject({ differs: true, batch: { size: 3, differs: 2 } });
+		expect(ledger.records[1]).toMatchObject({ differs: false, batch: { size: 1, differs: 0 } });
+	});
+
+	it("takes an outcome's keys in any order, and a key that holds nothing as absent", async () => {
+		const shaped = defineDecision({
+			id: "test.shaped",
+			version: 1,
+			cacheImpact: "none",
+			latency: "inline",
+			questions: { relevant: { type: "boolean", instructions: "Is `chunk` needed?" } },
+			buildState: (chunk: string) => ({ chunk }),
+			// The same as the fallback, built another way round.
+			policy: (answers) =>
+				threeZone(answers.relevant) === "yes"
+					? { hide: [] as string[], keep: ["a"] }
+					: { keep: ["a"], hide: ["b"] as string[] },
+			fallback: () => ({ keep: ["a"], hide: [] as string[] }),
+		});
+		const record = async (probability: number) => {
+			const ledger = new MemoryLedger();
+			const provider = new MockJudgeProvider(() => ({ relevant: { type: "boolean", probability } }));
+			await new DecisionEngine({ judge: new Judge({ provider }), defaultMode: "active", ledger }).decide(
+				shaped,
+				"x",
+			);
+			return ledger.records[0];
+		};
+		expect((await record(0.97)).differs).toBe(false);
+		expect((await record(0.03)).differs).toBe(true);
+	});
+});
+
+describe("what the engine tells the judge about a request's wait", () => {
+	/** A judge that says the chunk is not needed, after `takesMs`, and keeps what it was asked with. */
+	function recording(options: { takesMs?: number; queuedMs?: number } = {}) {
+		const seen: JudgeCall<Questions>[] = [];
+		const judge: JudgeLike = {
+			id: "recording",
+			evaluate: async <const Qs extends Questions>(request: JudgeCall<Qs>) => {
+				seen.push(request);
+				if (options.takesMs) await new Promise<void>((resolve) => setTimeout(resolve, options.takesMs));
+				return {
+					answers: { relevant: { type: "boolean", probability: 0.05 } },
+					usage: {},
+					latencyMs: options.takesMs ?? 1,
+					requests: 1,
+					providerId: "recording",
+					warnings: [],
+					...(options.queuedMs === undefined ? {} : { queuedMs: options.queuedMs }),
+				} as unknown as JudgeResult<Qs>;
+			},
+		};
+		return { judge, seen };
+	}
+	const background = defineDecision({ ...keepChunk, id: "test.keep_chunk_later", latency: "background" });
+
+	it("asks with the decision's own urgency while its verdict is acted on, and as background work in shadow", async () => {
+		const { judge, seen } = recording();
+		const engine = new DecisionEngine({ judge, defaultMode: "active" });
+		await engine.decide(keepChunk, input);
+		await engine.decide(background, input);
+		engine.setDefaultMode("shadow");
+		await engine.decide(keepChunk, input);
+		await engine.decideMany(keepChunk, [input]);
+
+		expect(seen.map((request) => request.latency)).toEqual(["inline", "background", "background", "background"]);
+		expect(seen.every((request) => request.decision?.startsWith("test.keep_chunk"))).toBe(true);
+	});
+
+	it("passes on when the caller stops waiting, and says of a verdict that came after it that it was late", async () => {
+		const ledger = new MemoryLedger();
+		const { judge, seen } = recording({ takesMs: 30 });
+		const engine = new DecisionEngine({ judge, defaultMode: "active", ledger });
+		const soon = Date.now() + 5;
+		const later = Date.now() + 60_000;
+
+		const late = await engine.decide(keepChunk, input, { neededBy: soon });
+		await engine.decide(keepChunk, input, { neededBy: later });
+		await engine.decide(keepChunk, input);
+
+		expect(seen.map((request) => request.neededBy)).toEqual([soon, later, undefined]);
+		// The engine does not end the call: what the judge said is still the outcome, for a caller that can use it late.
+		expect(late).toMatchObject({ outcome: "drop", source: "judge" });
+		expect(ledger.records.map((record) => record.late)).toEqual([true, undefined, undefined]);
+	});
+
+	it("has nobody stop waiting in shadow: the wait is not passed on, and no verdict is late", async () => {
+		const ledger = new MemoryLedger();
+		const { judge, seen } = recording({ takesMs: 20 });
+		const engine = new DecisionEngine({ judge, defaultMode: "shadow", ledger });
+		await engine.decide(keepChunk, input, { neededBy: Date.now() + 1 });
+		expect(seen[0].neededBy).toBeUndefined();
+		expect(ledger.records[0].late).toBeUndefined();
+	});
+
+	it("records how long the request stood in the judge's line, and for a batch the longest of them", async () => {
+		const ledger = new MemoryLedger();
+		const engine = new DecisionEngine({ judge: recording({ queuedMs: 1200 }).judge, defaultMode: "active", ledger });
+		await engine.decide(keepChunk, input);
+		await engine.decideMany(keepChunk, [input, input], { neededBy: Date.now() - 1 });
+		const plain = new DecisionEngine({ judge: recording().judge, defaultMode: "active", ledger });
+		await plain.decide(keepChunk, input);
+		await plain.decideMany(keepChunk, [input]);
+
+		expect(ledger.records.map((record) => [record.queuedMs, record.late])).toEqual([
+			[1200, undefined],
+			[1200, true],
+			[undefined, undefined],
+			[undefined, undefined],
+		]);
 	});
 });
 
