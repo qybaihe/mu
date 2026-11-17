@@ -59,8 +59,10 @@ afterEach(() => {
 });
 
 /** Give the video a finite duration and announce metadata, the way a real load does. */
-const loadVideo = (video: HTMLVideoElement, duration: number): void => {
+const loadVideo = (video: HTMLVideoElement, duration: number, w = 160, h = 90): void => {
   Object.defineProperty(video, 'duration', { configurable: true, value: duration });
+  Object.defineProperty(video, 'videoWidth', { configurable: true, value: w });
+  Object.defineProperty(video, 'videoHeight', { configurable: true, value: h });
   fireEvent(video, new Event('loadedmetadata'));
 };
 
@@ -188,6 +190,19 @@ describe('LocalVideoView', () => {
     fireEvent.click(screen.getByTestId('local-video-modal-mute'));
     expect((document.querySelector('video') as HTMLVideoElement).muted).toBe(false);
     expect(screen.getByTestId('local-video-modal-rotate-left')).toBeTruthy();
+  });
+
+  it('a turned overlay video swaps its layout box so the toolbar stays on screen', () => {
+    render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
+    const video = screen.getByTestId('local-video') as HTMLVideoElement;
+    loadVideo(video, 120);
+    fireEvent.click(screen.getByTestId('local-video-open'));
+    let lent = document.querySelector('video') as HTMLVideoElement;
+    expect(lent.style.aspectRatio).toBe('');
+    fireEvent.click(screen.getByTestId('local-video-rotate'));
+    expect(lent.style.aspectRatio).toBe('90 / 160'); // upright 160x90 now lies down
+    fireEvent.click(screen.getByTestId('local-video-rotate'));
+    expect(lent.style.aspectRatio).toBe('');
   });
 
   it('the overlay toolbar carries its own play/pause that drives the lent element', () => {

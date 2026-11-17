@@ -95,6 +95,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   // A play from the button runs once by default; the loop button switches the mode.
   const [looping, setLooping] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [intrinsic, setIntrinsic] = useState<{ w: number; h: number } | null>(null);
   // One speed for the video wherever it is watched: the card's menu and the overlay's share it.
   const [rate, setRate] = useState(1);
   // Where the element's playback stands when it is lent to the overlay or borrowed back.
@@ -145,6 +146,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const handleMetadata = useCallback(
     (video: HTMLVideoElement) => {
       setDuration(Number.isFinite(video.duration) ? video.duration : 0);
+      if (video.videoWidth > 0 && video.videoHeight > 0) setIntrinsic({ w: video.videoWidth, h: video.videoHeight });
       video.playbackRate = rate;
       // The element was lent or borrowed: stand where it stood, and run on if it was running.
       if (resumeAt.current !== null && video.currentTime !== resumeAt.current) {
@@ -262,6 +264,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
 
   // Exactly one video element exists at any moment; while the overlay is open it lives there
   // and the card keeps its place with a quiet placeholder.
+  const oddTurn = ((turn % 4) + 4) % 4 % 2 === 1;
   const video = (variant: 'card' | 'overlay'): React.JSX.Element => (
     <video
       key={attempt}
@@ -272,8 +275,12 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
       playsInline
       preload='metadata'
       data-testid='local-video'
+      // A quarter turn rotates only the pixels, not the layout box: a turned video still
+      // reserved its upright height and pushed the toolbar off screen. The swapped
+      // aspect-ratio makes the layout box itself lie down, so the toolbar stays in view.
+      style={variant === 'overlay' && oddTurn && intrinsic ? { aspectRatio: `${intrinsic.h} / ${intrinsic.w}` } : undefined}
       className={
-        variant === 'overlay' ? `${styles.overlayVideo} ${turn % 2 === 1 ? styles.fitTurned : ''}` : styles.cardVideo
+        variant === 'overlay' ? `${styles.overlayVideo} ${oddTurn ? styles.fitTurned : ''}` : styles.cardVideo
       }
       onLoadedMetadata={(event) => handleMetadata(event.currentTarget)}
       onTimeUpdate={(event) => {
