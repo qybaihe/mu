@@ -190,6 +190,19 @@ describe('LocalVideoView', () => {
     expect(screen.getByTestId('local-video-modal-rotate-left')).toBeTruthy();
   });
 
+  it('the overlay toolbar carries its own play/pause that drives the lent element', () => {
+    render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
+    const card = screen.getByTestId('local-video') as HTMLVideoElement;
+    loadVideo(card, 120);
+    setPaused(card, true);
+    fireEvent.click(screen.getByTestId('local-video-open'));
+    const lent = document.querySelector('video') as HTMLVideoElement;
+    fireEvent.click(screen.getByTestId('local-video-modal-play'));
+    expect(play).toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('local-video-modal-play'));
+    expect(lent.paused).toBe(true);
+  });
+
   it('plays, loops and re-rates from the overlay toolbar in step with the card', () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     fireEvent.click(screen.getByTestId('local-video-open'));

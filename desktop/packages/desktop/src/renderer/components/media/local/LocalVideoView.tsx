@@ -324,6 +324,20 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
             <div className={styles.overlayToolbar} onClick={(event) => event.stopPropagation()}>
               <Button
                 type='text'
+                data-testid='local-video-modal-play'
+                title={playing ? t('acp.video.pause') : t('acp.video.play')}
+                className={styles.overlayButton}
+                onClick={togglePlay}
+                icon={
+                  playing ? (
+                    <Pause theme='outline' size='14' aria-hidden='true' />
+                  ) : (
+                    <PlayOne theme='outline' size='14' aria-hidden='true' />
+                  )
+                }
+              />
+              <Button
+                type='text'
                 data-testid='local-video-zoom-in'
                 title={t('acp.video.zoom_in')}
                 className={styles.overlayButton}
