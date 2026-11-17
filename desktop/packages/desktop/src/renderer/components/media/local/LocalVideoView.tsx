@@ -119,6 +119,17 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     return attempt > 0 ? `${base}&_r=${attempt}` : base;
   }, [absolutePath, attempt]);
 
+  // The stage the video may fill in the overlay: the same visual budget the unturned video
+  // keeps, so a quarter turn changes the video's orientation but not its size. Runs before
+  // the failed-load early return so the hook count stays stable.
+  const fitted = useMemo(() => {
+    if (!intrinsic) return null;
+    const availW = window.innerWidth * 0.9;
+    const availH = window.innerHeight * 0.74;
+    const scale = Math.min(availW / intrinsic.w, availH / intrinsic.h);
+    return { w: intrinsic.w * scale, h: intrinsic.h * scale };
+  }, [intrinsic]);
+
   const zoomStep = ZOOM_STEPS[zoomIndex] ?? ZOOM_STEPS[2];
 
   const pickRate = useCallback((value: number) => {
@@ -264,7 +275,8 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
 
   // Exactly one video element exists at any moment; while the overlay is open it lives there
   // and the card keeps its place with a quiet placeholder.
-  const oddTurn = ((turn % 4) + 4) % 4 % 2 === 1;
+  const quarter = ((turn % 4) + 4) % 4;
+  const oddTurn = quarter % 2 === 1;
   const video = (variant: 'card' | 'overlay'): React.JSX.Element => (
     <video
       key={attempt}
@@ -276,12 +288,21 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
       preload='metadata'
       data-testid='local-video'
       // A quarter turn rotates only the pixels, not the layout box: a turned video still
-      // reserved its upright height and pushed the toolbar off screen. The swapped
-      // aspect-ratio makes the layout box itself lie down, so the toolbar stays in view.
-      style={variant === 'overlay' && oddTurn && intrinsic ? { aspectRatio: `${intrinsic.h} / ${intrinsic.w}` } : undefined}
-      className={
-        variant === 'overlay' ? `${styles.overlayVideo} ${oddTurn ? styles.fitTurned : ''}` : styles.cardVideo
+      // reserved its upright height and pushed the toolbar off screen. The stage below
+      // carries the turned box; this element centers in it and turns itself.
+      style={
+        variant === 'overlay' && fitted
+          ? {
+              position: 'absolute',
+              inset: 0,
+              margin: 'auto',
+              width: fitted.w,
+              height: fitted.h,
+              transform: `rotate(${quarter * 90}deg)`,
+            }
+          : undefined
       }
+      className={variant === 'overlay' ? styles.overlayVideo : styles.cardVideo}
       onLoadedMetadata={(event) => handleMetadata(event.currentTarget)}
       onTimeUpdate={(event) => {
         if (!scrubbing) setCurrent(event.currentTarget.currentTime);
@@ -297,6 +318,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     <Dropdown
       trigger='click'
       position='top'
+      triggerProps={{ popupStyle: { zIndex: 1150 } }}
       droplist={
         <Menu onClickMenuItem={(key) => pickRate(Number(key))} selectedKeys={[String(rate)]}>
           {RATES.map((value) => (
@@ -326,7 +348,20 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
         >
           <div className={styles.overlayCenter}>
             <div className={`${zoomStep.className} transition-transform duration-200`}>
-              <div className={`${styles.turnWrap} ${styles[`turn${((turn % 4) + 4) % 4}`]}`}>{video('overlay')}</div>
+              <div
+                className={styles.turnWrap}
+                style={
+                  fitted
+                    ? {
+                        width: oddTurn ? fitted.h : fitted.w,
+                        height: oddTurn ? fitted.w : fitted.h,
+                        position: 'relative',
+                      }
+                    : undefined
+                }
+              >
+                {video('overlay')}
+              </div>
             </div>
             <div className={styles.overlayToolbar} onClick={(event) => event.stopPropagation()}>
               <Button
@@ -370,6 +405,24 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
               </Button>
               <Button
                 type='text'
+                data-testid='local-video-modal-rotate-left'
+                title={t('acp.video.rotate_left')}
+                className={styles.overlayButton}
+                onClick={() => setTurn((value) => value - 1)}
+              >
+                ↺
+              </Button>
+              <Button
+                type='text'
+                data-testid='local-video-rotate'
+                title={t('acp.video.rotate_right')}
+                className={styles.overlayButton}
+                onClick={() => setTurn((value) => value + 1)}
+              >
+                ↻
+              </Button>
+              <Button
+                type='text'
                 data-testid='local-video-modal-loop'
                 aria-pressed={looping}
                 title={looping ? t('acp.video.loop_on') : t('acp.video.loop_off')}
@@ -393,24 +446,6 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
                   )
                 }
               />
-              <Button
-                type='text'
-                data-testid='local-video-modal-rotate-left'
-                title={t('acp.video.rotate_left')}
-                className={styles.overlayButton}
-                onClick={() => setTurn((value) => value - 1)}
-              >
-                ↺
-              </Button>
-              <Button
-                type='text'
-                data-testid='local-video-rotate'
-                title={t('acp.video.rotate_right')}
-                className={styles.overlayButton}
-                onClick={() => setTurn((value) => value + 1)}
-              >
-                ↻
-              </Button>
               <Button
                 type='text'
                 data-testid='local-video-save'

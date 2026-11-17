@@ -197,12 +197,40 @@ describe('LocalVideoView', () => {
     const video = screen.getByTestId('local-video') as HTMLVideoElement;
     loadVideo(video, 120);
     fireEvent.click(screen.getByTestId('local-video-open'));
-    let lent = document.querySelector('video') as HTMLVideoElement;
-    expect(lent.style.aspectRatio).toBe('');
+    const lent = document.querySelector('video') as HTMLVideoElement;
+    expect(lent.style.transform).toBe('rotate(0deg)');
     fireEvent.click(screen.getByTestId('local-video-rotate'));
-    expect(lent.style.aspectRatio).toBe('90 / 160'); // upright 160x90 now lies down
+    expect(lent.style.transform).toBe('rotate(90deg)');
+    // The stage carries the turned box: its width is the video's height, and vice versa.
+    const stage = lent.parentElement as HTMLElement;
+    expect(parseFloat(stage.style.width)).toBeCloseTo(parseFloat(lent.style.height));
+    expect(parseFloat(stage.style.height)).toBeCloseTo(parseFloat(lent.style.width));
     fireEvent.click(screen.getByTestId('local-video-rotate'));
-    expect(lent.style.aspectRatio).toBe('');
+    expect(lent.style.transform).toBe('rotate(180deg)');
+  });
+
+  it('the overlay toolbar follows the image preview order: zoom, rotation, then the rest', () => {
+    render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
+    const video = screen.getByTestId('local-video') as HTMLVideoElement;
+    loadVideo(video, 120);
+    fireEvent.click(screen.getByTestId('local-video-open'));
+    const toolbar = (screen.getByTestId('local-video-modal-play') as HTMLElement).parentElement as HTMLElement;
+    const ids = Array.from(toolbar.querySelectorAll('[data-testid]'))
+      .map((el) => el.getAttribute('data-testid'))
+      .filter((id): id is string => id !== null);
+    const order = [
+      'local-video-modal-play',
+      'local-video-zoom-in',
+      'local-video-zoom-out',
+      'local-video-zoom-reset',
+      'local-video-modal-rotate-left',
+      'local-video-rotate',
+      'local-video-modal-loop',
+      'local-video-modal-rate',
+      'local-video-modal-mute',
+      'local-video-save',
+    ];
+    expect(ids.filter((id) => order.includes(id))).toEqual(order);
   });
 
   it('the overlay toolbar carries its own play/pause that drives the lent element', () => {

@@ -21,25 +21,6 @@
   background: var(--color-fill-1);
 }
 
-/* Rotation is one of four settled positions, so it lives here as fixed classes
- * (UnoCSS cannot compose a computed class name at runtime). */
-.turnWrap {
-  display: block;
-  transition: transform 0.2s ease;
-}
-.turn0 {
-  transform: rotate(0deg);
-}
-.turn1 {
-  transform: rotate(90deg);
-}
-.turn2 {
-  transform: rotate(180deg);
-}
-.turn3 {
-  transform: rotate(270deg);
-}
-
 /* The overlay: a fixed layer portaled to the body (a fixed layer inside the
  * transcript is trapped by its ancestors' transforms). */
 .overlayRoot {
@@ -60,16 +41,18 @@
 
 /* A quarter turn swaps the video's axes: a turned wide video gets a box that
  * still clears the toolbar. */
+/* The overlay's video: absolutely centered in the stage, turning itself (the
+ * stage carries the turned layout box; see LocalVideoView.tsx). */
+.turnWrap {
+  display: block;
+}
 .overlayVideo {
   display: block;
   max-width: 90vw;
   max-height: 74vh;
   border-radius: 8px;
   background: var(--color-black);
-}
-.fitTurned {
-  max-width: 72vh;
-  max-height: 62vw;
+  transition: transform 0.2s ease;
 }
 
 /* The floating toolbar of the overlay, and its white-on-dark buttons. */
