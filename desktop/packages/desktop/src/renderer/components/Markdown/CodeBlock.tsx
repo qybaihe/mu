@@ -15,8 +15,7 @@ import { copyText } from '@/renderer/utils/ui/clipboard';
 import { codeLanguage } from './codeLanguage';
 import MermaidBlock from './MermaidBlock';
 import WavedromBlock from './WavedromBlock';
-import MuUiBlock from './MuUi/MuUiBlock';
-import { parseMuUiSpec } from './MuUi/muUiSpec';
+import MuUiBlock, { parseMuUiSpec } from './MuUiBlock';
 import { formatCode, getDiffLineStyle } from './markdownUtils';
 import { MarkdownFileSlotsContext } from './markdownComponents';
 
@@ -343,9 +342,10 @@ function CodeBlock(props: CodeBlockProps) {
   // A structured-UI fence: only a spec that fully parses is drawn; anything else (still streaming, malformed,
   // an unknown component type) falls through and stays a plain code block showing the source.
   if (language === 'mu-ui' || language === 'muui') {
-    const parsed = parseMuUiSpec(String(children));
+    const source = String(children);
+    const parsed = parseMuUiSpec(source);
     if (parsed.ok) {
-      return <MuUiBlock spec={parsed.spec} truncated={parsed.truncated} style={props.codeStyle} />;
+      return <MuUiBlock spec={parsed.spec} source={source} truncated={parsed.truncated} style={props.codeStyle} />;
     }
   }
 

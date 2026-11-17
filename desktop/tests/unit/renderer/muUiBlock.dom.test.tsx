@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,8 +31,10 @@ vi.mock('@icon-park/react', () => ({
   Up: () => <span />,
 }));
 
+import { Message } from '@arco-design/web-react';
 import CodeBlock from '@/renderer/components/Markdown/CodeBlock';
-import { MU_UI_MAX_NODES, parseMuUiSpec } from '@/renderer/components/Markdown/MuUi/muUiSpec';
+import { MU_UI_MAX_NODES, MU_UI_MAX_TEXT, parseMuUiSpec } from '@/renderer/components/Markdown/MuUiBlock';
+import { copyText } from '@/renderer/utils/ui/clipboard';
 
 const fence = (spec: unknown) => `${JSON.stringify(spec, null, 2)}\n`;
 
@@ -71,6 +73,9 @@ const nestedCols = (depth: number) => {
 describe('a mu-ui fence in a reply', () => {
   beforeEach(() => {
     highlighted.length = 0;
+    vi.mocked(copyText).mockClear();
+    vi.mocked(Message.success).mockClear();
+    vi.mocked(Message.error).mockClear();
   });
 
   it('renders a valid spec as components instead of code', () => {
@@ -119,6 +124,16 @@ describe('a mu-ui fence in a reply', () => {
     expect(highlighted).toHaveLength(1);
     expect(highlighted[0].code).toContain('"新增客户"');
   });
+
+  it('copies the raw spec JSON from the copy button on the card', async () => {
+    const source = fence(validSpec);
+    renderFence(source);
+    fireEvent.click(screen.getByTitle('common.copy'));
+    await waitFor(() => expect(copyText).toHaveBeenCalledTimes(1));
+    // The button copies the fence's source as written, not a re-serialised spec.
+    expect(copyText).toHaveBeenCalledWith(source);
+    expect(Message.success).toHaveBeenCalledWith('common.copySuccess');
+  });
 });
 
 describe('parseMuUiSpec guards', () => {
@@ -142,5 +157,27 @@ describe('parseMuUiSpec guards', () => {
     };
     const parsed = parseMuUiSpec(JSON.stringify(spec));
     expect(parsed.ok && parsed.truncated).toBe(true);
+  });
+
+  it('cuts a single over-long text value and flags the spec truncated', () => {
+    const parsed = parseMuUiSpec(
+      JSON.stringify({
+        title: 'x'.repeat(MU_UI_MAX_TEXT + 1),
+        items: [{ type: 'text', content: 'y'.repeat(MU_UI_MAX_TEXT + 500) }],
+      })
+    );
+    expect(parsed.ok && parsed.truncated).toBe(true);
+    const node = parsed.ok ? parsed.spec.items[0] : undefined;
+    if (!node || node.type !== 'text') throw new Error('expected a text node');
+    expect(node.content).toHaveLength(MU_UI_MAX_TEXT);
+    expect(parsed.ok ? parsed.spec.title : undefined).toHaveLength(MU_UI_MAX_TEXT);
+  });
+
+  it('leaves a value at the text limit whole and unflagged', () => {
+    const parsed = parseMuUiSpec(JSON.stringify({ items: [{ type: 'text', content: 'x'.repeat(MU_UI_MAX_TEXT) }] }));
+    expect(parsed.ok && !parsed.truncated).toBe(true);
+    const node = parsed.ok ? parsed.spec.items[0] : undefined;
+    if (!node || node.type !== 'text') throw new Error('expected a text node');
+    expect(node.content).toHaveLength(MU_UI_MAX_TEXT);
   });
 });

@@ -1,24 +1,284 @@
 /**
- * Renders a validated `mu-ui` spec (see `./muUiSpec`) as an inline structured card — stats, tables, callouts,
- * steps… — inside a chat reply. Mounted from `CodeBlock` when a fence's language is `mu-ui`/`muui`.
+ * One file for both halves of a `mu-ui` fence: the parser that turns the fence's JSON into a bounded, typed
+ * component tree, and the component that renders that tree as an inline structured card (stats, tables, callouts,
+ * steps…) inside a chat reply. `CodeBlock` mounts it when a fence's language is `mu-ui`/`muui`.
  *
- * Styling is inline styles over the app's CSS variables: markdown renders inside a Shadow DOM that does not see the
- * document's style sheets, while custom properties (and `color-mix` on them) inherit through the shadow boundary —
- * so the block follows the light/dark theme for free, like the rest of the Markdown blocks.
+ * The JSON is model output, so the parser is a trust boundary: every field is checked, coerced, or bounded there,
+ * and the renderer below works on the validated types alone. Anything structurally wrong — JSON that does not
+ * parse, an unknown `type`, a non-object node — makes the whole spec invalid, and the block falls back to a plain
+ * code block.
+ *
+ * The card styles itself with inline styles over the app's CSS variables: markdown renders inside a Shadow DOM that
+ * does not see the document's style sheets, while custom properties (and `color-mix` on them) inherit through the
+ * shadow boundary — so the card follows the light/dark theme for free, like the rest of the Markdown blocks. The
+ * copy button is the one piece styled from outside: its hover behaviour lives in `ShadowView`'s base style, the
+ * shared sheet every shadow tree adopts (see `markdown-mu-ui-copy`).
  */
+import { Message } from '@arco-design/web-react';
+import { Copy } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type {
-  MuUiAccent,
-  MuUiBadgeTone,
-  MuUiCell,
-  MuUiListItem,
-  MuUiNode,
-  MuUiSpec,
-  MuUiTextSize,
-} from './muUiSpec';
+import { copyText } from '@/renderer/utils/ui/clipboard';
 
-type MuUiBlockProps = { spec: MuUiSpec; truncated: boolean; style?: React.CSSProperties };
+export const MU_UI_MAX_NODES = 200;
+export const MU_UI_MAX_DEPTH = 8;
+/** A single text value longer than this is cut where it stands and the spec flagged truncated. */
+export const MU_UI_MAX_TEXT = 2000;
+
+export type MuUiAccent = 'info' | 'success' | 'warning' | 'error';
+export type MuUiBadgeTone = 'accent' | 'success' | 'warn' | 'danger';
+export type MuUiTextSize = 'h1' | 'h2' | 'h3' | 'body' | 'muted' | 'caption';
+
+/** A table cell or list entry may inline one node (e.g. a badge); it counts against the node budget like any other. */
+export type MuUiCell = string | MuUiNode;
+export type MuUiListItem = string | { title: string; desc?: string } | MuUiNode;
+export type MuUiStep = string | { title: string; desc?: string };
+export type MuUiTimelineItem = { title: string; desc?: string; time?: string };
+
+export type MuUiNode =
+  | { type: 'text'; content: string; size?: MuUiTextSize; center?: boolean }
+  | { type: 'row' | 'col'; items: MuUiNode[]; gap?: number; wrap?: boolean }
+  | { type: 'card'; title?: string; items: MuUiNode[]; accent?: MuUiAccent }
+  | { type: 'divider' }
+  | { type: 'spacer' }
+  | { type: 'stat'; label: string; value: string; delta?: string }
+  | { type: 'badge'; label: string; tone?: MuUiBadgeTone; icon?: string }
+  | { type: 'progress'; label?: string; value: number; valueLabel?: string }
+  | { type: 'list'; items: MuUiListItem[] }
+  | { type: 'table'; columns: string[]; rows: MuUiCell[][] }
+  | { type: 'keyvalue'; pairs: { key: string; value: string }[] }
+  | { type: 'callout'; tone: MuUiAccent; title?: string; content: string }
+  | { type: 'steps'; steps: MuUiStep[]; current?: number }
+  | { type: 'timeline'; items: MuUiTimelineItem[] };
+
+export type MuUiSpec = { title?: string; gap?: number; items: MuUiNode[] };
+
+export type MuUiParseResult = { ok: true; spec: MuUiSpec; truncated: boolean } | { ok: false };
+
+/** Raised while walking a tree whose shape the renderer cannot draw; the whole block then falls back to raw code. */
+class InvalidSpec extends Error {}
+
+type Budget = { count: number; truncated: boolean };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * One huge string from the model must not reach the renderer whole — a single multi-megabyte `text` node would
+ * stall the card — so it is cut at the limit and the spec flagged, reusing the truncation notice the node budget
+ * already shows.
+ */
+const clampText = (text: string, budget: Budget): string => {
+  if (text.length <= MU_UI_MAX_TEXT) return text;
+  budget.truncated = true;
+  return text.slice(0, MU_UI_MAX_TEXT);
+};
+
+/** Display text: strings (an over-long one cut by `clampText`), finite numbers as their string form, else empty. */
+const asString = (value: unknown, budget: Budget): string => {
+  if (typeof value === 'string') return clampText(value, budget);
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return '';
+};
+
+const asOptString = (value: unknown, budget: Budget): string | undefined =>
+  typeof value === 'string' && value.length > 0 ? clampText(value, budget) : undefined;
+
+/** A spacing value the renderer is willing to apply; keeps a model's `gap: 5000` from blowing up the layout. */
+const asGap = (value: unknown): number | undefined =>
+  typeof value === 'number' && Number.isFinite(value) ? Math.min(Math.max(Math.round(value), 0), 48) : undefined;
+
+const isOneOf = <T extends string>(value: unknown, allowed: readonly T[]): T | undefined =>
+  typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : undefined;
+
+const ACCENTS: readonly MuUiAccent[] = ['info', 'success', 'warning', 'error'];
+const BADGE_TONES: readonly MuUiBadgeTone[] = ['accent', 'success', 'warn', 'danger'];
+const TEXT_SIZES: readonly MuUiTextSize[] = ['h1', 'h2', 'h3', 'body', 'muted', 'caption'];
+
+/** A node that would live deeper than MU_UI_MAX_DEPTH, or past MU_UI_MAX_NODES, is dropped and the flag set. */
+const walkNode = (raw: unknown, depth: number, budget: Budget): MuUiNode | undefined => {
+  if (budget.count >= MU_UI_MAX_NODES || depth > MU_UI_MAX_DEPTH) {
+    budget.truncated = true;
+    return undefined;
+  }
+  if (!isRecord(raw)) throw new InvalidSpec();
+  const type = raw.type;
+  if (typeof type !== 'string') throw new InvalidSpec();
+  budget.count += 1;
+  switch (type) {
+    case 'text': {
+      return {
+        type,
+        content: asString(raw.content, budget),
+        size: isOneOf(raw.size, TEXT_SIZES),
+        center: raw.center === true,
+      };
+    }
+    case 'row':
+    case 'col': {
+      return { type, items: walkItems(raw.items, depth + 1, budget), gap: asGap(raw.gap), wrap: raw.wrap === true };
+    }
+    case 'card': {
+      return {
+        type,
+        title: asOptString(raw.title, budget),
+        items: walkItems(raw.items, depth + 1, budget),
+        accent: isOneOf(raw.accent, ACCENTS) ?? 'info',
+      };
+    }
+    case 'divider':
+      return { type };
+    case 'spacer':
+      return { type };
+    case 'stat': {
+      return {
+        type,
+        label: asString(raw.label, budget),
+        value: asString(raw.value, budget),
+        delta: asOptString(raw.delta, budget),
+      };
+    }
+    case 'badge': {
+      return {
+        type,
+        label: asString(raw.label, budget),
+        tone: isOneOf(raw.tone, BADGE_TONES) ?? 'accent',
+        icon: asOptString(raw.icon, budget),
+      };
+    }
+    case 'progress': {
+      const value = typeof raw.value === 'number' && Number.isFinite(raw.value) ? raw.value : 0;
+      return {
+        type,
+        label: asOptString(raw.label, budget),
+        value: Math.min(Math.max(value, 0), 100),
+        valueLabel: asOptString(raw.valueLabel, budget),
+      };
+    }
+    case 'list': {
+      return { type, items: walkListItems(raw.items, depth, budget) };
+    }
+    case 'table': {
+      return { type, columns: walkColumns(raw.columns, budget), rows: walkRows(raw.rows, depth, budget) };
+    }
+    case 'keyvalue': {
+      const rawPairs = Array.isArray(raw.pairs) ? raw.pairs : [];
+      return {
+        type,
+        pairs: rawPairs.map((pair) =>
+          isRecord(pair)
+            ? { key: asString(pair.key, budget), value: asString(pair.value, budget) }
+            : { key: '', value: '' }
+        ),
+      };
+    }
+    case 'callout': {
+      return {
+        type,
+        tone: isOneOf(raw.tone, ACCENTS) ?? 'info',
+        title: asOptString(raw.title, budget),
+        content: asString(raw.content, budget),
+      };
+    }
+    case 'steps': {
+      const rawSteps = Array.isArray(raw.steps) ? raw.steps : [];
+      const steps = rawSteps.map(
+        (step): MuUiStep =>
+          isRecord(step)
+            ? { title: asString(step.title, budget), desc: asOptString(step.desc, budget) }
+            : asString(step, budget)
+      );
+      const current = typeof raw.current === 'number' && Number.isFinite(raw.current) ? raw.current : undefined;
+      return { type, steps, current };
+    }
+    case 'timeline': {
+      const rawItems = Array.isArray(raw.items) ? raw.items : [];
+      const items = rawItems.map(
+        (item): MuUiTimelineItem =>
+          isRecord(item)
+            ? {
+                title: asString(item.title, budget),
+                desc: asOptString(item.desc, budget),
+                time: asOptString(item.time, budget),
+              }
+            : { title: asString(item, budget) }
+      );
+      return { type, items };
+    }
+    default:
+      throw new InvalidSpec();
+  }
+};
+
+const walkItems = (rawItems: unknown, depth: number, budget: Budget): MuUiNode[] => {
+  const entries = Array.isArray(rawItems) ? rawItems : [];
+  const items: MuUiNode[] = [];
+  for (const entry of entries) {
+    const node = walkNode(entry, depth, budget);
+    if (node !== undefined) items.push(node);
+  }
+  return items;
+};
+
+const walkListItems = (rawItems: unknown, depth: number, budget: Budget): MuUiListItem[] => {
+  const entries = Array.isArray(rawItems) ? rawItems : [];
+  const items: MuUiListItem[] = [];
+  for (const entry of entries) {
+    if (isRecord(entry) && typeof entry.type === 'string') {
+      const node = walkNode(entry, depth + 1, budget);
+      if (node !== undefined) items.push(node);
+    } else if (isRecord(entry)) {
+      items.push({ title: asString(entry.title, budget), desc: asOptString(entry.desc, budget) });
+    } else {
+      items.push(asString(entry, budget));
+    }
+  }
+  return items;
+};
+
+const walkColumns = (rawColumns: unknown, budget: Budget): string[] =>
+  Array.isArray(rawColumns) ? rawColumns.map((column) => asString(column, budget)) : [];
+
+const walkRows = (rawRows: unknown, depth: number, budget: Budget): MuUiCell[][] => {
+  const entries = Array.isArray(rawRows) ? rawRows : [];
+  return entries.map((row) => {
+    const cells = Array.isArray(row) ? row : [row];
+    return cells.map((cell): MuUiCell => {
+      if (isRecord(cell)) {
+        const node = walkNode(cell, depth + 1, budget);
+        if (node === undefined) return '';
+        return node;
+      }
+      return asString(cell, budget);
+    });
+  });
+};
+
+/**
+ * Parses one fence's JSON. Tolerant where the renderer is tolerant (missing display text renders empty); a spec
+ * with no renderable nodes at all is rejected so the block keeps showing as source code.
+ */
+export const parseMuUiSpec = (source: string): MuUiParseResult => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(source);
+  } catch {
+    return { ok: false };
+  }
+  if (!isRecord(parsed) || !Array.isArray(parsed.items) || parsed.items.length === 0) return { ok: false };
+  const budget: Budget = { count: 0, truncated: false };
+  try {
+    const items = walkItems(parsed.items, 1, budget);
+    if (items.length === 0) return { ok: false };
+    return {
+      ok: true,
+      spec: { title: asOptString(parsed.title, budget), gap: asGap(parsed.gap), items },
+      truncated: budget.truncated,
+    };
+  } catch {
+    return { ok: false };
+  }
+};
 
 const ACCENT_COLOR: Record<MuUiAccent, string> = {
   info: 'var(--info)',
@@ -413,12 +673,33 @@ function NodeView({ node }: { node: MuUiNode }) {
   }
 }
 
+type MuUiBlockProps = { spec: MuUiSpec; source: string; truncated: boolean; style?: React.CSSProperties };
+
 /**
  * Memoised on its validated spec: while a reply streams, the fence's JSON is re-parsed on every chunk, and a block
  * that parses keeps its object identity until the source actually changes enough to parse differently.
  */
-const MuUiBlock = React.memo(function MuUiBlock({ spec, truncated, style }: MuUiBlockProps) {
+const MuUiBlock = React.memo(function MuUiBlock({ spec, source, truncated, style }: MuUiBlockProps) {
   const { t } = useTranslation();
+
+  const handleCopy = () => {
+    void copyText(source)
+      .then(() => {
+        try {
+          Message.success(t('common.copySuccess'));
+        } catch {
+          /* Shadow DOM portal may fail silently */
+        }
+      })
+      .catch(() => {
+        try {
+          Message.error(t('common.copyFailed'));
+        } catch {
+          /* ignore */
+        }
+      });
+  };
+
   return (
     <div
       // The spec is JSON and its content is data; keep it left-to-right under an RTL document.
@@ -426,7 +707,9 @@ const MuUiBlock = React.memo(function MuUiBlock({ spec, truncated, style }: MuUi
       style={{ width: '100%', minWidth: 0, ...style }}
     >
       <div
+        className='markdown-mu-ui-card'
         style={{
+          position: 'relative',
           border: CELL_BORDER,
           borderRadius: '10px',
           padding: '12px 14px',
@@ -445,6 +728,8 @@ const MuUiBlock = React.memo(function MuUiBlock({ spec, truncated, style }: MuUi
               paddingBottom: '8px',
               borderBottom: '1px solid var(--border-light)',
               marginBottom: '10px',
+              // Room for the copy button pinned to the card's top-right corner.
+              paddingRight: '34px',
             }}
           >
             <MdText text={spec.title} />
@@ -456,6 +741,11 @@ const MuUiBlock = React.memo(function MuUiBlock({ spec, truncated, style }: MuUi
             {t('messages.muUiTruncated')}
           </div>
         )}
+        {/* The card's copy button, mirroring the code block's: the fence's raw JSON, feedback via toast. Its
+            hover behaviour lives in ShadowView's base style — the one sheet the shadow tree sees. */}
+        <span data-testid='mu-ui-copy' className='markdown-mu-ui-copy' title={t('common.copy')} onClick={handleCopy}>
+          <Copy theme='outline' size='14' style={{ display: 'block' }} fill='currentColor' />
+        </span>
       </div>
     </div>
   );

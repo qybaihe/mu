@@ -146,6 +146,37 @@ const initStyleCss = (
     background: var(--bg-3);
     color: var(--text-primary);
   }
+  /* The mu-ui card's copy button (copies the fence's raw JSON): pinned to the card's top-right corner, out of the
+     flow. Shown while the card is under the pointer — always on touch, where there is no hover — mirroring the code
+     block's header buttons. Lives here, not in utility classes, because this sheet is the only one the shadow tree
+     sees. */
+  .markdown-shadow-body .markdown-mu-ui-copy {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .markdown-shadow-body .markdown-mu-ui-card:hover .markdown-mu-ui-copy {
+    opacity: 1;
+  }
+  .markdown-shadow-body .markdown-mu-ui-copy:hover {
+    background: var(--bg-3);
+    color: var(--text-primary);
+  }
+  @media (hover: none) {
+    .markdown-shadow-body .markdown-mu-ui-copy {
+      opacity: 1;
+    }
+  }
   /* A file a reply names (components/media/FileRefs): the inline code stays, drawn as a link to the file. */
   .markdown-shadow-body .markdown-file-ref-open,
   .markdown-shadow-body .markdown-file-ref-reveal {

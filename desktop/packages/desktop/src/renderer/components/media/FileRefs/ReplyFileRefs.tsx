@@ -67,8 +67,7 @@ function useFailureNotice(): (result: KyrnResult<unknown>, name: string) => void
  * a relative one against the reply's workspace. A `file:` src stays untouched, as LocalImageView passes it on.
  */
 function resolveEmbeddedImageSrc(src: string, cwd: string | undefined): string {
-  if (src.startsWith('/') || src.startsWith('\\') || src.startsWith('file:') || /^[A-Za-z]:/.test(src))
-    return src;
+  if (src.startsWith('/') || src.startsWith('\\') || src.startsWith('file:') || /^[A-Za-z]:/.test(src)) return src;
   return joinPath(cwd ?? '', src);
 }
 
