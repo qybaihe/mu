@@ -137,5 +137,5 @@
     "title": "Sizin için dosyalar ({{count}})",
     "open": "{{name}} dosyasını aç"
   },
-  "dshUiTruncated": "Boyut sınırı aşıldığından yalnızca bir kısmı gösteriliyor"
+  "muUiTruncated": "Boyut sınırı aşıldığından yalnızca bir kısmı gösteriliyor"
 }

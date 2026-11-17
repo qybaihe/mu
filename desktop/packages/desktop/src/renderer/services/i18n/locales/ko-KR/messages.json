@@ -137,5 +137,5 @@
     "title": "전달된 파일 ({{count}})",
     "open": "{{name}} 열기"
   },
-  "dshUiTruncated": "크기 제한을 초과해 일부만 표시됩니다"
+  "muUiTruncated": "크기 제한을 초과해 일부만 표시됩니다"
 }

@@ -32,7 +32,7 @@ vi.mock('@icon-park/react', () => ({
 }));
 
 import CodeBlock from '@/renderer/components/Markdown/CodeBlock';
-import { DSH_UI_MAX_NODES, parseDshUiSpec } from '@/renderer/components/Markdown/DshUi/dshUiSpec';
+import { MU_UI_MAX_NODES, parseMuUiSpec } from '@/renderer/components/Markdown/MuUi/muUiSpec';
 
 const fence = (spec: unknown) => `${JSON.stringify(spec, null, 2)}\n`;
 
@@ -58,7 +58,7 @@ const validSpec = {
   ],
 };
 
-const renderFence = (source: string) => render(<CodeBlock className='language-dsh-ui'>{source}</CodeBlock>);
+const renderFence = (source: string) => render(<CodeBlock className='language-mu-ui'>{source}</CodeBlock>);
 
 const stat = (i: number) => ({ type: 'stat', label: `s${i}`, value: String(i) });
 
@@ -68,7 +68,7 @@ const nestedCols = (depth: number) => {
   return { items: [node] };
 };
 
-describe('a dsh-ui fence in a reply', () => {
+describe('a mu-ui fence in a reply', () => {
   beforeEach(() => {
     highlighted.length = 0;
   });
@@ -101,31 +101,38 @@ describe('a dsh-ui fence in a reply', () => {
   });
 
   it('truncates a spec over the node budget and says so', () => {
-    renderFence(fence({ items: Array.from({ length: DSH_UI_MAX_NODES + 50 }, (_, i) => stat(i)) }));
+    renderFence(fence({ items: Array.from({ length: MU_UI_MAX_NODES + 50 }, (_, i) => stat(i)) }));
     expect(screen.getByText('s199')).toBeTruthy();
-    expect(screen.queryByText(`s${DSH_UI_MAX_NODES}`)).toBeNull();
-    expect(screen.getByText('messages.dshUiTruncated')).toBeTruthy();
+    expect(screen.queryByText(`s${MU_UI_MAX_NODES}`)).toBeNull();
+    expect(screen.getByText('messages.muUiTruncated')).toBeTruthy();
     expect(highlighted).toHaveLength(0);
   });
 
-  it('also accepts the dshui alias', () => {
-    render(<CodeBlock className='language-dshui'>{fence(validSpec)}</CodeBlock>);
+  it('also accepts the muui alias', () => {
+    render(<CodeBlock className='language-muui'>{fence(validSpec)}</CodeBlock>);
     expect(screen.getByText('新增客户')).toBeTruthy();
+  });
+
+  it('no longer recognizes a dsh-ui fence and leaves it a plain code block', () => {
+    render(<CodeBlock className='language-dsh-ui'>{fence(validSpec)}</CodeBlock>);
+    expect(screen.queryByText('周报')).toBeNull();
+    expect(highlighted).toHaveLength(1);
+    expect(highlighted[0].code).toContain('"新增客户"');
   });
 });
 
-describe('parseDshUiSpec guards', () => {
+describe('parseMuUiSpec guards', () => {
   it('accepts nesting up to the depth limit and marks deeper trees truncated', () => {
-    const atLimit = parseDshUiSpec(JSON.stringify(nestedCols(8)));
+    const atLimit = parseMuUiSpec(JSON.stringify(nestedCols(8)));
     expect(atLimit.ok && !atLimit.truncated).toBe(true);
 
-    const overLimit = parseDshUiSpec(JSON.stringify(nestedCols(9)));
+    const overLimit = parseMuUiSpec(JSON.stringify(nestedCols(9)));
     expect(overLimit.ok && overLimit.truncated).toBe(true);
   });
 
   it('rejects a non-object or item-less payload without throwing', () => {
     for (const source of ['[1,2]', '"text"', '{}', '{ "items": "x" }', 'null']) {
-      expect(parseDshUiSpec(source).ok).toBe(false);
+      expect(parseMuUiSpec(source).ok).toBe(false);
     }
   });
 
@@ -133,7 +140,7 @@ describe('parseDshUiSpec guards', () => {
     const spec = {
       items: [{ type: 'list', items: Array.from({ length: 205 }, (_, i) => ({ type: 'badge', label: `b${i}` })) }],
     };
-    const parsed = parseDshUiSpec(JSON.stringify(spec));
+    const parsed = parseMuUiSpec(JSON.stringify(spec));
     expect(parsed.ok && parsed.truncated).toBe(true);
   });
 });

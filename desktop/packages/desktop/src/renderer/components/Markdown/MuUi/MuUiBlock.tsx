@@ -1,6 +1,6 @@
 /**
- * Renders a validated `dsh-ui` spec (see `./dshUiSpec`) as an inline structured card — stats, tables, callouts,
- * steps… — inside a chat reply. Mounted from `CodeBlock` when a fence's language is `dsh-ui`/`dshui`.
+ * Renders a validated `mu-ui` spec (see `./muUiSpec`) as an inline structured card — stats, tables, callouts,
+ * steps… — inside a chat reply. Mounted from `CodeBlock` when a fence's language is `mu-ui`/`muui`.
  *
  * Styling is inline styles over the app's CSS variables: markdown renders inside a Shadow DOM that does not see the
  * document's style sheets, while custom properties (and `color-mix` on them) inherit through the shadow boundary —
@@ -9,32 +9,32 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
-  DshUiAccent,
-  DshUiBadgeTone,
-  DshUiCell,
-  DshUiListItem,
-  DshUiNode,
-  DshUiSpec,
-  DshUiTextSize,
-} from './dshUiSpec';
+  MuUiAccent,
+  MuUiBadgeTone,
+  MuUiCell,
+  MuUiListItem,
+  MuUiNode,
+  MuUiSpec,
+  MuUiTextSize,
+} from './muUiSpec';
 
-type DshUiBlockProps = { spec: DshUiSpec; truncated: boolean; style?: React.CSSProperties };
+type MuUiBlockProps = { spec: MuUiSpec; truncated: boolean; style?: React.CSSProperties };
 
-const ACCENT_COLOR: Record<DshUiAccent, string> = {
+const ACCENT_COLOR: Record<MuUiAccent, string> = {
   info: 'var(--info)',
   success: 'var(--success)',
   warning: 'var(--warning)',
   error: 'var(--danger)',
 };
 
-const BADGE_COLOR: Record<DshUiBadgeTone, string> = {
+const BADGE_COLOR: Record<MuUiBadgeTone, string> = {
   accent: 'var(--primary)',
   success: 'var(--success)',
   warn: 'var(--warning)',
   danger: 'var(--danger)',
 };
 
-const TEXT_SIZE_STYLE: Record<DshUiTextSize, React.CSSProperties> = {
+const TEXT_SIZE_STYLE: Record<MuUiTextSize, React.CSSProperties> = {
   h1: { fontSize: '20px', fontWeight: 700 },
   h2: { fontSize: '17px', fontWeight: 700 },
   h3: { fontSize: '15px', fontWeight: 600 },
@@ -43,13 +43,13 @@ const TEXT_SIZE_STYLE: Record<DshUiTextSize, React.CSSProperties> = {
   caption: { fontSize: '12px', color: 'var(--text-secondary)' },
 };
 
-/** A translucent wash of a theme color, in place of the hardcoded tints of the reference DSH renderer. */
+/** A translucent wash of a theme color, in place of the hardcoded tints of the reference renderer. */
 const tint = (color: string, percent: number): string => `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 
 const CELL_BORDER = '1px solid var(--border-base)';
 const CELL_PADDING: React.CSSProperties = { padding: '6px 10px' };
 
-/** DSH text fields carry one piece of markup: `**bold**`; newlines become line breaks. */
+/** mu-ui text fields carry one piece of markup: `**bold**`; newlines become line breaks. */
 function MdText({ text }: { text: string }) {
   const lines = text.split('\n');
   return (
@@ -64,7 +64,7 @@ function MdText({ text }: { text: string }) {
   );
 }
 
-function Stack({ items, gap }: { items: DshUiNode[]; gap: number }) {
+function Stack({ items, gap }: { items: MuUiNode[]; gap: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap }}>
       {items.map((item, index) => (
@@ -74,11 +74,11 @@ function Stack({ items, gap }: { items: DshUiNode[]; gap: number }) {
   );
 }
 
-function CellView({ cell }: { cell: DshUiCell }) {
+function CellView({ cell }: { cell: MuUiCell }) {
   return typeof cell === 'string' ? <MdText text={cell} /> : <NodeView node={cell} />;
 }
 
-function ListItemView({ item }: { item: DshUiListItem }) {
+function ListItemView({ item }: { item: MuUiListItem }) {
   if (typeof item === 'string') return <MdText text={item} />;
   if ('type' in item) return <NodeView node={item} />;
   return (
@@ -94,10 +94,10 @@ function ListItemView({ item }: { item: DshUiListItem }) {
   );
 }
 
-/** A column whose every cell is a plain numeric-looking string is right-aligned, as in the DSH renderer. */
+/** A column whose every cell is a plain numeric-looking string is right-aligned, as in the reference renderer. */
 const NUMERIC_CELL = /^[+-]?[\d,.]+%?$/;
 
-const numericColumn = (rows: DshUiCell[][], column: number): boolean => {
+const numericColumn = (rows: MuUiCell[][], column: number): boolean => {
   if (rows.length === 0) return false;
   return rows.every((row) => {
     const cell = row[column];
@@ -105,7 +105,7 @@ const numericColumn = (rows: DshUiCell[][], column: number): boolean => {
   });
 };
 
-function NodeView({ node }: { node: DshUiNode }) {
+function NodeView({ node }: { node: MuUiNode }) {
   switch (node.type) {
     case 'text': {
       const sizeStyle = TEXT_SIZE_STYLE[node.size ?? 'body'];
@@ -417,7 +417,7 @@ function NodeView({ node }: { node: DshUiNode }) {
  * Memoised on its validated spec: while a reply streams, the fence's JSON is re-parsed on every chunk, and a block
  * that parses keeps its object identity until the source actually changes enough to parse differently.
  */
-const DshUiBlock = React.memo(function DshUiBlock({ spec, truncated, style }: DshUiBlockProps) {
+const MuUiBlock = React.memo(function MuUiBlock({ spec, truncated, style }: MuUiBlockProps) {
   const { t } = useTranslation();
   return (
     <div
@@ -453,7 +453,7 @@ const DshUiBlock = React.memo(function DshUiBlock({ spec, truncated, style }: Ds
         <Stack items={spec.items} gap={spec.gap ?? 8} />
         {truncated && (
           <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            {t('messages.dshUiTruncated')}
+            {t('messages.muUiTruncated')}
           </div>
         )}
       </div>
@@ -461,4 +461,4 @@ const DshUiBlock = React.memo(function DshUiBlock({ spec, truncated, style }: Ds
   );
 });
 
-export default DshUiBlock;
+export default MuUiBlock;

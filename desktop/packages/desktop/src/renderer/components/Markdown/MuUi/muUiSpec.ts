@@ -1,43 +1,43 @@
 /**
- * Parses the JSON of a `dsh-ui` fenced block into a bounded, typed component tree.
+ * Parses the JSON of a `mu-ui` fenced block into a bounded, typed component tree.
  *
  * The source is model output, so this module is a trust boundary: every field is checked or coerced here, and the
  * renderer downstream works on the validated types alone. Anything structurally wrong — JSON that does not parse, an
  * unknown `type`, a non-object node — makes the whole spec invalid, and the block falls back to a plain code block.
  */
 
-export const DSH_UI_MAX_NODES = 200;
-export const DSH_UI_MAX_DEPTH = 8;
+export const MU_UI_MAX_NODES = 200;
+export const MU_UI_MAX_DEPTH = 8;
 
-export type DshUiAccent = 'info' | 'success' | 'warning' | 'error';
-export type DshUiBadgeTone = 'accent' | 'success' | 'warn' | 'danger';
-export type DshUiTextSize = 'h1' | 'h2' | 'h3' | 'body' | 'muted' | 'caption';
+export type MuUiAccent = 'info' | 'success' | 'warning' | 'error';
+export type MuUiBadgeTone = 'accent' | 'success' | 'warn' | 'danger';
+export type MuUiTextSize = 'h1' | 'h2' | 'h3' | 'body' | 'muted' | 'caption';
 
 /** A table cell or list entry may inline one node (e.g. a badge); it counts against the node budget like any other. */
-export type DshUiCell = string | DshUiNode;
-export type DshUiListItem = string | { title: string; desc?: string } | DshUiNode;
-export type DshUiStep = string | { title: string; desc?: string };
-export type DshUiTimelineItem = { title: string; desc?: string; time?: string };
+export type MuUiCell = string | MuUiNode;
+export type MuUiListItem = string | { title: string; desc?: string } | MuUiNode;
+export type MuUiStep = string | { title: string; desc?: string };
+export type MuUiTimelineItem = { title: string; desc?: string; time?: string };
 
-export type DshUiNode =
-  | { type: 'text'; content: string; size?: DshUiTextSize; center?: boolean }
-  | { type: 'row' | 'col'; items: DshUiNode[]; gap?: number; wrap?: boolean }
-  | { type: 'card'; title?: string; items: DshUiNode[]; accent?: DshUiAccent }
+export type MuUiNode =
+  | { type: 'text'; content: string; size?: MuUiTextSize; center?: boolean }
+  | { type: 'row' | 'col'; items: MuUiNode[]; gap?: number; wrap?: boolean }
+  | { type: 'card'; title?: string; items: MuUiNode[]; accent?: MuUiAccent }
   | { type: 'divider' }
   | { type: 'spacer' }
   | { type: 'stat'; label: string; value: string; delta?: string }
-  | { type: 'badge'; label: string; tone?: DshUiBadgeTone; icon?: string }
+  | { type: 'badge'; label: string; tone?: MuUiBadgeTone; icon?: string }
   | { type: 'progress'; label?: string; value: number; valueLabel?: string }
-  | { type: 'list'; items: DshUiListItem[] }
-  | { type: 'table'; columns: string[]; rows: DshUiCell[][] }
+  | { type: 'list'; items: MuUiListItem[] }
+  | { type: 'table'; columns: string[]; rows: MuUiCell[][] }
   | { type: 'keyvalue'; pairs: { key: string; value: string }[] }
-  | { type: 'callout'; tone: DshUiAccent; title?: string; content: string }
-  | { type: 'steps'; steps: DshUiStep[]; current?: number }
-  | { type: 'timeline'; items: DshUiTimelineItem[] };
+  | { type: 'callout'; tone: MuUiAccent; title?: string; content: string }
+  | { type: 'steps'; steps: MuUiStep[]; current?: number }
+  | { type: 'timeline'; items: MuUiTimelineItem[] };
 
-export type DshUiSpec = { title?: string; gap?: number; items: DshUiNode[] };
+export type MuUiSpec = { title?: string; gap?: number; items: MuUiNode[] };
 
-export type DshUiParseResult = { ok: true; spec: DshUiSpec; truncated: boolean } | { ok: false };
+export type MuUiParseResult = { ok: true; spec: MuUiSpec; truncated: boolean } | { ok: false };
 
 /** Raised while walking a tree whose shape the renderer cannot draw; the whole block then falls back to raw code. */
 class InvalidSpec extends Error {}
@@ -64,13 +64,13 @@ const asGap = (value: unknown): number | undefined =>
 const isOneOf = <T extends string>(value: unknown, allowed: readonly T[]): T | undefined =>
   typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : undefined;
 
-const ACCENTS: readonly DshUiAccent[] = ['info', 'success', 'warning', 'error'];
-const BADGE_TONES: readonly DshUiBadgeTone[] = ['accent', 'success', 'warn', 'danger'];
-const TEXT_SIZES: readonly DshUiTextSize[] = ['h1', 'h2', 'h3', 'body', 'muted', 'caption'];
+const ACCENTS: readonly MuUiAccent[] = ['info', 'success', 'warning', 'error'];
+const BADGE_TONES: readonly MuUiBadgeTone[] = ['accent', 'success', 'warn', 'danger'];
+const TEXT_SIZES: readonly MuUiTextSize[] = ['h1', 'h2', 'h3', 'body', 'muted', 'caption'];
 
-/** A node that would live deeper than DSH_UI_MAX_DEPTH, or past DSH_UI_MAX_NODES, is dropped and the flag set. */
-const walkNode = (raw: unknown, depth: number, budget: Budget): DshUiNode | undefined => {
-  if (budget.count >= DSH_UI_MAX_NODES || depth > DSH_UI_MAX_DEPTH) {
+/** A node that would live deeper than MU_UI_MAX_DEPTH, or past MU_UI_MAX_NODES, is dropped and the flag set. */
+const walkNode = (raw: unknown, depth: number, budget: Budget): MuUiNode | undefined => {
+  if (budget.count >= MU_UI_MAX_NODES || depth > MU_UI_MAX_DEPTH) {
     budget.truncated = true;
     return undefined;
   }
@@ -144,7 +144,7 @@ const walkNode = (raw: unknown, depth: number, budget: Budget): DshUiNode | unde
     case 'steps': {
       const rawSteps = Array.isArray(raw.steps) ? raw.steps : [];
       const steps = rawSteps.map(
-        (step): DshUiStep =>
+        (step): MuUiStep =>
           isRecord(step) ? { title: asString(step.title), desc: asOptString(step.desc) } : asString(step)
       );
       const current = typeof raw.current === 'number' && Number.isFinite(raw.current) ? raw.current : undefined;
@@ -153,7 +153,7 @@ const walkNode = (raw: unknown, depth: number, budget: Budget): DshUiNode | unde
     case 'timeline': {
       const rawItems = Array.isArray(raw.items) ? raw.items : [];
       const items = rawItems.map(
-        (item): DshUiTimelineItem =>
+        (item): MuUiTimelineItem =>
           isRecord(item)
             ? { title: asString(item.title), desc: asOptString(item.desc), time: asOptString(item.time) }
             : { title: asString(item) }
@@ -165,9 +165,9 @@ const walkNode = (raw: unknown, depth: number, budget: Budget): DshUiNode | unde
   }
 };
 
-const walkItems = (rawItems: unknown, depth: number, budget: Budget): DshUiNode[] => {
+const walkItems = (rawItems: unknown, depth: number, budget: Budget): MuUiNode[] => {
   const entries = Array.isArray(rawItems) ? rawItems : [];
-  const items: DshUiNode[] = [];
+  const items: MuUiNode[] = [];
   for (const entry of entries) {
     const node = walkNode(entry, depth, budget);
     if (node !== undefined) items.push(node);
@@ -175,9 +175,9 @@ const walkItems = (rawItems: unknown, depth: number, budget: Budget): DshUiNode[
   return items;
 };
 
-const walkListItems = (rawItems: unknown, depth: number, budget: Budget): DshUiListItem[] => {
+const walkListItems = (rawItems: unknown, depth: number, budget: Budget): MuUiListItem[] => {
   const entries = Array.isArray(rawItems) ? rawItems : [];
-  const items: DshUiListItem[] = [];
+  const items: MuUiListItem[] = [];
   for (const entry of entries) {
     if (isRecord(entry) && typeof entry.type === 'string') {
       const node = walkNode(entry, depth + 1, budget);
@@ -194,11 +194,11 @@ const walkListItems = (rawItems: unknown, depth: number, budget: Budget): DshUiL
 const walkColumns = (rawColumns: unknown): string[] =>
   Array.isArray(rawColumns) ? rawColumns.map((column) => asString(column)) : [];
 
-const walkRows = (rawRows: unknown, depth: number, budget: Budget): DshUiCell[][] => {
+const walkRows = (rawRows: unknown, depth: number, budget: Budget): MuUiCell[][] => {
   const entries = Array.isArray(rawRows) ? rawRows : [];
   return entries.map((row) => {
     const cells = Array.isArray(row) ? row : [row];
-    return cells.map((cell): DshUiCell => {
+    return cells.map((cell): MuUiCell => {
       if (isRecord(cell)) {
         const node = walkNode(cell, depth + 1, budget);
         if (node === undefined) return '';
@@ -210,10 +210,10 @@ const walkRows = (rawRows: unknown, depth: number, budget: Budget): DshUiCell[][
 };
 
 /**
- * Parses one fence's JSON. Tolerant where the DSH renderer is tolerant (missing display text renders empty); a spec
+ * Parses one fence's JSON. Tolerant where the renderer is tolerant (missing display text renders empty); a spec
  * with no renderable nodes at all is rejected so the block keeps showing as source code.
  */
-export const parseDshUiSpec = (source: string): DshUiParseResult => {
+export const parseMuUiSpec = (source: string): MuUiParseResult => {
   let parsed: unknown;
   try {
     parsed = JSON.parse(source);

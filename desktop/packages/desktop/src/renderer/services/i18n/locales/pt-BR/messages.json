@@ -137,5 +137,5 @@
     "title": "Arquivos para você ({{count}})",
     "open": "Abrir {{name}}"
   },
-  "dshUiTruncated": "Exibido parcialmente — este bloco de UI ultrapassou o limite de tamanho"
+  "muUiTruncated": "Exibido parcialmente — este bloco de UI ultrapassou o limite de tamanho"
 }
