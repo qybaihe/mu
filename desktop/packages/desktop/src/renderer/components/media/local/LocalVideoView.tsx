@@ -22,7 +22,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from '@icon-park/react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useConversationContextSafe } from '@renderer/hooks/context/ConversationContext';
@@ -51,6 +51,13 @@ const ZOOM_STEPS: Array<{ factor: number; className: string }> = [
 const fmtClock = (seconds: number): string => {
   const total = Math.max(0, Math.floor(seconds));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
+
+/** The nearest ancestor that actually scrolls (taller than its own box), if any. */
+const scrollerOf = (start: HTMLElement | null): { el: HTMLElement; top: number } | null => {
+  let el: HTMLElement | null = start?.parentElement ?? null;
+  while (el && el.scrollHeight <= el.clientHeight) el = el.parentElement;
+  return el ? { el, top: el.scrollTop } : null;
 };
 
 /** Fail an invoke that no provider answers (WebUI with no desktop process) instead of hanging forever. */
@@ -97,6 +104,8 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const [muted, setMuted] = useState(false);
   const [intrinsic, setIntrinsic] = useState<{ w: number; h: number } | null>(null);
   const [lentSize, setLentSize] = useState<{ w: number; height: number } | null>(null);
+  // The transcript scroller and where it stood, to put back if a swap frame moves it.
+  const scrollHomeRef = useRef<{ el: HTMLElement; top: number } | null>(null);
   // One speed for the video wherever it is watched: the card's menu and the overlay's share it.
   const [rate, setRate] = useState(1);
   // Where the element's playback stands when it is lent to the overlay or borrowed back.
@@ -186,13 +195,25 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     // height (and so its scroll position) does not jump when the overlay opens.
     const v = videoRef.current;
     setLentSize(v && v.offsetHeight > 0 ? { w: v.offsetWidth, height: v.offsetHeight } : null);
+    scrollHomeRef.current = scrollerOf(v);
     setOpen(true);
   }, [capturePosition]);
 
   const closeOverlay = useCallback(() => {
     capturePosition();
+    scrollHomeRef.current = scrollerOf(videoRef.current);
     setOpen(false);
   }, [capturePosition]);
+
+  // Opening or closing swaps the card's video for a placeholder inside the markdown shadow:
+  // for one frame the box can dip and the transcript's scroller clamps its scrollTop, and
+  // the height comes back but the scroll position does not. Whatever moved it, the reader's
+  // place is put back before the frame is painted.
+  useLayoutEffect(() => {
+    const home = scrollHomeRef.current;
+    if (!home || Math.abs(home.el.scrollTop - home.top) <= 0.5) return;
+    home.el.scrollTop = home.top;
+  });
 
   // Esc closes the overlay wherever the focus stands, handing the element back where it stood.
   useEffect(() => {
