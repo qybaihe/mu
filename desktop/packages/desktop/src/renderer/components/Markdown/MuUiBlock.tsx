@@ -6,7 +6,8 @@
  * The JSON is model output, so the parser is a trust boundary: every field is checked, coerced, or bounded there,
  * and the renderer below works on the validated types alone. Anything structurally wrong — JSON that does not
  * parse, an unknown `type`, a non-object node — makes the whole spec invalid, and the block falls back to a plain
- * code block.
+ * code block. One common model mistake is absorbed instead: components nested inside a chart's `data` list are
+ * hoisted out as components after the chart (see the `chart` case).
  *
  * The card styles itself with inline styles over the app's CSS variables: markdown renders inside a Shadow DOM that
  * does not see the document's style sheets, while custom properties (and `color-mix` on them) inherit through the
@@ -260,9 +261,29 @@ const walkNode = (raw: unknown, depth: number, budget: Budget): MuUiNode | undef
         const series = walkChartSeries(raw.series, budget);
         return { type, kind: 'bars', data: series[0].data, series };
       }
-      const data = walkChartData(raw.data, budget);
-      if (data.length === 0) throw new InvalidSpec();
-      return { type, kind: isOneOf(raw.kind, CHART_KINDS) ?? 'bars', data };
+      // A model sometimes nests sibling components (a second chart, a callout) inside a chart's `data` list, which
+      // is for `{label, value}` points alone. Rejecting the whole spec for that would show raw JSON where the model
+      // meant a card, so a node-shaped entry (a record with a `type`) is hoisted out as a component after the chart;
+      // anything else that is not a point still makes the spec invalid.
+      const entries = Array.isArray(raw.data) ? raw.data : [];
+      const pointEntries: unknown[] = [];
+      const nested: MuUiNode[] = [];
+      for (const entry of entries) {
+        if (isRecord(entry) && typeof entry.type === 'string') {
+          const node = walkNode(entry, depth + 1, budget);
+          if (node !== undefined) nested.push(node);
+        } else {
+          pointEntries.push(entry);
+        }
+      }
+      const data = walkChartData(pointEntries, budget);
+      if (data.length === 0) {
+        if (nested.length === 0) throw new InvalidSpec();
+        // The chart was nothing but the mistake: what it held is the content.
+        return nested.length === 1 ? nested[0] : { type: 'col', items: nested };
+      }
+      const chart: MuUiNode = { type, kind: isOneOf(raw.kind, CHART_KINDS) ?? 'bars', data };
+      return nested.length === 0 ? chart : { type: 'col', items: [chart, ...nested] };
     }
     case 'echart': {
       // Full-option mode: an `option` object wins over preset data — a spec carrying both meant the option.

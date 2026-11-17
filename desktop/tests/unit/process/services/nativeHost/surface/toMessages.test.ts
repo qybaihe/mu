@@ -134,6 +134,26 @@ describe('the recorded conversation', () => {
 });
 
 describe('rows written by hand', () => {
+  // The mu-ui fence of native conversation 01a1ea35 (session jsonl entry 14) exactly as the file stores it: what a
+  // reply's text row must carry byte-exact, fence marks and info string whole, for CodeBlock's mu-ui branch.
+  const MU_UI_FENCE =
+    '```mu-ui\n{"title":"0.3.13 基线冒烟","items":[{"type":"row","items":[{"type":"stat","label":"基线","value":"v0.3.13"},{"type":"stat","label":"backend","value":"0.3.13"}]},{"type":"chart","kind":"bars","data":[{"label":"渲染","value":10},{"label":"复制","value":10},{"type":"chart","kind":"donut","data":[{"label":"通过","value":100}]}]},{"type":"callout","tone":"success","title":"冒烟","content":"**卡片+图表在 0.3.13 全正常**"}]}\n```';
+
+  it('hands a reply with an mu-ui fence to the text row byte-exact, live and read back', () => {
+    const live = reduceAll([
+      { type: 'agent_start' },
+      ended(user('请输出以下围栏，一字不改：')),
+      ended(reply([text(MU_UI_FENCE)])),
+      { type: 'agent_settled' },
+    ]);
+    const read = reduceAll([ended(user('请输出以下围栏，一字不改：')), ended(reply([text(MU_UI_FENCE)]))]);
+    for (const view of [live, read]) {
+      const list = rows(view).filter((row) => row.type === 'text' && row.position === 'left');
+      expect(list).toHaveLength(1);
+      expect((list[0] as { content: { content: string } }).content.content).toBe(MU_UI_FENCE);
+    }
+  });
+
   it('shows a thought as live only while the model writes it', () => {
     const run: PiRecord[] = [
       { type: 'agent_start' },

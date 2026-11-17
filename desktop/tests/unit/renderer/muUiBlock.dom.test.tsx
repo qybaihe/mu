@@ -145,6 +145,19 @@ describe('a mu-ui fence in a reply', () => {
     expect(screen.getByText('新增客户')).toBeTruthy();
   });
 
+  // The real reply of native conversation 01a1ea35 (session jsonl entry 14, mu 0.3.13): a donut chart nested
+  // inside a bars chart's data list. The fence reached the renderer byte-exact through the native loading layer;
+  // it fell back to code only because the spec put a component where points belong.
+  it('renders the real native-session fence with a nested chart as a card', () => {
+    renderFence(
+      '{"title":"0.3.13 基线冒烟","items":[{"type":"row","items":[{"type":"stat","label":"基线","value":"v0.3.13"},{"type":"stat","label":"backend","value":"0.3.13"}]},{"type":"chart","kind":"bars","data":[{"label":"渲染","value":10},{"label":"复制","value":10},{"type":"chart","kind":"donut","data":[{"label":"通过","value":100}]}]},{"type":"callout","tone":"success","title":"冒烟","content":"**卡片+图表在 0.3.13 全正常**"}]}'
+    );
+    expect(screen.getByText('0.3.13 基线冒烟')).toBeTruthy();
+    expect(screen.getAllByTestId('mu-ui-chart-bar')).toHaveLength(2);
+    expect(screen.getAllByTestId('mu-ui-donut-legend')).toHaveLength(1);
+    expect(highlighted).toHaveLength(0);
+  });
+
   it('no longer recognizes a dsh-ui fence and leaves it a plain code block', () => {
     render(<CodeBlock className='language-dsh-ui'>{fence(validSpec)}</CodeBlock>);
     expect(screen.queryByText('周报')).toBeNull();
@@ -322,6 +335,48 @@ describe('a chart node in a mu-ui fence', () => {
     renderFence(fence({ items: [{ type: 'chart', data: [{ label: 'a', value: 1, color: '#0f0' }] }] }));
     const bar = screen.getByTestId('mu-ui-chart-bar');
     expect(bar.querySelector('rect')?.getAttribute('fill')).toBe('#0f0');
+  });
+
+  it('hoists a component nested in a chart data list after the chart', () => {
+    renderFence(
+      fence({
+        items: [
+          {
+            type: 'chart',
+            kind: 'bars',
+            data: [
+              { label: '一月', value: 10 },
+              { type: 'chart', kind: 'donut', data: [{ label: '通过', value: 100 }] },
+            ],
+          },
+        ],
+      })
+    );
+    expect(screen.getAllByTestId('mu-ui-chart-bar')).toHaveLength(1);
+    expect(screen.getAllByTestId('mu-ui-donut-legend')).toHaveLength(1);
+    expect(highlighted).toHaveLength(0);
+  });
+
+  it('keeps what a chart held when it had no points of its own', () => {
+    renderFence(
+      fence({
+        items: [
+          {
+            type: 'chart',
+            kind: 'bars',
+            data: [{ type: 'callout', tone: 'success', title: '全部通过', content: '无数据' }],
+          },
+        ],
+      })
+    );
+    expect(screen.getByText('全部通过')).toBeTruthy();
+    expect(screen.queryByTestId('mu-ui-chart-bar')).toBeNull();
+    expect(highlighted).toHaveLength(0);
+  });
+
+  it('still rejects a chart data entry that is neither a point nor a component', () => {
+    renderFence(fence({ items: [{ type: 'chart', data: [{ label: 'a', value: 'not-a-number' }] }] }));
+    expect(highlighted).toHaveLength(1);
   });
 });
 
