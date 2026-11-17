@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  embeddedImageSrcs,
   findFileRefs,
   inlineCodeSpans,
   localLinkPaths,
@@ -93,29 +92,5 @@ describe('a reply’s references', () => {
 
   it('finds nothing in plain prose', () => {
     expect(findFileRefs('The file a.png is in out/ and report.pdf is next to it.')).toEqual([]);
-  });
-});
-
-describe('embedded image srcs', () => {
-  it('reads the local srcs in reply order, once each, decoded', () => {
-    const markdown = [
-      '![one](out/one.png)',
-      '![abs](E:/charts/two.png)',
-      '![again](out/one.png)',
-      '![remote](https://example.com/x.png) and ![data](data:image/png;base64,xxx)',
-      '![spaced](<my file.png> "title")',
-      '![pct](out/100%20flights.png)',
-    ].join('\n');
-    expect(embeddedImageSrcs(markdown)).toEqual([
-      'out/one.png',
-      'E:/charts/two.png',
-      'my file.png',
-      'out/100 flights.png',
-    ]);
-  });
-
-  it('leaves fenced code out', () => {
-    const markdown = ['```md', '![nope](fence.png)', '```', '![yes](real.png)'].join('\n');
-    expect(embeddedImageSrcs(markdown)).toEqual(['real.png']);
   });
 });

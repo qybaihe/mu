@@ -3,7 +3,7 @@
  * markdown is read for path-like inline code and local links (findFileRefs.ts); the main process says which name a
  * regular file (fileRefStore.ts). Until it answers, the reply is drawn as it always was; then:
  *
- * - an image opens in the preview panel, which steps through every image this reply names or embeds;
+ * - an image opens in the preview panel, which steps through every image this reply names;
  * - a file the panel draws well (code, text, Markdown, HTML, PDF) opens there too, beside the reply;
  * - any other file opens in the system's default app; every file's folder icon shows it in Finder (File Explorer, the
  *   file manager), and a program is only ever shown there;
@@ -15,7 +15,6 @@ import { Button, Message } from '@arco-design/web-react';
 import { FolderOpen } from '@icon-park/react';
 import React, { createContext, useContext, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { joinPath } from '@/common/chat/chatLib';
 import type { FileRefAnswer } from '@/common/chat/fileRefs/fileRefBridge';
 import { baseName, type FileRefStrength } from '@/common/chat/fileRefs/pathLike';
 import type { KyrnResult } from '@/common/kyrn/errors';
@@ -26,9 +25,9 @@ import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview
 import { isPanelPreviewable } from '@/renderer/pages/conversation/Preview/fileUtils';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { openFileRef, requestFileRefs, revealFileRef, revealPlatform, useFileRefAnswers } from './fileRefStore';
-import { embeddedImageSrcs, findFileRefs, type ReplyFileRef } from './findFileRefs';
+import { findFileRefs, type ReplyFileRef } from './findFileRefs';
 
-export type ReplyFileRefsValue = {
+type ReplyFileRefsValue = {
   cwd: string;
   /** A reference of this reply that the main process has answered, with how surely it is a path. */
   lookup: (ref: string) => { strength: FileRefStrength; answer: FileRefAnswer } | undefined;
@@ -38,11 +37,6 @@ export type ReplyFileRefsValue = {
 };
 
 const ReplyFileRefsContext = createContext<ReplyFileRefsValue | null>(null);
-
-/** The reply's file references where a reply is being drawn, for a view that opens one of them; null elsewhere. */
-export function useOptionalReplyFileRefs(): ReplyFileRefsValue | null {
-  return useContext(ReplyFileRefsContext);
-}
 /** Set inside a link: inline code in a link's text is part of the link, never a link of its own. */
 const InsideLinkContext = createContext(false);
 
@@ -60,15 +54,6 @@ function useFailureNotice(): (result: KyrnResult<unknown>, name: string) => void
     if (result.code === 'notFound') Message.warning(t('messages.fileRef.gone', { name }));
     else Message.error(t('messages.fileRef.openFailed', { name }));
   };
-}
-
-/**
- * An embedded image src (`![alt](src)`) as the markdown view's LocalImageView resolves it: an absolute src as it is,
- * a relative one against the reply's workspace. A `file:` src stays untouched, as LocalImageView passes it on.
- */
-function resolveEmbeddedImageSrc(src: string, cwd: string | undefined): string {
-  if (src.startsWith('/') || src.startsWith('\\') || src.startsWith('file:') || /^[A-Za-z]:/.test(src)) return src;
-  return joinPath(cwd ?? '', src);
 }
 
 /** A reference that names no file, or more than one: its text greyed out, with the reason on hover. */
@@ -257,7 +242,6 @@ export function ReplyFileRefs({
   }, [markdown]);
   const keys = useMemo(() => refs.map((item) => item.ref), [refs]);
   const answers = useFileRefAnswers(cwd, keys);
-  const embedded = useMemo(() => embeddedImageSrcs(markdown), [markdown]);
 
   // The preview changes whenever a tab opens or loads; a click only needs the latest, so it is read from a ref and a
   // change there draws nothing here.
@@ -271,18 +255,13 @@ export function ReplyFileRefs({
 
   const value = useMemo<ReplyFileRefsValue>(() => {
     const strengths = new Map(refs.map((item) => [item.ref, item.strength]));
-    // Every image the reply names or embeds, in order, once: the preview steps through them. An embedded src needs
-    // no answer from the main process — the panel reads the file again when it shows it, so a missing one steps to
-    // "gone" rather than dropping out of the list.
+    // Every image the reply names, in order, once: the preview steps through them.
     const gallery: string[] = [];
-    const push = (path: string) => {
-      if (!gallery.includes(path)) gallery.push(path);
-    };
     for (const { ref } of refs) {
       const answer = answers.get(ref);
-      if (answer?.state === 'found' && answer.kind === 'image') push(answer.path);
+      if (answer?.state === 'found' && answer.kind === 'image' && !gallery.includes(answer.path))
+        gallery.push(answer.path);
     }
-    for (const src of embedded) push(resolveEmbeddedImageSrc(src, cwd));
     return {
       cwd,
       lookup: (ref) => {
@@ -296,7 +275,7 @@ export function ReplyFileRefs({
       },
       openFile: hasPanel ? (path) => void openInPanelRef.current?.(path) : undefined,
     };
-  }, [answers, cwd, refs, embedded, hasPanel]);
+  }, [answers, cwd, refs, hasPanel]);
 
   // Always both providers, references or not: a reply that streams its first one must not draw its markdown anew.
   return (
