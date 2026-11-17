@@ -299,6 +299,48 @@ describe('the native send box', () => {
     expect(heard).toHaveBeenCalledWith('sent');
   });
 
+  it('holds a panel command that arrives mid-run and sends it when the turn ends', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    await mount(host);
+    await running(host);
+    const heard = vi.fn();
+    await act(async () => {
+      emitter.emit('sendbox.command', '/board on', 'c1', heard);
+    });
+    // pi is streaming and takes no bare prompt: the command waits, its sender is told.
+    expect(commands(host).filter((command) => command.type === 'prompt')).toEqual([]);
+    expect(heard).toHaveBeenCalledWith('waiting');
+
+    await act(async () => {
+      host.play('c1', [ended(reply([text('done')])) , { type: 'agent_settled' }]);
+    });
+    expect(commands(host)).toContainEqual({ type: 'prompt', message: '/board on' });
+    expect(heard).toHaveBeenCalledWith('sent');
+  });
+
+  it('a newer command held mid-run replaces the older one, which is told it was dropped', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    await mount(host);
+    await running(host);
+    const first = vi.fn();
+    const second = vi.fn();
+    await act(async () => {
+      emitter.emit('sendbox.command', '/board on', 'c1', first);
+      emitter.emit('sendbox.command', '/board off', 'c1', second);
+    });
+    expect(first).toHaveBeenCalledWith('dropped');
+    expect(second).toHaveBeenCalledWith('waiting');
+
+    await act(async () => {
+      host.play('c1', [ended(reply([text('done')])) , { type: 'agent_settled' }]);
+    });
+    expect(commands(host)).toContainEqual({ type: 'prompt', message: '/board off' });
+    expect(commands(host)).not.toContainEqual({ type: 'prompt', message: '/board on' });
+    expect(second).toHaveBeenCalledWith('sent');
+  });
+
   it('says when mu has no model, when it stopped, and why a command failed', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });

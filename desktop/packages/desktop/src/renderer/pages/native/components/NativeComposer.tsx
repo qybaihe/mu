@@ -209,14 +209,43 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
     [abort, request, working]
   );
 
+  // A command another panel sends for the person (mu's board switch, a mu-ui card's click) reaches pi only when it
+  // is idle: pi takes no bare prompt while a run streams (the person's own send steers instead), so one that arrives
+  // busy waits here and goes out when the turn ends, as the ACP send box holds it. The latest one wins; one that
+  // never gets its turn is dropped, its sender told.
+  const waitingCommand = useRef<{ command: string; heard?: (state: SendBoxCommandState) => void }>(undefined);
+  const sendCommand = useCallback(
+    (command: string, heard?: (state: SendBoxCommandState) => void) => {
+      void request({ type: 'prompt', message: command }).then((result) => heard?.(result.ok ? 'sent' : 'dropped'));
+    },
+    [request]
+  );
   useAddEventListener(
     'sendbox.command',
     (command, target, heard) => {
       if (target !== id || !command.trim()) return;
-      heard?.('sent');
-      void request({ type: 'prompt', message: command });
+      if (working || held) {
+        waitingCommand.current?.heard?.('dropped');
+        waitingCommand.current = { command, heard };
+        heard?.('waiting');
+        return;
+      }
+      sendCommand(command, heard);
     },
-    [id, request]
+    [held, id, sendCommand, working]
+  );
+  useEffect(() => {
+    const pending = waitingCommand.current;
+    if (working || held || !pending) return;
+    waitingCommand.current = undefined;
+    sendCommand(pending.command, pending.heard);
+  }, [held, sendCommand, working]);
+  useEffect(
+    () => () => {
+      waitingCommand.current?.heard?.('dropped');
+      waitingCommand.current = undefined;
+    },
+    []
   );
 
   // Text another part of the screen puts into the box (the person's message a fork brings back, to edit): added to
