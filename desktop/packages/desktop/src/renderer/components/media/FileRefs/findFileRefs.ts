@@ -96,6 +96,9 @@ function codeSpansIn(text: string): Found[] {
 /** `[text](target)` and `[text](<target with spaces> "title")`; not an image (`![alt](src)`). */
 const INLINE_LINK = /\[(?:[^\]\\\n]|\\.)*\]\(\s*(<[^>\n]*>|[^\s()<>]+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'))?\s*\)/g;
 
+/** `![alt](src)` and `![alt](<src with spaces> "title")`; the embedded image a link is not. */
+const INLINE_IMAGE = /!\[(?:[^\]\\\n]|\\.)*\]\(\s*(<[^>\n]*>|[^\s()<>]+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'))?\s*\)/g;
+
 /** The local file paths a text with fenced code blanked out links to, each with where its link starts. */
 function linkPathsIn(text: string): Found[] {
   const paths: Found[] = [];
@@ -119,6 +122,22 @@ export const inlineCodeSpans = (markdown: string): string[] =>
 /** The local file paths a markdown text links to, outside fenced code, as the markdown view's links resolve them. */
 export const localLinkPaths = (markdown: string): string[] =>
   linkPathsIn(withoutFencedCode(markdown)).map((link) => link.text);
+
+/**
+ * The srcs of the local images a markdown text embeds, outside fenced code, in the order the reply shows them, once
+ * each: the images the markdown view draws through LocalImageView. Remote and data srcs are left out; the src is
+ * decoded as the markdown view decodes it, and otherwise untouched — the caller resolves it against its workspace.
+ */
+export function embeddedImageSrcs(markdown: string): string[] {
+  const srcs: string[] = [];
+  for (const match of withoutFencedCode(markdown).matchAll(INLINE_IMAGE)) {
+    const raw = match[1].startsWith('<') ? match[1].slice(1, -1) : match[1];
+    const src = decodeURIComponent(raw);
+    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) continue;
+    if (!srcs.includes(src)) srcs.push(src);
+  }
+  return srcs;
+}
 
 /**
  * Every file reference of a reply, once each, in the order the reply has them: path-like inline code by its own

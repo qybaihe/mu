@@ -5,6 +5,7 @@ import { Image as ArcoImage, Message } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConversationContextSafe } from '@renderer/hooks/context/ConversationContext';
+import { useOptionalReplyFileRefs } from '@renderer/components/media/FileRefs/ReplyFileRefs';
 import { iconColors } from '@/renderer/styles/colors';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
 import { emitter } from '@/renderer/utils/emitter';
@@ -16,10 +17,11 @@ const LocalImageView: React.FC<{
   src: string;
   alt: string;
   className?: string;
-  /** Open the image preview on click: zoom, step through the conversation's images, save the file. */
+  /** Open a preview on click: the reply's shared preview inside a reply (steps through its images), Arco's own elsewhere. */
   preview?: boolean;
 }> = ({ src, alt, className, preview }) => {
   const { t } = useTranslation();
+  const replyRefs = useOptionalReplyFileRefs();
   const [loading, setLoading] = useState(true);
   const [url, setUrl] = useState(src);
   // Resolve relative image paths (e.g. ![](./chart.png)) against the conversation
@@ -89,7 +91,19 @@ const LocalImageView: React.FC<{
       </span>
     );
 
-  if (preview)
+  if (preview) {
+    // Inside a reply the shared preview panel owns the click: it steps through every image the reply names or embeds
+    // (its arrows and keys work; Arco's group preview steps by dense index, which breaks once images mounted elsewhere
+    // in the app have consumed ids). Outside a reply, Arco's own preview stays.
+    if (replyRefs)
+      return (
+        <img
+          src={url}
+          alt={alt}
+          className={className ? `${className} cursor-zoom-in` : 'cursor-zoom-in'}
+          onClick={() => replyRefs.openImage(absolutePath)}
+        />
+      );
     return (
       <ArcoImage
         src={url}
@@ -120,6 +134,7 @@ const LocalImageView: React.FC<{
         }}
       />
     );
+  }
 
   return <img src={url} alt={alt} className={className} />;
 };

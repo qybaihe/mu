@@ -6,6 +6,7 @@ import type { FileRefAnswer } from '@/common/chat/fileRefs/fileRefBridge';
 import MarkdownView from '@/renderer/components/Markdown';
 import { ReplyFileRefs } from '@/renderer/components/media/FileRefs/ReplyFileRefs';
 import { resetFileRefsForTest } from '@/renderer/components/media/FileRefs/fileRefStore';
+import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
 
 /**
  * A reply's file references on screen (renderer/components/media/FileRefs/): the reply is drawn as it always was, and
@@ -40,6 +41,19 @@ vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
 vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () => ({
   useOptionalLocalFilePreview: () => mocks.openFile,
 }));
+
+// LocalImageView (an embedded `![alt](src)` in the reply's markdown) reads the file through the main process; a null
+// answer leaves the raw src in place, which is enough for a click.
+vi.mock('@/common', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/common')>();
+  return {
+    ...original,
+    ipcBridge: {
+      ...original.ipcBridge,
+      fs: { ...original.ipcBridge.fs, getImageBase64: { invoke: vi.fn(async () => null) } },
+    },
+  };
+});
 
 // The reply's markdown is drawn into a shadow root in the app; here, in place, so the screen queries reach it.
 vi.mock('@/renderer/components/Markdown/ShadowView', () => ({
@@ -152,6 +166,47 @@ describe('a reply naming images', () => {
         file_path: `${CWD}/out/cover.png`,
         gallery: [`${CWD}/out/cover.png`, `${CWD}/out/${OWNER_IMAGES[0]}`, `${CWD}/out/back.png`],
       }),
+      { replace: true }
+    );
+  });
+});
+
+describe('a reply embedding images', () => {
+  // In the app the conversation's workspace is what LocalImageView resolves a relative src against; the reply's cwd is
+  // the same value, so the two agree on the absolute path.
+  const replyInConversation = (markdown: string) =>
+    render(
+      <ConversationProvider value={{ conversation_id: 'conv-1', workspace: CWD, type: 'acp' }}>
+        <ReplyFileRefs markdown={markdown} cwd={CWD}>
+          <MarkdownView>{markdown}</MarkdownView>
+        </ReplyFileRefs>
+      </ConversationProvider>
+    );
+
+  it('opens a clicked embedded image in the shared preview, with every embedded image to step through', async () => {
+    replyInConversation(['Before.', '', '![one](out/one.png)', '', '![two](/abs/two.png)', '', 'After.'].join('\n'));
+    const imgs = await screen.findAllByRole('img');
+    expect(imgs).toHaveLength(2);
+    fireEvent.click(imgs[0]);
+    expect(mocks.openPreview).toHaveBeenCalledWith(
+      '',
+      'image',
+      expect.objectContaining({
+        file_path: `${CWD}/out/one.png`,
+        gallery: [`${CWD}/out/one.png`, '/abs/two.png'],
+      }),
+      { replace: true }
+    );
+  });
+
+  it('steps a named image through the embedded ones, in the reply’s order', async () => {
+    mocks.files.set('shot.png', image('shot.png'));
+    reply('`shot.png` and ![chart](charts/a.png).');
+    fireEvent.click(await screen.findByRole('button', { name: 'messages.fileRef.preview:shot.png' }));
+    expect(mocks.openPreview).toHaveBeenCalledWith(
+      '',
+      'image',
+      expect.objectContaining({ gallery: [`${CWD}/out/shot.png`, `${CWD}/charts/a.png`] }),
       { replace: true }
     );
   });

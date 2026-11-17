@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Fixed
+
+- **A reply's embedded images step through the shared preview** (`desktop`): clicking a local markdown image in a reply opened Arco's group preview, whose stepping assumes dense image ids; ids come from a module-global counter every Arco image in the app shares, so in a multi-image reply both arrows rendered disabled and the arrow keys did nothing. The click now opens the reply's shared preview panel, and its gallery grows to hold the images the reply embeds beside the ones it names, resolved against the reply's workspace as the image view resolves them. Outside a reply (settings markdown, tool rows) Arco's preview stays.
+
 ## [0.3.12] - 2026-11-13
 
 **In 0.3.12 images and media in replies and deliverables cards are easier to inspect, save and quote back into the next message, while the judgment kernel closes a path-wrapper permission bypass and shows the judge long single-line test dumps.** The desktop app carries mu-agent 0.3.12.
