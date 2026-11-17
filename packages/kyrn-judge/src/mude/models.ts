@@ -291,6 +291,8 @@ export function localJudgeOf(id: string): LocalJudge {
 			model: id,
 			apiKeyEnv: keyVariable(id),
 			timeoutMs: 4000,
+			// The same server as mude's: it runs the model under a lock, one request at a time.
+			concurrency: 1,
 		}),
 	};
 }

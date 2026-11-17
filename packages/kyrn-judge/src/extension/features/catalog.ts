@@ -136,7 +136,11 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 	const disclosable = (): readonly Capability[] =>
 		catalog.hidden().filter((capability) => capability.kind !== "feature");
 	const disclose = (words: string, candidates: readonly Capability[], signal?: AbortSignal) =>
-		runtime.engine.decide(capabilityDisclosure, { userMessage: words, capabilities: candidates }, { signal });
+		runtime.engine.decide(
+			capabilityDisclosure,
+			{ userMessage: words, capabilities: candidates },
+			{ signal, neededBy: runtime.turnDeadline(options.waitMs) },
+		);
 	/** The question asked the moment the message arrived, alongside preflight. */
 	let early: { turn: number; decision: ReturnType<typeof disclose> } | undefined;
 	runtime.atTurnStart((words) => {

@@ -5,7 +5,7 @@ summary: Who answers the decision points, how to choose, chain and compare judge
 
 ## Which judge answers {#tiers}
 
-`tiers` in `~/.mu/agent/mu.json` lists the judges in order. Each later judge only sees the questions the earlier ones left uncertain, so a cheap local judge can go first and a hosted one catch the rest:
+`tiers` in `~/.mu/agent/mu.json` lists the judges in order. The first one answers, and a later judge answers only what the ones before it couldn't: a judge that failed (stopped, too slow, no key), or a kind of question it isn't trusted with. An unsure answer stays with the judge that gave it, and the decision point then does what it does without a verdict. So a local judge can go first, with a hosted one behind it for when it is down:
 
 ```json
 { "tiers": ["mude", "jev"] }
@@ -31,7 +31,7 @@ mu judge mude enable --local-only   # mude only: nothing goes to a hosted judge
 mu judge mude status
 ```
 
-By default, the judges you had before stay in `tiers` after it as fallbacks: they answer what mude can't (its server is stopped, or it's unsure) and handle the two injection checks mude isn't trusted with yet. With `--local-only`, mude is the only judge, and when it can't answer, the decision point uses its default. mude answers in about 0.1 s, and what it reads never leaves your Mac. Its server uses about 4 GB of memory while it runs, and mu starts it before a session when your configuration names it. If an install stops (Ctrl-C, a lost connection, a power cut), running it again picks up where it left off. On other platforms, serve the [full model](https://huggingface.co/qybaihe/mude-1.0) with its own System One server and add it as a `typesafe` judge, as its model card shows.
+By default, the judges you had before stay in `tiers` after it as fallbacks: they answer when mude can't (its server is stopped or too slow) and handle the two injection checks mude isn't trusted with yet. What mude is unsure of isn't passed on: the decision point then does what it does without a verdict. With `--local-only`, mude is the only judge, and when it can't answer, the decision point uses its default. mude answers in about 0.1 s, and what it reads never leaves your Mac. Its server uses about 4 GB of memory while it runs, and mu starts it before a session when your configuration names it. If an install stops (Ctrl-C, a lost connection, a power cut), running it again picks up where it left off. On other platforms, serve the [full model](https://huggingface.co/qybaihe/mude-1.0) with its own System One server and add it as a `typesafe` judge, as its model card shows.
 
 ### Other decision models {#models}
 
@@ -117,6 +117,10 @@ Under `judges` in `mu.json`, give a name and a type:
 
 The key never goes in the file: `apiKeyEnv` names the environment variable that holds it, set in your environment or in mu's `.env`.
 
+A judge can also carry the measured curves its probabilities are read through, as `profile.calibration`: by decision point and question, a list of `[said, was]` points. A chat model says 0.9 for most things it leans to; with a curve, mu reads that 0.9 as what it turned out to be worth before any decision point acts on it. mu ships no curves. `packages/kyrn-judge/scripts/fit-calibration.ts` in the repository makes them from answers whose right answer you know.
+
+A judge on your own machine usually answers one request at a time. With `"concurrency": 1` in its entry, mu keeps the line itself: the question the turn is waiting for goes first, the smaller of two equally urgent requests goes before the larger, and a question whose turn has gone on without it goes last. A request still in line after the judge's time limit is dropped without being sent. `mude` and the decision models that `mu judge model` adds are set this way already.
+
 ## Modes: active, shadow, off {#modes}
 
 Every decision point has a mode:
@@ -133,5 +137,7 @@ Set them in `mu.json` under `modes` (a `default` plus one entry per point), for 
 2. Work as usual for a while.
 3. Read the verdicts: `mu ledger [n]` prints the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, `mu ledger --timeline` puts each verdict between the reply and the tool result it came with, and the app's Judge tab shows each verdict with its question. When the judge gets one wrong, mark it: `/ledger wrong <id> [why]` in the terminal, or **Mark as wrong** on an opened verdict in the Judge tab.
 4. Switch the point back to active when its verdicts look right.
+
+`mu ledger --tally` adds up the last 20 sessions by decision point: how often it was asked, how often a verdict came, how often that verdict was something else than what mu does with no judge, and how many verdicts came after mu had stopped waiting for them. A point that never differs spent its judge calls and changed nothing; `/mu mode <point> off` stops asking it.
 
 `"recordState": true` also keeps the judged state in the ledger, which you need to train a judge of your own. It is off by default because the states hold your content.

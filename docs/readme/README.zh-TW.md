@@ -74,7 +74,7 @@ mu                  # 在目前目錄開一個工作階段
 
 ## 判定點
 
-每個判定點可以是 `active`（生效，預設）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`mude`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `mude,jev` 這樣的串接。
+每個判定點可以是 `active`（生效，預設）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`mude`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或者像 `mude,jev` 這樣依序排幾個：前一個答不了，才輪到後一個。
 
 **輸入**
 
@@ -170,7 +170,7 @@ mu judge mude uninstall             # 刪除模型和它的 Python 環境
 
 在能跑 mude 1.0 的 Mac 上，它是推薦的判定器：`mu setup` 把它列在第一位；桌面 App 首次啟動的引導裡，「判定器」這一步一開始就選中它，點一下就能安裝。之後在設定的「判定器」頁可以安裝、啟動、停止和解除安裝 mude，「僅限本機」開關等同於 `--local-only`。安裝中途停下（Ctrl-C、斷網、斷電、結束 App）後，會從中斷的地方接著裝：再執行一次 `mu judge mude install`，或者點「繼續安裝」。
 
-預設情況下，原本的判定器排在 mude 後面：mude 答不了的（服務沒在執行，或者它拿不準），以及它暫時還不被信任的兩項注入檢查，交給那個判定器。如果那個判定器是託管的（預設的 Jev 就是），它看到的內容會離開本機。mude 的服務執行時佔用約 4 GB 記憶體，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-1.0)（bf16、PyTorch，建議有 CUDA 顯示卡）自帶的 System One 服務執行，再依模型卡的寫法在 `mu.json` 裡把它加成 `typesafe` 判定器。
+預設情況下，原本的判定器排在 mude 後面：mude 答不了的時候（服務沒在執行，或者逾時），以及它暫時還不被信任的兩項注入檢查，交給那個判定器。mude 答了但拿不準的題不會轉過去：這時判定點照沒有判定器時的做法來。如果那個判定器是託管的（預設的 Jev 就是），它看到的內容會離開本機。mude 的服務執行時佔用約 4 GB 記憶體，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-1.0)（bf16、PyTorch，建議有 CUDA 顯示卡）自帶的 System One 服務執行，再依模型卡的寫法在 `mu.json` 裡把它加成 `typesafe` 判定器。
 
 ### mubench 1.0：決策模型怎麼比
 
@@ -221,6 +221,7 @@ mubench 是 mu 為決策模型做的評測。主榜的每一道題，都是 mu �
 - Terminal-Bench 2.1，透過 Harbor 0.24.0 執行，每題用它自己的時限。agent 到了時限，Harbor 仍會對它留下的結果跑測試，所以一次嘗試可能逾時卻通過。pytorch-model-recovery 不計入總數，因為最初幾輪裡測試框架沒有把它的題目說明傳給 pi 和 mu。有紀錄的三次裡每個設定都通過了它，所以去掉它不影響比較。
 - 全部使用 MiMo v2.6 Pro，推理強度 high。對照組是 pi 1.4.0。mu 是 mu-agent 0.1.12（以 pi 1.3.0 為基礎），使用預設設定；Jev 是 1.14 版。mude 一欄是 24 層的預發布版，和測試在同一台 Mac 上執行。mude 1.0 是由它做出的 20 層模型，還沒有在 Terminal-Bench 上跑過；0.1.12 之後的 mu 版本也沒有。
 - 每題三次，2026-10-22 到 2026-10-24，在一台 16 GB 的 Apple 晶片 Mac 上。只有基礎設施故障才重跑，規則事先定好。Rosetta 讓每個設定都有四題做不成，所以絕對通過率比 x86_64 上低約 4.5 個百分點，不能和公開排行榜比較。
+- 比的是整個 mu 和 pi：判定器的判定，加上 mu 裡不問判定器的那部分。這個差距裡判定占多少，還沒有測過。要測，得讓 mu 把所有判定點關掉再跑一遍，指令在 [bench/harbor/](../../bench/harbor/README.md#what-the-judge-adds)（英文）。
 
 每次嘗試的結果見 [docs/benchmarks/terminal-bench-2.1.csv](../benchmarks/terminal-bench-2.1.csv)，方法見 [docs/benchmarks/terminal-bench-2.1.md](../benchmarks/terminal-bench-2.1.md)（英文）。執行 mu 和 pi 的 Harbor 轉接器，以及用 CSV 重算這張表的腳本，在 [bench/harbor/](../../bench/harbor/)。
 

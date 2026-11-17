@@ -626,6 +626,13 @@ describe("task frame feature", () => {
 		await vi.waitFor(() => expect(shown()?.frame.version).toBe(2));
 		expect(updates().at(-1)?.turnId).toBe(2);
 		expect(shown()?.frame.updatedTurn).toBe(2);
+		// The ledger says the turn had stopped waiting for it; the frame used it all the same.
+		const asked = harness.sessionManager
+			.getEntries()
+			.flatMap((entry) => (entry.type === "custom" && entry.customType === "kyrn.decision" ? [entry.data] : []))
+			.map((data) => data as { specId: string; source: string; late?: boolean })
+			.filter((record) => record.specId === "task.frame");
+		expect(asked).toMatchObject([{ source: "judge", late: true }]);
 
 		// The next message carries the note.
 		await harness.session.prompt("and now?");

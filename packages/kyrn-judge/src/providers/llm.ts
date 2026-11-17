@@ -82,9 +82,10 @@ function extractJson(text: string): unknown {
 
 /**
  * Any generative model as a judge. Slower and costlier than a System One
- * model and its probabilities are verbalized rather than read off logits, but
- * it is strong zero-shot, which makes it the escalation tier behind a small
- * local judge and the teacher when distilling one.
+ * model, and its probabilities are written down rather than read off logits,
+ * so they are not on the scale a trained judge's are (`JudgeProfile.calibration`
+ * is where a measured correction goes). It is strong zero-shot, which makes it
+ * the stand-in behind a small local judge and the teacher when distilling one.
  */
 export class LlmJudgeProvider implements JudgeProvider {
 	readonly id: string;

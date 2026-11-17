@@ -648,6 +648,15 @@ describe("kyrn features", () => {
 				await harness.session.prompt("Book a room for Friday.");
 				await vi.waitFor(() => expect(landed).toBe(true));
 				await new Promise((resolve) => setImmediate(resolve));
+				// Used or dropped, the ledger says of that verdict that the turn had stopped waiting for it.
+				const first = harness.sessionManager
+					.getEntries()
+					.flatMap((entry) =>
+						entry.type === "custom" && entry.customType === "kyrn.decision" ? [entry.data] : [],
+					)
+					.map((data) => data as { specId: string; late?: boolean })
+					.find((record) => record.specId === "skills.disclosure");
+				expect(first?.late).toBe(true);
 				await harness.session.prompt("And send the invite.");
 				return skillNames;
 			};

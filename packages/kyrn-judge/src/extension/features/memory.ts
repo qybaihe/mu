@@ -119,6 +119,9 @@ function reportsOf(event: { content: unknown; details?: unknown }): string[] {
  * of a turn the judge says whether the lessons brought into it were followed, and one recalled many
  * times and never followed is retired.
  *
+ * Whether a lesson is brought into a turn is the recall verdict's alone: it reads each lesson's trigger against the
+ * message. Preflight's guess at whether notes would help, made without the notes, no longer overrules it.
+ *
  * The user's own word is not retired for being ignored. A correction or a rule the user had to say a second time, or
  * one recalled that often and never followed, becomes a standing rule (`standing`): recalling it was not enough, so
  * the constraint gate holds every call that changes something against it, as against a constraint of the task
@@ -298,7 +301,11 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 
 	const candidates = (cwd: string): StoredLesson[] => rankForRecall(store.all(), cwd, options.maxCandidates);
 	const recall = (words: string, lessons: readonly StoredLesson[], signal?: AbortSignal) =>
-		runtime.engine.decide(memoryRecall, { userMessage: clip(words, 400), lessons }, { signal });
+		runtime.engine.decide(
+			memoryRecall,
+			{ userMessage: clip(words, 400), lessons },
+			{ signal, neededBy: runtime.turnDeadline(options.waitMs) },
+		);
 	/** The recall asked the moment the message arrived, alongside preflight. */
 	let early: { turn: number; lessons: StoredLesson[]; decision: ReturnType<typeof recall> } | undefined;
 	runtime.atTurnStart((words) => {
@@ -320,7 +327,6 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			if (event.messageType === "custom") return undefined;
 			const started = early?.turn === runtime.userTurns ? early : undefined;
 			early = undefined;
-			if (runtime.turn.preflight?.needsMemory === "no") return undefined;
 			const lessons = started?.lessons ?? candidates(ctx.cwd);
 			if (lessons.length === 0) return undefined;
 			const pending = started?.decision ?? recall(userWords(event.prompt), lessons, ctx.signal);
@@ -398,7 +404,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		const pending = runtime.engine.decideMany(
 			memoryRecallForTask,
 			tasks.map((task) => ({ task: clip(task, 600), lessons })),
-			{ signal },
+			{ signal, neededBy: Date.now() + options.waitMs },
 		);
 		// Shadow records what it would have given; only an active verdict is worth holding the sub-agents for.
 		if (runtime.mode(memoryRecallForTask.id) !== "active") {

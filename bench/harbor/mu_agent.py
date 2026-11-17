@@ -14,6 +14,8 @@ files, the same trajectory and token accounting) with these differences:
 - The judge's calls are counted. Each verdict is a `kyrn.decision` entry in the session file with the judge's tokens;
   they are added to the run's usage under the judge's model, priced at Jev's list price, and the metadata says how
   many verdicts there were and how many fell back to the default because the judge didn't answer.
+- Two control arms say what the judge adds, apart from the rest of mu (`--ak judge_mode=off`, `--ak judge=off`;
+  bench/harbor/README.md).
 - Spend no assistant message carries is counted too: a reply the watchdog cut (the aborted request reports no usage)
   and the sub-agents of `delegate` and `hive` (they keep no session). mu records both as `kyrn.usage` entries
   (kyrn/docs/features/usage-accounting.md); for a session from a build before those, the same is worked out from the
@@ -106,6 +108,20 @@ class MuOptions(PiOptions):
         description="A System One endpoint (`.../v1/systemone`) to add as a judge; its key comes from MU_BENCH_JUDGE_KEY.",
     )
     judge_name: str = Field(default="mude", description="The name of the judge at judge_url; MU_JUDGE can list it.")
+    judge: str | None = Field(
+        default=None,
+        description=(
+            "MU_JUDGE for this configuration, instead of the env file's: the judges to ask, in order, or `off` for mu "
+            "without its kernel (no judge and none of the kernel's features)."
+        ),
+    )
+    judge_mode: str | None = Field(
+        default=None,
+        description=(
+            "MU_JUDGE_MODE: `off` runs every feature of the kernel on its fixed rules and asks no judge, `shadow` asks "
+            "and records without acting. Default: mu's own defaults."
+        ),
+    )
     record_state: bool = Field(
         default=False,
         description="Keep each judged state in the decision entries (mu.json recordState). It changes nothing mu does.",
@@ -198,6 +214,11 @@ class Mu(Pi):
             ):
                 if (value := self._get_env(name)) is not None:
                     env[name] = value
+            # One env file serves every configuration of a comparison: what tells them apart is given per run.
+            if self.options.judge is not None:
+                env["MU_JUDGE"] = self.options.judge
+            if self.options.judge_mode is not None:
+                env["MU_JUDGE_MODE"] = self.options.judge_mode
         return await super().exec_as_agent(environment, command, env=env, cwd=cwd, timeout_sec=timeout_sec)
 
     def _config_command(self, config_dir: str) -> str:

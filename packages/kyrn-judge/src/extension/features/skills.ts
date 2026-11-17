@@ -141,7 +141,11 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 
 	const visibleOf = (all: readonly PromptSkill[]) => all.filter((skill) => !skill.disableModelInvocation);
 	const disclose = (words: string, skills: readonly SkillCandidate[], signal?: AbortSignal) =>
-		runtime.engine.decide(skillDisclosure, { userMessage: words, skills }, { signal });
+		runtime.engine.decide(
+			skillDisclosure,
+			{ userMessage: words, skills },
+			{ signal, neededBy: runtime.turnDeadline(options.waitMs) },
+		);
 	const candidatesToAnnounce = () => [...hidden.values()].filter((skill) => !skill.announced);
 	/**
 	 * A later message's question about the hidden skills its words point to, with the handle that stops it; undefined

@@ -4,6 +4,7 @@ import type { JudgeLike, JudgeTierReport } from "./judge.ts";
 import { validateQuestions } from "./judge.ts";
 import type { LedgerRecord, LedgerSink } from "./ledger.ts";
 import { hasEscapeOption } from "./policy.ts";
+import type { LatencyClass } from "./queue.ts";
 import { environmentSecrets, redactJson } from "./redact.ts";
 import type {
 	Answer,
@@ -20,6 +21,24 @@ export const ABSTAIN: unique symbol = Symbol("kyrn.judge.abstain");
 
 /** Batches up to this size record each item's answers in the ledger. */
 const MAX_BATCH_ANSWERS = 8;
+
+/** Whether two values are the same as the ledger keeps them: an object's keys in any order, one that holds nothing as good as absent. */
+function sameJson(a: JsonValue | undefined, b: JsonValue | undefined): boolean {
+	if (a === b) return true;
+	if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+	if (Array.isArray(a) || Array.isArray(b)) {
+		if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+		return a.every((item, index) => sameJson(item, b[index]));
+	}
+	// Read by the other side's keys too, where a key may be missing.
+	const left = a as { readonly [key: string]: JsonValue | undefined };
+	const right = b as { readonly [key: string]: JsonValue | undefined };
+	return [...new Set([...Object.keys(left), ...Object.keys(right)])].every((key) => sameJson(left[key], right[key]));
+}
+
+/** Whether a verdict is something else than the fallback: without one there is nothing to differ. */
+const differsFrom = (judged: JsonValue | undefined, fallback: JsonValue): boolean =>
+	judged !== undefined && !sameJson(judged, fallback);
 
 /** A state's digest in the ledger: SHA-256 of its JSON, as the decision built it. */
 export const digestOf = (state: unknown): string => createHash("sha256").update(JSON.stringify(state)).digest("hex");
@@ -41,9 +60,6 @@ export type DecisionMode = "off" | "shadow" | "active";
  */
 export type CacheImpact = "none" | "append-only" | "prefix-mutating";
 
-/** `inline` blocks the agent loop, `parallel` races other work, `background` never blocks. */
-export type LatencyClass = "inline" | "parallel" | "background";
-
 export interface DecisionSpec<In, Qs extends Questions, Out extends JsonValue> {
 	readonly id: string;
 	/** Bump whenever question wording or policy changes, so ledger records stay comparable. */
@@ -60,6 +76,10 @@ export interface DecisionSpec<In, Qs extends Questions, Out extends JsonValue> {
 	/** What the questions take to answer: one value for all, or per question id. See `Capability`. */
 	readonly capabilities?: Capability | Readonly<Partial<Record<string, Capability>>>;
 	readonly cacheImpact: CacheImpact;
+	/**
+	 * How soon whoever asks needs the verdict. A judge that answers only a few requests at a time takes the urgent ones
+	 * first (`JudgeQueue`); to any other judge it makes no difference.
+	 */
 	readonly latency: LatencyClass;
 	/** Set only when every choice question's option set is truly closed. */
 	readonly allowChoicesWithoutEscape?: boolean;
@@ -157,6 +177,9 @@ interface Evaluation<Out> {
 	judged?: Out;
 	answers?: Readonly<Record<string, Answer>>;
 	latencyMs?: number;
+	queuedMs?: number;
+	/** The answer came after the asker had stopped waiting for it (`Asking.neededBy`). */
+	late?: boolean;
 	usage?: JudgeUsage;
 	modelId?: string;
 	warnings?: readonly JudgeWarning[];
@@ -167,6 +190,17 @@ interface Evaluation<Out> {
 	 * fails too: such a request is still one to replay or to train a judge on.
 	 */
 	request?: { state: JsonValue; questions: JsonValue };
+}
+
+/** What a caller says about its wait when it asks. */
+export interface Asking {
+	signal?: AbortSignal;
+	/**
+	 * When the caller stops waiting for the verdict, on `Date.now()`'s scale: the end of its own bounded wait. The
+	 * engine does not end the call then. A judge that keeps a line answers what is still waited for first, and the
+	 * ledger says of a verdict that came later that it was late. Not set: the caller waits until the verdict comes.
+	 */
+	neededBy?: number;
 }
 
 export class DecisionEngine {
@@ -293,7 +327,7 @@ export class DecisionEngine {
 		spec: DecisionSpec<In, Qs, Out>,
 		input: In,
 		state: JudgeInput,
-		signal: AbortSignal | undefined,
+		asking: Asking & { readonly latency: LatencyClass },
 	): Promise<Evaluation<Out>> {
 		const questions: Questions = spec.questionsFor ? spec.questionsFor(input) : spec.questions;
 		if (Object.keys(questions).length === 0) return { failure: "abstain" };
@@ -316,13 +350,18 @@ export class DecisionEngine {
 			const result = await this.judgeFor(spec.id).evaluate({
 				state: sent,
 				questions: asked,
-				signal,
+				signal: asking.signal,
 				capabilities,
+				decision: spec.id,
+				latency: asking.latency,
+				neededBy: asking.neededBy,
 			});
 			this.stats.inputTokens += result.usage.inputTokens ?? 0;
 			const evaluation: Evaluation<Out> = {
 				answers: result.answers,
 				latencyMs: result.latencyMs,
+				queuedMs: result.queuedMs,
+				late: asking.neededBy !== undefined && Date.now() > asking.neededBy ? true : undefined,
 				usage: result.usage,
 				modelId: result.modelId,
 				warnings: result.warnings.length > 0 ? result.warnings : undefined,
@@ -353,6 +392,20 @@ export class DecisionEngine {
 		return mode === "active" || (mode === "shadow" && spec.actsInShadow === true);
 	}
 
+	/**
+	 * What the judge is told about a request's wait. A verdict that is only recorded (shadow) holds nobody up: it is
+	 * asked as background work, and nobody stops waiting for it either.
+	 */
+	private waitOf(
+		spec: { readonly latency: LatencyClass; readonly actsInShadow?: boolean },
+		mode: DecisionMode,
+		asking: Asking,
+	): Asking & { readonly latency: LatencyClass } {
+		return this.applies(spec, mode)
+			? { signal: asking.signal, neededBy: asking.neededBy, latency: spec.latency }
+			: { signal: asking.signal, latency: "background" };
+	}
+
 	private asked(): JsonValue | undefined {
 		try {
 			return this.origin?.();
@@ -378,7 +431,7 @@ export class DecisionEngine {
 	async decide<In, const Qs extends Questions, Out extends JsonValue>(
 		spec: DecisionSpec<In, Qs, Out>,
 		input: In,
-		options: { signal?: AbortSignal } = {},
+		options: Asking = {},
 	): Promise<Decision<Out>> {
 		this.impacts.set(spec.id, spec.cacheImpact);
 		const mode = this.getMode(spec.id);
@@ -387,7 +440,7 @@ export class DecisionEngine {
 
 		const origin = this.asked();
 		const state = spec.buildState(input);
-		const evaluation = await this.evaluate(spec, input, state, options.signal);
+		const evaluation = await this.evaluate(spec, input, state, this.waitOf(spec, mode, options));
 		const { judged } = evaluation;
 		const useJudged = this.applies(spec, mode) && judged !== undefined;
 		const outcome = useJudged && judged !== undefined ? judged : fallback;
@@ -407,8 +460,11 @@ export class DecisionEngine {
 			source,
 			reason,
 			judged,
+			differs: differsFrom(judged, fallback),
 			answers: evaluation.answers,
 			latencyMs: evaluation.latencyMs,
+			queuedMs: evaluation.queuedMs,
+			late: evaluation.late,
 			usage: evaluation.usage,
 			warnings: evaluation.warnings,
 			tiers: evaluation.tiers,
@@ -442,7 +498,7 @@ export class DecisionEngine {
 	async decideMany<In, const Qs extends Questions, Out extends JsonValue>(
 		spec: DecisionSpec<In, Qs, Out>,
 		inputs: readonly In[],
-		options: { signal?: AbortSignal; concurrency?: number } = {},
+		options: Asking & { concurrency?: number } = {},
 	): Promise<Decision<Out>[]> {
 		this.impacts.set(spec.id, spec.cacheImpact);
 		const mode = this.getMode(spec.id);
@@ -461,11 +517,12 @@ export class DecisionEngine {
 		const evaluations: Evaluation<Out>[] = new Array(inputs.length);
 		// Each state is built once: for its call and for the ledger's digest.
 		const states = inputs.map((input) => spec.buildState(input));
+		const asking = this.waitOf(spec, mode, options);
 		let next = 0;
 		const worker = async () => {
 			while (next < inputs.length) {
 				const index = next++;
-				evaluations[index] = await this.evaluate(spec, inputs[index], states[index], options.signal);
+				evaluations[index] = await this.evaluate(spec, inputs[index], states[index], asking);
 			}
 		};
 		// The callers pass mu.json's values: one that is no whole number of at least one (0, 2.5) is taken as the nearest
@@ -476,13 +533,16 @@ export class DecisionEngine {
 		await Promise.all(Array.from({ length: workers }, worker));
 
 		const ledgerId = randomUUID();
+		let differing = 0;
 		const decisions = inputs.map((input, index): Decision<Out> => {
 			const evaluation = evaluations[index];
 			const useJudged = this.applies(spec, mode) && evaluation.judged !== undefined;
+			const fallback = spec.fallback(input);
+			if (differsFrom(evaluation.judged, fallback)) differing++;
 			return {
 				specId: spec.id,
 				mode,
-				outcome: useJudged && evaluation.judged !== undefined ? evaluation.judged : spec.fallback(input),
+				outcome: useJudged && evaluation.judged !== undefined ? evaluation.judged : fallback,
 				source: useJudged ? "judge" : "fallback",
 				reason: useJudged ? undefined : (evaluation.failure ?? "shadow"),
 				judged: evaluation.judged,
@@ -516,13 +576,22 @@ export class DecisionEngine {
 			reason:
 				mode === "shadow" && !spec.actsInShadow ? "shadow" : failures === inputs.length ? "error:all" : undefined,
 			judged: evaluations.map((evaluation) => evaluation.judged ?? null),
+			differs: differing > 0,
 			latencyMs: Math.round(performance.now() - startedAt),
+			// The longest any of its requests stood in line, and whether any answer came late.
+			queuedMs: evaluations.reduce<number | undefined>(
+				(longest, evaluation) =>
+					evaluation.queuedMs === undefined ? longest : Math.max(longest ?? 0, evaluation.queuedMs),
+				undefined,
+			),
+			late: evaluations.some((evaluation) => evaluation.late) ? true : undefined,
 			usage: { inputTokens, outputTokens },
 			state: requests?.map((request) => request?.state ?? null),
 			questions: requests?.map((request) => request?.questions ?? null),
 			batch: {
 				size: inputs.length,
 				failures,
+				differs: differing,
 				// Small batches (sub-agent routing) keep every verdict for inspection; large ones (output chunks) would bloat the session.
 				answers:
 					inputs.length <= MAX_BATCH_ANSWERS

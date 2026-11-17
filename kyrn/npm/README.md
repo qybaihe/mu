@@ -51,6 +51,7 @@ mu judge mude <cmd>      mude 1.0 on this Mac: install | enable | disable | star
 mu judge model <cmd>     other decision models from Hugging Face: add <link> | list | use | remove
 mu ledger [n] [--json]   print the judge's verdicts from the last n sessions
 mu ledger --timeline     one session step by step: your messages, the replies, each verdict and each tool result
+mu ledger --tally [n]    each decision point over the last n sessions: asked, answered, differed from no judge, cost
 mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows them (mu import --help)
 mu doctor                check the installation, the judges and the connections
 mu auth <cmd>            sign-in helper for the desktop app: status | login | logout | enable

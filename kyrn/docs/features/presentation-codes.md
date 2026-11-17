@@ -100,7 +100,7 @@ These fields are added to `VerdictData`:
   - `{ type: "choice", choice, probabilities? }`
   - `{ type: "score", score, probabilities? }`
 
-  The question ids are `turn_type`, `is_side_question`, `needs_clarification`, `needs_files_changed`, `needs_memory`, `swarm_worthy`, `plan_first`, `task_complexity`, `reasoning_depth` and `tool_complexity`.
+  The question ids are `turn_type`, `is_side_question`, `needs_clarification`, `needs_files_changed`, `swarm_worthy`, `plan_first`, `task_complexity`, `reasoning_depth` and `tool_complexity`. Records written up to preflight version 4 also carry `needs_memory`, a question that is no longer asked: keep its words, so an old session still reads.
 
 ## Sub-agents (delegate and hive snapshots)
 

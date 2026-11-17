@@ -112,6 +112,8 @@ export function usage(platform) {
 		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",
 		"  mu ledger --timeline     one session step by step: your messages, the replies, each verdict",
 		"                           and each tool result, in order (--session <file or id>)",
+		"  mu ledger --tally [n]    each decision point over the last n sessions: how often it was asked,",
+		"                           how often its verdict differed from what mu does with no judge, the cost",
 		"  mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows",
 		"                           them (mu import --help)",
 		"  mu doctor                check the installation, the judges and the connections",

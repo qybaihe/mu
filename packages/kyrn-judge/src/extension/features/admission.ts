@@ -1,9 +1,10 @@
 import { join } from "node:path";
 import { isTestLog, planTestLog, renderTestLog, type TestLogStrategy } from "../../admission/test-log.ts";
+import type { Asking } from "../../decision.ts";
 import { type AdmissionOutcome, toolAdmission, toolAdmissionBatch } from "../../decisions/tool-admission.ts";
 import { archiveDir as archiveDirOf, sweepArchives, writeArchive } from "../archive.ts";
 import { canRecall, recallCall, recordFullOutput } from "../full-output.ts";
-import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
+import { clip, failOpen, type KyrnRuntime, textOf, waitFor } from "../runtime.ts";
 
 /** What one batched request may carry in chunks: the judge takes 64 KiB, and the call and the questions need room too. */
 const BATCH_STATE_CHARS = 48_000;
@@ -165,13 +166,13 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 	const judgeChunks = async (
 		call: string,
 		middle: readonly string[],
-		signal: AbortSignal | undefined,
+		asking: Asking,
 	): Promise<{ outcomes: readonly AdmissionOutcome[]; ledgerId?: string }> => {
 		if (!runtime.answersInBatches(toolAdmission.id, "screen")) {
 			const decisions = await runtime.engine.decideMany(
 				toolAdmission,
 				middle.map((chunk) => ({ call, chunk })),
-				{ signal, concurrency: options.concurrency },
+				{ ...asking, concurrency: options.concurrency },
 			);
 			return { outcomes: decisions.map((decision) => decision.outcome), ledgerId: decisions[0]?.ledgerId };
 		}
@@ -181,7 +182,7 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			batches.push({ call, chunks: middle.slice(start, start + size) });
 		}
 		const decisions = await runtime.engine.decideMany(toolAdmissionBatch, batches, {
-			signal,
+			...asking,
 			concurrency: options.concurrency,
 		});
 		return { outcomes: decisions.flatMap((decision) => decision.outcome), ledgerId: decisions[0]?.ledgerId };
@@ -237,12 +238,16 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			const middle = chunks.slice(1, -1);
 			// Shadow records what it would have dropped; only an active verdict is worth holding the result for.
 			if (mode !== "active") {
-				void judgeChunks(call, middle, undefined).catch(() => {});
+				void judgeChunks(call, middle, {}).catch(() => {});
 				return undefined;
 			}
 			// Measured in real sessions before batching: up to 30 s in front of one result. Past the limit the output
-			// goes in whole; the verdicts still land in the ledger, where the wait they would have cost can be read.
-			const judged = await within(judgeChunks(call, middle, ctx.signal), options.waitMs);
+			// goes in whole; the verdicts still land in the ledger, marked late, where the wait they would have cost
+			// can be read.
+			const judged = await waitFor(
+				(neededBy) => judgeChunks(call, middle, { signal: ctx.signal, neededBy }),
+				options.waitMs,
+			);
 			if (!judged) return undefined;
 			const { outcomes } = judged;
 

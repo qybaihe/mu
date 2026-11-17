@@ -260,6 +260,8 @@ describe("decision models beside mude", () => {
 			model: "fast-judge",
 			apiKeyEnv: "MU_JUDGE_FAST_JUDGE_KEY",
 			timeoutMs: 4000,
+			// Its server answers one request at a time, as mude's does: mu lines its requests up.
+			concurrency: 1,
 		});
 		expect(written.routes).toEqual({ "tool.description": ["jev"], "tool.injection": ["jev"] });
 		expect(readFileSync(ctx.files.envFile, "utf8")).toMatch(/^MU_JUDGE_FAST_JUDGE_KEY=[0-9a-f]{64}$/m);

@@ -1,4 +1,5 @@
-import { CascadeJudge, type CascadeTier } from "./cascade.ts";
+import { checkCalibration } from "./calibration.ts";
+import { CascadeJudge, type CascadeTier, type JudgeProfile } from "./cascade.ts";
 import { BUILT_IN_JUDGES, type JudgeConfig, type KyrnConfig, LAYA } from "./config.ts";
 import { JudgeError, type JudgeErrorKind } from "./errors.ts";
 import { Judge, type JudgeLike } from "./judge.ts";
@@ -18,6 +19,7 @@ import {
 } from "./providers/openai-decisions.ts";
 import { RefusalGuard } from "./providers/refusal-guard.ts";
 import { CLM_DEFAULT_MODEL, clmEndpoint, TypeSafeJudgeProvider } from "./providers/typesafe.ts";
+import { JudgeQueue } from "./queue.ts";
 import type { JudgeProvider } from "./types.ts";
 
 /** A judge's service that turned its key down, or cannot charge the account behind it (`RefusalGuard`). */
@@ -52,6 +54,12 @@ export interface JudgeHost {
 	freeJev?: (outcome: FreeJevOutcome) => void;
 	/** Told when a judge's service turned its key down, or cannot charge the account, and is left alone for now. */
 	refused?: (refusal: JudgeRefusal) => void;
+	/**
+	 * The lines of the judges that answer only a few requests at a time (`JudgeConfig.concurrency`), by server. A host
+	 * that builds judges more than once (the tiers, each route, a switch at runtime) passes the same map every time,
+	 * so that a server has one line however many orders name it. Without it, each build keeps its own.
+	 */
+	queues?: Map<string, JudgeQueue>;
 	env?: Readonly<Record<string, string | undefined>>;
 }
 
@@ -289,6 +297,7 @@ function knownJudges(config: KyrnConfig): string {
 export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge {
 	const tiers: CascadeTier[] = [];
 	const problems: string[] = [];
+	const queues = host.queues ?? new Map<string, JudgeQueue>();
 	for (const name of config.tiers) {
 		const judgeConfig = resolveJudgeConfig(name, config);
 		if (!judgeConfig) {
@@ -302,7 +311,10 @@ export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge
 		try {
 			const provider = createProvider(name, judgeConfig, host);
 			const timeoutMs = judgeConfig.timeoutMs ?? DEFAULT_TIMEOUT_MS[judgeConfig.type];
-			tiers.push({ judge: new Judge({ provider, timeoutMs }), profile: judgeConfig.profile });
+			tiers.push({
+				judge: new Judge({ provider, timeoutMs, queue: queueOf(name, judgeConfig, queues, problems) }),
+				profile: readableProfile(name, judgeConfig, problems),
+			});
 		} catch (error) {
 			problems.push(error instanceof Error ? error.message : String(error));
 		}
@@ -312,6 +324,43 @@ export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge
 		tiers.push({ judge: new Judge({ provider: new UnavailableJudgeProvider() }) });
 	}
 	return { judge: new CascadeJudge(tiers), problems };
+}
+
+/**
+ * The line of a judge that says how many requests it answers at a time, undefined for one that does not. A server has
+ * one line: judges at the same address share it, and a judge without an address goes by its name. `concurrency` is
+ * mu.json's text: one that is no whole number of at least 1 is named in `problems`, and the judge gets no line.
+ */
+function queueOf(
+	name: string,
+	judge: JudgeConfig,
+	queues: Map<string, JudgeQueue>,
+	problems: string[],
+): JudgeQueue | undefined {
+	const concurrency: unknown = judge.concurrency;
+	if (concurrency === undefined) return undefined;
+	if (typeof concurrency !== "number" || !Number.isInteger(concurrency) || concurrency < 1) {
+		problems.push(
+			`judge "${name}": concurrency is not a whole number of 1 or more, so its requests are not lined up`,
+		);
+		return undefined;
+	}
+	const server = judge.baseUrl ?? name;
+	const queue = queues.get(server) ?? new JudgeQueue(concurrency);
+	queues.set(server, queue);
+	return queue;
+}
+
+/**
+ * A judge's profile with the calibration curves that can be read. The profile is mu.json's text: a curve that cannot
+ * be read is left out and named in `problems`, and the judge's answers to that question are read as it gives them.
+ */
+function readableProfile(name: string, judge: JudgeConfig, problems: string[]): JudgeProfile | undefined {
+	const profile = judge.profile;
+	if (profile?.calibration === undefined) return profile;
+	const { calibration, rejected } = checkCalibration(profile.calibration);
+	for (const what of rejected) problems.push(`judge "${name}": ${what}, so it is not used`);
+	return { ...profile, calibration };
 }
 
 /** No judge at all fails as a judge without a key does: nothing answers until the user sets one up. */

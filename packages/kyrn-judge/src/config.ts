@@ -76,12 +76,20 @@ export interface JudgeConfig {
 	readonly thinking?: string;
 	/** logprob: extra request fields, e.g. `{"chat_template_kwargs": {"enable_thinking": false}}`. */
 	readonly body?: Readonly<Record<string, JsonValue>>;
+	/** How long the judge has for one request, counted from when it is sent. */
 	readonly timeoutMs?: number;
+	/**
+	 * How many requests the judge answers at a time, for one that answers only so many: a model served on this machine
+	 * behind a lock answers one. mu then keeps the line itself and sends what a turn waits for first (`JudgeQueue`),
+	 * where the server would take the requests in whatever order they reached it. A whole number of 1 or more. Not
+	 * set: every request is sent as it comes.
+	 */
+	readonly concurrency?: number;
 	readonly profile?: JudgeProfile;
 }
 
 export interface KyrnConfig {
-	/** Judges tried in order; each later one only sees what the earlier ones left uncertain. */
+	/** Judges in order: a later one answers only what the ones before it could not (they failed, or are not trusted with it). */
 	readonly tiers: readonly string[];
 	/** Named judges, merged over the built-in ones (`jev` and its routes, `clef`, `clm`, `mude`, `openai`, `mock`). */
 	readonly judges: Readonly<Record<string, JudgeConfig>>;
@@ -150,13 +158,15 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 	// or better on relate, rate, meta, screening tool output (`tool.admission`) and promises (`turn.continue`), and on
 	// classify but for one check: a tool's description screened for injected instructions (`tool.description`), where
 	// Jev did better. Nothing measured it on injections in fetched content (`tool.injection`). So with a judge behind it,
-	// `mu judge mude` routes those two checks to that judge (`routes` in mu.json). It answers in about 0.1 s here.
+	// `mu judge mude` routes those two checks to that judge (`routes` in mu.json). It answers a small question in about
+	// 0.1 s here, and one request at a time: its server runs the model under a lock.
 	mude: {
 		type: "typesafe",
 		baseUrl: "http://127.0.0.1:8790/v1/systemone",
 		model: "mude",
 		apiKeyEnv: "MU_JUDGE_MUDE_KEY",
 		timeoutMs: 4000,
+		concurrency: 1,
 	},
 	// OpenAI's decision model, gpt-6-luna, through the Decisions API. Not measured on mu's questions yet.
 	openai: { type: "openai" },

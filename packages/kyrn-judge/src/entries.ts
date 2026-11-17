@@ -31,6 +31,7 @@ const LEDGER_CLI = "mu ledger: kyrn/bin/kyrn-ledger";
 const signals = {
 	confidence: Type.Optional(Type.Number()),
 	judge: Type.Optional(Type.String()),
+	said: Type.Optional(Type.Number()),
 };
 
 /** A judge's answer to one question (`Answer` in types.ts). */
@@ -64,8 +65,11 @@ const DecisionSchema = Type.Object({
 	source: Type.Union([Type.Literal("judge"), Type.Literal("fallback")]),
 	reason: Type.Optional(Type.String()),
 	judged: Type.Optional(Type.Unknown()),
+	differs: Type.Optional(Type.Boolean()),
 	answers: Type.Optional(Type.Record(Type.String(), AnswerSchema)),
 	latencyMs: Type.Optional(Type.Number()),
+	queuedMs: Type.Optional(Type.Number()),
+	late: Type.Optional(Type.Boolean()),
 	usage: Type.Optional(
 		Type.Object({
 			inputTokens: Type.Optional(Type.Number()),
@@ -90,6 +94,7 @@ const DecisionSchema = Type.Object({
 				asked: Type.Number(),
 				kept: Type.Number(),
 				latencyMs: Type.Optional(Type.Number()),
+				queuedMs: Type.Optional(Type.Number()),
 				error: Type.Optional(Type.String()),
 			}),
 		),
@@ -98,6 +103,7 @@ const DecisionSchema = Type.Object({
 		Type.Object({
 			size: Type.Number(),
 			failures: Type.Number(),
+			differs: Type.Optional(Type.Number()),
 			answers: Type.Optional(Type.Array(Type.Union([Type.Record(Type.String(), AnswerSchema), Type.Null()]))),
 			digests: Type.Optional(Type.Array(Type.String())),
 		}),
@@ -323,7 +329,7 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 	{
 		type: "kyrn.decision",
 		kind: "entry",
-		version: 1,
+		version: 2,
 		writers: ["src/extension/runtime.ts"],
 		readers: [DESKTOP_REDUCER, LEDGER_CLI, `/ledger: ${features("commands")}`, "replay: src/providers/replay.ts"],
 		summary: "One record of the judge's ledger: what a decision asked, the answers, what mu acted on.",
@@ -358,7 +364,7 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 	{
 		type: "kyrn.verdict",
 		kind: "entry",
-		version: 1,
+		version: 2,
 		writers: [features("preflight")],
 		readers: [DESKTOP_REDUCER],
 		summary: "The preflight verdict on a user message, as the verdict line under it shows it.",

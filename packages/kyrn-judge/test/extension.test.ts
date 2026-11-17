@@ -28,7 +28,6 @@ const chatVerdict: Record<string, Answer> = {
 	is_side_question: yes,
 	needs_clarification: no,
 	needs_files_changed: no,
-	needs_memory: no,
 	swarm_worthy: no,
 	plan_first: no,
 	task_complexity: { type: "score", score: 0.5 },
@@ -335,6 +334,29 @@ describe("kyrn judge extension", () => {
 		expect(turn.reasoningSent).toBe("high");
 		expect(turn.promptSeen).toContain("Write a short plan");
 		expect(turn.levelAfter).toBe("low");
+	});
+
+	// What the benchmark's rules-only arm runs (bench/harbor, `--ak judge_mode=off`): mu's kernel without its judge,
+	// to tell what the verdicts add from what the rest of mu adds.
+	it("with every decision point off, runs the kernel's features on their rules and asks no judge", async () => {
+		const provider = new MockJudgeProvider(() => chatVerdict);
+		const harness = await createHarness({
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "off", config })],
+		});
+		harnesses.push(harness);
+		harness.setResponses([fauxAssistantMessage("It refreshes the access token.")]);
+
+		await harness.session.prompt("By the way, what does the refreshToken helper do?");
+
+		// Not one question, a probe included, and nothing in the ledger.
+		expect(provider.calls).toEqual([]);
+		expect(ledgerRecords(harness)).toEqual([]);
+		// The kernel is there all the same: the opening snapshot, which no judge decides, went with the first message.
+		const snapshots = harness.session.messages.filter(
+			(message) => message.role === "custom" && message.customType === SNAPSHOT_MESSAGE,
+		);
+		expect(snapshots).toHaveLength(1);
+		expect(rolesSent(harness)).toEqual(["system", "user", "assistant"]);
 	});
 
 	it("never blocks or breaks a prompt when the judge is down", async () => {

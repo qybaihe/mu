@@ -17,6 +17,7 @@ import type { ClassifierCall } from "../providers/classifier.ts";
 import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
 import { isOpenAIAddress, type OpenAIKeyProblem } from "../providers/openai-decisions.ts";
+import type { JudgeQueue } from "../queue.ts";
 import { buildJudge, type JudgeRefusal, resolveJudgeConfig } from "../registry.ts";
 import type { Capability, JsonValue } from "../types.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
@@ -337,6 +338,8 @@ export class KyrnRuntime {
 	private firstUserMessage = "";
 	private turnStartListeners: ((words: string) => void)[] = [];
 	private judgeHttp: JudgeFetch | undefined;
+	/** One line per judge server that answers only a few requests at a time, whichever order of judges asks it. */
+	private readonly judgeQueues = new Map<string, JudgeQueue>();
 	private presentationSequence = 0;
 	onPresentation?: PresentationListener;
 	/** Set by the free Jev notice: how each call went when the `jev` judge falls back to the free Jev. */
@@ -419,6 +422,7 @@ export class KyrnRuntime {
 				freeJev: (outcome) => this.onFreeJev?.(outcome),
 				openaiKeyProblem: (problem) => this.onOpenAIKey?.(problem),
 				refused: (refusal) => this.onJudgeRefused?.(refusal, tiers),
+				queues: this.judgeQueues,
 			},
 		);
 		this.problems.push(...built.problems);
@@ -607,12 +611,21 @@ export class KyrnRuntime {
 	}
 
 	/**
+	 * When a wait of `waitMs` counted from the message's arrival is over, on `Date.now()`'s scale. A feature that asks
+	 * the judge before the turn and waits with `untilTurnDeadline` passes this as the call's `neededBy`: the judge's
+	 * line then knows until when the turn is held up for the verdict.
+	 */
+	turnDeadline(waitMs: number): number {
+		return this.turn.startedAt + waitMs;
+	}
+
+	/**
 	 * Waits for `work` until `waitMs` after the message arrived, whichever comes first; undefined
 	 * when the time is up. Every wait before the turn counts from the same moment, so a judge that
 	 * was slow for one feature does not buy the next feature a fresh allowance.
 	 */
 	untilTurnDeadline<T>(work: Promise<T>, waitMs: number): Promise<T | undefined> {
-		const left = Math.max(0, this.turn.startedAt + waitMs - Date.now());
+		const left = Math.max(0, this.turnDeadline(waitMs) - Date.now());
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		return Promise.race([
 			work,
@@ -816,6 +829,15 @@ export function within<T>(work: Promise<T>, waitMs: number): Promise<T | undefin
 	]).finally(() => {
 		if (timer) clearTimeout(timer);
 	});
+}
+
+/**
+ * A judge call the caller waits `waitMs` for, or undefined when the time is up; like `within`, the call carries on and
+ * is recorded when it lands. `ask` gets the moment the wait is over, to pass on as the call's `neededBy`: a judge that
+ * keeps a line then stops putting the request ahead of those still waited for.
+ */
+export function waitFor<T>(ask: (neededBy: number) => Promise<T>, waitMs: number): Promise<T | undefined> {
+	return within(ask(Date.now() + waitMs), waitMs);
 }
 
 /**

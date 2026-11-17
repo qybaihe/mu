@@ -1,23 +1,22 @@
+import { type Calibration, curveOf, readThrough } from "./calibration.ts";
 import { isLasting, JudgeError } from "./errors.ts";
 import type { JudgeCall, JudgeLike, JudgeResult, JudgeTierReport } from "./judge.ts";
 import { addUsage, validateQuestions } from "./judge.ts";
-import { DEFAULT_THRESHOLDS, neutralAnswer, type Thresholds } from "./policy.ts";
+import { neutralAnswer } from "./policy.ts";
 import type { Answer, AnswersFor, Capability, JudgeUsage, JudgeWarning, Question, Questions } from "./types.ts";
 
 /**
- * What a judge is good at. Profiles are per model and measured, not assumed: a
- * small base classifier can read a single text well and still answer "yes" to
- * nearly every relational question, or fail to use an ordinal rubric
- * (kyrn/docs/03-local-judge.md). Over-confidence is the one failure a cascade
- * cannot see in the probabilities, so it has to be declared here.
+ * What a judge is asked, and how its answers are read. Profiles are per model and measured, not assumed: a small base
+ * classifier can read a single text well and still answer "yes" to nearly every relational question, or fail to use
+ * an ordinal rubric (kyrn/docs/03-local-judge.md). Over-confidence is the one failure that does not show in the
+ * probabilities, so it has to be declared here: as a capability the judge is not asked about, or as the curve its
+ * probabilities are read through.
  */
 export interface JudgeProfile {
-	/** Capabilities this judge is trusted on; `false` sends the question to the next tier. Default: all. */
+	/** Capabilities this judge is trusted on; `false` sends the question to the next judge. Default: all. */
 	readonly capabilities?: Partial<Record<Capability, boolean>>;
-	/** A boolean answer strictly inside this band is uncertain and escalates. */
-	readonly thresholds?: Thresholds;
-	/** A choice whose picked option is below this is uncertain and escalates. */
-	readonly minChoiceProbability?: number;
+	/** How its probabilities are read, where that was measured (calibration.ts). Default: as it gives them. */
+	readonly calibration?: Calibration;
 }
 
 /** Ordinal rubrics need `rate`; everything else defaults to `classify` unless the decision says otherwise. */
@@ -36,27 +35,19 @@ export interface CascadeTier {
 
 export type TierReport = JudgeTierReport;
 
-export function isUncertain(_question: Question, answer: Answer, profile: JudgeProfile = {}): boolean {
-	if (answer.type === "boolean") {
-		const band = profile.thresholds ?? DEFAULT_THRESHOLDS;
-		return answer.probability > band.no && answer.probability < band.yes;
-	}
-	if (answer.type === "choice") {
-		const probability = answer.probabilities?.[answer.choice];
-		return probability !== undefined && probability < (profile.minChoiceProbability ?? 0.6);
-	}
-	return false;
-}
-
 /**
- * Judges in order of cost: a fast local model first, a stronger one behind it.
- * Each tier only sees the questions the previous tier could not settle, so the
- * expensive judge is paid for the grey zone alone. A tier that fails is
- * skipped; an uncertain answer beats none, so it is kept when every later
- * tier fails too.
+ * Judges in order. The first one that can answer a question answers it, and the ones behind it stand in when it
+ * cannot: it failed (down, slow, no key), or it is not trusted with what the question takes (`JudgeProfile`).
  *
- * A question no tier is trusted on gets a neutral answer, which every policy
- * reads as "unsure": a judge's known weakness must never drive behavior.
+ * An answer stands as it was given, sure or not. Up to mu 0.3.12 a yes/no answer between 0.2 and 0.8, or a weak pick,
+ * went on to the next judge. A policy reads such an answer as "unsure" and the decision takes its fallback, which
+ * changes nothing. Passing it on put the next judge's confident answer in that place, on exactly the questions the
+ * first judge found hard. Measured with a fine-tuned 4B judge and Nemotron 3 Ultra behind it (docs/nebius.md): on
+ * real held-out requests the 4B judge alone scored 68.2, and 20.0 with Ultra answering what it was unsure of, a few
+ * confident mistakes in costly places outweighing the rest.
+ *
+ * A question no judge is trusted on gets a neutral answer, which every policy reads as "unsure": a judge's known
+ * weakness must never drive behavior.
  */
 export class CascadeJudge implements JudgeLike {
 	private readonly tiers: readonly CascadeTier[];
@@ -84,30 +75,34 @@ export class CascadeJudge implements JudgeLike {
 		validateQuestions(request.questions);
 		const startedAt = performance.now();
 		const settled: Record<string, Answer> = {};
-		const tentative: Record<string, Answer> = {};
 		const usage: JudgeUsage = { inputTokens: 0, outputTokens: 0 };
 		const warnings: JudgeWarning[] = [];
 		const reports: TierReport[] = [];
 		let requests = 0;
+		let queuedMs = 0;
 		let modelId: string | undefined;
 		const errors: unknown[] = [];
 		let pending: string[] = Object.keys(request.questions);
 
 		const capability = (id: string) => capabilityOf(request.questions[id], request.capabilities?.[id]);
 
-		for (const [index, tier] of this.tiers.entries()) {
+		for (const tier of this.tiers) {
 			if (pending.length === 0) break;
 			if (request.signal?.aborted) throw new JudgeError("aborted", "Judge call was aborted");
-			const isLast = index === this.tiers.length - 1;
 			// Questions this tier is not trusted on skip it without costing a call.
 			const mine = pending.filter((id) => isTrusted(tier.profile, capability(id)));
 			if (mine.length === 0) continue;
 			const questions = Object.fromEntries(mine.map((id) => [id, request.questions[id]])) as Questions;
-			const others = pending.filter((id) => !mine.includes(id));
 
 			let result: JudgeResult<Questions>;
 			try {
-				result = await tier.judge.evaluate({ state: request.state, questions, signal: request.signal });
+				result = await tier.judge.evaluate({
+					state: request.state,
+					questions,
+					signal: request.signal,
+					latency: request.latency,
+					neededBy: request.neededBy,
+				});
 			} catch (error) {
 				errors.push(error);
 				reports.push({
@@ -123,39 +118,40 @@ export class CascadeJudge implements JudgeLike {
 			addUsage(usage, result.usage);
 			warnings.push(...result.warnings);
 			modelId ??= result.modelId;
-
-			const stillPending: string[] = [...others];
-			let kept = 0;
 			for (const id of mine) {
-				const answer: Answer = { ...result.answers[id], judge: tier.judge.id };
-				if (!isLast && isUncertain(request.questions[id], answer, tier.profile)) {
-					tentative[id] = answer;
-					stillPending.push(id);
-				} else {
-					settled[id] = answer;
-					kept++;
-				}
+				const curve = curveOf(tier.profile?.calibration, {
+					decision: request.decision,
+					question: id,
+					model: result.modelId,
+				});
+				const answer = curve ? readThrough(result.answers[id], curve) : result.answers[id];
+				settled[id] = { ...answer, judge: tier.judge.id };
 			}
-			reports.push({ judgeId: tier.judge.id, asked: mine.length, kept, latencyMs: result.latencyMs });
-			pending = stillPending;
+			queuedMs += result.queuedMs ?? 0;
+			reports.push({
+				judgeId: tier.judge.id,
+				asked: mine.length,
+				kept: mine.length,
+				latencyMs: result.latencyMs,
+				...(result.queuedMs === undefined ? {} : { queuedMs: result.queuedMs }),
+			});
+			pending = pending.filter((id) => !mine.includes(id));
 		}
 
-		const trustedSomewhere = (id: string) => this.tiers.some((tier) => isTrusted(tier.profile, capability(id)));
-		for (const id of pending) {
-			if (tentative[id]) settled[id] = tentative[id];
-			else if (!trustedSomewhere(id)) settled[id] = { ...neutralAnswer(request.questions[id]), judge: "untrusted" };
-		}
-		const missing = Object.keys(request.questions).filter((id) => !(id in settled));
-		if (missing.length > 0) {
+		if (pending.length > 0) {
 			// Nothing at all came back: that is an outage. Otherwise fail open question by question.
-			if (reports.every((report) => report.error !== undefined)) {
+			if (reports.length > 0 && reports.every((report) => report.error !== undefined)) {
 				// What the next call can expect, whatever the order of the tiers: a judge that may answer then (down, slow)
 				// says more than one that cannot until the user sets it up (no key, no credit).
 				const telling = [...errors].reverse().find((error) => !isLasting(error)) ?? errors.at(-1);
 				if (telling instanceof JudgeError) throw telling;
 				throw new JudgeError("unreachable", "No judge in the cascade answered", { cause: telling });
 			}
-			for (const id of missing) settled[id] = { ...neutralAnswer(request.questions[id]), judge: "unavailable" };
+			const trustedSomewhere = (id: string) => this.tiers.some((tier) => isTrusted(tier.profile, capability(id)));
+			for (const id of pending) {
+				const judge = trustedSomewhere(id) ? "unavailable" : "untrusted";
+				settled[id] = { ...neutralAnswer(request.questions[id]), judge };
+			}
 		}
 
 		return {
@@ -167,6 +163,7 @@ export class CascadeJudge implements JudgeLike {
 			modelId,
 			warnings,
 			tiers: reports,
+			...(queuedMs > 0 ? { queuedMs } : {}),
 		};
 	}
 }

@@ -46,7 +46,6 @@ const QUESTION_LABELS: readonly [string, string][] = [
 	["is_side_question", "side question"],
 	["needs_clarification", "too vague"],
 	["needs_files_changed", "code change"],
-	["needs_memory", "lessons help"],
 	["swarm_worthy", "independent parts"],
 	["plan_first", "large or risky"],
 	["task_complexity", "scope"],

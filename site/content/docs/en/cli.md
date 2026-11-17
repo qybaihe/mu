@@ -29,6 +29,7 @@ mu                     # an interactive session in the current directory
 | `mu doctor` | Check the installation, the model, the judges and the connections, and say what to fix |
 | `mu ledger [n] [--json]` | What the judge decided in the last n sessions. `--json` gives every record with its probabilities and timings. |
 | `mu ledger --timeline` | One session step by step: your messages, the model's replies, each verdict and each tool result, in order and timed. The last session, or the one `--session <file or id>` names. |
+| `mu ledger --tally [n]` | Each decision point over the last n sessions (20 by default): how often it was asked, how often a verdict came, how often the verdict was something else than what mu does with no judge, and what that cost. Ends with the points worth a look. |
 | `mu import --list` | Find your Claude Code, Codex and ZCode conversations |
 | `mu import <file>…` | Bring them into mu with their full history and continue there; run it again later to bring over what's new |
 | `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | [mude 1.0](@docs/judges#mude), mu's own decision model, on a Mac with Apple silicon. `install` resumes a stopped download. |

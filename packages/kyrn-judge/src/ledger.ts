@@ -27,8 +27,27 @@ export interface LedgerRecord {
 	readonly reason?: string;
 	/** What the judge path produced, when the call succeeded. */
 	readonly judged?: JsonValue;
+	/**
+	 * Whether `judged` is something else than the decision's fallback: only then can the verdict have changed what mu
+	 * did (when `source` is "judge"), or would have (in shadow). A point that is asked a hundred times and never differs
+	 * costs a hundred judge calls for nothing, and that shows here (`mu ledger --tally`). For a batch: whether any item
+	 * differs. Not in records written up to mu 0.3.12.
+	 */
+	readonly differs?: boolean;
 	readonly answers?: Readonly<Record<string, Answer>>;
+	/** From the ask to the answer, the wait in line included. */
 	readonly latencyMs?: number;
+	/**
+	 * How long the request stood in the judge's line before it was sent, for a judge that answers only a few at a time
+	 * (`JudgeQueue`). For a batch: the longest any of its requests stood there. Not set when it went at once.
+	 */
+	readonly queuedMs?: number;
+	/**
+	 * The answer came after the asker had stopped waiting for it (`Asking.neededBy`): the turn or the tool result went
+	 * on without it. Some features still use such an answer afterwards (the first message's skills, the task frame);
+	 * the others have no use for it. For a batch: at least one answer did.
+	 */
+	readonly late?: boolean;
 	readonly usage?: JudgeUsage;
 	/** What the provider cut or ignored, such as a state that did not fit its window. */
 	readonly warnings?: readonly JudgeWarning[];
@@ -38,6 +57,8 @@ export interface LedgerRecord {
 	readonly batch?: {
 		readonly size: number;
 		readonly failures: number;
+		/** How many items' verdicts are something else than their fallback (`differs`). */
+		readonly differs?: number;
 		/** Per-item answers, kept only for small batches. */
 		readonly answers?: readonly (Readonly<Record<string, Answer>> | null)[];
 		/** SHA-256 of each item's state, beside its answers: what a replay matches an item's request by. */

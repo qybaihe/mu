@@ -198,7 +198,14 @@ export function registerPreload(runtime: KyrnRuntime): void {
 			.then(async (paths) =>
 				paths.length === 0
 					? undefined
-					: { paths, decision: await runtime.engine.decide(contextPreload, { task: clip(words, 600), paths }) },
+					: {
+							paths,
+							decision: await runtime.engine.decide(
+								contextPreload,
+								{ task: clip(words, 600), paths },
+								{ neededBy: runtime.turnDeadline(options.waitMs) },
+							),
+						},
 			)
 			.catch(() => undefined);
 

@@ -29,6 +29,7 @@ mu                     # 在当前目录开一个交互会话
 | `mu doctor` | 检查安装、模型、判定器和各项连接，并告诉你要修什么 |
 | `mu ledger [n] [--json]` | 最近 n 个会话里判定器做了哪些决定。`--json` 给出每条记录及其概率和耗时。 |
 | `mu ledger --timeline` | 一步步回放一个会话：你的消息、模型的回复、每次判定和每个工具结果，按顺序并带时间。默认是最近一个会话，也可以用 `--session <文件或 id>` 指定。 |
+| `mu ledger --tally [n]` | 按判定点汇总最近 n 个会话（默认 20 个）：问了多少次，得到多少次判定，判定和没有判定器时的做法不同的有多少次，花了多少。最后列出值得看一眼的判定点。 |
 | `mu import --list` | 找出你的 Claude Code、Codex 和 ZCode 对话 |
 | `mu import <file>…` | 把它们连同完整历史导入 mu，在这里接着聊；之后再运行一次会带来新增的内容 |
 | `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | [mude 1.0](@docs/judges#mude)，mu 自己的决策模型，在 Apple 芯片的 Mac 上运行。下载中途停下后，`install` 会从中断的地方接着下。 |
