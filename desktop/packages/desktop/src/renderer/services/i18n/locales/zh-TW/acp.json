@@ -17,6 +17,26 @@
     "download_error": "下載失敗",
     "generated_alt": "生成的圖片"
   },
+  "video": {
+    "play": "播放",
+    "pause": "暫停",
+    "open": "放大查看",
+    "close": "關閉",
+    "progress": "播放進度",
+    "loop_on": "循環播放：開",
+    "loop_off": "循環播放：關",
+    "speed": "倍速",
+    "copy_file": "複製附件",
+    "copy_file_success": "已複製附件，可貼到任意位置",
+    "copy_path_fallback": "系統不支援複製檔案，已複製檔案路徑",
+    "rotate_left": "向左旋轉",
+    "rotate_right": "向右旋轉",
+    "zoom_in": "放大",
+    "zoom_out": "縮小",
+    "zoom_reset": "重設縮放",
+    "load_failed": "影片載入失敗",
+    "retry": "重試"
+  },
   "status": {
     "connecting": "正在連線至 {{agent}}...",
     "connected": "已連線至 {{agent}}",

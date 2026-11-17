@@ -17,6 +17,26 @@
     "download_error": "دانلود ناموفق بود",
     "generated_alt": "تصویر ساخته‌شده"
   },
+  "video": {
+    "play": "پخش",
+    "pause": "توقف",
+    "open": "نمایش بزرگ‌تر",
+    "close": "بستن",
+    "progress": "موقعیت پخش",
+    "loop_on": "تکرار: روشن",
+    "loop_off": "تکرار: خاموش",
+    "speed": "سرعت",
+    "copy_file": "کپی پیوست",
+    "copy_file_success": "پیوست کپی شد؛ هرجا خواستید بچسبانید",
+    "copy_path_fallback": "کپی فایل اینجا پشتیبانی نمی‌شود؛ مسیر فایل کپی شد",
+    "rotate_left": "چرخش به چپ",
+    "rotate_right": "چرخش به راست",
+    "zoom_in": "بزرگ‌نمایی",
+    "zoom_out": "کوچک‌نمایی",
+    "zoom_reset": "بازنشانی بزرگ‌نمایی",
+    "load_failed": "ویدیو بارگذاری نشد",
+    "retry": "تلاش دوباره"
+  },
   "status": {
     "connecting": "در حال اتصال به {{agent}}...",
     "connected": "متصل به {{agent}}",

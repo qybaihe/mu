@@ -17,6 +17,26 @@
     "download_error": "Error al descargar",
     "generated_alt": "Imagen generada"
   },
+  "video": {
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "open": "Ver más grande",
+    "close": "Cerrar",
+    "progress": "Posición de reproducción",
+    "loop_on": "Repetir: activado",
+    "loop_off": "Repetir: desactivado",
+    "speed": "Velocidad",
+    "copy_file": "Copiar archivo adjunto",
+    "copy_file_success": "Archivo copiado; pégalo donde quieras",
+    "copy_path_fallback": "Aquí no se puede copiar el archivo; se copió su ruta",
+    "rotate_left": "Girar a la izquierda",
+    "rotate_right": "Girar a la derecha",
+    "zoom_in": "Acercar",
+    "zoom_out": "Alejar",
+    "zoom_reset": "Restablecer zoom",
+    "load_failed": "No se pudo cargar el vídeo",
+    "retry": "Reintentar"
+  },
   "status": {
     "connecting": "Conectando a {{agent}}...",
     "connected": "Conectado a {{agent}}",

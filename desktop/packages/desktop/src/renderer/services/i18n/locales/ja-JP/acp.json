@@ -17,6 +17,26 @@
     "download_error": "ダウンロードに失敗しました",
     "generated_alt": "生成された画像"
   },
+  "video": {
+    "play": "再生",
+    "pause": "一時停止",
+    "open": "大きく表示",
+    "close": "閉じる",
+    "progress": "再生位置",
+    "loop_on": "ループ再生：オン",
+    "loop_off": "ループ再生：オフ",
+    "speed": "再生速度",
+    "copy_file": "添付ファイルをコピー",
+    "copy_file_success": "添付ファイルをコピーしました。どこにでも貼り付けられます",
+    "copy_path_fallback": "ここではファイルのコピーに対応していません。代わりにパスをコピーしました",
+    "rotate_left": "左に回転",
+    "rotate_right": "右に回転",
+    "zoom_in": "拡大",
+    "zoom_out": "縮小",
+    "zoom_reset": "ズームをリセット",
+    "load_failed": "動画を読み込めませんでした",
+    "retry": "再試行"
+  },
   "status": {
     "connecting": "{{agent}} に接続中...",
     "connected": "{{agent}} に接続しました",

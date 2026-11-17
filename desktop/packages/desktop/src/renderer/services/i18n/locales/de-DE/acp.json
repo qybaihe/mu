@@ -17,6 +17,26 @@
     "download_error": "Download fehlgeschlagen",
     "generated_alt": "Generiertes Bild"
   },
+  "video": {
+    "play": "Wiedergabe",
+    "pause": "Pausieren",
+    "open": "Größer ansehen",
+    "close": "Schließen",
+    "progress": "Wiedergabeposition",
+    "loop_on": "Endlosschleife: an",
+    "loop_off": "Endlosschleife: aus",
+    "speed": "Geschwindigkeit",
+    "copy_file": "Anhang kopieren",
+    "copy_file_success": "Anhang kopiert; überall einfügen",
+    "copy_path_fallback": "Das Kopieren der Datei wird hier nicht unterstützt; stattdessen wurde der Pfad kopiert",
+    "rotate_left": "Nach links drehen",
+    "rotate_right": "Nach rechts drehen",
+    "zoom_in": "Vergrößern",
+    "zoom_out": "Verkleinern",
+    "zoom_reset": "Zoom zurücksetzen",
+    "load_failed": "Video konnte nicht geladen werden",
+    "retry": "Erneut versuchen"
+  },
   "status": {
     "connecting": "Verbinde mit {{agent}}...",
     "connected": "Mit {{agent}} verbunden",

@@ -17,6 +17,26 @@
     "download_error": "Couldn't download",
     "generated_alt": "Generated image"
   },
+  "video": {
+    "play": "Play",
+    "pause": "Pause",
+    "open": "View larger",
+    "close": "Close",
+    "progress": "Playback position",
+    "loop_on": "Loop: on",
+    "loop_off": "Loop: off",
+    "speed": "Speed",
+    "copy_file": "Copy attachment",
+    "copy_file_success": "Attachment copied; paste it anywhere",
+    "copy_path_fallback": "File copy is not supported here; the file path was copied instead",
+    "rotate_left": "Rotate left",
+    "rotate_right": "Rotate right",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "zoom_reset": "Reset zoom",
+    "load_failed": "Video failed to load",
+    "retry": "Retry"
+  },
   "status": {
     "connecting": "Connecting to {{agent}}…",
     "connected": "Connected to {{agent}}",

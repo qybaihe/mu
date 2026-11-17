@@ -17,6 +17,26 @@
     "download_error": "İndirme başarısız",
     "generated_alt": "Oluşturulan görsel"
   },
+  "video": {
+    "play": "Oynat",
+    "pause": "Duraklat",
+    "open": "Büyüt",
+    "close": "Kapat",
+    "progress": "Oynatma konumu",
+    "loop_on": "Döngü: açık",
+    "loop_off": "Döngü: kapalı",
+    "speed": "Hız",
+    "copy_file": "Eki kopyala",
+    "copy_file_success": "Ek kopyalandı; istediğiniz yere yapıştırın",
+    "copy_path_fallback": "Dosya kopyalama burada desteklenmiyor; bunun yerine yolu kopyalandı",
+    "rotate_left": "Sola döndür",
+    "rotate_right": "Sağa döndür",
+    "zoom_in": "Yakınlaştır",
+    "zoom_out": "Uzaklaştır",
+    "zoom_reset": "Yakınlaştırmayı sıfırla",
+    "load_failed": "Video yüklenemedi",
+    "retry": "Yeniden dene"
+  },
   "status": {
     "connecting": "{{agent}} ajanına bağlanılıyor...",
     "connected": "{{agent}} ajanına bağlanıldı",

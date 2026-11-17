@@ -17,6 +17,26 @@
     "download_error": "下载失败",
     "generated_alt": "生成的图片"
   },
+  "video": {
+    "play": "播放",
+    "pause": "暂停",
+    "open": "放大查看",
+    "close": "关闭",
+    "progress": "播放进度",
+    "loop_on": "循环播放：开",
+    "loop_off": "循环播放：关",
+    "speed": "倍速",
+    "copy_file": "复制附件",
+    "copy_file_success": "已复制附件，可粘贴到任意位置",
+    "copy_path_fallback": "系统不支持复制文件，已复制文件路径",
+    "rotate_left": "向左旋转",
+    "rotate_right": "向右旋转",
+    "zoom_in": "放大",
+    "zoom_out": "缩小",
+    "zoom_reset": "重置缩放",
+    "load_failed": "视频加载失败",
+    "retry": "重试"
+  },
   "status": {
     "connecting": "正在连接 {{agent}}...",
     "connected": "已连接到 {{agent}}",

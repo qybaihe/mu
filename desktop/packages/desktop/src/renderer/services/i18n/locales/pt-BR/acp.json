@@ -28,5 +28,25 @@
     "download_success": "Download concluído",
     "download_error": "Falha ao baixar",
     "generated_alt": "Imagem gerada"
+  },
+  "video": {
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "open": "Ver ampliado",
+    "close": "Fechar",
+    "progress": "Posição de reprodução",
+    "loop_on": "Repetir: ativado",
+    "loop_off": "Repetir: desativado",
+    "speed": "Velocidade",
+    "copy_file": "Copiar anexo",
+    "copy_file_success": "Anexo copiado; cole onde quiser",
+    "copy_path_fallback": "Não há suporte para copiar o arquivo aqui; o caminho foi copiado",
+    "rotate_left": "Girar à esquerda",
+    "rotate_right": "Girar à direita",
+    "zoom_in": "Ampliar",
+    "zoom_out": "Reduzir",
+    "zoom_reset": "Redefinir zoom",
+    "load_failed": "Falha ao carregar o vídeo",
+    "retry": "Tentar novamente"
   }
 }

@@ -17,6 +17,26 @@
     "download_error": "다운로드 실패",
     "generated_alt": "생성된 이미지"
   },
+  "video": {
+    "play": "재생",
+    "pause": "일시정지",
+    "open": "크게 보기",
+    "close": "닫기",
+    "progress": "재생 위치",
+    "loop_on": "반복 재생: 켬",
+    "loop_off": "반복 재생: 끔",
+    "speed": "배속",
+    "copy_file": "첨부 파일 복사",
+    "copy_file_success": "첨부 파일을 복사했어요. 어디든 붙여넣으세요",
+    "copy_path_fallback": "여기서는 파일 복사가 지원되지 않아 파일 경로를 복사했어요",
+    "rotate_left": "왼쪽으로 회전",
+    "rotate_right": "오른쪽으로 회전",
+    "zoom_in": "확대",
+    "zoom_out": "축소",
+    "zoom_reset": "확대/축소 초기화",
+    "load_failed": "영상을 불러오지 못했어요",
+    "retry": "다시 시도"
+  },
   "status": {
     "connecting": "{{agent}}에 연결 중...",
     "connected": "{{agent}}에 연결됨",
