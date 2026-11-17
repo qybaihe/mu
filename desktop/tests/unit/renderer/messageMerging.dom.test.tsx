@@ -240,31 +240,47 @@ describe('message merging', () => {
 
     act(() => {
       result.current.addOrUpdateMessage(createTextMessage('agent-1', 'partial streaming response'));
-      // A tool row between the two texts: adjacent left text frames are one
-      // streamed reply and now merge (see splitTextSegmentCoalesce.test.ts),
-      // so the tool call is what keeps agent-2 a row of its own here.
-      result.current.addOrUpdateMessage(createToolCallMessage('tool-between'));
       result.current.addOrUpdateMessage(createTextMessage('agent-2', 'live tail'));
     });
     await flushMessageQueue();
 
     act(() => {
       result.current.replaceWithAnchorWindow(CONVERSATION_ID, [
-        // Right position: a user row. It must not coalesce with the reply
-        // below it (adjacent left texts are one streamed reply and merge now).
-        { ...createTextMessage('user-anchor', 'anchor'), position: 'right' },
+        createTextMessage('user-anchor', 'anchor'),
         createTextMessage('agent-1', 'partial'),
       ]);
     });
 
-    expect(result.current.messages.map((message) => message.msg_id)).toEqual([
-      'user-anchor',
-      'agent-1',
-      'tool-between',
-      'agent-2',
-    ]);
-    expect((result.current.messages[1] as IMessageText).content.content).toBe('partial streaming response');
-    expect((result.current.messages[3] as IMessageText).content.content).toBe('live tail');
+    // Every row in this scenario is a left text row (before the coalescing
+    // rule, different msg_ids alone kept them apart), so they are one streamed
+    // reply now: the window loads back as a single row that keeps every byte.
+    // The live (richer) agent-1 version still wins over the persisted 'partial',
+    // and the live-only 'live tail' survives — absorbed into that row. The new
+    // rule is stated directly by the test below; user rows (position right)
+    // breaking a run is covered in splitTextSegmentCoalesce.test.ts.
+    expect(result.current.messages.map((message) => message.msg_id)).toEqual(['user-anchor']);
+    const merged = result.current.messages[0] as IMessageText;
+    expect(merged.content.content).toBe('anchor' + 'partial streaming response' + 'live tail');
+  });
+
+  it('coalesces adjacent backend-split left text rows into one message on an anchor-window load', async () => {
+    const { result } = renderHook(() => useAnchorMessageHarness(), {
+      wrapper: TestWrapper,
+    });
+
+    act(() => {
+      result.current.replaceWithAnchorWindow(CONVERSATION_ID, [
+        { ...createTextMessage('user-anchor', 'anchor'), position: 'right' },
+        createTextMessage('seg-1', 'first half '),
+        createTextMessage('seg-2', 'second half'),
+      ]);
+    });
+
+    // The new rule: adjacent left text rows with different msg_ids are the
+    // split segments of one streamed reply, so they load back as one message
+    // (byte-exact concatenation). A user row (right position) breaks the run.
+    expect(result.current.messages.map((message) => message.msg_id)).toEqual(['user-anchor', 'seg-1']);
+    expect((result.current.messages[1] as IMessageText).content.content).toBe('first half second half');
   });
 
   it('requests compact tool content when hydrating historical messages', async () => {

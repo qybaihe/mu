@@ -167,6 +167,18 @@ const sanitizeMessageForList = (message: TMessage): TMessage =>
     ? ({ ...message, content: sanitizeAcpToolCallContent(message.content) } as TMessage)
     : message;
 
+/**
+ * msg_ids of the streamed frames a live text row has absorbed (see the absorb
+ * branch in composeMessageWithIndex: a continuing frame merges into the left
+ * text row above it, and the row keeps only its own msg_id). Reload
+ * reconciliation drops the persisted rows carrying those ids BY ID — never by
+ * comparing text, which on a plain history load would also eat a real paragraph
+ * whose text happens to repeat the tail above it (segments "A\n", "\n", "B").
+ * Weakly keyed: the bookkeeping dies with the row object; folded rows inherit
+ * the union so the next reload reconciles against them the same way.
+ */
+const absorbedMsgIdsByLiveRow = new WeakMap<IMessageText, ReadonlySet<string>>();
+
 // 使用索引优化的消息合并函数
 // Index-optimized message compose function
 export function composeMessageWithIndex(
@@ -342,10 +354,11 @@ export function composeMessageWithIndex(
 
     if (last.type === 'text' && last.msg_id === message.msg_id) {
       const newList = list.slice();
-      newList[newList.length - 1] = {
-        ...last,
-        content: mergeTextMessageContent(last.content, message.content),
-      };
+      const mergedRow = { ...last, content: mergeTextMessageContent(last.content, message.content) };
+      // The row object is replaced, so its absorb bookkeeping moves with it.
+      const absorbed = absorbedMsgIdsByLiveRow.get(last);
+      if (absorbed) absorbedMsgIdsByLiveRow.set(mergedRow, absorbed);
+      newList[newList.length - 1] = mergedRow;
       return newList;
     }
 
@@ -360,10 +373,13 @@ export function composeMessageWithIndex(
       // frames under that id resolve to the same row.
       index.msgIdIndex.set(message.msg_id, list.length - 1);
       const newList = list.slice();
-      newList[newList.length - 1] = {
-        ...last,
-        content: mergeTextMessageContent(last.content, message.content),
-      };
+      const mergedRow = { ...last, content: mergeTextMessageContent(last.content, message.content) };
+      // Record the absorbed msg_id so a reload drops the persisted row with
+      // that id by id instead of guessing overlap from text.
+      const ids = new Set(absorbedMsgIdsByLiveRow.get(last));
+      ids.add(message.msg_id);
+      absorbedMsgIdsByLiveRow.set(mergedRow, ids);
+      newList[newList.length - 1] = mergedRow;
       return newList;
     }
 
@@ -877,43 +893,60 @@ const isCoalescibleAssistantText = (message: TMessage | undefined): message is I
   !(message.content as { teammateMessage?: boolean } | undefined)?.teammateMessage;
 
 /**
- * Join the split rows of one streamed reply back into the single message the person watched live.
+ * Fold one run of adjacent coalescible rows into a single message.
  *
- * The backend persists a streaming reply snapshot-by-snapshot: each snapshot lands as its own
- * `text` row with its own msg_id (no shared backend_turn_id), and the turn end does not merge
- * them. Loading such a history un-split renders one reply as several bubbles — and a reply whose
- * text contains a fenced block gets cut mid-fence, so the fence no longer parses as a block at
- * all. Rows that are adjacent (same left position, same `text` type, nothing in between) are one
- * reply: concatenate them in order with no separator. Everything else — user rows (right),
- * thinking, tool calls, teammate rows — breaks the run and stays untouched, so a thought that
- * interleaved with the text is never swallowed into it.
- *
- * A segment whose whole text is already the tail of the row above it is a duplicate of a segment
- * that row already absorbed (the live list kept the merged row while the loaded page still holds
- * the persisted segments), so it is dropped instead of concatenated — otherwise reconciling a
- * live list with a page reload would double the reply's text.
+ * A pure-history run simply concatenates in order with no separator — text is
+ * never dropped, so a blank paragraph row ("\n") survives as a paragraph break.
+ * A run that reconciles a live row against a reload is different: the persisted
+ * rows whose msg_ids that live row absorbed carry text the live row already
+ * shows, so they are dropped BY ID (see absorbedMsgIdsByLiveRow). A folded row
+ * (multi-row run) records the ids it spans — all but its own — so the next
+ * reload reconciles against it the same way instead of doubling.
+ */
+const foldCoalescibleRun = (rows: IMessageText[]): IMessageText => {
+  const absorbed = new Set<string>();
+  for (const row of rows) {
+    for (const id of absorbedMsgIdsByLiveRow.get(row) ?? []) absorbed.add(id);
+  }
+  const kept = rows.filter((row) => !row.msg_id || !absorbed.has(row.msg_id));
+  const [first, ...rest] = kept.length ? kept : rows;
+  const content = rest.reduce((acc, row) => mergeTextMessageContent(acc, row.content), first.content);
+  const folded = rest.length ? { ...first, content } : first;
+  if (rows.length > 1) {
+    // The folded row now carries the text of every row in the run, whether it
+    // dropped it by id or concatenated it: record the ids it swallowed (all
+    // but its own, which must stay matchable by key), so the next reload drops
+    // those persisted rows by id instead of doubling them.
+    for (const row of rows) if (row !== first && row.msg_id) absorbed.add(row.msg_id);
+    absorbedMsgIdsByLiveRow.set(folded, absorbed);
+  }
+  return folded;
+};
+
+/**
+ * Join the split rows of one streamed reply back into the single message the person watched
+ * live: adjacent coalescible rows fold into one message (see foldCoalescibleRun), everything
+ * else — user rows (right), thinking, tool calls, teammate rows — breaks the run and stays
+ * untouched. Pure loads never drop text; reload reconciliation drops only rows a live row
+ * absorbed, by msg_id.
  */
 export function coalesceAdjacentTextSegments(messages: TMessage[]): TMessage[] {
   const coalesced: TMessage[] = [];
+  let run: IMessageText[] = [];
+  const flushRun = () => {
+    if (!run.length) return;
+    coalesced.push(run.length === 1 ? run[0] : foldCoalescibleRun(run));
+    run = [];
+  };
   for (const message of messages) {
-    const last = coalesced[coalesced.length - 1];
-    if (
-      isCoalescibleAssistantText(last) &&
-      isCoalescibleAssistantText(message) &&
-      !last.content.content.endsWith(message.content.content)
-    ) {
-      coalesced[coalesced.length - 1] = {
-        ...last,
-        content: mergeTextMessageContent(last.content, message.content),
-      };
+    if (isCoalescibleAssistantText(message)) {
+      run.push(message);
       continue;
     }
-    if (isCoalescibleAssistantText(last) && isCoalescibleAssistantText(message)) {
-      // Already absorbed into the row above — drop rather than duplicate.
-      continue;
-    }
+    flushRun();
     coalesced.push(message);
   }
+  flushRun();
   return coalesced.length === messages.length ? messages : coalesced;
 }
 

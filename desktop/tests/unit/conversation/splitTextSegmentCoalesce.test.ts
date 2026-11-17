@@ -153,11 +153,37 @@ describe('coalescing backend-split text segments on history load', () => {
     expect(coalesced.map((row) => row.id)).toEqual(['a', 't', 'b']);
   });
 
-  it('drops a persisted duplicate of a segment the row above already absorbed', () => {
-    const liveMerged = dbTextRow('2c55b8c9', REPLY_81F6);
-    const persistedTail = dbTextRow('86ea6505', SEG_86EA6505);
+  it('never drops text on a plain history load: a blank paragraph row survives', () => {
+    // The regression the text-tail duplicate check caused: "\n" is the tail of
+    // "A\n", so the blank row was dropped and two paragraphs became one. Pure
+    // loads concatenate adjacent rows; nothing is ever dropped by text.
+    const coalesced = coalesceAdjacentTextSegments([dbTextRow('a', 'A\n'), dbTextRow('b', '\n'), dbTextRow('c', 'B')]);
 
-    const coalesced = coalesceAdjacentTextSegments([liveMerged, persistedTail]);
+    expect(coalesced).toHaveLength(1);
+    expect((coalesced[0] as IMessageText).content.content).toBe('A\n\nB');
+  });
+
+  it('keeps a repeated segment whose whole text equals the row above (pure load)', () => {
+    // A persisted row whose text repeats is still real text — only rows a live
+    // row absorbed (by msg_id) may be dropped, never text that merely repeats.
+    const coalesced = coalesceAdjacentTextSegments([dbTextRow('a', 'x'), dbTextRow('b', 'x')]);
+
+    expect(coalesced).toHaveLength(1);
+    expect((coalesced[0] as IMessageText).content.content).toBe('xx');
+  });
+
+  it('drops a persisted duplicate of a segment the live row above absorbed, by msg_id', () => {
+    // Compose the live row the way the renderer really does — two streamed
+    // frames, the second absorbed by the first — so the row records the msg_ids
+    // it absorbed; the reload then brings the persisted split rows back.
+    let live: TMessage[] = [];
+    let index = buildMessageIndex(live);
+    live = composeMessageWithIndex(dbTextRow('2c55b8c9', SEG_2C55B8C9), live, index);
+    index = buildMessageIndex(live);
+    live = composeMessageWithIndex(dbTextRow('86ea6505', SEG_86EA6505), live, index);
+    const liveRow = live[0] as IMessageText;
+
+    const coalesced = coalesceAdjacentTextSegments([liveRow, dbTextRow('86ea6505', SEG_86EA6505)]);
 
     expect(coalesced).toHaveLength(1);
     expect((coalesced[0] as IMessageText).content.content).toBe(REPLY_81F6);
@@ -181,10 +207,11 @@ describe('the loaded page paths the renderer uses', () => {
 
   it('mergeLoadedPageWithCurrent reconciling a live list does not double the text', () => {
     // Live: the turn's frames were composed live into one row, plus the pending user row.
-    const liveList = [
-      { ...textRow('user-1', 'question', 'right'), status: 'pending' as const },
-      dbTextRow('2c55b8c9', REPLY_81F6),
-    ];
+    let liveList: TMessage[] = [{ ...textRow('user-1', 'question', 'right'), status: 'pending' as const }];
+    let index = buildMessageIndex(liveList);
+    liveList = composeMessageWithIndex(dbTextRow('2c55b8c9', SEG_2C55B8C9), liveList, index);
+    index = buildMessageIndex(liveList);
+    liveList = composeMessageWithIndex(dbTextRow('86ea6505', SEG_86EA6505), liveList, index);
     // The turn finished; the reload brings back the persisted split rows.
     const page = [
       textRow('user-1', 'question', 'right'),
@@ -197,6 +224,65 @@ describe('the loaded page paths the renderer uses', () => {
     const textRows = list.filter((row) => row.type === 'text' && row.position === 'left');
     expect(textRows).toHaveLength(1);
     expect((textRows[0] as IMessageText).content.content).toBe(REPLY_81F6);
+  });
+
+  it('reconciliation drops every persisted row the live row absorbed, not just the last one', () => {
+    // Three streamed segments were absorbed live into one row; the reload
+    // brings all three persisted rows back. A tail-text check would only catch
+    // the last one and double the middle segments into the reply — dropping by
+    // recorded msg_id gets all of them.
+    let liveList: TMessage[] = [];
+    let index = buildMessageIndex(liveList);
+    liveList = composeMessageWithIndex(dbTextRow('s1', 'one '), liveList, index);
+    index = buildMessageIndex(liveList);
+    liveList = composeMessageWithIndex(dbTextRow('s2', 'two '), liveList, index);
+    index = buildMessageIndex(liveList);
+    liveList = composeMessageWithIndex(dbTextRow('s3', 'three'), liveList, index);
+    const page = [dbTextRow('s1', 'one '), dbTextRow('s2', 'two '), dbTextRow('s3', 'three')];
+
+    const list = mergeLoadedPageWithCurrent('conv-1', page, liveList);
+
+    const textRows = list.filter((row) => row.type === 'text' && row.position === 'left');
+    expect(textRows).toHaveLength(1);
+    expect((textRows[0] as IMessageText).content.content).toBe('one two three');
+  });
+
+  it('a folded reconciliation row keeps the absorbed ids for the next reload', () => {
+    // First reload: the live row absorbed s2 but the page also holds s3, which
+    // was never streamed — the fold concatenates it and inherits the ids.
+    // A second reload of the same page must reconcile against that folded row
+    // without doubling anything.
+    let liveList: TMessage[] = [];
+    let index = buildMessageIndex(liveList);
+    liveList = composeMessageWithIndex(dbTextRow('s1', 'one '), liveList, index);
+    index = buildMessageIndex(liveList);
+    liveList = composeMessageWithIndex(dbTextRow('s2', 'two '), liveList, index);
+    const page = [dbTextRow('s1', 'one '), dbTextRow('s2', 'two '), dbTextRow('s3', 'three')];
+
+    const once = mergeLoadedPageWithCurrent('conv-1', page, liveList);
+    const onceText = once.filter((row) => row.type === 'text' && row.position === 'left');
+    expect(onceText).toHaveLength(1);
+    expect((onceText[0] as IMessageText).content.content).toBe('one two three');
+
+    const twice = mergeLoadedPageWithCurrent('conv-1', page, once);
+    const twiceText = twice.filter((row) => row.type === 'text' && row.position === 'left');
+    expect(twiceText).toHaveLength(1);
+    expect((twiceText[0] as IMessageText).content.content).toBe('one two three');
+  });
+
+  it('a pure-load fold also reconciles its next reload without doubling', () => {
+    // First load (no live rows) folds the split rows; a reload that arrives
+    // while that list is current (e.g. turnCompleted) must drop the persisted
+    // rows the fold already carries, by id.
+    const page = [dbTextRow('s1', 'one '), dbTextRow('s2', 'two '), dbTextRow('s3', 'three')];
+
+    const once = mergeLoadedPageWithCurrent('conv-1', page, []);
+    expect((once[0] as IMessageText).content.content).toBe('one two three');
+
+    const twice = mergeLoadedPageWithCurrent('conv-1', page, once);
+    const textRows = twice.filter((row) => row.type === 'text' && row.position === 'left');
+    expect(textRows).toHaveLength(1);
+    expect((textRows[0] as IMessageText).content.content).toBe('one two three');
   });
 
   it('prependHistoryPages merges a reply split across the page boundary', () => {
