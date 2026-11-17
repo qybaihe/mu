@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.13] - 2026-11-17
+
+**In 0.3.13 a judge that runs on your own machine gets mu's questions one at a time, the most urgent first, `mu ledger --tally` shows what each decision point costs and whether its verdicts change anything, and an unsure answer stays with the judge that gave it.** A judge whose key is refused no longer costs every decision a round trip, and mu is built on pi 1.5.2. The desktop app's own code is unchanged apart from one sentence in Settings → Judges; it carries mu-agent 0.3.13.
+
 ### Added
 
 - **`mu ledger --tally` says what each decision point costs, and what comes of it.** It adds up your recent sessions by decision point: how often it was asked, how often a verdict came, how often that verdict was something else than what mu does with no judge, how many verdicts came after mu had stopped waiting, and how many tokens the judge read. It ends with the points worth a look, each with the rule that put it there. The ledger now records whether a verdict differed from the fallback, so a point that spends judge calls and changes nothing shows as one.
@@ -13,8 +17,9 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Changed
 
-- **An unsure answer stays with the judge that gave it.** With several judges in order (`"tiers": ["mude", "jev"]`), a later judge now answers only when an earlier one fails or isn't trusted with that kind of question. Until now a yes/no answer between 0.2 and 0.8 went on to the next judge, and that was measured to do harm: a fine-tuned 4B judge alone scored 68.2 on real held-out requests, and 20.0 with a larger model answering what it was unsure of ([docs/nebius.md](docs/nebius.md)). With mude first, what it is unsure of no longer goes to a hosted judge.
+- **An unsure answer stays with the judge that gave it.** With several judges in order (`"tiers": ["mude", "jev"]`), a later judge now answers only when an earlier one fails or isn't trusted with that kind of question. Until now a yes/no answer between 0.2 and 0.8 went on to the next judge, and that was measured to do harm: a fine-tuned 4B judge alone scored 68.2 on real held-out requests, and 20.0 with a larger model answering what it was unsure of ([docs/nebius.md](docs/nebius.md)). With mude first, what it is unsure of no longer goes to a hosted judge, and the local-only switch in the app's settings says so in all 13 languages.
 - **Lessons are recalled by the recall verdict alone.** Preflight no longer asks whether notes from past sessions would help. It asked without the notes, and a sure no kept the turn from lessons that the recall question, which reads them, had found to apply.
+- Built on pi 1.5.2 and the upstream changes after it. pi's `cacheWarming` setting now defaults to `"idle"`: prompt caches stay warm for up to 30 minutes between runs when a refresh is expected to pay for itself (`"cacheWarming": "streaming"` in `~/.mu/agent/settings.json` restores the earlier behavior). That puts mu's `cache.warming` decision point to work by default: between runs the judge reads the last exchange, stops the refreshes after a message that ends the conversation, and keeps them going while the reply asks you a question. What this does to cost is not measured yet. `read` streams a large file instead of loading it whole, `edit` no longer rewrites the line endings of lines it doesn't touch, and more requests that fail on a dropped connection are retried. In the terminal, a session whose folder is gone can be forked into the current one. The model list gains Claude Fable 5.2, GPT-6 Cyber, Gemini 4 Carbon and Gemini 4 Hydrogen, and 51 models their providers no longer list are gone, most of them on OpenRouter and the Vercel AI Gateway: where one was your model, mu uses another until you choose again. Several providers have a newer default model, used when you haven't chosen a model: Claude Opus 5.5 for Anthropic and Amazon Bedrock, Gemini 4 Argon for Google, GPT-6.1 Sol for Azure, and Kimi K2.7 Code in place of Kimi K2.6.
 
 ### Fixed
 
