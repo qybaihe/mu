@@ -706,8 +706,9 @@ describe('the sidebar’s native group', () => {
     await waitFor(() => expect(shownIds()).toHaveLength(5));
     expect(shownIds()[0]).toBe('c10');
     expect(shownIds()).not.toContain('c5');
-    // Cmd/Ctrl+1 to 9 count the rows on screen; the next one marked unread is looked for among all of them.
-    expect([nativeConversationAt(5), nativeConversationAt(6)]).toEqual(['c6', undefined]);
+    // Cmd/Ctrl+1 to 9 count the rows on screen; the next one marked unread is looked for among all of them. The group
+    // publishes this order in a passive effect, which can flush after the rows above are already on screen: wait for it.
+    await waitFor(() => expect([nativeConversationAt(5), nativeConversationAt(6)]).toEqual(['c6', undefined]));
     expect(nextWaitingConversation(new Set(['c1']), 'c10')).toBe('c1');
     expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (10)');
     fireEvent.click(screen.getByTestId('native-sidebar-more'));
