@@ -45,7 +45,15 @@ describe('LocalImageView', () => {
     const image = await screen.findByAltText('card.png');
     fireEvent.load(image);
     fireEvent.click(image);
-    const shown = await waitFor(() => document.querySelector('.arco-image-preview-img'), { timeout: 3000 });
+    // The preview mounts asynchronously after the click, and `waitFor` resolves a querySelector that returns null
+    // without retrying — only a thrown expectation makes it wait for the mount.
+    const shown = await waitFor(
+      () => {
+        expect(document.querySelector('.arco-image-preview-img')).toBeTruthy();
+        return document.querySelector('.arco-image-preview-img');
+      },
+      { timeout: 3000 }
+    );
     fireEvent.load(shown as HTMLElement);
     const save = await screen.findByTestId('local-image-save', undefined, { timeout: 3000 });
     expect(save).toBeTruthy();
