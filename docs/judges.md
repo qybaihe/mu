@@ -24,6 +24,8 @@ In a session, use `/mu judge <tiers>` and `/mu route <point> <tiers|default>`. `
 
 If no judge answers in time, the decision point falls back to what it does without a verdict (usually, nothing changes), and the ledger records why.
 
+If a judge's service turns its key down or can't charge the account behind it, mu tells you once per session and stops asking that service: after two refusals in a row, calls fail at once instead of waiting for the same refusal, and one call a minute tries again. Meanwhile the next judge in the order answers, or the decision point falls back. A judge that is slow or unreachable is still asked every time. At the start of a terminal session mu checks the judge of each route as well as the shared one, and `/doctor` lists them.
+
 ## mude 1.0, on your Mac
 
 mude 1.0 is mu's own decision model, optimized for coding. It has 2B parameters and answers every question in a decision in one forward pass. On a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more), it's the recommended judge: `mu setup` offers it first, and the desktop app's first-run guide has it preselected.
@@ -68,7 +70,9 @@ Jev is a judgment model from TypeSafe, built for this kind of question. The buil
 
 After these, mu falls back to a Vercel AI Gateway key that pi saved at `/login`. A key is only ever sent to the service it belongs to. To skip the order, name one directly by its built-in name (`"tiers": ["jev-openrouter"]`).
 
-**The free Jev.** With no key at all, Jev 1.13 on OpenCode Zen answers. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. It's a limited-time offer from OpenCode: when it ends, mu tells you, and the decision points fall back until you set a key. `mu setup --judge free` chooses it explicitly.
+When a service in this order turns its key down or can't charge the account (a revoked key, a closed account, no payment method), the same call goes on to the next service whose key is set, and last to the free Jev. mu tells you which service refused and what it said. A service that is slow or unreachable is not skipped, because another service is another place your judged text would go. A judge you name directly (`jev-direct`, `jev-gateway`) never moves to another service.
+
+**The free Jev.** With no key at all, or when every service whose key is set turned it down, Jev 1.13 on OpenCode Zen answers. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. It's a limited-time offer from OpenCode: when it ends, mu tells you, and the decision points fall back until you set a key. `mu setup --judge free` chooses it explicitly.
 
 Measured in the authors' own sessions: a warm question takes about 0.3 s, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once.
 

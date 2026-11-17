@@ -25,7 +25,8 @@ export interface JudgeConfig {
 	 * `jev` is Jev by whichever access this machine has: TypeSafe directly when TYPESAFE_API_KEY is set, else
 	 * OpenRouter when MU_JUDGE_OPENROUTER_API_KEY is set, else the Vercel AI Gateway when AI_GATEWAY_API_KEY is
 	 * set, else OpenCode Zen when OPENCODE_API_KEY is set, else Cloudflare Workers AI when CLOUDFLARE_API_KEY and
-	 * CLOUDFLARE_ACCOUNT_ID are, else the Vercel AI Gateway with the key pi keeps for it. `typesafe` is Jev over
+	 * CLOUDFLARE_ACCOUNT_ID are, else the Vercel AI Gateway with the key pi keeps for it, else the free Jev on OpenCode
+	 * Zen. A service that turns its key down hands the call to the next of them (`JevRoutes`). `typesafe` is Jev over
 	 * System One at `baseUrl` (TypeSafe's own, OpenRouter's, a relay's), `gateway` through the Vercel AI Gateway.
 	 * `clm` is CLM-8B (github.com/Contrastive-LM/CLM) at the address of a `clm-serve`, which speaks System One too.
 	 * `systemone` is any other System One server, such as a fine-tuned judge served on this machine. `openai` is OpenAI's

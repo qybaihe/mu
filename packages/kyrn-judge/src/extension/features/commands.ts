@@ -553,7 +553,7 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 			const ok = (good: boolean) => (good ? "ok  " : "FIX ");
 			// With every decision point off nothing is sent to a judge, and the check must not send anything either.
 			const asks = runtime.enabled && engine.asksJudge();
-			const probe = asks ? await engine.probe() : undefined;
+			const [probe, routes] = asks ? await Promise.all([engine.probe(), runtime.routeHealth()]) : [undefined, []];
 			const browserHost = thisBrowserHost();
 			const chrome = findBrowser(browserHost)?.executable;
 			const available = ctx.modelRegistry.getAvailable();
@@ -585,6 +585,15 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 								? "off: no decision point asks one, so nothing is sent to a judge"
 								: "off (MU_JUDGE=off)",
 						],
+				// A decision point with a judge of its own: the row above says nothing about that judge.
+				...routes.map(
+					(route) =>
+						[
+							ok(route.ok),
+							"route",
+							`${route.points.join(", ")} -> ${route.providerId} ${route.ok ? `answers in ${route.latencyMs} ms` : `isn't answering (${route.error})`}`,
+						] as const,
+				),
 				[
 					"--  ",
 					"decisions",

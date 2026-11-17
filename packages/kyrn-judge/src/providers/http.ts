@@ -17,7 +17,10 @@ export function errorKindForStatus(status: number, message: string): JudgeErrorK
 	return "bad_request";
 }
 
-/** Reads `{error: {message}}`, `{error: "..."}`, `{message}` or `{detail: "..."}`; returns "" when there is none. */
+/**
+ * Reads `{error: {message}}`, `{error: "..."}`, `{message}`, `{detail: "..."}` or `{detail: {message}}`; returns ""
+ * when there is none.
+ */
 export function messageFromErrorBody(body: unknown): string {
 	if (typeof body !== "object" || body === null) return "";
 	const record = body as Record<string, unknown>;
@@ -28,8 +31,14 @@ export function messageFromErrorBody(body: unknown): string {
 	}
 	if (typeof nested === "string") return nested;
 	if (typeof record.message === "string") return record.message;
-	// FastAPI's shape, which CLM's server answers with. A list there echoes the request back, and is left out.
-	return typeof record.detail === "string" ? record.detail : "";
+	// FastAPI's shape, which CLM's server answers with.
+	const detail = record.detail;
+	if (typeof detail === "string") return detail;
+	// A list there echoes the request back, and is left out. An object is how TypeSafe says why it turned a key
+	// down (`{error_type, message}`): an account it switched off reads as nothing but "HTTP 403" without it.
+	if (typeof detail !== "object" || detail === null || Array.isArray(detail)) return "";
+	const detailMessage = (detail as Record<string, unknown>).message;
+	return typeof detailMessage === "string" ? detailMessage : "";
 }
 
 /** Keeps well-formed warnings and drops the rest, so a provider cannot break a call with a bad diagnostic. */

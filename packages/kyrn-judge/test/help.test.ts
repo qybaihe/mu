@@ -96,7 +96,7 @@ describe("/doctor and /status with the judge off", () => {
 	});
 
 	/** Runs a command of a session whose default mode is `mode`, and returns what it showed and what reached the judge. */
-	async function run(command: "doctor" | "status", mode: DecisionMode) {
+	async function run(command: "doctor" | "status", mode: DecisionMode, config: Record<string, unknown> = {}) {
 		const provider = new MockJudgeProvider(() => ({}));
 		const harness = await createHarness({
 			extensionFactories: [
@@ -104,7 +104,7 @@ describe("/doctor and /status with the judge off", () => {
 					provider,
 					mode,
 					only: [],
-					config: parseConfig({ features: { memory: false } }),
+					config: parseConfig({ ...config, features: { memory: false } }),
 				}),
 			],
 		});
@@ -137,5 +137,20 @@ describe("/doctor and /status with the judge off", () => {
 		expect(doctor.calls).toBeGreaterThan(0);
 		const status = await run("status", "active");
 		expect(status.text).toContain("notify.routing=shadow");
+	});
+
+	it("checks the judge of each route too: one that cannot answer is a thing to fix while the shared judge is fine", async () => {
+		const doctor = await run("doctor", "active", {
+			// A judge with no key on this machine: it fails before any request is sent.
+			judges: {
+				keyless: { type: "typesafe", baseUrl: "http://127.0.0.1:9/v1/systemone", apiKeyEnv: "MU_TEST_NO_KEY" },
+			},
+			routes: { "tool.injection": ["keyless"], "tool.description": ["keyless"], "browser.step": ["mock"] },
+		});
+		expect(doctor.text).toMatch(/^ok {2}judge {6}mock answers in \d+ ms$/m);
+		expect(doctor.text).toContain(
+			"FIX route      tool.injection, tool.description -> 127.0.0.1:9:jev-latest isn't answering (auth)",
+		);
+		expect(doctor.text).toMatch(/^ok {2}route {6}browser\.step -> mock answers in \d+ ms$/m);
 	});
 });

@@ -1,4 +1,4 @@
-import { JudgeError } from "./errors.ts";
+import { isLasting, JudgeError } from "./errors.ts";
 import type { JudgeCall, JudgeLike, JudgeResult, JudgeTierReport } from "./judge.ts";
 import { addUsage, validateQuestions } from "./judge.ts";
 import { DEFAULT_THRESHOLDS, neutralAnswer, type Thresholds } from "./policy.ts";
@@ -59,13 +59,20 @@ export function isUncertain(_question: Question, answer: Answer, profile: JudgeP
  * reads as "unsure": a judge's known weakness must never drive behavior.
  */
 export class CascadeJudge implements JudgeLike {
-	readonly id: string;
 	private readonly tiers: readonly CascadeTier[];
 
 	constructor(tiers: readonly CascadeTier[]) {
 		if (tiers.length === 0) throw new TypeError("A cascade needs at least one judge");
 		this.tiers = tiers;
-		this.id = tiers.length === 1 ? tiers[0].judge.id : `cascade(${tiers.map((tier) => tier.judge.id).join(">")})`;
+	}
+
+	/**
+	 * The tiers by their ids, as they are now: a judge with several services (`jev`) goes by the one that answered
+	 * last, so the ledger names the service a verdict came from.
+	 */
+	get id(): string {
+		const ids = this.tiers.map((tier) => tier.judge.id);
+		return ids.length === 1 ? ids[0] : `cascade(${ids.join(">")})`;
 	}
 
 	/** Whether any tier is trusted on a capability: when none is, every such question gets a neutral answer. */
@@ -144,9 +151,7 @@ export class CascadeJudge implements JudgeLike {
 			if (reports.every((report) => report.error !== undefined)) {
 				// What the next call can expect, whatever the order of the tiers: a judge that may answer then (down, slow)
 				// says more than one that cannot until the user sets it up (no key, no credit).
-				const lasting = (error: unknown) =>
-					error instanceof JudgeError && (error.kind === "auth" || error.kind === "payment_required");
-				const telling = [...errors].reverse().find((error) => !lasting(error)) ?? errors.at(-1);
+				const telling = [...errors].reverse().find((error) => !isLasting(error)) ?? errors.at(-1);
 				if (telling instanceof JudgeError) throw telling;
 				throw new JudgeError("unreachable", "No judge in the cascade answered", { cause: telling });
 			}

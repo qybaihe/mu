@@ -213,13 +213,16 @@ export class DecisionEngine {
 	/**
 	 * One trivial question straight to the judge: is anyone answering, and how fast?
 	 * Not a decision, so it is not written to the ledger; `stats.probes` counts it apart from the decisions.
+	 * With `specId`, the question goes to the judge that answers that decision: its own when it has one (`setJudgeFor`).
 	 */
-	async probe(signal?: AbortSignal): Promise<{ ok: boolean; latencyMs: number; error?: string }> {
+	async probe(signal?: AbortSignal, specId?: string): Promise<{ ok: boolean; latencyMs: number; error?: string }> {
 		const startedAt = performance.now();
 		this.stats.probes++;
-		this.lastUsedAt = Date.now();
+		const judge = specId === undefined ? this.judge : this.judgeFor(specId);
+		const shared = judge === this.judge;
+		if (shared) this.lastUsedAt = Date.now();
 		try {
-			const result = await this.judge.evaluate({
+			const result = await judge.evaluate({
 				state: { text: "ping" },
 				questions: { ready: { type: "boolean", instructions: "Is `text` the word ping?" } },
 				signal,
@@ -230,7 +233,7 @@ export class DecisionEngine {
 			const kind = isJudgeError(error) ? error.kind : "error";
 			return { ok: false, latencyMs: Math.round(performance.now() - startedAt), error: kind };
 		} finally {
-			this.lastUsedAt = Date.now();
+			if (shared) this.lastUsedAt = Date.now();
 		}
 	}
 

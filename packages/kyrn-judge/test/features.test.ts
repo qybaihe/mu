@@ -19,8 +19,9 @@ import { pickModel, type SwarmAssignment, type SwarmRunner, type SwarmTask } fro
 import { lexicalRank } from "../src/extension/features/tools.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { Judge } from "../src/judge.ts";
+import type { LedgerRecord } from "../src/ledger.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
-import type { Answer } from "../src/types.ts";
+import type { Answer, JudgeRequest } from "../src/types.ts";
 import { attended } from "./attended.ts";
 
 const yes: Answer = { type: "boolean", probability: 0.96 };
@@ -732,6 +733,108 @@ describe("kyrn features", () => {
 		expect(await run(true)).toEqual({ askedBeforePreflightAnswered: true, skillNames: [["spreadsheet"]] });
 		// Switched off, the question waits for preflight's verdict first, as before.
 		expect(await run(false)).toEqual({ askedBeforePreflightAnswered: false, skillNames: [["spreadsheet"]] });
+	});
+
+	/** A session with `names` as its skills, all of them hidden by the first message's verdict, and what was asked after. */
+	async function withHiddenSkills(
+		names: readonly string[],
+		later: (request: JudgeRequest) => Record<string, Answer> | Promise<Record<string, Answer>>,
+		skills: Record<string, unknown> = {},
+	) {
+		let first = true;
+		const asked: string[][] = [];
+		const provider = new MockJudgeProvider(async (request): Promise<Record<string, Answer>> => {
+			if (!("skill_0" in request.questions)) return {};
+			const ids = Object.keys(request.questions);
+			if (first) {
+				first = false;
+				return Object.fromEntries(ids.map((id) => [id, no]));
+			}
+			// "Would this skill help with `user_message`? <name>: <description>"
+			asked.push(ids.map((id) => /\? (\S+):/.exec(String(request.questions[id].instructions))?.[1] ?? ""));
+			return later(request);
+		});
+		const harness = await withSkills(names, [
+			createKyrnJudgeExtension({
+				provider,
+				mode: "active",
+				only: ["preflight", "skills"],
+				config: parseConfig({ features: attended({ skills: { minSkills: 1, ...skills } }) }),
+			}),
+		]);
+		return { harness, asked };
+	}
+
+	it("skills: a later message asks only about the hidden skills its words point to, and nothing when they point to none", async () => {
+		const { harness, asked } = await withHiddenSkills(["calendar", "spreadsheet", "slides", "pdf"], (request) =>
+			Object.fromEntries(Object.keys(request.questions).map((id) => [id, yes])),
+		);
+		harness.setResponses([
+			fauxAssistantMessage("Fixed."),
+			fauxAssistantMessage("Added."),
+			fauxAssistantMessage("Going on."),
+			fauxAssistantMessage("Opened."),
+		]);
+		await harness.session.prompt("Fix the login bug.");
+		expect(asked).toEqual([]);
+
+		// One of the four hidden skills shares a word with the message: one question, not four.
+		await harness.session.prompt("Add a total row to the budget spreadsheet.");
+		expect(asked).toEqual([["spreadsheet"]]);
+		expect(customMessages(harness, "kyrn.skills")).toEqual([
+			expect.stringMatching(/^Skills that may help with this request:\n- spreadsheet: Works with spreadsheet files/),
+		]);
+
+		// No hidden skill is named in any word: the judge is not asked, and the turn does not wait for it.
+		await harness.session.prompt("Thanks, go on.");
+		expect(asked).toHaveLength(1);
+		// A skill that was announced is not asked about again.
+		await harness.session.prompt("Open the spreadsheet once more.");
+		expect(asked).toHaveLength(1);
+		expect(customMessages(harness, "kyrn.skills")).toHaveLength(1);
+	});
+
+	it("skills: a later message's question names the eight closest hidden skills at most", async () => {
+		const names = Array.from({ length: 12 }, (_, index) => `report-${index + 1}`);
+		const { harness, asked } = await withHiddenSkills([...names, "calendar"], () => ({}));
+		harness.setResponses([fauxAssistantMessage("Fixed."), fauxAssistantMessage("Written.")]);
+		await harness.session.prompt("Fix the login bug.");
+		// "files" is in every description, "report-7" in one: that one goes first, and seven more fill the question.
+		await harness.session.prompt("Now check the report-7 files.");
+		expect(asked).toHaveLength(1);
+		expect(asked[0]).toHaveLength(8);
+		expect(asked[0][0]).toBe("report-7");
+	});
+
+	it("skills: a later message's question is stopped when the turn stops waiting for it", async () => {
+		let stopped = false;
+		const { harness, asked } = await withHiddenSkills(
+			["calendar", "spreadsheet"],
+			(request) =>
+				new Promise((_resolve, reject) => {
+					request.signal?.addEventListener("abort", () => {
+						stopped = true;
+						reject(request.signal?.reason);
+					});
+				}),
+			{ waitMs: 100 },
+		);
+		harness.setResponses([fauxAssistantMessage("Fixed."), fauxAssistantMessage("Updated.")]);
+		await harness.session.prompt("Fix the login bug.");
+		const startedAt = Date.now();
+		await harness.session.prompt("Update the spreadsheet.");
+		// The judge's own timeout is 4 s: the question went at the turn's 100 ms, not then.
+		expect(Date.now() - startedAt).toBeLessThan(2000);
+		expect(asked).toEqual([["spreadsheet"]]);
+		expect(stopped).toBe(true);
+		expect(customMessages(harness, "kyrn.skills")).toEqual([]);
+		const records = harness.sessionManager
+			.getEntries()
+			.flatMap((entry) =>
+				entry.type === "custom" && entry.customType === "kyrn.decision" ? [entry.data as LedgerRecord] : [],
+			)
+			.filter((record) => record.specId === skillDisclosure.id);
+		expect(records.map((record) => record.reason)).toEqual([undefined, "error:aborted"]);
 	});
 
 	it("a turn waits at most 3 s by default for the questions asked before it", async () => {

@@ -1,6 +1,7 @@
 import { appendFileSync, closeSync, fstatSync, mkdirSync, openSync, readFileSync, readSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Lesson, LessonText } from "../decisions/memory.ts";
+import { sharingTerms } from "../terms.ts";
 
 /**
  * The experience library on disk: `<agentDir>/mu/lessons.jsonl`, one JSON object per line, only ever
@@ -315,59 +316,7 @@ export function rankForRecall(lessons: readonly StoredLesson[], cwd: string, lim
 		.slice(0, limit);
 }
 
-/** Words that say nothing about what a lesson is about. */
-const FILLER = new Set([
-	"the",
-	"and",
-	"for",
-	"with",
-	"when",
-	"this",
-	"that",
-	"from",
-	"into",
-	"are",
-	"was",
-	"were",
-	"you",
-	"your",
-	"its",
-	"has",
-	"have",
-	"will",
-	"then",
-	"than",
-	"there",
-	"which",
-	"what",
-	"should",
-	"would",
-	"could",
-	"been",
-	"about",
-]);
-
-const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+/gu;
-
-/**
- * The terms two lessons can share: words of three letters or more, and pairs of neighbouring
- * characters in Chinese, Japanese or Korean, which are written without spaces.
- */
-export function terms(text: string): Set<string> {
-	const lower = text.toLowerCase();
-	const found = new Set<string>();
-	for (const run of lower.match(CJK) ?? []) {
-		if (run.length === 1) found.add(run);
-		for (let index = 0; index + 1 < run.length; index++) found.add(run.slice(index, index + 2));
-	}
-	for (const raw of lower.replace(CJK, " ").match(/[\p{L}\p{N}_./-]+/gu) ?? []) {
-		const word = raw.replace(/^[._/-]+|[._/-]+$/g, "");
-		if (word.length >= 3 && !FILLER.has(word)) found.add(word);
-	}
-	return found;
-}
-
-const lessonTerms = (lesson: LessonText) => terms(`${lesson.trigger} ${lesson.lesson}`);
+const lessonText = (lesson: LessonText) => `${lesson.trigger} ${lesson.lesson}`;
 
 /**
  * The active lessons of this project a new one is held against before it is stored: those it shares
@@ -379,20 +328,8 @@ export function neighbours(
 	cwd: string,
 	limit: number,
 ): StoredLesson[] {
-	const mine = lessonTerms(candidate);
-	if (mine.size === 0 || limit <= 0) return [];
-	const scored: { lesson: StoredLesson; overlap: number }[] = [];
-	for (const lesson of lessons) {
-		if (lesson.status !== "active" || !inScope(lesson, cwd)) continue;
-		const theirs = lessonTerms(lesson);
-		let shared = 0;
-		for (const term of mine) if (theirs.has(term)) shared++;
-		if (shared > 0) scored.push({ lesson, overlap: shared / Math.min(mine.size, theirs.size) });
-	}
-	return scored
-		.sort((a, b) => b.overlap - a.overlap)
-		.slice(0, limit)
-		.map((entry) => entry.lesson);
+	const kept = lessons.filter((lesson) => lesson.status === "active" && inScope(lesson, cwd));
+	return sharingTerms(lessonText(candidate), kept, lessonText, limit);
 }
 
 /** Word for word the same, whatever the spacing and case. */

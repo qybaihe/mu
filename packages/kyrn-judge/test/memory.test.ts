@@ -34,11 +34,11 @@ import {
 	rankForRecall,
 	readLessons,
 	type StoredLesson,
-	terms,
 	writeLesson,
 } from "../src/memory/store.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import { briefFor, briefMessage, knownLessons } from "../src/swarm/brief.ts";
+import { terms } from "../src/terms.ts";
 import type { Answer, JudgeRequest } from "../src/types.ts";
 
 const yes: Answer = { type: "boolean", probability: 0.9 };
