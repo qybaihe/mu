@@ -10,7 +10,7 @@ import { endedRuns } from '@/renderer/pages/conversation/KyrnPanel/Hive/activity
 import type { Activity } from '@/common/kyrn/types';
 import { activity, hiveEvents, hiveSnapshot } from './hiveFixtures';
 
-vi.mock('@/renderer/components/media/LocalImageView', () => ({ default: () => null }));
+vi.mock('@/renderer/components/media/local/LocalImageView', () => ({ default: () => null }));
 vi.mock('@/renderer/utils/file/download', () => ({ downloadFileFromPath: vi.fn() }));
 
 const i18n = createInstance();

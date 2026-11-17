@@ -22,7 +22,7 @@ vi.mock('@/renderer/components/Markdown/CodeBlock', () => ({
   default: ({ children }: { children?: React.ReactNode }) => <code>{children}</code>,
 }));
 
-vi.mock('@/renderer/components/media/LocalImageView', () => ({
+vi.mock('@/renderer/components/media/local/LocalImageView', () => ({
   __esModule: true,
   default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />,
 }));

@@ -19,7 +19,7 @@ import classNames from 'classnames';
 import React, { useCallback, useContext, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { convertLatexDelimiters } from '@renderer/utils/chat/latexDelimiters';
-import LocalImageView from '@renderer/components/media/LocalImageView';
+import LocalImageView from '@renderer/components/media/local/LocalImageView';
 import CodeBlock from './CodeBlock';
 import LocalFileLink from './LocalFileLink';
 import ShadowView from './ShadowView';

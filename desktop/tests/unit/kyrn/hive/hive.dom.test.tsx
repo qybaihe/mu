@@ -10,7 +10,7 @@ import { onHiveFocus, requestHiveFocus } from '@/renderer/pages/conversation/Kyr
 import MessageToolGroupSummary from '@/renderer/pages/conversation/Messages/components/MessageToolGroupSummary';
 import { activity, hiveEvents, hiveMessage, hiveSnapshot } from './hiveFixtures';
 
-vi.mock('@/renderer/components/media/LocalImageView', () => ({ default: () => null }));
+vi.mock('@/renderer/components/media/local/LocalImageView', () => ({ default: () => null }));
 vi.mock('@/renderer/utils/file/download', () => ({ downloadFileFromPath: vi.fn() }));
 
 const i18n = createInstance();

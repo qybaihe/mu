@@ -10,7 +10,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TMessage } from '@/common/chat/chatLib';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
-import LocalImageView from '@/renderer/components/media/LocalImageView';
+import LocalImageView from '@/renderer/components/media/local/LocalImageView';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { useMessageListRun } from '../hooks';
 

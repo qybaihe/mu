@@ -11,7 +11,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import LocalImageView from '@/renderer/components/media/LocalImageView';
+import LocalImageView from '@/renderer/components/media/local/LocalImageView';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),

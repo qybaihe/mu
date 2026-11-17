@@ -25,7 +25,7 @@ vi.mock('@/common/kyrn/bridge', () => ({
     return result.data;
   },
 }));
-vi.mock('@/renderer/components/media/LocalImageView', () => ({ default: () => null }));
+vi.mock('@/renderer/components/media/local/LocalImageView', () => ({ default: () => null }));
 vi.mock('@/renderer/utils/file/download', () => ({ downloadFileFromPath: vi.fn() }));
 
 const i18n = createInstance();

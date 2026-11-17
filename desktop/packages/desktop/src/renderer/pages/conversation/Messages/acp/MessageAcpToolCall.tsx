@@ -7,7 +7,7 @@
 import type { IMessageAcpToolCall } from '@/common/chat/chatLib';
 import { getAcpImageFileName, getAcpImagePath } from '@/common/chat/acpToolCallOutput';
 import FileChangesPanel from '@/renderer/components/base/FileChangesPanel';
-import LocalImageView from '@/renderer/components/media/LocalImageView';
+import LocalImageView from '@/renderer/components/media/local/LocalImageView';
 import { useDiffPreviewHandlers } from '@/renderer/hooks/file/useDiffPreviewHandlers';
 import { parseDiff } from '@/renderer/utils/file/diffUtils';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';

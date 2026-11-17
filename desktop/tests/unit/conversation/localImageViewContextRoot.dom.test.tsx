@@ -29,7 +29,7 @@ vi.mock('@/common', () => ({
   },
 }));
 
-import LocalImageView from '@renderer/components/media/LocalImageView';
+import LocalImageView from '@renderer/components/media/local/LocalImageView';
 import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
 
 afterEach(() => {

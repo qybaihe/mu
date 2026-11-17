@@ -14,7 +14,7 @@ const mockDownloadFileFromPath = vi.fn().mockResolvedValue(undefined);
 const mockMessageSuccess = vi.fn();
 const mockMessageError = vi.fn();
 
-vi.mock('@/renderer/components/media/LocalImageView', () => ({
+vi.mock('@/renderer/components/media/local/LocalImageView', () => ({
   __esModule: true,
   default: ({ src, alt, className }: { src: string; alt: string; className?: string }) => (
     <img src={src} alt={alt} className={className} data-testid='local-image' />

@@ -13,7 +13,7 @@ import { ipcBridge } from '@/common';
 import { getAcpImageFileName } from '@/common/chat/acpToolCallOutput';
 import type { NormalizedToolCall, NormalizedToolStatus, ToolMessage } from '@/common/chat/normalizeToolCall';
 import { normalizeToolMessages } from '@/common/chat/normalizeToolCall';
-import LocalImageView from '@/renderer/components/media/LocalImageView';
+import LocalImageView from '@/renderer/components/media/local/LocalImageView';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { HiveToolCard } from '@/renderer/pages/conversation/KyrnPanel/Hive';
 import { swarmProgressText } from '@/renderer/pages/conversation/KyrnPanel/Hive/codes';
