@@ -294,7 +294,9 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
       data-testid='local-video'
       // A quarter turn rotates only the pixels, not the layout box: a turned video still
       // reserved its upright height and pushed the toolbar off screen. The stage below
-      // carries the turned box; this element centers in it and turns itself.
+      // carries the turned box; this element centers in it and turns itself. On the card,
+      // the box measured before the loan keeps the layout stable while the remounted
+      // element loads, so the transcript does not scroll when the video comes back.
       style={
         variant === 'overlay' && fitted
           ? {
@@ -305,7 +307,9 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
               height: fitted.h,
               transform: `rotate(${quarter * 90}deg)`,
             }
-          : undefined
+          : variant === 'card' && lentSize
+            ? { width: lentSize.w, height: lentSize.height }
+            : undefined
       }
       className={variant === 'overlay' ? styles.overlayVideo : styles.cardVideo}
       onLoadedMetadata={(event) => handleMetadata(event.currentTarget)}
