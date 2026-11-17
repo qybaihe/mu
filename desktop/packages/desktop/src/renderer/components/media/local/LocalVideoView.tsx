@@ -96,6 +96,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const [looping, setLooping] = useState(false);
   const [muted, setMuted] = useState(false);
   const [intrinsic, setIntrinsic] = useState<{ w: number; h: number } | null>(null);
+  const [lentSize, setLentSize] = useState<{ w: number; height: number } | null>(null);
   // One speed for the video wherever it is watched: the card's menu and the overlay's share it.
   const [rate, setRate] = useState(1);
   // Where the element's playback stands when it is lent to the overlay or borrowed back.
@@ -181,6 +182,10 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
 
   const openOverlay = useCallback(() => {
     capturePosition();
+    // Hold the card's exact box while the element is lent out, so the transcript's
+    // height (and so its scroll position) does not jump when the overlay opens.
+    const v = videoRef.current;
+    setLentSize(v && v.offsetHeight > 0 ? { w: v.offsetWidth, height: v.offsetHeight } : null);
     setOpen(true);
   }, [capturePosition]);
 
@@ -480,7 +485,14 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   return (
     <span className='inline-flex flex-col gap-6px max-w-full align-top'>
       <span className='relative inline-block max-w-full' data-testid='local-video-wrap'>
-        {open ? <span className={`${styles.cardVideo} ${styles.placeholderCard}`} /> : video('card')}
+        {open ? (
+          <span
+            className={`${styles.cardVideo} ${styles.placeholderCard}`}
+            style={lentSize ? { width: lentSize.w, height: lentSize.height } : undefined}
+          />
+        ) : (
+          video('card')
+        )}
         {open ? null : (
           <Button
             type='text'
