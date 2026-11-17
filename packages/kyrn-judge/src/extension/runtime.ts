@@ -17,7 +17,8 @@ import type { ClassifierCall } from "../providers/classifier.ts";
 import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
 import { isOpenAIAddress, type OpenAIKeyProblem } from "../providers/openai-decisions.ts";
-import { buildJudge, resolveJudgeConfig } from "../registry.ts";
+import type { JudgeQueue } from "../queue.ts";
+import { buildJudge, type JudgeRefusal, resolveJudgeConfig } from "../registry.ts";
 import type { Capability, JsonValue } from "../types.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
 import {
@@ -166,6 +167,17 @@ export interface Savings {
 	compactedChars: number;
 	/** Characters of new diagnostics that were never told: style noise, fixed before the model paused, or over the cap. */
 	diagnosticsWithheldChars: number;
+}
+
+/** How the judge of one route answered a trivial question (`KyrnRuntime.routeHealth`). */
+export interface RouteHealth {
+	/** The decision points this judge answers, by id. */
+	readonly points: readonly string[];
+	/** The judge as the ledger names it ("typesafe:jev-latest"). */
+	readonly providerId: string;
+	readonly ok: boolean;
+	readonly latencyMs: number;
+	readonly error?: string;
 }
 
 /**
@@ -326,12 +338,19 @@ export class KyrnRuntime {
 	private firstUserMessage = "";
 	private turnStartListeners: ((words: string) => void)[] = [];
 	private judgeHttp: JudgeFetch | undefined;
+	/** One line per judge server that answers only a few requests at a time, whichever order of judges asks it. */
+	private readonly judgeQueues = new Map<string, JudgeQueue>();
 	private presentationSequence = 0;
 	onPresentation?: PresentationListener;
 	/** Set by the free Jev notice: how each call went when the `jev` judge falls back to the free Jev. */
 	onFreeJev?: (outcome: FreeJevOutcome) => void;
 	/** Told when the `openai` judge has no usable key (features/openai-key.ts says so once). */
 	onOpenAIKey?: (problem: OpenAIKeyProblem) => void;
+	/**
+	 * Told when a judge's service turned its key down or cannot charge the account, with the judges it is in order with
+	 * (the tiers, or a route's): features/judge-refused.ts says so once for each service.
+	 */
+	onJudgeRefused?: (refusal: JudgeRefusal, tiers: readonly string[]) => void;
 	/** Features that show the person what another feature announced: the board says a permission is waiting. */
 	private readonly observers = new Map<KyrnPresentationEvent["kind"], Set<(payload: unknown) => void>>();
 
@@ -402,6 +421,8 @@ export class KyrnRuntime {
 				classify: (model) => this.classifier(model),
 				freeJev: (outcome) => this.onFreeJev?.(outcome),
 				openaiKeyProblem: (problem) => this.onOpenAIKey?.(problem),
+				refused: (refusal) => this.onJudgeRefused?.(refusal, tiers),
+				queues: this.judgeQueues,
 			},
 		);
 		this.problems.push(...built.problems);
@@ -590,12 +611,21 @@ export class KyrnRuntime {
 	}
 
 	/**
+	 * When a wait of `waitMs` counted from the message's arrival is over, on `Date.now()`'s scale. A feature that asks
+	 * the judge before the turn and waits with `untilTurnDeadline` passes this as the call's `neededBy`: the judge's
+	 * line then knows until when the turn is held up for the verdict.
+	 */
+	turnDeadline(waitMs: number): number {
+		return this.turn.startedAt + waitMs;
+	}
+
+	/**
 	 * Waits for `work` until `waitMs` after the message arrived, whichever comes first; undefined
 	 * when the time is up. Every wait before the turn counts from the same moment, so a judge that
 	 * was slow for one feature does not buy the next feature a fresh allowance.
 	 */
 	untilTurnDeadline<T>(work: Promise<T>, waitMs: number): Promise<T | undefined> {
-		const left = Math.max(0, this.turn.startedAt + waitMs - Date.now());
+		const left = Math.max(0, this.turnDeadline(waitMs) - Date.now());
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		return Promise.race([
 			work,
@@ -737,15 +767,40 @@ export class KyrnRuntime {
 		}
 	}
 
-	/** "cascade(127.0.0.1:8790:mude>gateway:typesafe-ai/jev)" -> "mude>jev". */
+	/** The shared judge by its short name ("mude>jev"), or "off" when the judgment layer is switched off. */
 	get judgeLabel(): string {
-		if (!this.enabled) return "off";
-		const id = this.engine.providerId.replace(/^cascade\((.*)\)$/, "$1");
-		return id
-			.split(">")
-			.map((tier) => tier.split(/[:/]/).pop() || tier)
-			.join(">");
+		return this.enabled ? judgeLabelOf(this.engine.providerId) : "off";
 	}
+
+	/**
+	 * Asks each judge that answers decision points of its own (`routes`) one trivial question, as `engine.probe` asks
+	 * the shared one: a route's judge can be down while the shared judge answers, and nothing else says so before its
+	 * decisions fall back. Points that are off are left out, and points routed to the same judges share one question.
+	 */
+	async routeHealth(signal?: AbortSignal): Promise<RouteHealth[]> {
+		const byJudges = new Map<string, string[]>();
+		for (const [specId, tiers] of this.routes) {
+			if (this.mode(specId) === "off") continue;
+			const key = tiers.join(",");
+			byJudges.set(key, [...(byJudges.get(key) ?? []), specId]);
+		}
+		return Promise.all(
+			[...byJudges.values()].map(async (points) => {
+				const probe = await this.engine.probe(signal, points[0]);
+				// Named after the question: a `jev` judge goes by the service that answered last.
+				return { points, providerId: this.engine.judgeFor(points[0]).id, ...probe };
+			}),
+		);
+	}
+}
+
+/** A judge's short name: "cascade(127.0.0.1:8790:mude>gateway:typesafe-ai/jev)" -> "mude>jev". */
+export function judgeLabelOf(providerId: string): string {
+	return providerId
+		.replace(/^cascade\((.*)\)$/, "$1")
+		.split(">")
+		.map((tier) => tier.split(/[:/]/).pop() || tier)
+		.join(">");
 }
 
 function emptyTurn(userMessage: string): TurnState {
@@ -774,6 +829,15 @@ export function within<T>(work: Promise<T>, waitMs: number): Promise<T | undefin
 	]).finally(() => {
 		if (timer) clearTimeout(timer);
 	});
+}
+
+/**
+ * A judge call the caller waits `waitMs` for, or undefined when the time is up; like `within`, the call carries on and
+ * is recorded when it lands. `ask` gets the moment the wait is over, to pass on as the call's `neededBy`: a judge that
+ * keeps a line then stops putting the request ahead of those still waited for.
+ */
+export function waitFor<T>(ask: (neededBy: number) => Promise<T>, waitMs: number): Promise<T | undefined> {
+	return within(ask(Date.now() + waitMs), waitMs);
 }
 
 /**

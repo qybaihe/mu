@@ -4,6 +4,29 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.13] - 2026-11-17
+
+**In 0.3.13 a judge that runs on your own machine gets mu's questions one at a time, the most urgent first, `mu ledger --tally` shows what each decision point costs and whether its verdicts change anything, and an unsure answer stays with the judge that gave it.** A judge whose key is refused no longer costs every decision a round trip, and mu is built on pi 1.5.2. The desktop app's own code is unchanged apart from one sentence in Settings → Judges; it carries mu-agent 0.3.13.
+
+### Added
+
+- **`mu ledger --tally` says what each decision point costs, and what comes of it.** It adds up your recent sessions by decision point: how often it was asked, how often a verdict came, how often that verdict was something else than what mu does with no judge, how many verdicts came after mu had stopped waiting, and how many tokens the judge read. It ends with the points worth a look, each with the rule that put it there. The ledger now records whether a verdict differed from the fallback, so a point that spends judge calls and changes nothing shows as one.
+- **A judge can say how many requests it answers at a time (`concurrency`).** A model on your own machine answers one request at a time, and a message asks several things at once: in the authors' sessions with mude, the task frame's small question stood behind the skills question and came after its 3 s wait 48 times in 57. mu now keeps the line for such a judge itself: the question the turn is waiting for goes first, then the smaller of two, and a request that waited too long is dropped without being sent. `mude` and the decision models that `mu judge model` adds are set to one at a time. How much this cuts the late verdicts is not measured yet.
+- **Measured curves for a judge's probabilities (`profile.calibration`).** A chat model says 0.9 for most things it leans to, and a decision point acts on a yes from 0.8 whichever judge answered. With curves you measured, mu reads a judge's probabilities as what they turned out to be worth before any decision point acts on them. mu ships no curves; `packages/kyrn-judge/scripts/fit-calibration.ts` fits them from answers whose right answer you know.
+- **Benchmark runs that tell the judge from the rest of mu.** `--ak judge_mode=off` runs mu on its fixed rules with no judge asked, and `--ak judge=off` runs it without the kernel ([bench/harbor](bench/harbor/README.md#what-the-judge-adds)). Neither has been run yet.
+
+### Changed
+
+- **An unsure answer stays with the judge that gave it.** With several judges in order (`"tiers": ["mude", "jev"]`), a later judge now answers only when an earlier one fails or isn't trusted with that kind of question. Until now a yes/no answer between 0.2 and 0.8 went on to the next judge, and that was measured to do harm: a fine-tuned 4B judge alone scored 68.2 on real held-out requests, and 20.0 with a larger model answering what it was unsure of ([docs/nebius.md](docs/nebius.md)). With mude first, what it is unsure of no longer goes to a hosted judge, and the local-only switch in the app's settings says so in all 13 languages.
+- **Lessons are recalled by the recall verdict alone.** Preflight no longer asks whether notes from past sessions would help. It asked without the notes, and a sure no kept the turn from lessons that the recall question, which reads them, had found to apply.
+- Built on pi 1.5.2 and the upstream changes after it. pi's `cacheWarming` setting now defaults to `"idle"`: prompt caches stay warm for up to 30 minutes between runs when a refresh is expected to pay for itself (`"cacheWarming": "streaming"` in `~/.mu/agent/settings.json` restores the earlier behavior). That puts mu's `cache.warming` decision point to work by default: between runs the judge reads the last exchange, stops the refreshes after a message that ends the conversation, and keeps them going while the reply asks you a question. What this does to cost is not measured yet. `read` streams a large file instead of loading it whole, `edit` no longer rewrites the line endings of lines it doesn't touch, and more requests that fail on a dropped connection are retried. In the terminal, a session whose folder is gone can be forked into the current one. The model list gains Claude Fable 5.2, GPT-6 Cyber, Gemini 4 Carbon and Gemini 4 Hydrogen, and 51 models their providers no longer list are gone, most of them on OpenRouter and the Vercel AI Gateway: where one was your model, mu uses another until you choose again. Several providers have a newer default model, used when you haven't chosen a model: Claude Opus 5.5 for Anthropic and Amazon Bedrock, Gemini 4 Argon for Google, GPT-6.1 Sol for Azure, and Kimi K2.7 Code in place of Kimi K2.6.
+
+### Fixed
+
+- **A judge whose key is refused no longer costs every decision a round trip.** After two refusals in a row (a revoked key, a closed account, no payment method), mu stops asking that service, tells you once, and tries again once a minute. The `jev` judge moves on to the next Jev service whose key is set, and last to the free Jev. The welcome screen and `/doctor` check the judge of every route.
+- **Later messages ask the judge about fewer skills.** After the first message, a message asks only about the hidden skills that share a term with it (at most 8), and asks nothing when none does.
+- **`mu ledger <n>` reads n sessions.** A number given as the first argument was ignored, and the last 5 sessions were read.
+
 ## [0.3.12] - 2026-11-13
 
 **In 0.3.12 images and media in replies and deliverables cards are easier to inspect, save and quote back into the next message, while the judgment kernel closes a path-wrapper permission bypass and shows the judge long single-line test dumps.** The desktop app carries mu-agent 0.3.12.

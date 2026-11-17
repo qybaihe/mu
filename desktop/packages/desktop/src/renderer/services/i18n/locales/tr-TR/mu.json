@@ -178,7 +178,7 @@
       },
       "localOnly": "Yalnızca yerel — hiçbir bulut hakemine sorma",
       "localOnlyOn": "Tek hakem mude 1.0 olur ve buluta hiçbir şey gitmez. Yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
-      "localOnlyOff": "mude 1.0'ın yanıtlayamadığı kararlar (örneğin durmuşken ya da emin değilken) buluttaki {{judges}} hakemine gider; oraya gönderilen her şey bu Mac'ten çıkar. İki güvenlik denetimi de her zaman oraya gider: araç açıklamalarının taranması ve getirilen içerikte enjekte edilmiş talimat olup olmadığının taranması.",
+      "localOnlyOff": "mude 1.0'ın yanıtlayamadığı kararlar (örneğin durmuşken ya da çok yavaşken) buluttaki {{judges}} hakemine gider; oraya gönderilen her şey bu Mac'ten çıkar. İki güvenlik denetimi de her zaman oraya gider: araç açıklamalarının taranması ve getirilen içerikte enjekte edilmiş talimat olup olmadığının taranması.",
       "localOnlyOffLocal": "mude 1.0'ın yanıtlayamadığı kararlar, yine bu Mac'te çalışan {{judges}} hakemine gider.",
       "localOnlyNone": "mude 1.0'ın arkasında ayarlı bir hakem yok. Yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
       "use": "mude 1.0'ı hakem olarak kullan",

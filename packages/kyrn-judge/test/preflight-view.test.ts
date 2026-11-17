@@ -34,7 +34,6 @@ const chatAnswers: Record<string, Answer> = {
 	is_side_question: no,
 	needs_clarification: no,
 	needs_files_changed: no,
-	needs_memory: no,
 	swarm_worthy: no,
 	plan_first: { type: "boolean", probability: 0.91 },
 	task_complexity: { type: "score", score: 0.2 },
@@ -48,7 +47,6 @@ const chatOutcome: PreflightOutcome = {
 	sideQuestion: "no",
 	needsClarification: "no",
 	needsFilesChanged: "no",
-	needsMemory: "no",
 	swarmWorthy: "no",
 	planFirst: "yes",
 	complexity: { task: 0.2, reasoning: 1.1, tools: 0 },
@@ -129,7 +127,7 @@ describe("preflight view", () => {
 		expect(collapsed).toEqual([" ◆ Jev  chat · answer directly · thinking medium → low · 640 ms"]);
 
 		const expanded = renderVerdict(data, true, 100, plain);
-		expect(expanded).toHaveLength(1 + 10 + 1);
+		expect(expanded).toHaveLength(1 + 9 + 1);
 		expect(expanded[1]).toMatch(/turn type\s+chat 93%/);
 		expect(expanded.at(-1)).toMatch(/told the model\s+- Write a short plan first\./);
 		for (const line of renderVerdict(data, true, 30, plain)) expect(visibleWidth(line)).toBeLessThanOrEqual(30);

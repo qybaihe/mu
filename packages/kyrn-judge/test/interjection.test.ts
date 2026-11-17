@@ -252,6 +252,16 @@ describe("interjection: mu decides when a message sent mid-run reaches the work"
 		expect(run.asked).toEqual([failed, late]);
 		expect(run.session.getSteeringMessages()).toEqual([failed, late]);
 		expect(run.session.getFollowUpMessages()).toEqual([]);
+		// The ledger says so of the one that came: the message had stopped waiting for it.
+		const records = run.harness.sessionManager
+			.getEntries()
+			.flatMap((entry) => (entry.type === "custom" && entry.customType === "kyrn.decision" ? [entry.data] : []))
+			.map((data) => data as { specId: string; reason?: string; late?: boolean })
+			.filter((record) => record.specId === "input.interjection");
+		expect(records.map((record) => [record.reason, record.late])).toEqual([
+			["error:unreachable", undefined],
+			[undefined, true],
+		]);
 
 		run.release();
 		await first;

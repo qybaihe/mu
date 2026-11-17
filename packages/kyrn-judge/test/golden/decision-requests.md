@@ -523,7 +523,7 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 }
 ```
 
-## input.preflight v4
+## input.preflight v5
 
 ```json
 {
@@ -568,10 +568,6 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 		"needs_files_changed": {
 			"type": "boolean",
 			"instructions": "Does `user_message` request a code change?"
-		},
-		"needs_memory": {
-			"type": "boolean",
-			"instructions": "Would notes from past sessions in this project help with `user_message`?"
 		},
 		"swarm_worthy": {
 			"type": "boolean",

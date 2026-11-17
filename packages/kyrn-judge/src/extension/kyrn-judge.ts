@@ -53,6 +53,7 @@ import { registerInjection } from "./features/injection.ts";
 import { registerInterjection } from "./features/interjection.ts";
 import { registerInterrupted } from "./features/interrupted.ts";
 import { registerJudgeItems } from "./features/judge-items.ts";
+import { registerJudgeRefusedNotice } from "./features/judge-refused.ts";
 import { registerLayaNotice } from "./features/laya.ts";
 import { registerLsp } from "./features/lsp.ts";
 import { registerMcp } from "./features/mcp.ts";
@@ -384,6 +385,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	}
 	registerFreeJevNotice(runtime, roots);
 	registerOpenAIKeyNotice(runtime);
+	registerJudgeRefusedNotice(runtime);
 	registerCommands(runtime, roots);
 	registerImport(pi);
 	if (roots) registerLockSafeQuit(pi, roots.agentDir);

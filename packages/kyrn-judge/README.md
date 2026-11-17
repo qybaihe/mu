@@ -22,8 +22,8 @@ From this repository, `kyrn/bin/mu` (on Windows `kyrn\bin\mu.cmd`; the launcher 
 
 ```jsonc
 {
-  "tiers": ["mude", "jev"],          // asked in order; a later tier only gets what an earlier one is unsure of or not trusted on
-  "judges": { "luna": { "type": "llm", "model": "openai/gpt-5.6-luna" } },
+  "tiers": ["mude", "jev"],          // asked in order; a later tier only gets what an earlier one could not answer (it failed) or is not trusted on
+  "judges": { "luna": { "type": "llm", "model": "openai/gpt-5.6-luna" } },   // "profile": { "calibration": … } holds measured curves its probabilities are read through; "concurrency": 1 lines up the requests of a judge that answers one at a time (docs/judges.md)
   "modes": { "default": "active" },  // off | shadow (record only) | active (the default), per decision id
   "features": {
     "swarm": { "models": ["openai/gpt-5.6-luna", "openai/gpt-5.6-sol"] },   // cheapest to strongest

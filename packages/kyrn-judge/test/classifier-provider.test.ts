@@ -7,7 +7,8 @@ import {
 	type ClassifierOutcome,
 	type ClassifierWireQuestion,
 } from "../src/providers/classifier.ts";
-import { FreeJevFallback } from "../src/providers/free-jev.ts";
+import { FreeJev } from "../src/providers/free-jev.ts";
+import { JevRoutes } from "../src/providers/jev-routes.ts";
 import { buildJudge, type JudgeHost } from "../src/registry.ts";
 import type { JudgeProvider, Questions } from "../src/types.ts";
 
@@ -119,6 +120,24 @@ describe("ClassifierJudgeProvider", () => {
 		expect((aborted as Error).name).toBe("AbortError");
 	});
 
+	it("keeps the status of a call the service turned down, and gives none to a key missing on this machine", async () => {
+		const status = async (errorMessage: string) => {
+			const error = await failure(
+				new ClassifierJudgeProvider({
+					model: "opencode/jev-1.13",
+					call: recording({ answers: {}, stopReason: "error", errorMessage }).call,
+				}),
+			);
+			return isJudgeError(error) ? error.status : String(error);
+		};
+		// As pi-ai words a response it could not use, and as it did before.
+		expect(await status("OpenCode System One error (401): invalid key")).toBe(401);
+		expect(await status("System One API returned 402: add credits")).toBe(402);
+		expect(await status("Cloudflare System One error (403): no access to this model")).toBe(403);
+		expect(await status("No API key for provider: opencode")).toBeUndefined();
+		expect(await status("System One API returned 503")).toBeUndefined();
+	});
+
 	it("refuses an answer of the wrong kind or an option that was not offered", async () => {
 		const wrong = new ClassifierJudgeProvider({
 			model: "x/y",
@@ -149,9 +168,20 @@ describe("the jev judge with no key", () => {
 	it("answers with the free Jev, unless the host keeps a gateway key, and says how each free call went", async () => {
 		let stored: string | undefined;
 		const heard: string[] = [];
-		const gateway = fixed("gateway:typesafe-ai/jev", "answer");
+		// The gateway as its provider behaves: with no key it fails before any request.
+		const gateway: JudgeProvider & { asked: number } = {
+			id: "gateway:typesafe-ai/jev",
+			asked: 0,
+			async evaluate() {
+				if (!stored) throw new JudgeError("auth", "No AI Gateway API key is configured");
+				this.asked++;
+				return { answers: {}, modelId: this.id };
+			},
+		};
 		const free = fixed("classifier:opencode/jev-1.13-free", "answer");
-		const judge = new FreeJevFallback({ gateway, free, gatewayKey: () => stored, onFree: (o) => heard.push(o) });
+		const freeJev = new FreeJev(free, (outcome) => heard.push(outcome));
+		const judge = new JevRoutes([gateway, freeJev], freeJev);
+		expect(judge.id).toBe("classifier:opencode/jev-1.13-free");
 		await judge.evaluate({ state: "s", questions: {} });
 		expect([free.asked, gateway.asked, judge.id]).toEqual([1, 0, "classifier:opencode/jev-1.13-free"]);
 		// A key stored during the session (a sign-in) is used from the next call on.
@@ -160,12 +190,17 @@ describe("the jev judge with no key", () => {
 		expect([free.asked, gateway.asked, judge.id]).toEqual([1, 1, "gateway:typesafe-ai/jev"]);
 		expect(heard).toEqual(["answered"]);
 
-		const ended = new FreeJevFallback({
+		stored = undefined;
+		const ended = new JevRoutes(
+			[
+				gateway,
+				new FreeJev(
+					fixed("classifier:opencode/jev-1.13-free", new JudgeError("payment_required", "402")),
+					(outcome) => heard.push(outcome),
+				),
+			],
 			gateway,
-			free: fixed("classifier:opencode/jev-1.13-free", new JudgeError("payment_required", "402")),
-			gatewayKey: () => undefined,
-			onFree: (o) => heard.push(o),
-		});
+		);
 		await expect(ended.evaluate({ state: "s", questions: {} })).rejects.toThrow("402");
 		expect(heard).toEqual(["answered", "payment_required"]);
 	});

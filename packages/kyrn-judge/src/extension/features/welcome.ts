@@ -4,7 +4,7 @@ import { basename } from "node:path";
 import { getReadmePath, keyText, VERSION as PI_VERSION, type Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { appLanguage } from "../../language.ts";
-import { failOpen, type KyrnRuntime } from "../runtime.ts";
+import { failOpen, judgeLabelOf, type KyrnRuntime, type RouteHealth } from "../runtime.ts";
 import { isUnattended } from "./unattended.ts";
 
 /**
@@ -71,6 +71,8 @@ export interface WelcomeView {
 	piVersion: string;
 	judge: string;
 	health: JudgeHealth;
+	/** The judges of single decision points (`routes`) that are not answering. */
+	routesDown: readonly RouteHealth[];
 	mode: string;
 	model: string | undefined;
 	thinking: string | undefined;
@@ -89,6 +91,11 @@ const HEALTH_ERROR: Readonly<Record<string, string>> = {
 	auth: "no usable key (run mu setup)",
 	payment_required: "out of credit",
 };
+
+/** Why a judge is not answering, by the kind of its failure. */
+function downText(error: string | undefined): string {
+	return HEALTH_ERROR[error ?? ""] ?? `failing (${error ?? "error"})`;
+}
 
 /**
  * A judge's label as people read it: "jev" is Jev, "jev-1.13-free" is "Jev 1.13 (free)", and a cascade ("clm>jev" or
@@ -114,8 +121,13 @@ function healthText(view: WelcomeView, paint: Paint): string {
 	if (view.health.ok) {
 		return `${judge} ${paint.fg("success", `· answering in ${view.health.latencyMs} ms`)} ${paint.fg("dim", `· decision points ${view.mode === "shadow" ? "in shadow" : view.mode}`)}`;
 	}
-	const why = HEALTH_ERROR[view.health.error ?? ""] ?? `failing (${view.health.error ?? "error"})`;
-	return `${judge} ${paint.fg("warning", `· ${why}; using the fallbacks`)}`;
+	return `${judge} ${paint.fg("warning", `· ${downText(view.health.error)}; using the fallbacks`)}`;
+}
+
+/** A route whose judge is not answering: the judge's own line is about the shared one, and says nothing of it. */
+function routeText(route: RouteHealth, paint: Paint): string {
+	const judge = judgeDisplayName(judgeLabelOf(route.providerId));
+	return `${route.points.join(", ")}: ${judge} ${paint.fg("warning", `· ${downText(route.error)}; using the fallbacks`)}`;
 }
 
 /** The rule under the header: as wide as the screen, up to the width the header itself takes. */
@@ -144,6 +156,7 @@ export function renderWelcome(view: WelcomeView, width: number, paint: Paint): s
 	const title = WORDMARK.map((row, index) => `${paint.bold(paint.fg(shades[index], row))}   ${beside[index]}`);
 	const readout: [string, string, string][] = [
 		[paint.fg("customMessageLabel", "◆"), "judge", healthText(view, paint)],
+		...view.routesDown.map((route): [string, string, string] => [" ", "route", routeText(route, paint)]),
 		[" ", "model", model],
 		[" ", "cwd", cwd],
 	];
@@ -231,6 +244,7 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 	});
 	if (!options.enabled) return;
 	let health: JudgeHealth = "checking";
+	let routesDown: readonly RouteHealth[] = [];
 	/** Settled on the first run: the prompt's prefix must not move once it has been cached. */
 	let lean: boolean | undefined;
 
@@ -279,6 +293,7 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 								// Every decision point off: no judge is asked, so none is named.
 								judge: runtime.engine.asksJudge() ? runtime.judgeLabel : "off",
 								health,
+								routesDown,
 								mode: runtime.mode("*"),
 								model: modelRef(model),
 								thinking: current?.thinkingLevel ?? runtime.pi.getThinkingLevel(),
@@ -300,9 +315,15 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 			// point asks it: then nothing goes to the judge at all.
 			if (!runtime.engine.asksJudge()) return undefined;
 			health = "checking";
+			routesDown = [];
 			void runtime.engine.probe().then((result) => {
 				health = result;
 				redraw?.();
+			});
+			// A decision point with a judge of its own is not covered by that question: its judge is asked too.
+			void runtime.routeHealth().then((routes) => {
+				routesDown = routes.filter((route) => !route.ok);
+				if (routesDown.length > 0) redraw?.();
 			});
 			return undefined;
 		}),

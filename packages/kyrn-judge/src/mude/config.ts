@@ -19,8 +19,9 @@ import { DEFAULT_PORT, mudeBaseUrl } from "./server.ts";
  * What enabling mude changes in mu's files, and how disabling it puts them back:
  *
  * - mu.json `tiers`: "mude" goes first. With the fallback kept (the default), the judges that were there stay behind
- *   it: what mude cannot answer (its server is down, or it is unsure) goes to them, and what they read leaves this
- *   machine when they are hosted. Local only: "mude" alone, and a decision mude cannot answer takes its fallback.
+ *   it: what mude cannot answer (its server is down or too slow) goes to them, and what they read leaves this
+ *   machine when they are hosted. What mude answers stands, also where it is unsure: that takes the decision's
+ *   fallback, not another judge. Local only: "mude" alone, and a decision mude cannot answer takes its fallback.
  * - mu.json `judges.mude`: only when the server is not on its usual port. mu's built-in `mude` (config.ts) has the
  *   address and the capability profile, and an entry in the file would replace all of it.
  * - the .env: MU_JUDGE_MUDE_KEY, the key the server was started with.

@@ -4,6 +4,7 @@ import { Type } from "typebox";
 import type { Decision } from "../../decision.ts";
 import { type SkillCandidate, type SkillDisclosureOutcome, skillDisclosure } from "../../decisions/skill-disclosure.ts";
 import { inheritedNames, SKILLS_HIDDEN_ENV } from "../../swarm/brief.ts";
+import { sharingTerms } from "../../terms.ts";
 import { failOpen, type KyrnRuntime, userWords } from "../runtime.ts";
 import type { HarnessRoots } from "./inherit.ts";
 import {
@@ -58,6 +59,13 @@ interface PromptSkill extends SkillCandidate {
 	readonly disableModelInvocation?: boolean;
 }
 
+/**
+ * How many hidden skills the question of a later message names: the ones closest to it by shared terms. About a
+ * seventh of the 59 the owner's sessions asked about each time; how long a judge on a laptop takes for eight is not
+ * measured yet.
+ */
+const ANNOUNCE_LIMIT = 8;
+
 const listedOf = (skills: readonly PromptSkill[]): ListedSkill[] =>
 	skills
 		.filter((skill) => !skill.disableModelInvocation)
@@ -72,6 +80,16 @@ const listedOf = (skills: readonly PromptSkill[]): ListedSkill[] =>
  * A first verdict that arrives after the turn stopped waiting for it is applied
  * when the next turn starts (`applyLate`): one change of the prompt prefix, where
  * dropping it would carry every skill description on every request of the session.
+ *
+ * A later message asks only about the hidden skills its own words point to: those whose name or description shares a
+ * term with it, at most `ANNOUNCE_LIMIT`, and no question when there are none. A rule before the judge (`sharingTerms`,
+ * as a new lesson's neighbours are picked). Before it every message asked about every hidden skill. In the owner's
+ * sessions, with 59 skills hidden and the judge on the laptop, that was 14,000 tokens a message and a median of 3.3 s:
+ * the verdict came after the turn had stopped waiting 55 times in 59, so a message waited the whole `waitMs` for an
+ * announcement that never came, and the questions behind it in the judge's queue waited too. A skill the message
+ * names in other words, or in another language, is not asked about: `find_skill` still lists it. Such a question is
+ * stopped when its wait is up, since nothing uses a later announcement; the first verdict is not, because `applyLate`
+ * does.
  *
  * A sub-agent takes its parent's verdict (`subagentsInherit`): the parent passes the skills it keeps out of the
  * prompt, and the sub-agent hides those and asks nothing. A sub-agent never shows a skill its parent hid.
@@ -123,8 +141,29 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 
 	const visibleOf = (all: readonly PromptSkill[]) => all.filter((skill) => !skill.disableModelInvocation);
 	const disclose = (words: string, skills: readonly SkillCandidate[], signal?: AbortSignal) =>
-		runtime.engine.decide(skillDisclosure, { userMessage: words, skills }, { signal });
+		runtime.engine.decide(
+			skillDisclosure,
+			{ userMessage: words, skills },
+			{ signal, neededBy: runtime.turnDeadline(options.waitMs) },
+		);
 	const candidatesToAnnounce = () => [...hidden.values()].filter((skill) => !skill.announced);
+	/**
+	 * A later message's question about the hidden skills its words point to, with the handle that stops it; undefined
+	 * when they point to none.
+	 */
+	const announce = (words: string, signal?: AbortSignal) => {
+		const skills = sharingTerms(
+			words,
+			candidatesToAnnounce(),
+			(skill) => `${skill.name} ${skill.description}`,
+			ANNOUNCE_LIMIT,
+		);
+		if (skills.length === 0) return undefined;
+		const stop = new AbortController();
+		const decision = disclose(words, skills, signal ? AbortSignal.any([signal, stop.signal]) : stop.signal);
+		decision.catch(() => {});
+		return { decision, stop };
+	};
 	const hideNamed = (names: ReadonlySet<string>, skills: readonly PromptSkill[]) => {
 		for (const skill of skills) {
 			if (!names.has(skill.name)) continue;
@@ -141,8 +180,14 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		hide(late.decision, late.skills);
 		late = undefined;
 	};
-	/** The question asked the moment the message arrived, alongside preflight: the first pick, or the later announcements. */
-	let early: { turn: number; first: boolean; decision: ReturnType<typeof disclose> } | undefined;
+	/**
+	 * The question asked the moment the message arrived, alongside preflight: the first pick, or a later message's
+	 * announcements, which may be no question at all.
+	 */
+	let early:
+		| { readonly turn: number; readonly first: true; readonly decision: ReturnType<typeof disclose> }
+		| { readonly turn: number; readonly first: false; readonly announcing: ReturnType<typeof announce> }
+		| undefined;
 	/** The prompt's skill list as the last turn had it, before this feature hid any. */
 	let seen: readonly PromptSkill[] | undefined;
 	/**
@@ -213,12 +258,16 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		}
 		const visible = visibleOf(all);
 		if (visible.length < options.minSkills) return;
-		const first = !decided;
-		const skills = first ? visible : runtime.userTurns > 1 ? candidatesToAnnounce() : [];
-		if (skills.length === 0) return;
-		const decision = disclose(words, skills);
+		if (decided) {
+			// With nothing hidden yet, the turn's start asks: a late first verdict may hide skills before then.
+			if (runtime.userTurns > 1 && candidatesToAnnounce().length > 0) {
+				early = { turn: runtime.userTurns, first: false, announcing: announce(words) };
+			}
+			return;
+		}
+		const decision = disclose(words, visible);
 		decision.catch(() => {});
-		early = { turn: runtime.userTurns, first, decision };
+		early = { turn: runtime.userTurns, first: true, decision };
 	});
 
 	pi.on(
@@ -290,11 +339,13 @@ export function registerSkills(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			event.systemPromptOptions.skills = all.filter((skill) => !hidden.has(skill.name));
 
 			if (runtime.userTurns <= 1) return undefined;
-			const candidates = candidatesToAnnounce();
-			if (candidates.length === 0) return undefined;
-			const again = await settle(
-				started && !started.first ? started.decision : disclose(userWords(event.prompt), candidates, ctx.signal),
-			);
+			// What was asked when the message arrived stands, also when that was nothing.
+			const announcing =
+				started && !started.first ? started.announcing : announce(userWords(event.prompt), ctx.signal);
+			if (!announcing) return undefined;
+			const again = await settle(announcing.decision);
+			// The wait is up and nothing uses a later answer: it must not keep the judge from the turn's other questions.
+			if (!again && mode === "active") announcing.stop.abort();
 			if (again?.source !== "judge" || again.outcome.relevant.length === 0) return undefined;
 			const lines: string[] = [];
 			for (const name of again.outcome.relevant) {

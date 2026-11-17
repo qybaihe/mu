@@ -30,7 +30,7 @@ If that doesn't help, [open an issue](https://github.com/qybaihe/mu/issues/new/c
 
 **The free Jev stopped answering.** It's a limited-time offer from OpenCode Zen, and mu tells you when it ends. Set a key for one of the [Jev services](judges.md#hosted-jev), or choose another judge.
 
-**Verdicts are slow.** Every decision point has a time limit, after which mu carries on without the verdict, so nothing blocks for long. `mu ledger --json` shows each verdict's latency. If a judge is far away on the network or busy, you can replace it per point with `routes`.
+**Verdicts are slow.** Every decision point has a time limit, after which mu carries on without the verdict, so nothing blocks for long. `mu ledger --json` shows each verdict's latency, and `mu ledger --tally` shows by decision point how often no verdict came and why (`timeout`, `auth`). If a judge is far away on the network or busy, you can replace it per point with `routes`. A judge on your own machine that answers one request at a time needs `"concurrency": 1` in its entry, so mu sends the question the turn is waiting for first ([Judges](judges.md#a-judge-that-answers-one-request-at-a-time)); `mude` has it already.
 
 **"Laya is no longer built in."** mu used to include Laya, a local judge, and no longer does. Where your `mu.json` named it, mu now uses mude 1.0 if it's set up on this Mac, otherwise your other judges or Jev, and it has updated the file (a copy of the old one is in `~/.mu/backups`). `mu judge setup`, `start`, `stop` and `status` are gone too. For a decision model on your Mac, use [mude 1.0](judges.md#mude-10-on-your-mac) or [add one from Hugging Face](judges.md#other-decision-models).
 

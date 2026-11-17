@@ -12,7 +12,8 @@ order (attempt 1, then the job that ran attempts 2 and 3):
 
 Each attempt is one letter: P passed, p passed after hitting its time limit (Harbor runs the tests anyway), T failed
 after hitting its time limit, F failed. The last column given with --config, or pi_attempts in a CSV, is the
-baseline. Standard library only.
+baseline; --baseline names another, such as the column of mu run on its fixed rules, to see what the judge adds to
+them. Standard library only.
 """
 
 import argparse
@@ -117,6 +118,7 @@ def main():
     parser.add_argument("--jobs", type=Path, help="Harbor's jobs directory")
     parser.add_argument("--dataset", type=Path, help="the terminal-bench-2-1 task directory, for the time limits")
     parser.add_argument("--config", action="append", default=[], help="column=job[,job...], attempt order")
+    parser.add_argument("--baseline", help="the column the others are compared with")
     args = parser.parse_args()
     times = None
     if args.jobs:
@@ -131,6 +133,10 @@ def main():
     else:
         letters, columns = read_csv(args.csv)
         baseline = BASELINE if BASELINE in columns else columns[-1]
+    if args.baseline:
+        if args.baseline not in columns:
+            parser.error(f"--baseline {args.baseline} is not one of the columns: {', '.join(columns)}")
+        baseline = args.baseline
     summarize(letters, columns, baseline, times)
 
 

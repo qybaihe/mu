@@ -211,7 +211,7 @@ export function registerForgetting(runtime: KyrnRuntime): void {
 						ageTurns: candidate.ageTurns,
 						since,
 					})),
-					{ signal: ctx.signal },
+					{ signal: ctx.signal, neededBy: Date.now() + options.waitMs },
 				);
 				// This request goes out on time either way: the verdicts shape the next one when they are late.
 				const decisions = await within(pending, options.waitMs);

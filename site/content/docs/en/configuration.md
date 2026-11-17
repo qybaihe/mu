@@ -33,7 +33,7 @@ Only your own `mu.json` is read. A project can't change the judge, its address o
 
 | Key | Meaning | Default |
 | --- | --- | --- |
-| `tiers` | The judges that answer, in order. A later judge only sees what the earlier ones left uncertain. | `["jev"]` |
+| `tiers` | The judges that answer, in order. A later judge answers only what the ones before it couldn't, because they failed or aren't trusted with that kind of question. An unsure answer stays with the judge that gave it. | `["jev"]` |
 | `modes` | `default` plus one entry per decision point: `active`, `shadow` or `off` | `{ "default": "active" }` |
 | `routes` | A decision point on its own judges, in place of `tiers` | none |
 | `judges` | Your own named judges; see [Judges](@docs/judges#custom) | none |

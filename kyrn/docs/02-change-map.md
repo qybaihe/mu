@@ -140,7 +140,9 @@ npm run check                                                                  #
 src/
   types.ts  errors.ts  policy.ts     线上契约（与网关同形）、错误分类、三区间/逃生选项/中性答案
   judge.ts                           单个判断模型：超时、>32 题分片、答案校验；JudgeLike 抽象
-  cascade.ts                         多档级联：按"能力档案"路由，逐题升级，不可信的答案中性化
+  queue.ts                           排队：一次只答几个请求的判定器（concurrency），按紧急程度、大小、先后发
+  cascade.ts                         多档顶替：按"能力档案"路由，前一档答不了（失败或不被信任）才轮到后一档，不可信的答案中性化
+  calibration.ts  calibration-fit.ts 校准：按实测曲线读判定器的概率；从带标注的答案拟合曲线
   registry.ts  config.ts             判断模型注册表（jev / typesafe / clm / gateway / http / llm / classifier / mock）+ ~/.kyrn/agent/kyrn.json
   decision.ts  ledger.ts             DecisionSpec（静态或按输入生成题目）+ 引擎（off/shadow/active、decideMany、fail-open）+ 账本
   providers/                         gateway（Jev）· typesafe（System One：TypeSafe、mude 1.0、CLM）· http-judge（任意同协议 HTTP）· llm（任意生成式模型）· mock
@@ -175,6 +177,8 @@ test/                                105 个测试；features/admission/extensio
 - 账本默认只存 state 的 SHA-256，不存原文；要做回放校准或蒸馏时显式打开 `recordState`。
 - 发给判定器的 state 和题面先去掉凭据（`src/redact.ts`，在 `DecisionEngine` 里统一做）：只有凭据才有的形状（`sk-…`、`ghp_…`、`AKIA…`、私钥块、JWT、Bearer 令牌、URL 里的密码），名字说明是凭据的赋值（`DB_PASSWORD=…`、`"password": "…"`，值至少 8 个字符），以及本进程里名字像凭据的环境变量的值。看板写手的请求也一样。判定器只回答布尔、选项和分数，不回文本，所以去掉的内容不会让任何映射失效。
 - 后端截断或忽略了什么（`warnings`）、实际用的模型（`modelId`）、级联各档答了几题（`tiers`）都进账本。
+- 判定和兜底是不是同一个结果也进账本（`differs`）：只有不同的那一次才可能改变了 mu 的行为。`mu ledger --tally` 按决策点汇总问了多少次、判定和兜底不同的有多少次、花了多少。
+- 本机判定器一次只答一个请求：它声明 `concurrency` 之后，请求在 mu 这边排队（`src/queue.ts`），先发卡住主循环的（决策规格的 `latency: inline`），再发和别的工作赛跑的（`parallel`），最后是没人等的（`background`、影子模式、等待已经结束的）；同样紧急的先发小的。排队的时间（`queuedMs`）和判定是不是在等待结束之后才到（`late`）也进账本。
 - 状态里决定性内容放最前；问题要短、具体、单一谓词；小模型优先用"这是什么"的分类式问法而不是"相关吗"的关系式问法（03 文档 §4.2、04 文档 §3）。
 - 每个扩展 handler 都包在 `failOpen` 里：功能里的 bug 不能拦住工具或提示。
 

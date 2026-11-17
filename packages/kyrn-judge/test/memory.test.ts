@@ -34,11 +34,11 @@ import {
 	rankForRecall,
 	readLessons,
 	type StoredLesson,
-	terms,
 	writeLesson,
 } from "../src/memory/store.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import { briefFor, briefMessage, knownLessons } from "../src/swarm/brief.ts";
+import { terms } from "../src/terms.ts";
 import type { Answer, JudgeRequest } from "../src/types.ts";
 
 const yes: Answer = { type: "boolean", probability: 0.9 };
@@ -964,6 +964,43 @@ describe("the experience library in a session", () => {
 		// Use accounting is not a change of the lesson.
 		expect(byId.get("new")?.updated).toBe("2026-09-22T00:00:00.000Z");
 		expect(session.shown("memory.recalled")).toEqual([{ ids: ["followed", "new"], turn: 1 }]);
+	});
+
+	// Up to preflight v4 a sure "notes would not help", asked without the notes, kept the turn from its lessons.
+	it("recall: a lesson that applies is brought in whatever preflight made of the message", async () => {
+		const session = await start((request): Record<string, Answer> => {
+			if ("lesson_0" in request.questions) return { lesson_0: yes };
+			if (!("turn_type" in request.questions)) return {};
+			// Preflight is sure of everything, and of nothing that would call for a lesson: a short question.
+			return {
+				...Object.fromEntries(
+					Object.entries(request.questions).map(([id, question]): [string, Answer] => [
+						id,
+						question.type === "score" ? { type: "score", score: 0 } : no,
+					]),
+				),
+				turn_type: { type: "choice", choice: "chat_question", probabilities: { chat_question: 0.95 } },
+			};
+		});
+		seed(session.path, [
+			lesson("release", {
+				scope: { cwd: session.harness.tempDir },
+				trigger: "the user asks which command runs the tests",
+				lesson: "The tests run with npx vitest --run, never npm test.",
+			}),
+		]);
+		let seen = "";
+		session.harness.setResponses([
+			(context) => {
+				seen = JSON.stringify(context.messages);
+				return fauxAssistantMessage("npx vitest --run.");
+			},
+		]);
+		await session.harness.session.prompt("which command runs the tests here?");
+
+		expect(session.asked("turn_type")).toHaveLength(1);
+		expect(seen).toContain("The tests run with npx vitest --run, never npm test.");
+		expect(session.shown("memory.recalled")).toEqual([{ ids: ["release"], turn: 1 }]);
 	});
 
 	it("applied: a lesson followed is counted, one recalled eight times and never followed retires", async () => {

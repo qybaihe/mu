@@ -349,7 +349,8 @@ export function registerPreflight(runtime: KyrnRuntime): void {
 			const willRun = ctx.model !== undefined && ctx.modelRegistry.hasConfiguredAuth(ctx.model);
 			if (visible && active && willRun && ctx.mode === "tui") openPanel(ctx, current);
 
-			const pending = runtime.engine.decide(inputPreflight, input, { signal: ctx.signal }).then((decision) => {
+			const asking = { signal: ctx.signal, neededBy: Date.now() + options.waitMs };
+			const pending = runtime.engine.decide(inputPreflight, input, asking).then((decision) => {
 				// A fallback that still names a turn type was settled by rule (an obvious chat message), judge or no judge.
 				const ruled = decision.mode === "active" && decision.outcome.turnType !== "unknown";
 				if (decision.source === "judge" || ruled) turn.preflight = decision.outcome;

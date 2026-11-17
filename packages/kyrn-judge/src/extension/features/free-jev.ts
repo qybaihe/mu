@@ -33,9 +33,10 @@ function markSaid(file: string | undefined, day: string): void {
 }
 
 /**
- * Tells the person when the `jev` judge falls back to the free Jev on OpenCode Zen because no key is set: once a day,
- * at its first answer, where what it judges goes and how to use a key of their own. Once per session, when the free
- * Jev stops answering because it now asks for a key or is gone: decision points use their fallbacks until a key is set.
+ * Tells the person when the `jev` judge falls back to the free Jev on OpenCode Zen because no key is set, or because
+ * the services whose keys are set turned them down: once a day, at its first answer, where what it judges goes and how
+ * to use a key of their own. Once per session, when the free Jev stops answering because it now asks for a key or is
+ * gone: decision points use their fallbacks until a key is set.
  */
 export function registerFreeJevNotice(runtime: KyrnRuntime, roots: HarnessRoots | undefined): void {
 	const file = roots ? noticesFile(roots.agentDir) : undefined;
@@ -59,8 +60,8 @@ export function registerFreeJevNotice(runtime: KyrnRuntime, roots: HarnessRoots 
 			tell(
 				"free_jev",
 				say({
-					zh: "mu：没有配置 Jev 密钥，判定器先用 OpenCode Zen 上限时免费的 Jev 1.13。判定要读的内容会发给 OpenCode，它不拿来训练模型。想用自己的密钥：运行 mu setup，或在桌面端「设置 → 判定器」里填。",
-					en: "mu: no Jev key is set, so the judge is using Jev 1.13 on OpenCode Zen, which is free for a limited time. What the judge reads is sent to OpenCode, which doesn't train on it. To use your own key, run mu setup, or add it in the desktop app under Settings → Judges.",
+					zh: "mu：没有可用的 Jev 密钥，判定器先用 OpenCode Zen 上限时免费的 Jev 1.13。判定要读的内容会发给 OpenCode，它不拿来训练模型。想用自己的密钥：运行 mu setup，或在桌面端「设置 → 判定器」里填。",
+					en: "mu: no usable Jev key is set, so the judge is using Jev 1.13 on OpenCode Zen, which is free for a limited time. What the judge reads is sent to OpenCode, which doesn't train on it. To use your own key, run mu setup, or add it in the desktop app under Settings → Judges.",
 				}),
 			);
 			return;

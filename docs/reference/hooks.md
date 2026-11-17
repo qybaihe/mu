@@ -360,6 +360,7 @@ is marked: two features that set it in the same turn decide between them by the 
 | `nudges` | `extension/kyrn-judge.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts` |
 | `offerFeature` | `extension/features/feature-offers.ts` | `extension/features/catalog.ts` |
 | `onFreeJev` | `extension/features/free-jev.ts` | `extension/runtime.ts` |
+| `onJudgeRefused` | `extension/features/judge-refused.ts` | `extension/runtime.ts` |
 | `onOpenAIKey` | `extension/features/openai-key.ts` | `extension/runtime.ts` |
 | `onPresentation` | `extension/kyrn-judge.ts` | `extension/runtime.ts` |
 | `onProgress` | `extension/features/preflight.ts` | `extension/runtime.ts` |
