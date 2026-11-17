@@ -349,6 +349,24 @@ export function composeMessageWithIndex(
       return newList;
     }
 
+    // One streamed reply arrives as several left text frames, one per backend
+    // snapshot row, each under its own msg_id (see coalesceAdjacentTextSegments).
+    // A frame that continues the left text row above it appends there, so the
+    // live list shows the same single message the coalesced history shows. A
+    // user row (right), a teammate row, or any other type in between breaks the
+    // run and starts a new row.
+    if (isCoalescibleAssistantText(last) && isCoalescibleAssistantText(message)) {
+      // Point the new snapshot's msg_id at the row that absorbed it, so later
+      // frames under that id resolve to the same row.
+      index.msgIdIndex.set(message.msg_id, list.length - 1);
+      const newList = list.slice();
+      newList[newList.length - 1] = {
+        ...last,
+        content: mergeTextMessageContent(last.content, message.content),
+      };
+      return newList;
+    }
+
     const newIdx = list.length;
     index.msgIdIndex.set(message.msg_id, newIdx);
     return list.concat(message);
@@ -849,11 +867,65 @@ const preferPersistedOrLiveMessage = (persisted: TMessage, live: TMessage): TMes
   return persisted;
 };
 
-function mergeLoadedPageWithCurrent(conversationId: string, messages: TMessage[], currentList: TMessage[]): TMessage[] {
-  if (!currentList.length) return foldSupersededTips(messages);
+/**
+ * Whether an assistant (left) text row can absorb a following streamed segment. Teammate
+ * rows are complete standalone messages, never streaming chunks, so they never merge.
+ */
+const isCoalescibleAssistantText = (message: TMessage | undefined): message is IMessageText =>
+  message?.type === 'text' &&
+  message.position === 'left' &&
+  !(message.content as { teammateMessage?: boolean } | undefined)?.teammateMessage;
+
+/**
+ * Join the split rows of one streamed reply back into the single message the person watched live.
+ *
+ * The backend persists a streaming reply snapshot-by-snapshot: each snapshot lands as its own
+ * `text` row with its own msg_id (no shared backend_turn_id), and the turn end does not merge
+ * them. Loading such a history un-split renders one reply as several bubbles — and a reply whose
+ * text contains a fenced block gets cut mid-fence, so the fence no longer parses as a block at
+ * all. Rows that are adjacent (same left position, same `text` type, nothing in between) are one
+ * reply: concatenate them in order with no separator. Everything else — user rows (right),
+ * thinking, tool calls, teammate rows — breaks the run and stays untouched, so a thought that
+ * interleaved with the text is never swallowed into it.
+ *
+ * A segment whose whole text is already the tail of the row above it is a duplicate of a segment
+ * that row already absorbed (the live list kept the merged row while the loaded page still holds
+ * the persisted segments), so it is dropped instead of concatenated — otherwise reconciling a
+ * live list with a page reload would double the reply's text.
+ */
+export function coalesceAdjacentTextSegments(messages: TMessage[]): TMessage[] {
+  const coalesced: TMessage[] = [];
+  for (const message of messages) {
+    const last = coalesced[coalesced.length - 1];
+    if (
+      isCoalescibleAssistantText(last) &&
+      isCoalescibleAssistantText(message) &&
+      !last.content.content.endsWith(message.content.content)
+    ) {
+      coalesced[coalesced.length - 1] = {
+        ...last,
+        content: mergeTextMessageContent(last.content, message.content),
+      };
+      continue;
+    }
+    if (isCoalescibleAssistantText(last) && isCoalescibleAssistantText(message)) {
+      // Already absorbed into the row above — drop rather than duplicate.
+      continue;
+    }
+    coalesced.push(message);
+  }
+  return coalesced.length === messages.length ? messages : coalesced;
+}
+
+export function mergeLoadedPageWithCurrent(
+  conversationId: string,
+  messages: TMessage[],
+  currentList: TMessage[]
+): TMessage[] {
+  if (!currentList.length) return foldSupersededTips(coalesceAdjacentTextSegments(messages));
 
   const sameConversation = currentList.filter((message) => message.conversation_id === conversationId);
-  if (!sameConversation.length) return foldSupersededTips(messages);
+  if (!sameConversation.length) return foldSupersededTips(coalesceAdjacentTextSegments(messages));
 
   const currentById = new Map(sameConversation.map((message) => [message.id, message]));
   const currentByKey = new Map(sameConversation.map((message) => [getMessageMergeKey(message), message]));
@@ -871,8 +943,12 @@ function mergeLoadedPageWithCurrent(conversationId: string, messages: TMessage[]
   // Fold after the concat, not before: the live card and the persisted rows of
   // the same retry run reach this point as separate entries (a persisted tip has
   // no msg_id, so neither merge key matches), and only a key-based fold sees
-  // that they are one card.
-  return foldSupersededTips(liveOnly.length ? [...mergedMessages, ...liveOnly] : mergedMessages);
+  // that they are one card. Coalescing last also spans the seam between the
+  // persisted rows and any live rows, and drops persisted segments the live
+  // rows already absorbed (see coalesceAdjacentTextSegments).
+  return foldSupersededTips(
+    coalesceAdjacentTextSegments(liveOnly.length ? [...mergedMessages, ...liveOnly] : mergedMessages)
+  );
 }
 
 export function prependHistoryMessages(currentList: TMessage[], messages: TMessage[]): TMessage[] {
@@ -884,8 +960,12 @@ export function prependHistoryMessages(currentList: TMessage[], messages: TMessa
     (message) => !currentIds.has(message.id) && !currentKeys.has(getMessageMergeKey(message))
   );
   // Folding the combined list (not the page alone) also covers a retry run whose
-  // attempts straddle a page boundary.
-  return uniqueHistory.length ? foldSupersededTips([...uniqueHistory, ...currentList]) : currentList;
+  // attempts straddle a page boundary. Coalescing the combined list covers the
+  // split-segment seam the same way: a reply whose rows straddle the page
+  // boundary still comes back as one message.
+  return uniqueHistory.length
+    ? foldSupersededTips(coalesceAdjacentTextSegments([...uniqueHistory, ...currentList]))
+    : currentList;
 }
 
 export const usePrependHistoryPage = () => {
