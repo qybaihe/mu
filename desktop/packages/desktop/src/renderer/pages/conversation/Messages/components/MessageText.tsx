@@ -173,6 +173,11 @@ const MessageText: React.FC<{
   // Mid-stream an opened code fence has no close yet; without one the block would read as raw backticks until it
   // arrives, then jump. Only the Markdown path needs it — a user message and a JSON payload are shown as they are.
   const markdown = useMemo(() => (typeof data === 'string' ? closeOpenFence(data) : data), [data]);
+  // An mu-ui fence renders block-level cards that must span the message column. The assistant column is otherwise
+  // shrink-to-fit (bubble-less left-aligned text), and a card's own content — an echart canvas carries a px width —
+  // would pin the whole column to that width instead. Only such replies get the full-width column; text, code and
+  // images keep their current look.
+  const spansMessageColumn = !isUserMessage && typeof markdown === 'string' && /```\s*mu-?ui\s/i.test(markdown);
   const shouldRenderPlainText = isUserMessage || Boolean(contextResetNotice);
   const conversationContext = useConversationContextSafe();
   // A native conversation has no backend conversation around it: its project folder comes with its list.
@@ -297,7 +302,13 @@ const MessageText: React.FC<{
 
   return (
     <>
-      <div className={classNames('min-w-0 flex flex-col group', isUserMessage ? 'items-end' : 'items-start')}>
+      <div
+        className={classNames(
+          'min-w-0 flex flex-col group',
+          isUserMessage ? 'items-end' : 'items-start',
+          spansMessageColumn && 'w-full'
+        )}
+      >
         {cronMeta && <MessageCronBadge meta={cronMeta} />}
         {isTeammateMessage && displaySenderName && (
           <div className='flex items-center gap-6px mb-4px'>
@@ -375,7 +386,7 @@ const MessageText: React.FC<{
             className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
               'message-user-bubble bg-aou-2 px-12px py-8px md:px-16px md:py-10px': isUserMessage || cronMeta,
               'bg-3 p-6px md:p-8px': isTeammateMessage,
-              'w-full': !(isUserMessage || cronMeta || isTeammateMessage),
+              'w-full': !(isUserMessage || cronMeta || isTeammateMessage) || spansMessageColumn,
             })}
             style={{
               ...(isUserMessage || cronMeta

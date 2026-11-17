@@ -207,10 +207,27 @@ export function EChartView({ node }: { node: MuUiEChartNode }) {
       try {
         const echarts = await import('echarts');
         if (disposed) return;
-        chart = echarts.init(container);
-        draw();
-        setReady(true);
-        resizeObserver = new ResizeObserver(() => chart?.resize());
+
+        // ECharts pins its canvas to the container's client width at init, and a shadow tree may not be laid out
+        // yet at mount. A 0-width init would both draw a blank chart and feed that width back into the card's
+        // shrink-to-fit ancestors (the collapsed-card bug), so init only on a measured non-zero width — the
+        // ResizeObserver's first callback delivers one when the mount-time width was still 0.
+        const tryInit = (reportedWidth?: number): void => {
+          if (disposed || chart !== undefined) return;
+          if ((reportedWidth ?? container.clientWidth) <= 0) return;
+          chart = echarts.init(container);
+          draw();
+          setReady(true);
+        };
+
+        tryInit();
+        resizeObserver = new ResizeObserver((entries) => {
+          if (chart === undefined) {
+            for (const entry of entries) tryInit(entry.contentRect.width);
+            return;
+          }
+          chart.resize();
+        });
         resizeObserver.observe(container);
         themeObserver = new MutationObserver(draw);
         themeObserver.observe(document.documentElement, {
@@ -238,7 +255,9 @@ export function EChartView({ node }: { node: MuUiEChartNode }) {
   return (
     <div
       data-testid='mu-ui-echart'
-      style={{ position: 'relative', height: node.height, minHeight: node.height, maxWidth: '100%' }}
+      // Every wrapper down from the card carries an inline width so the chain stays percentage-defined — the
+      // shadow tree only sees inline styles, and a px-sized canvas left to size the chain is what collapsed cards.
+      style={{ position: 'relative', width: '100%', height: node.height, minHeight: node.height }}
     >
       {!ready && (
         <div
@@ -256,7 +275,7 @@ export function EChartView({ node }: { node: MuUiEChartNode }) {
         </div>
       )}
       {/* ECharts owns this div's contents once it inits; the loading caption above unmounts then. */}
-      <div ref={holder} style={{ height: '100%' }} />
+      <div ref={holder} data-testid='mu-ui-echart-holder' style={{ width: '100%', height: '100%' }} />
     </div>
   );
 }

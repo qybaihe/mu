@@ -457,7 +457,9 @@ function MdText({ text }: { text: string }) {
 
 function Stack({ items, gap }: { items: MuUiNode[]; gap: number }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap }}>
+    // width: 100% keeps the chain from the card down percentage-defined; block-level cards (echart) must not
+    // size their column by content.
+    <div style={{ display: 'flex', flexDirection: 'column', gap, width: '100%' }}>
       {items.map((item, index) => (
         <NodeView key={index} node={item} />
       ))}
@@ -885,6 +887,7 @@ const MuUiBlock = React.memo(function MuUiBlock({ spec, source, truncated, style
         className='markdown-mu-ui-card'
         style={{
           position: 'relative',
+          width: '100%',
           border: CELL_BORDER,
           borderRadius: '10px',
           padding: '12px 14px',

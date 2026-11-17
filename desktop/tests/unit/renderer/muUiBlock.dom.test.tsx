@@ -347,9 +347,14 @@ describe('a mermaid node in a mu-ui fence', () => {
 });
 
 describe('an echart node in a mu-ui fence', () => {
-  // jsdom has no ResizeObserver; the view needs one after a successful init.
+  // jsdom has no ResizeObserver and reports clientWidth 0; the stub mirrors the real one's initial fire on
+  // observe, which is what lets a gated init (mount-time width 0) proceed in tests.
   class ResizeObserverStub {
-    observe() {}
+    private static readonly entries = [{ contentRect: { width: 640 } }];
+    constructor(private readonly callback: ResizeObserverCallback) {}
+    observe() {
+      this.callback(ResizeObserverStub.entries as ResizeObserverEntry[], this as unknown as ResizeObserver);
+    }
     unobserve() {}
     disconnect() {}
   }
@@ -397,6 +402,21 @@ describe('an echart node in a mu-ui fence', () => {
     expect(option.series[0].data).toEqual([120, -35, { value: 98, itemStyle: { color: '#0f0' } }]);
     expect(option.series[0].type).toBe('bar');
     expect(highlighted).toHaveLength(0);
+  });
+
+  it('renders the echart container with a percentage width so a px-sized canvas cannot collapse the card', () => {
+    // Regression for the collapsed-card bug: ECharts pins its canvas to a px width; every wrapper from the card
+    // down must carry width:100% (inline — the shadow tree only sees inline styles) so the chain stays
+    // percentage-defined instead of shrink-to-fit to the canvas.
+    const { container } = renderFence(
+      fence({ items: [{ type: 'echart', preset: 'bar', data: [{ label: 'A', value: 1 }] }] })
+    );
+    const view = container.querySelector('[data-testid="mu-ui-echart"]') as HTMLElement;
+    expect(view.style.width).toBe('100%');
+    const holder = view.querySelector('[data-testid="mu-ui-echart-holder"]') as HTMLElement;
+    expect(holder.style.width).toBe('100%');
+    const card = container.querySelector('.markdown-mu-ui-card') as HTMLElement;
+    expect(card.style.width).toBe('100%');
   });
 
   it('draws preset series as named multi-series with a legend', async () => {

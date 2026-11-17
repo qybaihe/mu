@@ -76,7 +76,8 @@ function BarsView({ series }: { series: MuUiChartSeries[] }) {
   const groupCenter = (index: number) => padX + (plotW * (index + 0.5)) / Math.max(groups, 1);
   const labelSeries = series.reduce((a, b) => (b.data.length > a.data.length ? b : a));
   return (
-    <div>
+    // width: 100% keeps the wrapper percentage-defined like the rest of the card chain (the svg already is).
+    <div style={{ width: '100%' }}>
       {series.length > 1 && <ChartLegend names={series.map((one) => one.name)} />}
       <svg viewBox={`0 0 ${width} ${height}`} style={{ display: 'block', width: '100%', height: 'auto' }}>
         <line x1={padX} x2={width - padX} y1={baseline} y2={baseline} stroke='var(--border-base)' />
