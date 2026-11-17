@@ -314,11 +314,14 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
     />
   );
 
-  const rateMenu = (testId: string, buttonClassName?: string): React.JSX.Element => (
+  const rateMenu = (testId: string, buttonClassName?: string, popupContainer?: () => Element): React.JSX.Element => (
     <Dropdown
       trigger='click'
       position='top'
-      triggerProps={{ popupStyle: { zIndex: 1150 } }}
+      triggerProps={{
+        popupStyle: { zIndex: 1150 },
+        ...(popupContainer ? { getPopupContainer: popupContainer } : {}),
+      }}
       droplist={
         <Menu onClickMenuItem={(key) => pickRate(Number(key))} selectedKeys={[String(rate)]}>
           {RATES.map((value) => (
@@ -430,7 +433,11 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
                 onClick={() => setLooping((value) => !value)}
                 icon={<Cycle theme='outline' size='14' aria-hidden='true' />}
               />
-              {rateMenu('local-video-modal-rate', styles.overlayButton)}
+              {rateMenu(
+                'local-video-modal-rate',
+                styles.overlayButton,
+                () => document.querySelector('[data-testid="local-video-modal"]') ?? document.body
+              )}
               <Button
                 type='text'
                 data-testid='local-video-modal-mute'

@@ -56,7 +56,13 @@
 }
 
 /* The floating toolbar of the overlay, and its white-on-dark buttons. */
+/* The overlay's toolbar: pinned to the bottom of the overlay, like the image preview's,
+ * so it stays put while the video turns or zooms. */
 .overlayToolbar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 8px;
