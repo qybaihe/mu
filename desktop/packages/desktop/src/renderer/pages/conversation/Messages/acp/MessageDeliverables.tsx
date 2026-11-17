@@ -29,9 +29,12 @@ export function deliverables(message: TMessage): Deliverables | undefined {
   if (message.type !== 'acp_tool_call') return undefined;
   const update = record(message.content?.update);
   if (update.title !== 'present' || update.status !== 'completed') return undefined;
-  // The relay snake-cases the keys it passes on.
+  // The relay snake-cases the keys it passes on. The files live in the result's details
+  // (kyrn-judge's PresentDetails); the older flat shape is still read, so a payload either
+  // era wrote shows its card.
   const output = record(update.raw_output ?? update.rawOutput);
-  const files = (Array.isArray(output.files) ? output.files : [])
+  const carried = Array.isArray(output.files) ? output.files : record(output.details).files;
+  const files = (Array.isArray(carried) ? carried : [])
     .slice(0, MAX_FILES)
     .map(record)
     .flatMap((file): DeliveredFile[] =>
