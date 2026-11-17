@@ -137,5 +137,6 @@
     "title": "Dateien für dich ({{count}})",
     "open": "{{name}} öffnen"
   },
-  "muUiTruncated": "Nur teilweise angezeigt — dieser UI-Block überschreitet die Größenbeschränkung"
+  "muUiTruncated": "Nur teilweise angezeigt — dieser UI-Block überschreitet die Größenbeschränkung",
+  "muUiImageLoadFailed": "Dieses Bild konnte nicht geladen werden"
 }

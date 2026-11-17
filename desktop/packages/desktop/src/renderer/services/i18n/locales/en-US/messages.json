@@ -137,5 +137,6 @@
     "title": "Files for you ({{count}})",
     "open": "Open {{name}}"
   },
-  "muUiTruncated": "Shown in part — this UI block is over the size limit"
+  "muUiTruncated": "Shown in part — this UI block is over the size limit",
+  "muUiImageLoadFailed": "This image could not be loaded"
 }

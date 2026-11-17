@@ -137,5 +137,6 @@
     "title": "交給你的檔案（{{count}}）",
     "open": "開啟 {{name}}"
   },
-  "muUiTruncated": "內容超出組件數上限，已截斷顯示"
+  "muUiTruncated": "內容超出組件數上限，已截斷顯示",
+  "muUiImageLoadFailed": "圖片載入失敗"
 }

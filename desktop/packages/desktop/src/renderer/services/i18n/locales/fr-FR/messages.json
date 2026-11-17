@@ -137,5 +137,6 @@
     "title": "Fichiers pour vous ({{count}})",
     "open": "Ouvrir {{name}}"
   },
-  "muUiTruncated": "Affiché partiellement — ce bloc d’UI dépasse la limite de taille"
+  "muUiTruncated": "Affiché partiellement — ce bloc d’UI dépasse la limite de taille",
+  "muUiImageLoadFailed": "Impossible de charger cette image"
 }

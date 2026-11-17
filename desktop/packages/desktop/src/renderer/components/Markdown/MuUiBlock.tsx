@@ -1,7 +1,7 @@
 /**
  * One file for both halves of a `mu-ui` fence: the parser that turns the fence's JSON into a bounded, typed
  * component tree, and the component that renders that tree as an inline structured card (stats, tables, callouts,
- * steps…) inside a chat reply. `CodeBlock` mounts it when a fence's language is `mu-ui`/`muui`.
+ * steps, charts, diagrams, images…) inside a chat reply. `CodeBlock` mounts it when a fence's language is `mu-ui`/`muui`.
  *
  * The JSON is model output, so the parser is a trust boundary: every field is checked, coerced, or bounded there,
  * and the renderer below works on the validated types alone. Anything structurally wrong — JSON that does not
@@ -20,10 +20,26 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 
+import MermaidBlock from './MermaidBlock';
+import {
+  ChartView,
+  type MuUiChartDatum,
+  type MuUiChartKind,
+  type MuUiChartNode,
+  type MuUiChartSeries,
+} from './MuUiChart';
+
+export type { MuUiChartDatum, MuUiChartKind, MuUiChartSeries } from './MuUiChart';
+
 export const MU_UI_MAX_NODES = 200;
 export const MU_UI_MAX_DEPTH = 8;
 /** A single text value longer than this is cut where it stands and the spec flagged truncated. */
 export const MU_UI_MAX_TEXT = 2000;
+/** A chart with more points than this (or more series) is cut and the spec flagged truncated. */
+export const MU_UI_MAX_CHART_POINTS = 60;
+export const MU_UI_MAX_CHART_SERIES = 6;
+/** Mermaid source longer than this is cut and the spec flagged truncated. */
+export const MU_UI_MAX_MERMAID_CODE = 5000;
 
 export type MuUiAccent = 'info' | 'success' | 'warning' | 'error';
 export type MuUiBadgeTone = 'accent' | 'success' | 'warn' | 'danger';
@@ -49,7 +65,10 @@ export type MuUiNode =
   | { type: 'keyvalue'; pairs: { key: string; value: string }[] }
   | { type: 'callout'; tone: MuUiAccent; title?: string; content: string }
   | { type: 'steps'; steps: MuUiStep[]; current?: number }
-  | { type: 'timeline'; items: MuUiTimelineItem[] };
+  | { type: 'timeline'; items: MuUiTimelineItem[] }
+  | MuUiChartNode
+  | { type: 'mermaid'; code: string }
+  | { type: 'image'; src: string; alt?: string };
 
 export type MuUiSpec = { title?: string; gap?: number; items: MuUiNode[] };
 
@@ -68,10 +87,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * stall the card — so it is cut at the limit and the spec flagged, reusing the truncation notice the node budget
  * already shows.
  */
-const clampText = (text: string, budget: Budget): string => {
-  if (text.length <= MU_UI_MAX_TEXT) return text;
+const clampText = (text: string, budget: Budget, limit: number = MU_UI_MAX_TEXT): string => {
+  if (text.length <= limit) return text;
   budget.truncated = true;
-  return text.slice(0, MU_UI_MAX_TEXT);
+  return text.slice(0, limit);
 };
 
 /** Display text: strings (an over-long one cut by `clampText`), finite numbers as their string form, else empty. */
@@ -90,6 +109,32 @@ const asGap = (value: unknown): number | undefined =>
 
 const isOneOf = <T extends string>(value: unknown, allowed: readonly T[]): T | undefined =>
   typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : undefined;
+
+const CHART_KINDS: readonly MuUiChartKind[] = ['bars', 'line', 'donut'];
+const HEX_COLOR = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+/** A color override the renderer is willing to paint; anything that is not `#hex` falls back to the palette. */
+const asChartColor = (value: unknown): string | undefined =>
+  typeof value === 'string' && HEX_COLOR.test(value.trim()) ? value.trim() : undefined;
+
+/** A finite number the chart is willing to plot; anything else makes the whole spec invalid. */
+const asChartValue = (value: unknown): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw new InvalidSpec();
+  return value;
+};
+
+/** An image source the card is willing to fetch: an http(s) URL only, so a spec cannot probe local protocols. */
+const asHttpUrl = (value: unknown, budget: Budget): string => {
+  if (typeof value !== 'string' || value.length === 0) throw new InvalidSpec();
+  let protocol: string;
+  try {
+    protocol = new URL(value).protocol;
+  } catch {
+    throw new InvalidSpec();
+  }
+  if (protocol !== 'https:' && protocol !== 'http:') throw new InvalidSpec();
+  return clampText(value, budget);
+};
 
 const ACCENTS: readonly MuUiAccent[] = ['info', 'success', 'warning', 'error'];
 const BADGE_TONES: readonly MuUiBadgeTone[] = ['accent', 'success', 'warn', 'danger'];
@@ -205,9 +250,59 @@ const walkNode = (raw: unknown, depth: number, budget: Budget): MuUiNode | undef
       );
       return { type, items };
     }
+    case 'chart': {
+      // `series` present means grouped bars (the vocabulary's rule); a flat `data` list picks its own `kind`.
+      const rawSeries = raw.series;
+      if (rawSeries !== undefined) {
+        const entries = Array.isArray(rawSeries) ? rawSeries : [];
+        const series: MuUiChartSeries[] = [];
+        for (const entry of entries) {
+          if (series.length >= MU_UI_MAX_CHART_SERIES) {
+            budget.truncated = true;
+            break;
+          }
+          if (!isRecord(entry)) throw new InvalidSpec();
+          const data = walkChartData(entry.data, budget);
+          if (data.length === 0) throw new InvalidSpec();
+          series.push({ name: asOptString(entry.name, budget) ?? `S${series.length + 1}`, data });
+        }
+        if (series.length === 0) throw new InvalidSpec();
+        return { type, kind: 'bars', data: series[0].data, series };
+      }
+      const data = walkChartData(raw.data, budget);
+      if (data.length === 0) throw new InvalidSpec();
+      return { type, kind: isOneOf(raw.kind, CHART_KINDS) ?? 'bars', data };
+    }
+    case 'mermaid': {
+      const code = typeof raw.code === 'string' ? raw.code : '';
+      if (code.trim().length === 0) throw new InvalidSpec();
+      return { type, code: clampText(code, budget, MU_UI_MAX_MERMAID_CODE) };
+    }
+    case 'image': {
+      return { type, src: asHttpUrl(raw.src, budget), alt: asOptString(raw.alt, budget) };
+    }
     default:
       throw new InvalidSpec();
   }
+};
+
+/** Chart points: past the point budget the rest is dropped and the spec flagged; a bad value rejects the spec. */
+const walkChartData = (raw: unknown, budget: Budget): MuUiChartDatum[] => {
+  const entries = Array.isArray(raw) ? raw : [];
+  const data: MuUiChartDatum[] = [];
+  for (const entry of entries) {
+    if (data.length >= MU_UI_MAX_CHART_POINTS) {
+      budget.truncated = true;
+      break;
+    }
+    if (!isRecord(entry)) throw new InvalidSpec();
+    data.push({
+      label: asString(entry.label, budget),
+      value: asChartValue(entry.value),
+      color: asChartColor(entry.color),
+    });
+  }
+  return data;
 };
 
 const walkItems = (rawItems: unknown, depth: number, budget: Budget): MuUiNode[] => {
@@ -364,6 +459,41 @@ const numericColumn = (rows: MuUiCell[][], column: number): boolean => {
     return typeof cell === 'string' && cell.length > 0 && NUMERIC_CELL.test(cell.trim());
   });
 };
+
+/** The one image type: lazy, http(s) only (checked at parse), with a placeholder when it fails to load. */
+function ImageView({ node }: { node: Extract<MuUiNode, { type: 'image' }> }) {
+  const { t } = useTranslation();
+  const [failed, setFailed] = React.useState(false);
+  if (failed) {
+    return (
+      <div
+        data-testid='mu-ui-image-failed'
+        style={{
+          border: CELL_BORDER,
+          borderRadius: '8px',
+          background: 'var(--bg-2)',
+          padding: '18px 12px',
+          fontSize: '13px',
+          color: 'var(--text-secondary)',
+          textAlign: 'center',
+        }}
+      >
+        {t('messages.muUiImageLoadFailed')}
+      </div>
+    );
+  }
+  return (
+    <img
+      data-testid='mu-ui-image'
+      src={node.src}
+      alt={node.alt ?? ''}
+      loading='lazy'
+      decoding='async'
+      onError={() => setFailed(true)}
+      style={{ display: 'block', maxWidth: '100%', maxHeight: '380px', borderRadius: '8px', margin: '0 auto' }}
+    />
+  );
+}
 
 function NodeView({ node }: { node: MuUiNode }) {
   switch (node.type) {
@@ -670,6 +800,13 @@ function NodeView({ node }: { node: MuUiNode }) {
           ))}
         </ul>
       );
+    case 'chart':
+      return <ChartView node={node} />;
+    case 'mermaid':
+      // Embedded in the card the diagram stays static (no pan/zoom); open-in-panel still works via the preview context.
+      return <MermaidBlock code={node.code} enablePanZoom={false} />;
+    case 'image':
+      return <ImageView node={node} />;
   }
 }
 

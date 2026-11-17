@@ -137,5 +137,6 @@
     "title": "전달된 파일 ({{count}})",
     "open": "{{name}} 열기"
   },
-  "muUiTruncated": "크기 제한을 초과해 일부만 표시됩니다"
+  "muUiTruncated": "크기 제한을 초과해 일부만 표시됩니다",
+  "muUiImageLoadFailed": "이미지를 불러올 수 없습니다"
 }

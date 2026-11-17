@@ -137,5 +137,6 @@
     "title": "受け取るファイル（{{count}}）",
     "open": "{{name}} を開く"
   },
-  "muUiTruncated": "サイズ上限を超えたため、一部のみ表示しています"
+  "muUiTruncated": "サイズ上限を超えたため、一部のみ表示しています",
+  "muUiImageLoadFailed": "画像を読み込めませんでした"
 }
