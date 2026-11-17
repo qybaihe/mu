@@ -136,5 +136,6 @@
   "deliverables": {
     "title": "Archivos para ti ({{count}})",
     "open": "Abrir {{name}}"
-  }
+  },
+  "dshUiTruncated": "Mostrado parcialmente: este bloque de UI supera el límite de tamaño"
 }

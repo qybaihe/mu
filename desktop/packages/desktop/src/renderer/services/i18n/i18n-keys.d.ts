@@ -2323,6 +2323,7 @@ export type I18nKey =
   | 'messages.delivery.pending'
   | 'messages.downloadFailed'
   | 'messages.downloadSuccess'
+  | 'messages.dshUiTruncated'
   | 'messages.export.assistantLabel'
   | 'messages.export.commandDescription'
   | 'messages.export.conversationIdLabel'

@@ -136,5 +136,6 @@
   "deliverables": {
     "title": "交给你的文件（{{count}}）",
     "open": "打开 {{name}}"
-  }
+  },
+  "dshUiTruncated": "内容超出组件数上限，已截断显示"
 }
