@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 
 import MermaidBlock from './MermaidBlock';
+import { EChartView, type MuUiEChartNode, type MuUiEChartPreset, sanitizeEChartsOption } from './MuUiEChart';
 import {
   ChartView,
   type MuUiChartDatum,
@@ -30,6 +31,7 @@ import {
 } from './MuUiChart';
 
 export type { MuUiChartDatum, MuUiChartKind, MuUiChartSeries } from './MuUiChart';
+export type { MuUiEChartNode, MuUiEChartPreset } from './MuUiEChart';
 
 export const MU_UI_MAX_NODES = 200;
 export const MU_UI_MAX_DEPTH = 8;
@@ -67,6 +69,7 @@ export type MuUiNode =
   | { type: 'steps'; steps: MuUiStep[]; current?: number }
   | { type: 'timeline'; items: MuUiTimelineItem[] }
   | MuUiChartNode
+  | MuUiEChartNode
   | { type: 'mermaid'; code: string }
   | { type: 'image'; src: string; alt?: string };
 
@@ -111,6 +114,7 @@ const isOneOf = <T extends string>(value: unknown, allowed: readonly T[]): T | u
   typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : undefined;
 
 const CHART_KINDS: readonly MuUiChartKind[] = ['bars', 'line', 'donut'];
+const ECHART_PRESETS: readonly MuUiEChartPreset[] = ['bar', 'line', 'area', 'pie', 'scatter'];
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 /** A color override the renderer is willing to paint; anything that is not `#hex` falls back to the palette. */
@@ -252,26 +256,40 @@ const walkNode = (raw: unknown, depth: number, budget: Budget): MuUiNode | undef
     }
     case 'chart': {
       // `series` present means grouped bars (the vocabulary's rule); a flat `data` list picks its own `kind`.
-      const rawSeries = raw.series;
-      if (rawSeries !== undefined) {
-        const entries = Array.isArray(rawSeries) ? rawSeries : [];
-        const series: MuUiChartSeries[] = [];
-        for (const entry of entries) {
-          if (series.length >= MU_UI_MAX_CHART_SERIES) {
-            budget.truncated = true;
-            break;
-          }
-          if (!isRecord(entry)) throw new InvalidSpec();
-          const data = walkChartData(entry.data, budget);
-          if (data.length === 0) throw new InvalidSpec();
-          series.push({ name: asOptString(entry.name, budget) ?? `S${series.length + 1}`, data });
-        }
-        if (series.length === 0) throw new InvalidSpec();
+      if (raw.series !== undefined) {
+        const series = walkChartSeries(raw.series, budget);
         return { type, kind: 'bars', data: series[0].data, series };
       }
       const data = walkChartData(raw.data, budget);
       if (data.length === 0) throw new InvalidSpec();
       return { type, kind: isOneOf(raw.kind, CHART_KINDS) ?? 'bars', data };
+    }
+    case 'echart': {
+      // Full-option mode: an `option` object wins over preset data — a spec carrying both meant the option.
+      let option: Record<string, unknown> | undefined;
+      if (raw.option !== undefined) {
+        if (!isRecord(raw.option)) throw new InvalidSpec();
+        // Throws past the option's depth/size budgets; the fence then falls back to a code block.
+        option = sanitizeEChartsOption(raw.option);
+      }
+      let data: MuUiChartDatum[] | undefined;
+      let series: MuUiChartSeries[] | undefined;
+      if (option === undefined && raw.series !== undefined) {
+        series = walkChartSeries(raw.series, budget);
+      } else if (option === undefined) {
+        data = walkChartData(raw.data, budget);
+        if (data.length === 0) throw new InvalidSpec();
+      }
+      const rawHeight = typeof raw.height === 'number' && Number.isFinite(raw.height) ? raw.height : 300;
+      return {
+        type,
+        title: asOptString(raw.title, budget),
+        height: Math.min(Math.max(Math.round(rawHeight), 120), 720),
+        preset: isOneOf(raw.preset, ECHART_PRESETS),
+        data,
+        series,
+        option,
+      };
     }
     case 'mermaid': {
       const code = typeof raw.code === 'string' ? raw.code : '';
@@ -303,6 +321,24 @@ const walkChartData = (raw: unknown, budget: Budget): MuUiChartDatum[] => {
     });
   }
   return data;
+};
+
+/** Chart series (grouped mode, shared by `chart` and `echart`): capped, named, each with at least one point. */
+const walkChartSeries = (raw: unknown, budget: Budget): MuUiChartSeries[] => {
+  const entries = Array.isArray(raw) ? raw : [];
+  const series: MuUiChartSeries[] = [];
+  for (const entry of entries) {
+    if (series.length >= MU_UI_MAX_CHART_SERIES) {
+      budget.truncated = true;
+      break;
+    }
+    if (!isRecord(entry)) throw new InvalidSpec();
+    const data = walkChartData(entry.data, budget);
+    if (data.length === 0) throw new InvalidSpec();
+    series.push({ name: asOptString(entry.name, budget) ?? `S${series.length + 1}`, data });
+  }
+  if (series.length === 0) throw new InvalidSpec();
+  return series;
 };
 
 const walkItems = (rawItems: unknown, depth: number, budget: Budget): MuUiNode[] => {
@@ -802,6 +838,8 @@ function NodeView({ node }: { node: MuUiNode }) {
       );
     case 'chart':
       return <ChartView node={node} />;
+    case 'echart':
+      return <EChartView node={node} />;
     case 'mermaid':
       // Embedded in the card the diagram stays static (no pan/zoom); open-in-panel still works via the preview context.
       return <MermaidBlock code={node.code} enablePanZoom={false} />;

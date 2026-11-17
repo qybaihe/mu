@@ -138,5 +138,6 @@
     "open": "{{name}} 열기"
   },
   "muUiTruncated": "크기 제한을 초과해 일부만 표시됩니다",
-  "muUiImageLoadFailed": "이미지를 불러올 수 없습니다"
+  "muUiImageLoadFailed": "이미지를 불러올 수 없습니다",
+  "muUiEChartLoading": "차트 불러오는 중…"
 }

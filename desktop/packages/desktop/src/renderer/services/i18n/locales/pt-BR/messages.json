@@ -138,5 +138,6 @@
     "open": "Abrir {{name}}"
   },
   "muUiTruncated": "Exibido parcialmente — este bloco de UI ultrapassou o limite de tamanho",
-  "muUiImageLoadFailed": "Não foi possível carregar esta imagem"
+  "muUiImageLoadFailed": "Não foi possível carregar esta imagem",
+  "muUiEChartLoading": "Carregando gráfico…"
 }

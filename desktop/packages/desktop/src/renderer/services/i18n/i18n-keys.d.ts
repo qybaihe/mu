@@ -2370,6 +2370,7 @@ export type I18nKey =
   | 'messages.fork.errorUnsupported'
   | 'messages.imageGenerationModelDetected'
   | 'messages.imageLoadFailed'
+  | 'messages.muUiEChartLoading'
   | 'messages.muUiImageLoadFailed'
   | 'messages.muUiTruncated'
   | 'messages.noOptionsAvailable'

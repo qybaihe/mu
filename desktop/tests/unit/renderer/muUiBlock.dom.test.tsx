@@ -44,6 +44,15 @@ vi.mock('mermaid', () => ({
   default: { initialize: vi.fn(), render: mermaidRender },
 }));
 
+// The echart type renders through MuUiEChart with ECharts itself mocked (module mock, the mermaid precedent):
+// init records the container it was given, setOption records the option the view built.
+const echartsInit = vi.hoisted(() => vi.fn());
+const echartsSetOption = vi.hoisted(() => vi.fn());
+
+vi.mock('echarts', () => ({
+  init: echartsInit,
+}));
+
 vi.mock('@/renderer/pages/conversation/Preview', () => ({
   usePreviewContext: () => ({ openPreview: vi.fn() }),
 }));
@@ -51,6 +60,7 @@ vi.mock('@/renderer/pages/conversation/Preview', () => ({
 import { Message } from '@arco-design/web-react';
 import CodeBlock from '@/renderer/components/Markdown/CodeBlock';
 import { MU_UI_MAX_NODES, MU_UI_MAX_TEXT, parseMuUiSpec } from '@/renderer/components/Markdown/MuUiBlock';
+import { MU_UI_MAX_ECHART_OPTION, sanitizeEChartsOption } from '@/renderer/components/Markdown/MuUiEChart';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 
 const fence = (spec: unknown) => `${JSON.stringify(spec, null, 2)}\n`;
@@ -333,6 +343,161 @@ describe('a mermaid node in a mu-ui fence', () => {
   it('falls back to code for blank mermaid source', () => {
     renderFence(fence({ items: [{ type: 'mermaid', code: '   ' }] }));
     expect(highlighted).toHaveLength(1);
+  });
+});
+
+describe('an echart node in a mu-ui fence', () => {
+  // jsdom has no ResizeObserver; the view needs one after a successful init.
+  class ResizeObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
+  beforeEach(() => {
+    highlighted.length = 0;
+    echartsInit.mockReset();
+    echartsSetOption.mockReset();
+    echartsInit.mockImplementation(() => ({
+      setOption: echartsSetOption,
+      resize: vi.fn(),
+      dispose: vi.fn(),
+    }));
+    vi.stubGlobal('ResizeObserver', ResizeObserverStub);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('lazily inits echarts and draws a themed preset bar over data', async () => {
+    renderFence(
+      fence({
+        items: [
+          {
+            type: 'echart',
+            title: '季报',
+            preset: 'bar',
+            data: [
+              { label: '一月', value: 120 },
+              { label: '二月', value: -35 },
+              { label: '三月', value: 98, color: '#0f0' },
+            ],
+          },
+        ],
+      })
+    );
+    expect(await screen.findByTestId('mu-ui-echart')).toBeTruthy();
+    await waitFor(() => expect(echartsInit).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(echartsSetOption).toHaveBeenCalledTimes(1));
+    const option = echartsSetOption.mock.calls[0][0];
+    expect(option.title.text).toBe('季报');
+    expect(option.xAxis.data).toEqual(['一月', '二月', '三月']);
+    // Per-datum #hex overrides ride along as itemStyle entries; plain values otherwise.
+    expect(option.series[0].data).toEqual([120, -35, { value: 98, itemStyle: { color: '#0f0' } }]);
+    expect(option.series[0].type).toBe('bar');
+    expect(highlighted).toHaveLength(0);
+  });
+
+  it('draws preset series as named multi-series with a legend', async () => {
+    renderFence(
+      fence({
+        items: [
+          {
+            type: 'echart',
+            preset: 'line',
+            series: [
+              {
+                name: '本季',
+                data: [
+                  { label: 'W1', value: 3 },
+                  { label: 'W2', value: 9 },
+                ],
+              },
+              {
+                name: '上季',
+                data: [
+                  { label: 'W1', value: 2 },
+                  { label: 'W2', value: 5 },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    );
+    await waitFor(() => expect(echartsSetOption).toHaveBeenCalledTimes(1));
+    const option = echartsSetOption.mock.calls[0][0];
+    expect(option.series.map((one: { name: string }) => one.name)).toEqual(['本季', '上季']);
+    expect(option.series[0].type).toBe('line');
+    expect(option.series[0].data).toEqual([3, 9]);
+    expect(option.legend).toBeTruthy();
+  });
+
+  it('passes a full option through verbatim', async () => {
+    const option = {
+      radar: {
+        indicator: [
+          { name: '成本', max: 100 },
+          { name: '时效', max: 100 },
+        ],
+      },
+      series: [{ type: 'radar', data: [{ value: [90, 70] }] }],
+    };
+    renderFence(fence({ items: [{ type: 'echart', height: 260, option }] }));
+    await waitFor(() => expect(echartsSetOption).toHaveBeenCalledTimes(1));
+    expect(echartsSetOption.mock.calls[0][0]).toEqual(option);
+  });
+
+  it('strips functions and non-finite numbers from an option (trust boundary)', () => {
+    const sanitized = sanitizeEChartsOption({
+      a: 1,
+      f: () => 1,
+      g: function () {
+        return 2;
+      },
+      nested: { f: () => 3, ok: 'x', inf: Infinity, arr: [1, () => 4, Infinity, null] },
+    });
+    expect(sanitized).toEqual({ a: 1, nested: { ok: 'x', inf: null, arr: [1, null, null, null] } });
+  });
+
+  it('rejects an option over the depth or serialized-size budget', () => {
+    expect(() => sanitizeEChartsOption({ blob: 'x'.repeat(MU_UI_MAX_ECHART_OPTION + 1) })).toThrow();
+    let deep: Record<string, unknown> = { v: 1 };
+    for (let i = 0; i < 120; i += 1) deep = { child: deep };
+    expect(() => sanitizeEChartsOption(deep)).toThrow();
+    expect(() => sanitizeEChartsOption('nope')).toThrow();
+  });
+
+  it('falls back to code with neither data nor option, empty data, a non-option option, or a non-finite value', () => {
+    renderFence(fence({ items: [{ type: 'echart' }] }));
+    renderFence(fence({ items: [{ type: 'echart', preset: 'bar', data: [] }] }));
+    renderFence(fence({ items: [{ type: 'echart', option: 'nope' }] }));
+    // 1e999 parses to Infinity — a non-finite value the preset refuses.
+    const infinite = fence({ items: [{ type: 'echart', preset: 'bar', data: [{ label: 'a', value: 12 }] }] }).replace(
+      '"value": 12',
+      '"value": 1e999'
+    );
+    renderFence(infinite);
+    expect(highlighted).toHaveLength(4);
+    expect(echartsInit).not.toHaveBeenCalled();
+  });
+
+  it('falls back to code when the option serializes over the budget at parse time', () => {
+    renderFence(fence({ items: [{ type: 'echart', option: { blob: 'x'.repeat(MU_UI_MAX_ECHART_OPTION + 1) } }] }));
+    expect(highlighted).toHaveLength(1);
+    expect(highlighted[0].code).toContain('echart');
+  });
+
+  it('swaps the whole fence back to the code block when echarts fails at runtime', async () => {
+    echartsInit.mockImplementation(() => {
+      throw new Error('boom');
+    });
+    renderFence(fence({ items: [{ type: 'echart', preset: 'bar', data: [{ label: 'a', value: 1 }] }] }));
+    // React's error recovery may mount the fallback subtree twice; each mount shows the same source as code.
+    await waitFor(() => expect(highlighted.length).toBeGreaterThanOrEqual(1));
+    expect(highlighted.every((entry) => entry.code.includes('"echart"'))).toBe(true);
+    expect(screen.queryByTestId('mu-ui-echart')).toBeNull();
   });
 });
 

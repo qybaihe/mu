@@ -138,5 +138,6 @@
     "open": "باز کردن {{name}}"
   },
   "muUiTruncated": "نمایش بخشی — این بلوک از محدودیت اندازه فراتر است",
-  "muUiImageLoadFailed": "این تصویر بارگذاری نشد"
+  "muUiImageLoadFailed": "این تصویر بارگذاری نشد",
+  "muUiEChartLoading": "در حال بارگذاری نمودار…"
 }

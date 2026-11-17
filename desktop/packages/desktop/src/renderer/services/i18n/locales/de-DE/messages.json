@@ -138,5 +138,6 @@
     "open": "{{name}} öffnen"
   },
   "muUiTruncated": "Nur teilweise angezeigt — dieser UI-Block überschreitet die Größenbeschränkung",
-  "muUiImageLoadFailed": "Dieses Bild konnte nicht geladen werden"
+  "muUiImageLoadFailed": "Dieses Bild konnte nicht geladen werden",
+  "muUiEChartLoading": "Diagramm wird geladen…"
 }

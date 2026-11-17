@@ -138,5 +138,6 @@
     "open": "打开 {{name}}"
   },
   "muUiTruncated": "内容超出组件数上限，已截断显示",
-  "muUiImageLoadFailed": "图片加载失败"
+  "muUiImageLoadFailed": "图片加载失败",
+  "muUiEChartLoading": "正在加载图表…"
 }

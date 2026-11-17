@@ -345,7 +345,11 @@ function CodeBlock(props: CodeBlockProps) {
     const source = String(children);
     const parsed = parseMuUiSpec(source);
     if (parsed.ok) {
-      return <MuUiBlock spec={parsed.spec} source={source} truncated={parsed.truncated} style={props.codeStyle} />;
+      return (
+        <MuUiFenceBoundary key={source} fallback={<FencedCodeBlock {...props} language={language} />}>
+          <MuUiBlock spec={parsed.spec} source={source} truncated={parsed.truncated} style={props.codeStyle} />
+        </MuUiFenceBoundary>
+      );
     }
   }
 
@@ -359,6 +363,31 @@ function CodeBlock(props: CodeBlockProps) {
   }
 
   return <FencedCodeBlock {...props} language={language} />;
+}
+
+/**
+ * Catches a structured-UI fence that fails while rendering — today only the `echart` type can: a chart library that
+ * fails to load or a draw that throws re-raises during render — and swaps the whole card back to the plain code
+ * block, so a broken chart never leaves a blank area in the reply. Keyed by the fence source: a new spec starts
+ * fresh instead of staying on the fallback.
+ */
+class MuUiFenceBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { failed: boolean }
+> {
+  state: { failed: boolean } = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.warn('mu-ui fence fell back to its code block after a render error', error);
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
 }
 
 export default CodeBlock;
