@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.13] - 2026-11-17
+
+**0.3.13 lines up the requests of a judge that answers one at a time (`concurrency`), adds `mu ledger --tally` with `differs`, `queuedMs` and `late` in the ledger (`kyrn.decision` v2), makes several judges in order a fallback order, adds `profile.calibration`, drops `needs_memory` from `input.preflight` (v5), leaves a service that refuses a judge's key alone, and is built on pi 1.5.2.**
+
 ### Added
 
 - **`mu ledger --tally [n] [--json]`**: each decision point over the n most recent sessions (20 by default): asks, verdicts, why the rest had none (`timeout`, `abstain`, `auth`), verdicts that were something else than the fallback, verdicts that came late, asks that waited in a judge's line with the median wait, median latency, input tokens, and the labels joined to its records (`kyrn.outcome`, `kyrn.skill-read`). It ends with the points worth a look and the rule that put each there: no verdict for half the asks or more (from 10), 20 or more verdicts and none that differed (`tool.risk`, `tool.injection` and `tool.description` are exempt), half the verdicts or more late (from 10), or half the nudges or more ended without a tool call (from 5). mu changes no mode by itself.
@@ -15,6 +19,7 @@
 - **`CascadeJudge` is a fallback order.** A later judge answers only what an earlier one failed on (down, slow, no key) or isn't trusted with (`profile.capabilities`). An answer stands as given, sure or not: a yes/no answer between 0.2 and 0.8 or a choice below 0.6 is no longer passed on. `profile.thresholds` and `profile.minChoiceProbability` are no longer read, `isUncertain` is removed, and a tier report's `kept` is all it was asked or none.
 - **`input.preflight` v5**: the `needs_memory` question and `needsMemory` in the verdict are gone, and `memory.recall` is asked whatever preflight says.
 - **A judge call of several requests stops at the first failure.** The other requests of the call are aborted, and the call reports the first failure.
+- **Built on pi 1.5.2** and upstream main after it (6bacbb4b9). pi's `cacheWarming` setting defaults to `"idle"` (was `"streaming"`): eligible prompt caches are also kept warm for up to 30 minutes between runs, when a refresh is expected to pay for itself. Anthropic requests on `api.anthropic.com` use message threads: only the new messages are sent, with a full request when earlier context changed. `read` streams the file and keeps only the lines it shows, `edit` keeps the line endings of untouched lines in a file with mixed endings, and provider errors that report a dropped connection (`Connection closed.`, `read ECONNRESET`, a stream cut short after the reply began) are retried. MCP: `tool_search` finds tools by fields behind a local `$ref`, large stdio messages are no longer copied as each chunk arrives, and `/mcp` sign-in no longer stays on "Connecting…" after the browser step. Interactive mode offers to fork a session whose folder is gone. The pinned catalog gains Claude Fable 5.2 (`claude-fable-5-2`), GPT-6 Cyber, Gemini 4 Carbon, Gemini 4 Hydrogen and the provider `qwen-token-plan-individual-cn`.
 
 ### Fixed
 
