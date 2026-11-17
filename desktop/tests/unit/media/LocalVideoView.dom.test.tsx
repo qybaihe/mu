@@ -175,6 +175,21 @@ describe('LocalVideoView', () => {
     expect(video.currentTime).toBe(10);
   });
 
+  it('starts with the sound on, mute buttons control it on card and overlay, and rotation lives only in the overlay', () => {
+    render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
+    const video = screen.getByTestId('local-video') as HTMLVideoElement;
+    loadVideo(video, 120);
+    expect(video.muted).toBe(false);
+    fireEvent.click(screen.getByTestId('local-video-mute'));
+    expect(video.muted).toBe(true);
+    // The inline toolbar has no rotate buttons; the overlay keeps both rotations and its own mute of the same sound.
+    expect(screen.queryByTestId('local-video-rotate-right')).toBeNull();
+    fireEvent.click(screen.getByTestId('local-video-open'));
+    fireEvent.click(screen.getByTestId('local-video-modal-mute'));
+    expect((document.querySelector('video') as HTMLVideoElement).muted).toBe(false);
+    expect(screen.getByTestId('local-video-modal-rotate-left')).toBeTruthy();
+  });
+
   it('plays, loops and re-rates from the overlay toolbar in step with the card', () => {
     render(<LocalVideoView src='E:/out/demo.mp4' title='demo' />);
     fireEvent.click(screen.getByTestId('local-video-open'));

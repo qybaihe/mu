@@ -31,6 +31,8 @@
     "copy_path_fallback": "La copie de fichier n’est pas prise en charge ici ; le chemin a été copié à la place",
     "rotate_left": "Pivoter à gauche",
     "rotate_right": "Pivoter à droite",
+    "mute": "Couper le son",
+    "unmute": "Activer le son",
     "zoom_in": "Zoomer",
     "zoom_out": "Dézoomer",
     "zoom_reset": "Réinitialiser le zoom",

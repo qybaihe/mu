@@ -31,6 +31,8 @@
     "copy_path_fallback": "系统不支持复制文件，已复制文件路径",
     "rotate_left": "向左旋转",
     "rotate_right": "向右旋转",
+    "mute": "静音",
+    "unmute": "取消静音",
     "zoom_in": "放大",
     "zoom_out": "缩小",
     "zoom_reset": "重置缩放",

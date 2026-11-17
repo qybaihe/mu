@@ -31,6 +31,8 @@
     "copy_path_fallback": "File copy is not supported here; the file path was copied instead",
     "rotate_left": "Rotate left",
     "rotate_right": "Rotate right",
+    "mute": "Mute",
+    "unmute": "Unmute",
     "zoom_in": "Zoom in",
     "zoom_out": "Zoom out",
     "zoom_reset": "Reset zoom",

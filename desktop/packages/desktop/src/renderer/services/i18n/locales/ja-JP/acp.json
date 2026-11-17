@@ -31,6 +31,8 @@
     "copy_path_fallback": "ここではファイルのコピーに対応していません。代わりにパスをコピーしました",
     "rotate_left": "左に回転",
     "rotate_right": "右に回転",
+    "mute": "ミュート",
+    "unmute": "ミュート解除",
     "zoom_in": "拡大",
     "zoom_out": "縮小",
     "zoom_reset": "ズームをリセット",

@@ -31,6 +31,8 @@
     "copy_path_fallback": "Aquí no se puede copiar el archivo; se copió su ruta",
     "rotate_left": "Girar a la izquierda",
     "rotate_right": "Girar a la derecha",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
     "zoom_in": "Acercar",
     "zoom_out": "Alejar",
     "zoom_reset": "Restablecer zoom",

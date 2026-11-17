@@ -31,6 +31,8 @@
     "copy_path_fallback": "Dosya kopyalama burada desteklenmiyor; bunun yerine yolu kopyalandı",
     "rotate_left": "Sola döndür",
     "rotate_right": "Sağa döndür",
+    "mute": "Sesi kapat",
+    "unmute": "Sesi aç",
     "zoom_in": "Yakınlaştır",
     "zoom_out": "Uzaklaştır",
     "zoom_reset": "Yakınlaştırmayı sıfırla",

@@ -8,7 +8,20 @@ import { ipcBridge } from '@/common';
 import { joinPath } from '@/common/chat/chatLib';
 import { localFileRef } from '@/common/types/chatFile';
 import { Button, Dropdown, Menu, Message, Slider } from '@arco-design/web-react';
-import { Copy, Cycle, Download, Link, Pause, PlayOne, Refresh, VideoTwo, ZoomIn, ZoomOut } from '@icon-park/react';
+import {
+  Copy,
+  Cycle,
+  Download,
+  Link,
+  Mute,
+  Pause,
+  PlayOne,
+  Refresh,
+  VideoTwo,
+  VolumeDown,
+  ZoomIn,
+  ZoomOut,
+} from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -81,6 +94,7 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   const [scrubbing, setScrubbing] = useState(false);
   // A play from the button runs once by default; the loop button switches the mode.
   const [looping, setLooping] = useState(false);
+  const [muted, setMuted] = useState(false);
   // One speed for the video wherever it is watched: the card's menu and the overlay's share it.
   const [rate, setRate] = useState(1);
   // Where the element's playback stands when it is lent to the overlay or borrowed back.
@@ -112,11 +126,11 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
   }, []);
 
   // React's muted attribute is not applied as a property on mount (a long-standing quirk),
-  // so the element is muted and rated here on every (re)mount too.
+  // so the property itself is set here on every (re)mount and on every toggle, with the sound on by default.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = true;
+    video.muted = muted;
     video.playbackRate = rate;
   });
 
@@ -345,6 +359,21 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
               {rateMenu('local-video-modal-rate', styles.overlayButton)}
               <Button
                 type='text'
+                data-testid='local-video-modal-mute'
+                aria-pressed={muted}
+                title={muted ? t('acp.video.unmute') : t('acp.video.mute')}
+                className={muted ? `${styles.overlayButton} ${styles.overlayButtonActive}` : styles.overlayButton}
+                onClick={() => setMuted((value) => !value)}
+                icon={
+                  muted ? (
+                    <Mute theme='outline' size='14' aria-hidden='true' />
+                  ) : (
+                    <VolumeDown theme='outline' size='14' aria-hidden='true' />
+                  )
+                }
+              />
+              <Button
+                type='text'
                 data-testid='local-video-modal-rotate-left'
                 title={t('acp.video.rotate_left')}
                 className={styles.overlayButton}
@@ -449,6 +478,22 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
           onClick={() => setLooping((value) => !value)}
           icon={<Cycle theme='outline' size='14' aria-hidden='true' />}
         />
+        <Button
+          type='text'
+          size='mini'
+          data-testid='local-video-mute'
+          aria-pressed={muted}
+          title={muted ? t('acp.video.unmute') : t('acp.video.mute')}
+          className={muted ? '!text-primary' : undefined}
+          onClick={() => setMuted((value) => !value)}
+          icon={
+            muted ? (
+              <Mute theme='outline' size='14' aria-hidden='true' />
+            ) : (
+              <VolumeDown theme='outline' size='14' aria-hidden='true' />
+            )
+          }
+        />
         {rateMenu('local-video-rate')}
         <Button
           type='text'
@@ -466,24 +511,6 @@ const LocalVideoView: React.FC<{ src: string; title: string }> = ({ src, title }
           onClick={quote}
           icon={<Link theme='outline' size='14' aria-hidden='true' />}
         />
-        <Button
-          type='text'
-          size='mini'
-          data-testid='local-video-rotate-left'
-          title={t('acp.video.rotate_left')}
-          onClick={() => setTurn((value) => value - 1)}
-        >
-          ↺
-        </Button>
-        <Button
-          type='text'
-          size='mini'
-          data-testid='local-video-rotate-right'
-          title={t('acp.video.rotate_right')}
-          onClick={() => setTurn((value) => value + 1)}
-        >
-          ↻
-        </Button>
         <Button
           type='text'
           size='mini'

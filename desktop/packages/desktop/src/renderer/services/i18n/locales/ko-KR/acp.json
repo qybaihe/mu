@@ -31,6 +31,8 @@
     "copy_path_fallback": "여기서는 파일 복사가 지원되지 않아 파일 경로를 복사했어요",
     "rotate_left": "왼쪽으로 회전",
     "rotate_right": "오른쪽으로 회전",
+    "mute": "음소거",
+    "unmute": "음소거 해제",
     "zoom_in": "확대",
     "zoom_out": "축소",
     "zoom_reset": "확대/축소 초기화",

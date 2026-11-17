@@ -31,6 +31,8 @@
     "copy_path_fallback": "Das Kopieren der Datei wird hier nicht unterstützt; stattdessen wurde der Pfad kopiert",
     "rotate_left": "Nach links drehen",
     "rotate_right": "Nach rechts drehen",
+    "mute": "Stumm",
+    "unmute": "Stumm aus",
     "zoom_in": "Vergrößern",
     "zoom_out": "Verkleinern",
     "zoom_reset": "Zoom zurücksetzen",
