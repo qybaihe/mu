@@ -240,20 +240,31 @@ describe('message merging', () => {
 
     act(() => {
       result.current.addOrUpdateMessage(createTextMessage('agent-1', 'partial streaming response'));
+      // A tool row between the two texts: adjacent left text frames are one
+      // streamed reply and now merge (see splitTextSegmentCoalesce.test.ts),
+      // so the tool call is what keeps agent-2 a row of its own here.
+      result.current.addOrUpdateMessage(createToolCallMessage('tool-between'));
       result.current.addOrUpdateMessage(createTextMessage('agent-2', 'live tail'));
     });
     await flushMessageQueue();
 
     act(() => {
       result.current.replaceWithAnchorWindow(CONVERSATION_ID, [
-        createTextMessage('user-anchor', 'anchor'),
+        // Right position: a user row. It must not coalesce with the reply
+        // below it (adjacent left texts are one streamed reply and merge now).
+        { ...createTextMessage('user-anchor', 'anchor'), position: 'right' },
         createTextMessage('agent-1', 'partial'),
       ]);
     });
 
-    expect(result.current.messages.map((message) => message.msg_id)).toEqual(['user-anchor', 'agent-1', 'agent-2']);
+    expect(result.current.messages.map((message) => message.msg_id)).toEqual([
+      'user-anchor',
+      'agent-1',
+      'tool-between',
+      'agent-2',
+    ]);
     expect((result.current.messages[1] as IMessageText).content.content).toBe('partial streaming response');
-    expect((result.current.messages[2] as IMessageText).content.content).toBe('live tail');
+    expect((result.current.messages[3] as IMessageText).content.content).toBe('live tail');
   });
 
   it('requests compact tool content when hydrating historical messages', async () => {
