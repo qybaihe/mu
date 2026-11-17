@@ -57,6 +57,7 @@ export const JUDGE_QUESTIONS: Record<keyof typeof DECISIONS, readonly JudgeQuest
     { id: 'is_side_question', type: 'boolean' },
     { id: 'needs_clarification', type: 'boolean' },
     { id: 'needs_files_changed', type: 'boolean' },
+    // Asked up to input.preflight v4: the records from then still carry its answer.
     { id: 'needs_memory', type: 'boolean' },
     { id: 'swarm_worthy', type: 'boolean' },
     { id: 'plan_first', type: 'boolean' },

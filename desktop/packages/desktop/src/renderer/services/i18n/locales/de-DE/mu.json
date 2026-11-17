@@ -178,7 +178,7 @@
       },
       "localOnly": "Nur lokal – nie einen Cloud-Judge fragen",
       "localOnlyOn": "mude 1.0 ist der einzige Judge, und nichts geht in die Cloud. Kann mude 1.0 nicht antworten, nutzt der Entscheidungspunkt seine Standardstrategie.",
-      "localOnlyOff": "Entscheidungen, die mude 1.0 nicht beantworten kann, etwa während es gestoppt oder unsicher ist, gehen an {{judges}} in der Cloud – was dorthin geht, verlässt diesen Mac. Zwei Sicherheitsprüfungen gehen immer dorthin: das Prüfen von Tool-Beschreibungen und das Prüfen abgerufener Inhalte auf eingeschleuste Anweisungen.",
+      "localOnlyOff": "Entscheidungen, die mude 1.0 nicht beantworten kann, etwa während es gestoppt oder zu langsam ist, gehen an {{judges}} in der Cloud – was dorthin geht, verlässt diesen Mac. Zwei Sicherheitsprüfungen gehen immer dorthin: das Prüfen von Tool-Beschreibungen und das Prüfen abgerufener Inhalte auf eingeschleuste Anweisungen.",
       "localOnlyOffLocal": "Entscheidungen, die mude 1.0 nicht beantworten kann, gehen an {{judges}}, das ebenfalls auf diesem Mac läuft.",
       "localOnlyNone": "Hinter mude 1.0 ist kein Judge eingestellt. Kann mude 1.0 nicht antworten, nutzt der Entscheidungspunkt seine Standardstrategie.",
       "use": "mude 1.0 als Judge verwenden",

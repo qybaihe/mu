@@ -178,7 +178,7 @@
       },
       "localOnly": "Local only — never ask a cloud judge",
       "localOnlyOn": "mude 1.0 is the only judge, and nothing goes to the cloud. When it can't answer, the decision point uses its default.",
-      "localOnlyOff": "When mude 1.0 can't answer, for example while it's stopped or unsure, the question goes to {{judges}} in the cloud and leaves this Mac. Two security checks always go there too: screening tool descriptions and screening fetched content for injected instructions.",
+      "localOnlyOff": "When mude 1.0 can't answer, for example while it's stopped or too slow, the question goes to {{judges}} in the cloud and leaves this Mac. Two security checks always go there too: screening tool descriptions and screening fetched content for injected instructions.",
       "localOnlyOffLocal": "Decisions mude 1.0 can't answer go to {{judges}}, which also runs on this Mac.",
       "localOnlyNone": "No fallback judge is set for mude 1.0. When it can't answer, the decision point uses its default.",
       "use": "Use mude 1.0 as the judge",

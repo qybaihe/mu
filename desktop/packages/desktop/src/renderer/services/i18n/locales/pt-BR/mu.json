@@ -178,7 +178,7 @@
       },
       "localOnly": "Só local — nunca consultar um juiz na nuvem",
       "localOnlyOn": "O mude 1.0 é o único juiz e nada vai para a nuvem. Quando o mude 1.0 não consegue responder, o ponto de decisão usa a estratégia padrão.",
-      "localOnlyOff": "As decisões que o mude 1.0 não consegue responder, por exemplo quando está parado ou em dúvida, vão para {{judges}} na nuvem, então o que é enviado sai deste Mac. Duas verificações de segurança também vão sempre para lá: a análise das descrições de ferramentas e a análise do conteúdo buscado em busca de instruções injetadas.",
+      "localOnlyOff": "As decisões que o mude 1.0 não consegue responder, por exemplo quando está parado ou lento demais, vão para {{judges}} na nuvem, então o que é enviado sai deste Mac. Duas verificações de segurança também vão sempre para lá: a análise das descrições de ferramentas e a análise do conteúdo buscado em busca de instruções injetadas.",
       "localOnlyOffLocal": "As decisões que o mude 1.0 não consegue responder vão para {{judges}}, que também roda neste Mac.",
       "localOnlyNone": "Não há nenhum juiz depois do mude 1.0. Quando o mude 1.0 não consegue responder, o ponto de decisão usa a estratégia padrão.",
       "use": "Usar o mude 1.0 como juiz",
