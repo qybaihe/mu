@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import type { AgentStreamErrorInfo, IMessageText, IMessageTips, TMessage } from '@/common/chat/chatLib';
 import {
   composeMessage,
+  isTextContentReplacement,
   mergeAcpToolCallContent,
   mergeTextMessageContent,
   normalizeAgentStreamError,
@@ -367,8 +368,15 @@ export function composeMessageWithIndex(
     // A frame that continues the left text row above it appends there, so the
     // live list shows the same single message the coalesced history shows. A
     // user row (right), a teammate row, or any other type in between breaks the
-    // run and starts a new row.
-    if (isCoalescibleAssistantText(last) && isCoalescibleAssistantText(message)) {
+    // run and starts a new row. A frame whose content has `replace` set swaps
+    // only its own msg_id's text (the branch above); absorbed here it would
+    // wipe text other msg_ids contributed, so it starts its own row instead —
+    // exactly what the folded history shows for it.
+    if (
+      isCoalescibleAssistantText(last) &&
+      isCoalescibleAssistantText(message) &&
+      !isTextContentReplacement(message.content)
+    ) {
       // Point the new snapshot's msg_id at the row that absorbed it, so later
       // frames under that id resolve to the same row.
       index.msgIdIndex.set(message.msg_id, list.length - 1);
@@ -886,11 +894,40 @@ const preferPersistedOrLiveMessage = (persisted: TMessage, live: TMessage): TMes
 /**
  * Whether an assistant (left) text row can absorb a following streamed segment. Teammate
  * rows are complete standalone messages, never streaming chunks, so they never merge.
+ * A hidden row stays in the list but is skipped only at render time — it never joins a
+ * run: absorbing would either keep the merged row hidden (the visible reply after it
+ * disappears) or splice the hidden row's text into the visible row above it.
  */
 const isCoalescibleAssistantText = (message: TMessage | undefined): message is IMessageText =>
   message?.type === 'text' &&
   message.position === 'left' &&
+  !message.hidden &&
   !(message.content as { teammateMessage?: boolean } | undefined)?.teammateMessage;
+
+/**
+ * The run's merged text. Rows fold per msg_id first — a row whose content has `replace`
+ * set swaps only its own msg_id's text, never text another msg_id in the run contributed
+ * (`mergeTextMessageContent` on the whole run would drop everything but that row's text).
+ * The per-id results then concatenate in the order their ids first appeared.
+ */
+const foldRunContent = (rows: IMessageText[]): IMessageText['content'] => {
+  const segments: Array<{ key: string | IMessageText; content: IMessageText['content'] }> = [];
+  for (const row of rows) {
+    const segment = segments.find((candidate) => candidate.key === (row.msg_id || row));
+    if (segment) segment.content = mergeTextMessageContent(segment.content, row.content);
+    else segments.push({ key: row.msg_id || row, content: row.content });
+  }
+  // A cross-id join is plain concatenation in first-appearance order; no id's replace flag
+  // may reach another id's text, so the flags stay inside the per-id segments above.
+  const { replace: _seedReplace, ...seed } = rows[0].content;
+  return segments.reduce(
+    (acc, segment) => {
+      const { replace: _replaced, ...rest } = segment.content;
+      return { ...acc, ...rest, content: acc.content + segment.content.content };
+    },
+    { ...seed, content: '' }
+  );
+};
 
 /**
  * Fold one run of adjacent coalescible rows into a single message.
@@ -910,7 +947,7 @@ const foldCoalescibleRun = (rows: IMessageText[]): IMessageText => {
   }
   const kept = rows.filter((row) => !row.msg_id || !absorbed.has(row.msg_id));
   const [first, ...rest] = kept.length ? kept : rows;
-  const content = rest.reduce((acc, row) => mergeTextMessageContent(acc, row.content), first.content);
+  const content = rest.length ? foldRunContent(kept) : first.content;
   const folded = rest.length ? { ...first, content } : first;
   if (rows.length > 1) {
     // The folded row now carries the text of every row in the run, whether it

@@ -53,6 +53,13 @@ const textRow = (id: string, content: string, position: 'left' | 'right' = 'left
 const dbTextRow = (id: string, raw: string): IMessageText =>
   normalizeDbMessage({ ...textRow(id, ''), content: JSON.stringify({ content: raw }) as unknown }) as IMessageText;
 
+// A persisted replace frame: the backend (or the builtin agent's cron display path)
+// swapped this msg_id's accumulated text outright.
+const replaceRow = (id: string, raw: string): IMessageText => ({
+  ...textRow(id, raw),
+  content: { content: raw, replace: true },
+});
+
 const thinkingRow = (id: string): TMessage => ({
   id,
   msg_id: id,
@@ -170,6 +177,55 @@ describe('coalescing backend-split text segments on history load', () => {
 
     expect(coalesced).toHaveLength(1);
     expect((coalesced[0] as IMessageText).content.content).toBe('xx');
+  });
+
+  it('a hidden row never joins a run: the visible reply after it survives', () => {
+    // [hidden '', 'the visible reply'] used to fold into one row that kept the first
+    // row's hidden: true, so the reply disappeared with it.
+    const coalesced = coalesceAdjacentTextSegments([
+      { ...dbTextRow('h', ''), hidden: true },
+      dbTextRow('v', 'the visible reply'),
+    ]);
+
+    expect(coalesced).toHaveLength(2);
+    expect(coalesced[0].hidden).toBe(true);
+    expect((coalesced[1] as IMessageText).content.content).toBe('the visible reply');
+    expect(coalesced[1].hidden).toBeFalsy();
+  });
+
+  it('a hidden row after a visible reply never splices its text in', () => {
+    const coalesced = coalesceAdjacentTextSegments([
+      dbTextRow('v', 'the visible reply'),
+      { ...dbTextRow('h', 'INTERNAL NOTE'), hidden: true },
+    ]);
+
+    expect(coalesced).toHaveLength(2);
+    expect((coalesced[0] as IMessageText).content.content).toBe('the visible reply');
+    expect((coalesced[1] as IMessageText).content.content).toBe('INTERNAL NOTE');
+  });
+
+  it('a replace frame under another msg_id keeps the text the other ids wrote', () => {
+    // 'first reply. ' (msg a) followed by a replace frame (msg b) used to fold to
+    // only 'second reply, final text': mergeTextMessageContent drops the existing
+    // text when incoming.replace is set, and the fold handed it the whole run.
+    const coalesced = coalesceAdjacentTextSegments([
+      dbTextRow('a', 'first reply. '),
+      replaceRow('b', 'second reply, final text'),
+    ]);
+
+    expect(coalesced).toHaveLength(1);
+    expect((coalesced[0] as IMessageText).content.content).toBe('first reply. second reply, final text');
+  });
+
+  it('a replace frame still swaps only the earlier snapshots of its own msg_id', () => {
+    const coalesced = coalesceAdjacentTextSegments([
+      dbTextRow('a', 'first reply. '),
+      dbTextRow('b', 'draft'),
+      replaceRow('b', 'final'),
+    ]);
+
+    expect(coalesced).toHaveLength(1);
+    expect((coalesced[0] as IMessageText).content.content).toBe('first reply. final');
   });
 
   it('drops a persisted duplicate of a segment the live row above absorbed, by msg_id', () => {
@@ -336,5 +392,28 @@ describe('composing live frames of one reply', () => {
 
     expect(list).toHaveLength(3);
     expect(list.map((row) => (row as IMessageText).content.content)).toEqual(['reply one', 'question', 'reply two']);
+  });
+  it('a live replace frame under a new msg_id starts its own row, never wipes the one above', () => {
+    let list: TMessage[] = [];
+    let index = buildMessageIndex(list);
+    list = composeMessageWithIndex(dbTextRow('a', 'first reply. '), list, index);
+    index = buildMessageIndex(list);
+    list = composeMessageWithIndex(replaceRow('b', 'second reply, final text'), list, index);
+
+    expect(list).toHaveLength(2);
+    expect((list[0] as IMessageText).content.content).toBe('first reply. ');
+    expect((list[1] as IMessageText).content.content).toBe('second reply, final text');
+  });
+
+  it('a hidden live frame is not absorbed into the visible row above it', () => {
+    let list: TMessage[] = [];
+    let index = buildMessageIndex(list);
+    list = composeMessageWithIndex(dbTextRow('v', 'the visible reply'), list, index);
+    index = buildMessageIndex(list);
+    list = composeMessageWithIndex({ ...dbTextRow('h', 'INTERNAL NOTE'), hidden: true }, list, index);
+
+    expect(list).toHaveLength(2);
+    expect((list[0] as IMessageText).content.content).toBe('the visible reply');
+    expect(list[1].hidden).toBe(true);
   });
 });
