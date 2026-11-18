@@ -1506,6 +1506,7 @@
     "pasteAndMatchStyle": "스타일 맞춰 붙여넣기",
     "delete": "삭제",
     "selectAll": "모두 선택",
+    "clearInput": "입력창 비우기",
     "view": "보기",
     "reload": "새로고침",
     "forceReload": "강제 새로고침",

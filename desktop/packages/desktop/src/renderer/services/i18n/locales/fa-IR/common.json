@@ -1506,6 +1506,7 @@
     "pasteAndMatchStyle": "جای‌گذاری با سبک یکسان",
     "delete": "حذف",
     "selectAll": "انتخاب همه",
+    "clearInput": "پاک کردن جعبه ورودی",
     "view": "نما",
     "reload": "بارگذاری دوباره",
     "forceReload": "بارگذاری دوبارهٔ اجباری",

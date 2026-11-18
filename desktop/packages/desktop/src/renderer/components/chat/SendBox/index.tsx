@@ -6,6 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import AtFileMenu from '@/renderer/components/chat/AtFileMenu';
+import TextContextMenu from '@/renderer/components/chat/TextContextMenu';
 import AtSessionMenu from '@/renderer/components/chat/AtSessionMenu';
 import BtwOverlay from '@/renderer/components/chat/BtwOverlay';
 import SlashCommandMenu, { type SlashCommandMenuItem } from '@/renderer/components/chat/SlashCommandMenu';
@@ -2181,87 +2182,89 @@ const SendBox: React.FC<{
               </span>
             </div>
           )}
-          <div
-            className={`sendbox-highlight-container ${isSingleLine ? 'sendbox-highlight-container--single' : ''}`}
-            style={{
-              width: isSingleLine ? 'auto' : '100%',
-              flex: isSingleLine ? 1 : 'none',
-              minWidth: 0,
-              maxWidth: '100%',
-              marginBottom: isSingleLine ? 0 : '6px',
-              minHeight: isSingleLine ? '20px' : '36px',
-            }}
-          >
+          <TextContextMenu variant='editable' getTextarea={getTextareaElement}>
             <div
-              ref={highlightScrollRef}
-              aria-hidden='true'
-              className={`sendbox-highlight-layer text-14px ${isMobile ? 'sendbox-input--mobile' : ''} ${isSingleLine ? 'sendbox-highlight-layer--single' : ''}`}
-              data-testid='sendbox-highlight-layer'
-              style={!shouldUseHighlightOverlay ? { visibility: 'hidden' } : undefined}
-            >
-              {renderHighlightedInputValue()}
-            </div>
-            <Input.TextArea
-              autoFocus={active && !isMobile}
-              disabled={disabled}
-              spellCheck={false}
-              value={input}
-              placeholder={
-                isMobileCompact
-                  ? (placeholder ?? (bottomHint as string | undefined) ?? sendboxHint)
-                  : placeholder
-                    ? `${placeholder}  ${bottomHint ?? sendboxHint}`
-                    : ((bottomHint as string | undefined) ?? sendboxHint)
-              }
-              className={`${shouldUseHighlightOverlay ? 'sendbox-highlight-textarea ' : ''}ps-0 pe-0 !b-none focus:shadow-none m-0 !bg-transparent !focus:bg-transparent !hover:bg-transparent lh-[20px] !resize-none text-14px ${isMobile ? 'sendbox-input--mobile' : ''}`}
-              data-testid={testIds?.input ?? 'sendbox-input'}
+              className={`sendbox-highlight-container ${isSingleLine ? 'sendbox-highlight-container--single' : ''}`}
               style={{
-                width: '100%',
+                width: isSingleLine ? 'auto' : '100%',
                 flex: isSingleLine ? 1 : 'none',
                 minWidth: 0,
                 maxWidth: '100%',
-                marginLeft: 0,
-                marginRight: 0,
-                marginBottom: 0,
-                height: isSingleLine ? (isMobile ? '22px' : '20px') : 'auto',
-                minHeight: isSingleLine ? (isMobile ? '22px' : '20px') : '36px',
-                overflowY: isSingleLine ? 'hidden' : 'auto',
-                overflowX: 'hidden',
-                whiteSpace: isSingleLine ? 'nowrap' : 'pre-wrap',
-                textOverflow: isSingleLine ? 'ellipsis' : 'clip',
-                wordBreak: isSingleLine ? 'normal' : 'break-word',
-                overflowWrap: 'break-word',
+                marginBottom: isSingleLine ? 0 : '6px',
+                minHeight: isSingleLine ? '20px' : '36px',
               }}
-              onChange={handleTextAreaChange}
-              onPaste={onPaste}
-              onTouchStart={markMobileFocusIntent}
-              onMouseDown={markMobileFocusIntent}
-              onClick={(event) => {
-                syncCaretPosition(event.target);
-              }}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
-              onKeyUp={handleTextAreaKeyUp}
-              onSelect={(event) => {
-                syncCaretPosition(event.currentTarget);
-              }}
-              onScroll={(event) => {
-                syncHighlightScroll(event.currentTarget);
-              }}
-              {...compositionHandlers}
-              autoSize={isSingleLine ? false : MULTI_LINE_AUTO_SIZE}
-              onKeyDown={createKeyDownHandler(handlePrimaryAction, (event) => {
-                return (
-                  handleAddToDraftShortcut(event) ||
-                  handleAtSessionMenuKeyDown(event) ||
-                  handleAtFileMenuKeyDown(event) ||
-                  handleOverlayKeyDown(event) ||
-                  handleHistoryKeyDown(event) ||
-                  handleStopShortcut(event)
-                );
-              })}
-            ></Input.TextArea>
-          </div>
+            >
+              <div
+                ref={highlightScrollRef}
+                aria-hidden='true'
+                className={`sendbox-highlight-layer text-14px ${isMobile ? 'sendbox-input--mobile' : ''} ${isSingleLine ? 'sendbox-highlight-layer--single' : ''}`}
+                data-testid='sendbox-highlight-layer'
+                style={!shouldUseHighlightOverlay ? { visibility: 'hidden' } : undefined}
+              >
+                {renderHighlightedInputValue()}
+              </div>
+              <Input.TextArea
+                autoFocus={active && !isMobile}
+                disabled={disabled}
+                spellCheck={false}
+                value={input}
+                placeholder={
+                  isMobileCompact
+                    ? (placeholder ?? (bottomHint as string | undefined) ?? sendboxHint)
+                    : placeholder
+                      ? `${placeholder}  ${bottomHint ?? sendboxHint}`
+                      : ((bottomHint as string | undefined) ?? sendboxHint)
+                }
+                className={`${shouldUseHighlightOverlay ? 'sendbox-highlight-textarea ' : ''}ps-0 pe-0 !b-none focus:shadow-none m-0 !bg-transparent !focus:bg-transparent !hover:bg-transparent lh-[20px] !resize-none text-14px ${isMobile ? 'sendbox-input--mobile' : ''}`}
+                data-testid={testIds?.input ?? 'sendbox-input'}
+                style={{
+                  width: '100%',
+                  flex: isSingleLine ? 1 : 'none',
+                  minWidth: 0,
+                  maxWidth: '100%',
+                  marginLeft: 0,
+                  marginRight: 0,
+                  marginBottom: 0,
+                  height: isSingleLine ? (isMobile ? '22px' : '20px') : 'auto',
+                  minHeight: isSingleLine ? (isMobile ? '22px' : '20px') : '36px',
+                  overflowY: isSingleLine ? 'hidden' : 'auto',
+                  overflowX: 'hidden',
+                  whiteSpace: isSingleLine ? 'nowrap' : 'pre-wrap',
+                  textOverflow: isSingleLine ? 'ellipsis' : 'clip',
+                  wordBreak: isSingleLine ? 'normal' : 'break-word',
+                  overflowWrap: 'break-word',
+                }}
+                onChange={handleTextAreaChange}
+                onPaste={onPaste}
+                onTouchStart={markMobileFocusIntent}
+                onMouseDown={markMobileFocusIntent}
+                onClick={(event) => {
+                  syncCaretPosition(event.target);
+                }}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+                onKeyUp={handleTextAreaKeyUp}
+                onSelect={(event) => {
+                  syncCaretPosition(event.currentTarget);
+                }}
+                onScroll={(event) => {
+                  syncHighlightScroll(event.currentTarget);
+                }}
+                {...compositionHandlers}
+                autoSize={isSingleLine ? false : MULTI_LINE_AUTO_SIZE}
+                onKeyDown={createKeyDownHandler(handlePrimaryAction, (event) => {
+                  return (
+                    handleAddToDraftShortcut(event) ||
+                    handleAtSessionMenuKeyDown(event) ||
+                    handleAtFileMenuKeyDown(event) ||
+                    handleOverlayKeyDown(event) ||
+                    handleHistoryKeyDown(event) ||
+                    handleStopShortcut(event)
+                  );
+                })}
+              ></Input.TextArea>
+            </div>
+          </TextContextMenu>
           {isSingleLine && (
             <div className='flex items-center gap-1'>
               {sendButtonPrefix}

@@ -1506,6 +1506,7 @@
     "pasteAndMatchStyle": "Colar e manter estilo",
     "delete": "Excluir",
     "selectAll": "Selecionar tudo",
+    "clearInput": "Limpar campo de entrada",
     "view": "Visualizar",
     "reload": "Recarregar",
     "forceReload": "Forçar recarregamento",
