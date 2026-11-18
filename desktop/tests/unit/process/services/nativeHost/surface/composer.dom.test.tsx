@@ -313,7 +313,7 @@ describe('the native send box', () => {
     expect(heard).toHaveBeenCalledWith('waiting');
 
     await act(async () => {
-      host.play('c1', [ended(reply([text('done')])) , { type: 'agent_settled' }]);
+      host.play('c1', [ended(reply([text('done')])), { type: 'agent_settled' }]);
     });
     expect(commands(host)).toContainEqual({ type: 'prompt', message: '/board on' });
     expect(heard).toHaveBeenCalledWith('sent');
@@ -334,7 +334,7 @@ describe('the native send box', () => {
     expect(second).toHaveBeenCalledWith('waiting');
 
     await act(async () => {
-      host.play('c1', [ended(reply([text('done')])) , { type: 'agent_settled' }]);
+      host.play('c1', [ended(reply([text('done')])), { type: 'agent_settled' }]);
     });
     expect(commands(host)).toContainEqual({ type: 'prompt', message: '/board off' });
     expect(commands(host)).not.toContainEqual({ type: 'prompt', message: '/board on' });
