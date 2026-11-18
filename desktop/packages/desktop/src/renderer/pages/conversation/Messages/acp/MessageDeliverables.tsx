@@ -11,7 +11,8 @@ import { useTranslation } from 'react-i18next';
 import type { TMessage } from '@/common/chat/chatLib';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import LocalImageView from '@/renderer/components/media/local/LocalImageView';
-import LocalVideoView, { isVideoPath } from '@/renderer/components/media/local/LocalVideoView';
+import LocalVideoView from '@/renderer/components/media/local/LocalVideoView';
+import { isVideoPath } from '@/common/chat/fileRefs/pathLike';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { useMessageListRun } from '../hooks';
 

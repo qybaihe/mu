@@ -32,7 +32,6 @@ vi.mock('@/renderer/components/media/local/LocalVideoView', () => ({
   default: ({ src, title }: { src: string; title: string }) => (
     <span data-testid='markdown-video' data-src={src} data-title={title} />
   ),
-  isVideoPath: (path: string) => /\.(?:mp4|m4v|webm|mov|ogv)$/i.test(path),
 }));
 
 vi.mock('@/renderer/utils/chat/latexDelimiters', () => ({

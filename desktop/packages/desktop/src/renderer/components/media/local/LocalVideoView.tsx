@@ -6,6 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import { joinPath } from '@/common/chat/chatLib';
+import { isVideoPath } from '@/common/chat/fileRefs/pathLike';
 import { localFileRef } from '@/common/types/chatFile';
 import { Button, Dropdown, Menu, Message, Slider } from '@arco-design/web-react';
 import {
@@ -31,9 +32,6 @@ import { buildFileStreamUrl } from '@/renderer/utils/file/fileUrls';
 import { emitter } from '@/renderer/utils/emitter';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 import styles from './LocalVideoView.module.css';
-
-/** A video path the markdown image syntax may carry — shared with the deliverables card. */
-export const isVideoPath = (path: string): boolean => /\.(?:mp4|m4v|webm|mov|ogv)$/i.test(path);
 
 const RATES = [0.5, 1, 1.5, 2, 3];
 /** The zoom ladder: settled steps, so every step is a literal UnoCSS class. */

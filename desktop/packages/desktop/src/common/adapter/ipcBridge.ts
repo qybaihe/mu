@@ -847,7 +847,11 @@ export const fs = {
   // Put a real file on the OS clipboard (paste it into Explorer/Finder). No web
   // clipboard API writes files, so this one is true IPC to the desktop main
   // process, which asks the OS shell utility; the HTTP backend has no such route.
-  // A WebUI client with no provider connected fails the invoke's timeout fast
+  // The main process re-validates the path (a regular video file a reply card could show)
+  // and keeps it out of all script text — it rides the child's environment on Windows and a
+  // separate osascript argument on macOS. Errors come back as codes only (INVALID_PATH /
+  // FILE_NOT_FOUND / CLIPBOARD_FAILED / UNSUPPORTED_PLATFORM), never a message containing a
+  // path. A WebUI client with no provider connected fails the invoke's timeout fast
   // (the renderer then falls back to copying the path) instead of hanging.
   copyFileToClipboard: bridge.buildProvider<boolean, { path: string }>('fs.copy-file-to-clipboard'),
   // Open a file in the OS default application, addressed by ChatFileRef so it

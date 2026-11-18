@@ -275,6 +275,12 @@ export function extensionOf(path: string): string {
   return name.slice(dot + 1).toLowerCase();
 }
 
+/** Videos the reply player streams (the renderer's player and the main process's clipboard copy share this one list). */
+export const VIDEO_EXTENSIONS: ReadonlySet<string> = new Set(['mp4', 'm4v', 'webm', 'mov', 'ogv']);
+
+/** Whether a path names a video the reply player can stream. */
+export const isVideoPath = (path: string): boolean => VIDEO_EXTENSIONS.has(extensionOf(path));
+
 /**
  * The extension of a span that may be a path, as extensionOf, except that a mixed-case one is none: `Command` in
  * `exec.Command` is a type, while `PNG` and `png` are extensions.
