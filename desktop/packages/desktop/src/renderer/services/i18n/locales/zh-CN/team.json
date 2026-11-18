@@ -13,5 +13,16 @@
     "sender": "团队",
     "contextResetSuccess": "已为 {{memberName}} 开始新上下文。",
     "contextResetRuntimeFailed": "已为 {{memberName}} 重置上下文，但代理重新启动失败。"
+  },
+  "workbench": {
+    "title": "团队工作台",
+    "description": "团队需要你处理的事，都在这里",
+    "attention": "需要你处理",
+    "attention.empty": "目前没有需要你处理的事项",
+    "attention.approval": "等你批准",
+    "attention.question": "等你回答",
+    "attention.failure": "运行失败",
+    "attention.markHandled": "标记已处理",
+    "attention.markHandledA11y": "将 {{name}} 的失败标记为已处理"
   }
 }

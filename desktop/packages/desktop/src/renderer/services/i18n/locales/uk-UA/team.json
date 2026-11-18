@@ -13,5 +13,16 @@
     "sender": "Команда",
     "contextResetSuccess": "Для {{memberName}} розпочато новий контекст.",
     "contextResetRuntimeFailed": "Контекст {{memberName}} скинуто, але агент не перезапустився."
+  },
+  "workbench": {
+    "title": "Робоча станція команди",
+    "description": "Усе, чого команда чекає від вас, в одному місці",
+    "attention": "Потребує вашої уваги",
+    "attention.empty": "Нічого не потребує вашої уваги",
+    "attention.approval": "Чекає вашого підтвердження",
+    "attention.question": "Чекає вашої відповіді",
+    "attention.failure": "Збій виконання",
+    "attention.markHandled": "Позначити як опрацьоване",
+    "attention.markHandledA11y": "Позначити збій у {{name}} як опрацьований"
   }
 }

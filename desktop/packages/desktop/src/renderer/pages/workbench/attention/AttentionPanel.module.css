@@ -1,0 +1,28 @@
+/* Attention panel: failure rows read as warnings; the dismiss button stays reachable but
+   quiet until hover so the row itself (open the conversation) stays the primary action. */
+
+.failureIcon {
+  color: var(--color-warning-6);
+}
+
+.failureTag {
+  background: var(--color-warning-light-1);
+  color: var(--color-warning-6);
+}
+
+.handledButton {
+  flex: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.row:hover .handledButton,
+.handledButton:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .handledButton {
+    opacity: 1;
+  }
+}

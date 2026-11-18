@@ -82,7 +82,14 @@ describe('sidebar entries', () => {
 
   it('collapsed on the desktop, is a rail of its ways in and its footer, without the conversations', () => {
     render(<Sider collapsed />);
-    for (const id of ['sider-new-chat', 'sider-search', 'sider-scheduled', 'sider-settings', 'theme-toggle'])
+    for (const id of [
+      'sider-new-chat',
+      'sider-search',
+      'sider-scheduled',
+      'sider-workbench',
+      'sider-settings',
+      'theme-toggle',
+    ])
       expect(screen.getByTestId(id)).toBeInTheDocument();
     // Each icon keeps a name for whoever cannot see its tooltip.
     expect(screen.getByTestId('sider-new-chat')).toHaveAttribute('aria-label', 'conversation.welcome.newConversation');
@@ -175,6 +182,7 @@ describe('sidebar entries', () => {
     expect(await tab()).toBe('sider-batch-mode');
     expect(await tab()).toBe('sider-search');
     expect(await tab()).toBe('sider-scheduled');
+    expect(await tab()).toBe('sider-workbench');
     expect(await tab()).toBe('sider-settings');
     expect(await tab()).toBe('theme-toggle');
   });

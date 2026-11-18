@@ -13,5 +13,16 @@
     "sender": "Команда",
     "contextResetSuccess": "Для {{memberName}} начат новый контекст.",
     "contextResetRuntimeFailed": "Контекст {{memberName}} сброшен, но агент не запустился повторно."
+  },
+  "workbench": {
+    "title": "Рабочая станция команды",
+    "description": "Всё, что команда ждёт от вас, в одном месте",
+    "attention": "Требует вашего внимания",
+    "attention.empty": "Ничего не требует вашего внимания",
+    "attention.approval": "Ждёт вашего одобрения",
+    "attention.question": "Ждёт вашего ответа",
+    "attention.failure": "Сбой выполнения",
+    "attention.markHandled": "Отметить как обработанное",
+    "attention.markHandledA11y": "Отметить сбой в {{name}} как обработанный"
   }
 }

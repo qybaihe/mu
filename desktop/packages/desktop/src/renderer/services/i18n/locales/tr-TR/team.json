@@ -13,5 +13,16 @@
     "sender": "Takım",
     "contextResetSuccess": "{{memberName}} için yeni bağlam başlatıldı.",
     "contextResetRuntimeFailed": "{{memberName}} bağlamı sıfırlandı ancak aracı yeniden başlatılamadı."
+  },
+  "workbench": {
+    "title": "Ekip çalışma tezgâhı",
+    "description": "Ekibin sizden beklediği her şey tek yerde",
+    "attention": "Dikkatinizi gerektiriyor",
+    "attention.empty": "Dikkatinizi gerektiren bir şey yok",
+    "attention.approval": "Onayınız bekleniyor",
+    "attention.question": "Yanıtınız bekleniyor",
+    "attention.failure": "Çalışma başarısız",
+    "attention.markHandled": "İşlendi olarak işaretle",
+    "attention.markHandledA11y": "{{name}} içindeki hatayı işlendi olarak işaretle"
   }
 }

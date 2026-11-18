@@ -13,5 +13,16 @@
     "sender": "Equipe",
     "contextResetSuccess": "Um novo contexto foi iniciado para {{memberName}}.",
     "contextResetRuntimeFailed": "O contexto de {{memberName}} foi redefinido, mas o agente não reiniciou."
+  },
+  "workbench": {
+    "title": "Bancada da equipe",
+    "description": "O que a equipe precisa de você, em um só lugar",
+    "attention": "Precisa da sua atenção",
+    "attention.empty": "Nada precisa da sua atenção",
+    "attention.approval": "Aguardando sua aprovação",
+    "attention.question": "Aguardando sua resposta",
+    "attention.failure": "Falha na execução",
+    "attention.markHandled": "Marcar como tratado",
+    "attention.markHandledA11y": "Marcar a falha em {{name}} como tratada"
   }
 }

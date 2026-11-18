@@ -13,5 +13,16 @@
     "sender": "Team",
     "contextResetSuccess": "Neuer Kontext für {{memberName}} wurde gestartet.",
     "contextResetRuntimeFailed": "Der Kontext für {{memberName}} wurde zurückgesetzt, aber der Agent konnte nicht neu gestartet werden."
+  },
+  "workbench": {
+    "title": "Team-Workbench",
+    "description": "Was das Team von dir braucht, an einem Ort",
+    "attention": "Braucht deine Aufmerksamkeit",
+    "attention.empty": "Nichts braucht deine Aufmerksamkeit",
+    "attention.approval": "Wartet auf deine Freigabe",
+    "attention.question": "Wartet auf deine Antwort",
+    "attention.failure": "Lauf fehlgeschlagen",
+    "attention.markHandled": "Als erledigt markieren",
+    "attention.markHandledA11y": "Den Fehlschlag in {{name}} als erledigt markieren"
   }
 }

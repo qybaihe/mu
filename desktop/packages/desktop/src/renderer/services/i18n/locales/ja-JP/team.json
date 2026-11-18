@@ -13,5 +13,16 @@
     "sender": "チーム",
     "contextResetSuccess": "{{memberName}} の新しいコンテキストを開始しました。",
     "contextResetRuntimeFailed": "{{memberName}} のコンテキストはリセットされましたが、エージェントの再起動に失敗しました。"
+  },
+  "workbench": {
+    "title": "チームワークベンチ",
+    "description": "チームがあなたに求めていることを、ここにまとめて",
+    "attention": "要対応",
+    "attention.empty": "対応が必要な項目はありません",
+    "attention.approval": "承認待ち",
+    "attention.question": "回答待ち",
+    "attention.failure": "実行に失敗",
+    "attention.markHandled": "対応済みにする",
+    "attention.markHandledA11y": "{{name}} の失敗を対応済みにする"
   }
 }

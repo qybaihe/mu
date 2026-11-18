@@ -13,5 +13,16 @@
     "sender": "팀",
     "contextResetSuccess": "{{memberName}}의 새 컨텍스트를 시작했습니다.",
     "contextResetRuntimeFailed": "{{memberName}}의 컨텍스트는 재설정되었지만 에이전트를 다시 시작하지 못했습니다."
+  },
+  "workbench": {
+    "title": "팀 워크벤치",
+    "description": "팀이 사용자에게 필요로 하는 일을 한곳에",
+    "attention": "처리가 필요합니다",
+    "attention.empty": "처리가 필요한 항목이 없습니다",
+    "attention.approval": "승인 대기 중",
+    "attention.question": "답변 대기 중",
+    "attention.failure": "실행 실패",
+    "attention.markHandled": "처리됨으로 표시",
+    "attention.markHandledA11y": "{{name}}의 실패를 처리됨으로 표시"
   }
 }

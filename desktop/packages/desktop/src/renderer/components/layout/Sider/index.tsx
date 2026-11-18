@@ -9,7 +9,7 @@ import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
 import NativeSiderGroup from '@renderer/pages/native/sider/NativeSiderGroup';
 import { useNativeEnabled } from '@renderer/pages/native/hooks/useNativeConversations';
 import { SETTINGS_HOME } from '@renderer/pages/settings/settingsNav';
-import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry } from './SiderNav';
+import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderWorkbenchEntry } from './SiderNav';
 import SiderFooter from './SiderFooter';
 import CommandPalette from './CommandPalette';
 import siderStyles from './Sider.module.css';
@@ -106,6 +106,19 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     }
   };
 
+  const handleWorkbenchClick = () => {
+    cleanupSiderTooltips();
+    blurActiveElement();
+    closePreview();
+    setIsBatchMode(false);
+    Promise.resolve(navigate('/workbench')).catch((error) => {
+      console.error('Navigation failed:', error);
+    });
+    if (onSessionClick) {
+      onSessionClick();
+    }
+  };
+
   const handleQuickThemeToggle = () => {
     void setTheme(theme === 'dark' ? 'light' : 'dark');
   };
@@ -160,6 +173,14 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
                 onClick={handleScheduledClick}
               />
             )}
+            {/* 4 — the team workbench: what the team needs from its person (approvals, questions, failed runs). */}
+            <SiderWorkbenchEntry
+              isMobile={isMobile}
+              isActive={pathname === '/workbench'}
+              collapsed={collapsed}
+              siderTooltipProps={siderTooltipProps}
+              onClick={handleWorkbenchClick}
+            />
             {rail ? null : (
               <>
                 {/* The one hairline in the sidebar: above it the ways in, below it the conversations. */}

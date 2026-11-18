@@ -13,5 +13,16 @@
     "sender": "Team",
     "contextResetSuccess": "Started a new context for {{memberName}}.",
     "contextResetRuntimeFailed": "The context was reset for {{memberName}}, but the agent couldn't restart."
+  },
+  "workbench": {
+    "title": "Team workbench",
+    "description": "What the team needs from you, in one place",
+    "attention": "Needs your attention",
+    "attention.empty": "Nothing needs your attention",
+    "attention.approval": "Waiting for your approval",
+    "attention.question": "Waiting for your answer",
+    "attention.failure": "Run failed",
+    "attention.markHandled": "Mark as handled",
+    "attention.markHandledA11y": "Mark the failure in {{name}} as handled"
   }
 }

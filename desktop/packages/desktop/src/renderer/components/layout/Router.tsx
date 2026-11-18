@@ -52,6 +52,7 @@ const ExtensionSettingsPage = preloadablePage(() => import('@renderer/pages/sett
 const ComponentsShowcase = preloadablePage(() => import('@renderer/pages/TestShowcase'));
 const ScheduledTasksPage = preloadablePage(() => import('@renderer/pages/cron/ScheduledTasksPage'));
 const TaskDetailPage = preloadablePage(() => import('@renderer/pages/cron/ScheduledTasksPage/TaskDetailPage'));
+const WorkbenchPage = preloadablePage(() => import('@renderer/pages/workbench/WorkbenchPage'));
 
 /**
  * The pages loaded ahead while the window is idle after its first page, the likeliest next ones first: a conversation,
@@ -63,6 +64,7 @@ const PRELOADED: readonly PreloadablePage[] = [
   Guid,
   MuSettings,
   ScheduledTasksPage,
+  WorkbenchPage,
   AppearanceSettings,
   SystemSettings,
   ConversationSettings,
@@ -304,6 +306,7 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
           <Route path='/test/components' element={withRouteFallback(ComponentsShowcase)} />
           <Route path='/scheduled' element={withRouteFallback(ScheduledTasksPage)} />
           <Route path='/scheduled/:job_id' element={withRouteFallback(TaskDetailPage)} />
+          <Route path='/workbench' element={withRouteFallback(WorkbenchPage)} />
         </Route>
         <Route path='*' element={<Navigate to='/guid' replace />} />
       </Routes>

@@ -13,5 +13,16 @@
     "sender": "تیم",
     "contextResetSuccess": "برای {{memberName}} زمینه جدید آغاز شد.",
     "contextResetRuntimeFailed": "زمینه {{memberName}} بازنشانی شد، اما عامل دوباره راه‌اندازی نشد."
+  },
+  "workbench": {
+    "title": "میز کار تیم",
+    "description": "هر چه تیم از شما می‌خواهد، در یکجا",
+    "attention": "نیازمند توجه شماست",
+    "attention.empty": "هیچ چیز نیازمند توجه شما نیست",
+    "attention.approval": "در انتظار تأیید شما",
+    "attention.question": "در انتظار پاسخ شما",
+    "attention.failure": "اجرای ناموفق",
+    "attention.markHandled": "علامت‌گذاری به‌عنوان رسیدگی‌شده",
+    "attention.markHandledA11y": "علامت‌گذاری خطای {{name}} به‌عنوان رسیدگی‌شده"
   }
 }

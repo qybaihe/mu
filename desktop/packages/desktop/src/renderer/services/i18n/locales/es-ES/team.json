@@ -13,5 +13,16 @@
     "sender": "Equipo",
     "contextResetSuccess": "Se inició un contexto nuevo para {{memberName}}.",
     "contextResetRuntimeFailed": "Se restableció el contexto de {{memberName}}, pero el agente no pudo reiniciarse."
+  },
+  "workbench": {
+    "title": "Mesa de trabajo del equipo",
+    "description": "Lo que el equipo necesita de ti, en un solo lugar",
+    "attention": "Requiere tu atención",
+    "attention.empty": "Nada requiere tu atención",
+    "attention.approval": "Esperando tu aprobación",
+    "attention.question": "Esperando tu respuesta",
+    "attention.failure": "Ejecución fallida",
+    "attention.markHandled": "Marcar como gestionado",
+    "attention.markHandledA11y": "Marcar el fallo en {{name}} como gestionado"
   }
 }

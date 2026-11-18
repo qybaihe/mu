@@ -13,5 +13,16 @@
     "sender": "Équipe",
     "contextResetSuccess": "Un nouveau contexte a été démarré pour {{memberName}}.",
     "contextResetRuntimeFailed": "Le contexte de {{memberName}} a été réinitialisé, mais l’agent n’a pas redémarré."
+  },
+  "workbench": {
+    "title": "Atelier d'équipe",
+    "description": "Ce que l'équipe attend de vous, au même endroit",
+    "attention": "Nécessite votre attention",
+    "attention.empty": "Rien ne nécessite votre attention",
+    "attention.approval": "En attente de votre approbation",
+    "attention.question": "En attente de votre réponse",
+    "attention.failure": "Échec de l'exécution",
+    "attention.markHandled": "Marquer comme traité",
+    "attention.markHandledA11y": "Marquer l'échec dans {{name}} comme traité"
   }
 }
