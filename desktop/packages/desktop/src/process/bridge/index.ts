@@ -16,6 +16,7 @@ import { initKyrnBrowserBridge } from './kyrnBrowserBridge';
 import { initNativeBridge } from './nativeBridge';
 import { initFolderGitBridge } from '../services/folderGit';
 import { initFileRefsBridge } from '../services/fileRefs';
+import { initTeamDispatchBridge } from '../services/teamDispatch';
 import { initPositionsBridge } from '../services/positions';
 import { initSupervisorBridge } from '../services/supervisor';
 
@@ -34,6 +35,7 @@ export function initAllBridges(_deps: BridgeDependencies = {}): void {
   initNativeBridge();
   initFolderGitBridge();
   initFileRefsBridge();
+  initTeamDispatchBridge();
   initPositionsBridge();
   initSupervisorBridge();
 }
