@@ -51,5 +51,13 @@
     "noHits": "Нет совпадений в этой команде",
     "toolCall": "Вызов инструмента",
     "loadMore": "Загрузить ещё"
+  },
+  "notification": {
+    "bodyRunCompleted": "Команда завершила задачу",
+    "bodyRunCompletedNamed": "Команда «{{name}}» завершила задачу",
+    "bodyRunFailed": "Задача команды завершилась ошибкой",
+    "bodyRunFailedNamed": "Задача команды «{{name}}» завершилась ошибкой",
+    "bodyWaitingStall": "Команда ждёт ответа участника",
+    "bodyWaitingStallNamed": "Команда «{{name}}» ждёт ответа участника"
   }
 }

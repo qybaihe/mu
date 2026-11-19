@@ -51,5 +51,13 @@
     "noHits": "Sin coincidencias en este equipo",
     "toolCall": "Llamada de herramienta",
     "loadMore": "Cargar más"
+  },
+  "notification": {
+    "bodyRunCompleted": "Un equipo terminó su tarea",
+    "bodyRunCompletedNamed": "El equipo \"{{name}}\" terminó su tarea",
+    "bodyRunFailed": "Una tarea de equipo falló",
+    "bodyRunFailedNamed": "La tarea del equipo \"{{name}}\" falló",
+    "bodyWaitingStall": "Un equipo espera a un compañero",
+    "bodyWaitingStallNamed": "El equipo \"{{name}}\" espera a un compañero"
   }
 }

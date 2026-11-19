@@ -51,5 +51,13 @@
     "noHits": "本團隊內無匹配",
     "toolCall": "工具調用",
     "loadMore": "載入更多"
+  },
+  "notification": {
+    "bodyRunCompleted": "隊伍已完成本輪任務",
+    "bodyRunCompletedNamed": "隊伍「{{name}}」已完成本輪任務",
+    "bodyRunFailed": "隊伍任務執行失敗",
+    "bodyRunFailedNamed": "隊伍「{{name}}」任務執行失敗",
+    "bodyWaitingStall": "隊伍正在等待成員回覆",
+    "bodyWaitingStallNamed": "隊伍「{{name}}」正在等待成員回覆"
   }
 }

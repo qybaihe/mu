@@ -51,5 +51,13 @@
     "noHits": "本团队内无匹配",
     "toolCall": "工具调用",
     "loadMore": "加载更多"
+  },
+  "notification": {
+    "bodyRunCompleted": "队伍已完成本轮任务",
+    "bodyRunCompletedNamed": "队伍「{{name}}」已完成本轮任务",
+    "bodyRunFailed": "队伍任务运行失败",
+    "bodyRunFailedNamed": "队伍「{{name}}」任务运行失败",
+    "bodyWaitingStall": "队伍正在等待成员回话",
+    "bodyWaitingStallNamed": "队伍「{{name}}」正在等待成员回话"
   }
 }

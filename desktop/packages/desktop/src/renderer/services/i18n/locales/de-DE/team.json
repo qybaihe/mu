@@ -51,5 +51,13 @@
     "noHits": "Keine Treffer in diesem Team",
     "toolCall": "Werkzeugaufruf",
     "loadMore": "Mehr laden"
+  },
+  "notification": {
+    "bodyRunCompleted": "Ein Team hat seinen Lauf abgeschlossen",
+    "bodyRunCompletedNamed": "Das Team „{{name}}“ hat seinen Lauf abgeschlossen",
+    "bodyRunFailed": "Ein Teamlauf ist fehlgeschlagen",
+    "bodyRunFailedNamed": "Der Lauf des Teams „{{name}}“ ist fehlgeschlagen",
+    "bodyWaitingStall": "Ein Team wartet auf ein Teammitglied",
+    "bodyWaitingStallNamed": "Das Team „{{name}}“ wartet auf ein Teammitglied"
   }
 }

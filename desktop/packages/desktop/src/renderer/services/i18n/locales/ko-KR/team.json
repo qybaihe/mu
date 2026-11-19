@@ -51,5 +51,13 @@
     "noHits": "이 팀에 일치 없음",
     "toolCall": "도구 호출",
     "loadMore": "더 불러오기"
+  },
+  "notification": {
+    "bodyRunCompleted": "팀이 작업을 완료했습니다",
+    "bodyRunCompletedNamed": "팀 \"{{name}}\"이(가) 작업을 완료했습니다",
+    "bodyRunFailed": "팀 작업이 실패했습니다",
+    "bodyRunFailedNamed": "팀 \"{{name}}\" 작업이 실패했습니다",
+    "bodyWaitingStall": "팀이 팀원 응답을 기다리고 있습니다",
+    "bodyWaitingStallNamed": "팀 \"{{name}}\"이(가) 팀원 응답을 기다리고 있습니다"
   }
 }

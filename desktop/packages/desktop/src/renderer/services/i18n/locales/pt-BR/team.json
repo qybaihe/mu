@@ -51,5 +51,13 @@
     "noHits": "Nenhuma correspondência neste time",
     "toolCall": "Chamada de ferramenta",
     "loadMore": "Carregar mais"
+  },
+  "notification": {
+    "bodyRunCompleted": "Uma equipe concluiu sua tarefa",
+    "bodyRunCompletedNamed": "A equipe \"{{name}}\" concluiu sua tarefa",
+    "bodyRunFailed": "Uma tarefa de equipe falhou",
+    "bodyRunFailedNamed": "A tarefa da equipe \"{{name}}\" falhou",
+    "bodyWaitingStall": "Uma equipe aguarda um colega",
+    "bodyWaitingStallNamed": "A equipe \"{{name}}\" aguarda um colega"
   }
 }

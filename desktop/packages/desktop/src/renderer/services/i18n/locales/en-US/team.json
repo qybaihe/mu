@@ -51,5 +51,13 @@
     "noHits": "No matches in this team",
     "toolCall": "Tool call",
     "loadMore": "Load more"
+  },
+  "notification": {
+    "bodyRunCompleted": "A team finished its run",
+    "bodyRunCompletedNamed": "The team \"{{name}}\" finished its run",
+    "bodyRunFailed": "A team run failed",
+    "bodyRunFailedNamed": "The team \"{{name}}\" hit a failed run",
+    "bodyWaitingStall": "A team is waiting on a teammate",
+    "bodyWaitingStallNamed": "The team \"{{name}}\" is waiting on a teammate"
   }
 }

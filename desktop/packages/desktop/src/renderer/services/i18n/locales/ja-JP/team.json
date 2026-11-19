@@ -51,5 +51,13 @@
     "noHits": "このチームに一致なし",
     "toolCall": "ツール呼び出し",
     "loadMore": "さらに読み込む"
+  },
+  "notification": {
+    "bodyRunCompleted": "チームがタスクを完了しました",
+    "bodyRunCompletedNamed": "チーム「{{name}}」がタスクを完了しました",
+    "bodyRunFailed": "チームのタスクが失敗しました",
+    "bodyRunFailedNamed": "チーム「{{name}}」のタスクが失敗しました",
+    "bodyWaitingStall": "チームがメンバーの返信を待機しています",
+    "bodyWaitingStallNamed": "チーム「{{name}}」がメンバーの返信を待機しています"
   }
 }

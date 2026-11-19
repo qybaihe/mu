@@ -51,5 +51,13 @@
     "noHits": "Aucun résultat dans cette équipe",
     "toolCall": "Appel d’outil",
     "loadMore": "Charger plus"
+  },
+  "notification": {
+    "bodyRunCompleted": "Une équipe a terminé sa tâche",
+    "bodyRunCompletedNamed": "L'équipe « {{name}} » a terminé sa tâche",
+    "bodyRunFailed": "Une tâche d'équipe a échoué",
+    "bodyRunFailedNamed": "La tâche de l'équipe « {{name}} » a échoué",
+    "bodyWaitingStall": "Une équipe attend un coéquipier",
+    "bodyWaitingStallNamed": "L'équipe « {{name}} » attend un coéquipier"
   }
 }

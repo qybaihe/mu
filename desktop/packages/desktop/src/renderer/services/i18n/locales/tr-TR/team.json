@@ -51,5 +51,13 @@
     "noHits": "Bu ekipte eşleşme yok",
     "toolCall": "Araç çağrısı",
     "loadMore": "Daha fazla yükle"
+  },
+  "notification": {
+    "bodyRunCompleted": "Bir ekip görevini tamamladı",
+    "bodyRunCompletedNamed": "\"{{name}}\" ekibi görevini tamamladı",
+    "bodyRunFailed": "Bir ekip görevi başarısız oldu",
+    "bodyRunFailedNamed": "\"{{name}}\" ekibinin görevi başarısız oldu",
+    "bodyWaitingStall": "Bir ekip takım arkadaşı bekliyor",
+    "bodyWaitingStallNamed": "\"{{name}}\" ekibi bir takım arkadaşı bekliyor"
   }
 }

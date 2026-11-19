@@ -51,5 +51,13 @@
     "noHits": "بدون نتیجه در این تیم",
     "toolCall": "فراخوانی ابزار",
     "loadMore": "بارگذاری بیشتر"
+  },
+  "notification": {
+    "bodyRunCompleted": "یک تیم کارش را تمام کرد",
+    "bodyRunCompletedNamed": "تیم «{{name}}» کارش را تمام کرد",
+    "bodyRunFailed": "کار یک تیم ناموفق بود",
+    "bodyRunFailedNamed": "کار تیم «{{name}}» ناموفق بود",
+    "bodyWaitingStall": "یک تیم در انتظار پاسخ هم‌تیمی است",
+    "bodyWaitingStallNamed": "تیم «{{name}}» در انتظار پاسخ هم‌تیمی است"
   }
 }

@@ -37,6 +37,7 @@ import { NavigationHistoryProvider } from '@renderer/hooks/context/NavigationHis
 import { useDeepLink } from '@renderer/hooks/system/useDeepLink';
 import { useNotificationClick } from '@renderer/hooks/system/notification/useNotificationClick';
 import { useDesktopTurnNotification } from '@renderer/hooks/system/notification/useDesktopTurnNotification';
+import { useTeamRunNotification } from '@renderer/hooks/system/notification/useTeamRunNotification';
 import { useNativeAttention } from '@renderer/pages/native/hooks/useNativeAttention';
 import { useAppBadge } from '@renderer/hooks/system/notification/useAppBadge';
 import { useKeepAwakeWhileRunning } from '@renderer/hooks/system/useKeepAwakeWhileRunning';
@@ -149,6 +150,7 @@ const Layout: React.FC<{
   useDeepLink();
   useNotificationClick();
   useDesktopTurnNotification();
+  useTeamRunNotification();
   useNativeAttention();
   useAppBadge();
   useKeepAwakeWhileRunning();
