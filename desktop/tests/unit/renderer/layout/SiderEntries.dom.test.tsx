@@ -48,6 +48,11 @@ vi.mock('@renderer/pages/settings/components/SettingsSider', () => ({
   default: () => <nav data-testid='settings-sider' />,
 }));
 vi.mock('@renderer/pages/native/sider/NativeSiderGroup', () => ({ default: () => null }));
+// The position roster pulls its data over the bridge and the conversation-history
+// context; its behavior has its own test (SiderPositionsGroup.dom.test.tsx).
+vi.mock('@renderer/components/layout/Sider/SiderNav/SiderPositionsGroup', () => ({
+  default: () => <div data-testid='sider-positions' />,
+}));
 vi.mock('@renderer/pages/native/hooks/useNativeConversations', () => ({ useNativeEnabled: () => nativeOn }));
 vi.mock('@renderer/components/layout/Sider/CommandPalette', () => ({
   default: () => <div data-testid='command-palette-host' />,
@@ -82,14 +87,7 @@ describe('sidebar entries', () => {
 
   it('collapsed on the desktop, is a rail of its ways in and its footer, without the conversations', () => {
     render(<Sider collapsed />);
-    for (const id of [
-      'sider-new-chat',
-      'sider-search',
-      'sider-scheduled',
-      'sider-workbench',
-      'sider-settings',
-      'theme-toggle',
-    ])
+    for (const id of ['sider-new-chat', 'sider-search', 'sider-scheduled', 'sider-settings', 'theme-toggle'])
       expect(screen.getByTestId(id)).toBeInTheDocument();
     // Each icon keeps a name for whoever cannot see its tooltip.
     expect(screen.getByTestId('sider-new-chat')).toHaveAttribute('aria-label', 'conversation.welcome.newConversation');
@@ -182,7 +180,6 @@ describe('sidebar entries', () => {
     expect(await tab()).toBe('sider-batch-mode');
     expect(await tab()).toBe('sider-search');
     expect(await tab()).toBe('sider-scheduled');
-    expect(await tab()).toBe('sider-workbench');
     expect(await tab()).toBe('sider-settings');
     expect(await tab()).toBe('theme-toggle');
   });

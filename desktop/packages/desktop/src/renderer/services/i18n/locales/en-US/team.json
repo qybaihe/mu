@@ -6,7 +6,13 @@
     "searchPlaceholder": "Search",
     "recentLabel": "Recent",
     "chooseDifferentFolder": "Choose a different folder",
-    "errorWithDetail": "Couldn't create the team: {{error}}"
+    "errors": {
+      "noAgents": "No agent can join a team yet. Enable an agent that supports teams.",
+      "needName": "Give the team a name.",
+      "needLead": "Pick a lead.",
+      "needTeammate": "Add at least one teammate.",
+      "needMemberName": "Every member needs a name."
+    }
   },
   "interruptAndSend": "Interrupt and send",
   "systemNotice": {
@@ -15,15 +21,6 @@
     "contextResetRuntimeFailed": "The context was reset for {{memberName}}, but the agent couldn't restart."
   },
   "workbench": {
-    "title": "Team workbench",
-    "description": "What the team needs from you, in one place",
-    "attention": "Needs your attention",
-    "attention.empty": "Nothing needs your attention",
-    "attention.approval": "Waiting for your approval",
-    "attention.question": "Waiting for your answer",
-    "attention.failure": "Run failed",
-    "attention.markHandled": "Mark as handled",
-    "attention.markHandledA11y": "Mark the failure in {{name}} as handled",
     "claims.inProgress": "Announces work in progress, but this turn ran no tool",
     "claims.missingFiles": "Linked file does not exist: {{files}}"
   },
@@ -71,5 +68,33 @@
     "groupChatPill": "Group chat · {{count}}",
     "teamPill": "Team · {{count}}",
     "members": "Members: {{names}}"
+  },
+  "groupChat": {
+    "newEntry": "New group chat",
+    "title": "New group chat",
+    "subtitle": "Pick positions to join; every slot runs mu. Reusable for 7 days.",
+    "nameLabel": "Group name",
+    "namePlaceholder": "Optional — the positions name it",
+    "nameAutoHint": "Leave it empty and the picked positions name the group.",
+    "namePreview": "Group name: {{name}}",
+    "positionsLabel": "Positions",
+    "positionsPlaceholder": "Pick at least one position",
+    "positionsHint": "Each position becomes one mu slot; the first is the lead.",
+    "submit": "Create",
+    "errorWithDetail": "Failed to create the group chat: {{error}}",
+    "errors.noPositions": "Pick at least one position.",
+    "errors.tooManyPositions": "Pick at most 6 positions."
+  },
+  "members": {
+    "manageA11y": "Manage members",
+    "listTitle": "Members ({{count}})",
+    "leadBadge": "Lead",
+    "removeA11y": "Remove {{name}}",
+    "removeFailed": "Failed to remove {{name}}",
+    "addFailed": "Failed to add the member",
+    "addLabel": "Add positions",
+    "addPlaceholder": "Pick positions to add",
+    "addApply": "Add",
+    "addAllOnTeam": "Every roster position is already in this group."
   }
 }

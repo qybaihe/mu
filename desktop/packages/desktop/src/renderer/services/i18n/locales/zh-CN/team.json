@@ -6,7 +6,13 @@
     "searchPlaceholder": "搜索",
     "recentLabel": "最近使用",
     "chooseDifferentFolder": "选择其他目录",
-    "errorWithDetail": "创建团队失败：{{error}}"
+    "errors": {
+      "noAgents": "还没有可入队的成员。请启用支持团队的成员。",
+      "needName": "给团队起个名字。",
+      "needLead": "请选择领队。",
+      "needTeammate": "至少添加一位队友。",
+      "needMemberName": "每个成员都需要名称。"
+    }
   },
   "interruptAndSend": "打断并发送",
   "systemNotice": {
@@ -15,15 +21,6 @@
     "contextResetRuntimeFailed": "已为 {{memberName}} 重置上下文，但代理重新启动失败。"
   },
   "workbench": {
-    "title": "团队工作台",
-    "description": "团队需要你处理的事，都在这里",
-    "attention": "需要你处理",
-    "attention.empty": "目前没有需要你处理的事项",
-    "attention.approval": "等你批准",
-    "attention.question": "等你回答",
-    "attention.failure": "运行失败",
-    "attention.markHandled": "标记已处理",
-    "attention.markHandledA11y": "将 {{name}} 的失败标记为已处理",
     "claims.inProgress": "宣称正在干活，但本回合没有调用任何工具",
     "claims.missingFiles": "链接的文件不存在：{{files}}"
   },
@@ -71,5 +68,33 @@
     "groupChatPill": "群聊 · {{count}} 人",
     "teamPill": "团队 · {{count}} 人",
     "members": "成员：{{names}}"
+  },
+  "groupChat": {
+    "newEntry": "新建群聊",
+    "title": "新建群聊",
+    "subtitle": "选择岗位入群，全员 mu 阵容，7 天内可被复用续命。",
+    "nameLabel": "群名",
+    "namePlaceholder": "可留空，自动按岗位起名",
+    "nameAutoHint": "留空时自动用所选岗位命名。",
+    "namePreview": "群名：{{name}}",
+    "positionsLabel": "岗位",
+    "positionsPlaceholder": "至少选择一个岗位",
+    "positionsHint": "每个岗位一个 mu 席位，第一个为领队。",
+    "submit": "创建",
+    "errorWithDetail": "创建群聊失败：{{error}}",
+    "errors.noPositions": "至少选择一个岗位。",
+    "errors.tooManyPositions": "最多选择 6 个岗位。"
+  },
+  "members": {
+    "manageA11y": "管理成员",
+    "listTitle": "成员（{{count}} 人）",
+    "leadBadge": "领队",
+    "removeA11y": "移除 {{name}}",
+    "removeFailed": "移除 {{name}} 失败",
+    "addFailed": "添加成员失败",
+    "addLabel": "添加岗位",
+    "addPlaceholder": "选择要添加的岗位",
+    "addApply": "添加",
+    "addAllOnTeam": "岗位名册已全部在群内。"
   }
 }

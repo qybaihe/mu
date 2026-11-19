@@ -9,9 +9,19 @@ import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
 import NativeSiderGroup from '@renderer/pages/native/sider/NativeSiderGroup';
 import { useNativeEnabled } from '@renderer/pages/native/hooks/useNativeConversations';
 import { SETTINGS_HOME } from '@renderer/pages/settings/settingsNav';
-import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderWorkbenchEntry } from './SiderNav';
+import {
+  SiderToolbar,
+  SiderSearchEntry,
+  SiderScheduledEntry,
+  SiderPositionsGroup,
+  SiderTeamsGroup,
+  SiderMonitorEntry,
+} from './SiderNav';
 import SiderFooter from './SiderFooter';
 import CommandPalette from './CommandPalette';
+import NewGroupChatModal from '@renderer/pages/team/createGroupChat/NewGroupChatModal';
+import { leadConversationIdOf } from '@renderer/pages/team/createGroupChat/groupChatCore';
+import type { TTeam } from '@/common/types/team/teamTypes';
 import siderStyles from './Sider.module.css';
 
 const WorkspaceGroupedHistory = React.lazy(() => import('@renderer/pages/conversation/GroupedHistory'));
@@ -37,6 +47,7 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
   const { closePreview } = usePreviewContext();
   const { theme, setTheme } = useThemeContext();
   const [isBatchMode, setIsBatchMode] = useState(false);
+  const [newTeamOpen, setNewTeamOpen] = useState(false);
   const isSettings = pathname.startsWith('/settings');
   const lastNonSettingsPathRef = useRef('/guid');
 
@@ -106,21 +117,22 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     }
   };
 
-  const handleWorkbenchClick = () => {
+  const handleQuickThemeToggle = () => {
+    void setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
+  // Creating a team lands in its lead conversation — the group chat itself.
+  const handleTeamCreated = (team: TTeam) => {
     cleanupSiderTooltips();
-    blurActiveElement();
-    closePreview();
     setIsBatchMode(false);
-    Promise.resolve(navigate('/workbench')).catch((error) => {
+    const conversationId = leadConversationIdOf(team);
+    if (!conversationId) return;
+    Promise.resolve(navigate(`/conversation/${conversationId}`)).catch((error) => {
       console.error('Navigation failed:', error);
     });
     if (onSessionClick) {
       onSessionClick();
     }
-  };
-
-  const handleQuickThemeToggle = () => {
-    void setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   const tooltipEnabled = collapsed && !isMobile;
@@ -173,20 +185,16 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
                 onClick={handleScheduledClick}
               />
             )}
-            {/* 4 — the team workbench: what the team needs from its person (approvals, questions, failed runs). */}
-            <SiderWorkbenchEntry
-              isMobile={isMobile}
-              isActive={pathname === '/workbench'}
-              collapsed={collapsed}
-              siderTooltipProps={siderTooltipProps}
-              onClick={handleWorkbenchClick}
-            />
+            {/* 4 — the team group chats: created from the section header below. */}
             {rail ? null : (
               <>
                 {/* The one hairline in the sidebar: above it the ways in, below it the conversations. */}
                 <div className='shrink-0 mt-8px mb-2px mx-8px h-1px bg-[var(--color-border-2)]' />
-                {/* Scrollable content: pinned → projects → conversations */}
+                {/* Scrollable content: the position roster → the monitor → the team group chats → pinned → projects → conversations */}
                 <div className={classNames('flex-1 min-h-0 overflow-y-auto', siderStyles.scrollArea)}>
+                  <SiderPositionsGroup onSessionClick={onSessionClick} />
+                  <SiderMonitorEntry onSessionClick={onSessionClick} />
+                  <SiderTeamsGroup onSessionClick={onSessionClick} onNewGroupChat={() => setNewTeamOpen(true)} />
                   <Suspense fallback={<div className='min-h-200px' />}>
                     <WorkspaceGroupedHistory {...workspaceHistoryProps} />
                   </Suspense>
@@ -198,6 +206,8 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
       </div>
       {/* Cmd/Ctrl+K on every page, the settings included, which is why it lives here and not in the search entry. */}
       <CommandPalette onNavigate={handlePaletteNavigate} />
+      {/* The group-chat dialog: its create lands the app in the new group conversation. */}
+      <NewGroupChatModal open={newTeamOpen} onClose={() => setNewTeamOpen(false)} onCreated={handleTeamCreated} />
       {/* Footer: settings (or back out of them), and the theme. */}
       <SiderFooter
         isMobile={isMobile}

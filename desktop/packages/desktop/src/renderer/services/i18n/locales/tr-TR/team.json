@@ -6,7 +6,13 @@
     "searchPlaceholder": "Ara",
     "recentLabel": "Son kullanılan",
     "chooseDifferentFolder": "Farklı klasör seç",
-    "errorWithDetail": "Takım oluşturulamadı: {{error}}"
+    "errors": {
+      "noAgents": "Henüz bir ekibe katılabilecek ajan yok. Ekip destekli bir ajanı etkinleştirin.",
+      "needName": "Ekibe bir ad verin.",
+      "needLead": "Bir lider seçin.",
+      "needTeammate": "En az bir ekip arkadaşı ekleyin.",
+      "needMemberName": "Her üyenin bir adı olmalı."
+    }
   },
   "interruptAndSend": "Kes ve gönder",
   "systemNotice": {
@@ -15,15 +21,6 @@
     "contextResetRuntimeFailed": "{{memberName}} bağlamı sıfırlandı ancak aracı yeniden başlatılamadı."
   },
   "workbench": {
-    "title": "Ekip çalışma tezgâhı",
-    "description": "Ekibin sizden beklediği her şey tek yerde",
-    "attention": "Dikkatinizi gerektiriyor",
-    "attention.empty": "Dikkatinizi gerektiren bir şey yok",
-    "attention.approval": "Onayınız bekleniyor",
-    "attention.question": "Yanıtınız bekleniyor",
-    "attention.failure": "Çalışma başarısız",
-    "attention.markHandled": "İşlendi olarak işaretle",
-    "attention.markHandledA11y": "{{name}} içindeki hatayı işlendi olarak işaretle",
     "claims.inProgress": "İş devam ediyor diyor ama bu turda hiçbir araç çalıştırmadı",
     "claims.missingFiles": "Bağlantılı dosya mevcut değil: {{files}}"
   },
@@ -71,5 +68,33 @@
     "groupChatPill": "Grup sohbeti · {{count}}",
     "teamPill": "Ekip · {{count}}",
     "members": "Üyeler: {{names}}"
+  },
+  "groupChat": {
+    "newEntry": "New group chat",
+    "title": "New group chat",
+    "subtitle": "Pick positions to join; every slot runs mu. Reusable for 7 days.",
+    "nameLabel": "Group name",
+    "namePlaceholder": "Optional — the positions name it",
+    "nameAutoHint": "Leave it empty and the picked positions name the group.",
+    "namePreview": "Group name: {{name}}",
+    "positionsLabel": "Positions",
+    "positionsPlaceholder": "Pick at least one position",
+    "positionsHint": "Each position becomes one mu slot; the first is the lead.",
+    "submit": "Create",
+    "errorWithDetail": "Failed to create the group chat: {{error}}",
+    "errors.noPositions": "Pick at least one position.",
+    "errors.tooManyPositions": "Pick at most 6 positions."
+  },
+  "members": {
+    "manageA11y": "Manage members",
+    "listTitle": "Members ({{count}})",
+    "leadBadge": "Lead",
+    "removeA11y": "Remove {{name}}",
+    "removeFailed": "Failed to remove {{name}}",
+    "addFailed": "Failed to add the member",
+    "addLabel": "Add positions",
+    "addPlaceholder": "Pick positions to add",
+    "addApply": "Add",
+    "addAllOnTeam": "Every roster position is already in this group."
   }
 }

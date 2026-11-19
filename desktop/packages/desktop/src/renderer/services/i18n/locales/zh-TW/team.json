@@ -6,7 +6,13 @@
     "searchPlaceholder": "搜尋",
     "recentLabel": "最近使用",
     "chooseDifferentFolder": "選擇其他目錄",
-    "errorWithDetail": "建立團隊失敗：{{error}}"
+    "errors": {
+      "noAgents": "還沒有可入隊的成員。請啟用支援團隊的成員。",
+      "needName": "給團隊取個名字。",
+      "needLead": "請選擇領隊。",
+      "needTeammate": "至少新增一位隊友。",
+      "needMemberName": "每個成員都需要名稱。"
+    }
   },
   "interruptAndSend": "中斷並傳送",
   "systemNotice": {
@@ -15,15 +21,6 @@
     "contextResetRuntimeFailed": "已為 {{memberName}} 重設上下文，但代理重新啟動失敗。"
   },
   "workbench": {
-    "title": "團隊工作台",
-    "description": "團隊需要你處理的事，都在這裡",
-    "attention": "需要你處理",
-    "attention.empty": "目前沒有需要你處理的事項",
-    "attention.approval": "等你批准",
-    "attention.question": "等你回答",
-    "attention.failure": "執行失敗",
-    "attention.markHandled": "標記已處理",
-    "attention.markHandledA11y": "將 {{name}} 的失敗標記為已處理",
     "claims.inProgress": "宣稱正在幹活，但本回合沒有調用任何工具",
     "claims.missingFiles": "鏈接的文件不存在：{{files}}"
   },
@@ -71,5 +68,33 @@
     "groupChatPill": "群聊 · {{count}} 人",
     "teamPill": "團隊 · {{count}} 人",
     "members": "成員：{{names}}"
+  },
+  "groupChat": {
+    "newEntry": "New group chat",
+    "title": "New group chat",
+    "subtitle": "Pick positions to join; every slot runs mu. Reusable for 7 days.",
+    "nameLabel": "Group name",
+    "namePlaceholder": "Optional — the positions name it",
+    "nameAutoHint": "Leave it empty and the picked positions name the group.",
+    "namePreview": "Group name: {{name}}",
+    "positionsLabel": "Positions",
+    "positionsPlaceholder": "Pick at least one position",
+    "positionsHint": "Each position becomes one mu slot; the first is the lead.",
+    "submit": "Create",
+    "errorWithDetail": "Failed to create the group chat: {{error}}",
+    "errors.noPositions": "Pick at least one position.",
+    "errors.tooManyPositions": "Pick at most 6 positions."
+  },
+  "members": {
+    "manageA11y": "Manage members",
+    "listTitle": "Members ({{count}})",
+    "leadBadge": "Lead",
+    "removeA11y": "Remove {{name}}",
+    "removeFailed": "Failed to remove {{name}}",
+    "addFailed": "Failed to add the member",
+    "addLabel": "Add positions",
+    "addPlaceholder": "Pick positions to add",
+    "addApply": "Add",
+    "addAllOnTeam": "Every roster position is already in this group."
   }
 }

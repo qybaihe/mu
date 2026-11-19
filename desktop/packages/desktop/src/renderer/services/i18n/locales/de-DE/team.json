@@ -6,7 +6,13 @@
     "recentLabel": "Zuletzt",
     "chooseDifferentFolder": "Anderen Ordner wählen",
     "searchPlaceholder": "Suchen",
-    "errorWithDetail": "Team konnte nicht erstellt werden: {{error}}"
+    "errors": {
+      "noAgents": "Noch kein Agent kann einem Team beitreten. Aktiviere einen Agenten mit Team-Unterstützung.",
+      "needName": "Gib dem Team einen Namen.",
+      "needLead": "Wähle eine Leitung.",
+      "needTeammate": "Füge mindestens ein Teammitglied hinzu.",
+      "needMemberName": "Jedes Mitglied braucht einen Namen."
+    }
   },
   "interruptAndSend": "Unterbrechen & senden",
   "systemNotice": {
@@ -15,15 +21,6 @@
     "contextResetRuntimeFailed": "Der Kontext für {{memberName}} wurde zurückgesetzt, aber der Agent konnte nicht neu gestartet werden."
   },
   "workbench": {
-    "title": "Team-Workbench",
-    "description": "Was das Team von dir braucht, an einem Ort",
-    "attention": "Braucht deine Aufmerksamkeit",
-    "attention.empty": "Nichts braucht deine Aufmerksamkeit",
-    "attention.approval": "Wartet auf deine Freigabe",
-    "attention.question": "Wartet auf deine Antwort",
-    "attention.failure": "Lauf fehlgeschlagen",
-    "attention.markHandled": "Als erledigt markieren",
-    "attention.markHandledA11y": "Den Fehlschlag in {{name}} als erledigt markieren",
     "claims.inProgress": "Kündigt laufende Arbeit an, aber dieser Durchlauf nutzte kein Werkzeug",
     "claims.missingFiles": "Verlinkte Datei existiert nicht: {{files}}"
   },
@@ -71,5 +68,33 @@
     "groupChatPill": "Gruppenchat · {{count}}",
     "teamPill": "Team · {{count}}",
     "members": "Mitglieder: {{names}}"
+  },
+  "groupChat": {
+    "newEntry": "New group chat",
+    "title": "New group chat",
+    "subtitle": "Pick positions to join; every slot runs mu. Reusable for 7 days.",
+    "nameLabel": "Group name",
+    "namePlaceholder": "Optional — the positions name it",
+    "nameAutoHint": "Leave it empty and the picked positions name the group.",
+    "namePreview": "Group name: {{name}}",
+    "positionsLabel": "Positions",
+    "positionsPlaceholder": "Pick at least one position",
+    "positionsHint": "Each position becomes one mu slot; the first is the lead.",
+    "submit": "Create",
+    "errorWithDetail": "Failed to create the group chat: {{error}}",
+    "errors.noPositions": "Pick at least one position.",
+    "errors.tooManyPositions": "Pick at most 6 positions."
+  },
+  "members": {
+    "manageA11y": "Manage members",
+    "listTitle": "Members ({{count}})",
+    "leadBadge": "Lead",
+    "removeA11y": "Remove {{name}}",
+    "removeFailed": "Failed to remove {{name}}",
+    "addFailed": "Failed to add the member",
+    "addLabel": "Add positions",
+    "addPlaceholder": "Pick positions to add",
+    "addApply": "Add",
+    "addAllOnTeam": "Every roster position is already in this group."
   }
 }

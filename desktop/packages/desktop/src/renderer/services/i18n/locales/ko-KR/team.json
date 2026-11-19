@@ -6,7 +6,13 @@
     "searchPlaceholder": "검색",
     "recentLabel": "최근 사용",
     "chooseDifferentFolder": "다른 폴더 선택",
-    "errorWithDetail": "팀을 만들지 못했습니다: {{error}}"
+    "errors": {
+      "noAgents": "팀에 들어올 에이전트가 아직 없습니다. 팀을 지원하는 에이전트를 켜 주세요.",
+      "needName": "팀 이름을 입력하세요.",
+      "needLead": "리드를 선택하세요.",
+      "needTeammate": "팀원을 한 명 이상 추가하세요.",
+      "needMemberName": "모든 멤버에게 이름이 필요합니다."
+    }
   },
   "interruptAndSend": "중단하고 보내기",
   "systemNotice": {
@@ -15,15 +21,6 @@
     "contextResetRuntimeFailed": "{{memberName}}의 컨텍스트는 재설정되었지만 에이전트를 다시 시작하지 못했습니다."
   },
   "workbench": {
-    "title": "팀 워크벤치",
-    "description": "팀이 사용자에게 필요로 하는 일을 한곳에",
-    "attention": "처리가 필요합니다",
-    "attention.empty": "처리가 필요한 항목이 없습니다",
-    "attention.approval": "승인 대기 중",
-    "attention.question": "답변 대기 중",
-    "attention.failure": "실행 실패",
-    "attention.markHandled": "처리됨으로 표시",
-    "attention.markHandledA11y": "{{name}}의 실패를 처리됨으로 표시",
     "claims.inProgress": "작업 진행 중이라고 했지만 이 턴에는 도구를 실행하지 않았습니다",
     "claims.missingFiles": "링크된 파일이 존재하지 않습니다: {{files}}"
   },
@@ -71,5 +68,33 @@
     "groupChatPill": "그룹 채팅 · {{count}}명",
     "teamPill": "팀 · {{count}}명",
     "members": "구성원: {{names}}"
+  },
+  "groupChat": {
+    "newEntry": "New group chat",
+    "title": "New group chat",
+    "subtitle": "Pick positions to join; every slot runs mu. Reusable for 7 days.",
+    "nameLabel": "Group name",
+    "namePlaceholder": "Optional — the positions name it",
+    "nameAutoHint": "Leave it empty and the picked positions name the group.",
+    "namePreview": "Group name: {{name}}",
+    "positionsLabel": "Positions",
+    "positionsPlaceholder": "Pick at least one position",
+    "positionsHint": "Each position becomes one mu slot; the first is the lead.",
+    "submit": "Create",
+    "errorWithDetail": "Failed to create the group chat: {{error}}",
+    "errors.noPositions": "Pick at least one position.",
+    "errors.tooManyPositions": "Pick at most 6 positions."
+  },
+  "members": {
+    "manageA11y": "Manage members",
+    "listTitle": "Members ({{count}})",
+    "leadBadge": "Lead",
+    "removeA11y": "Remove {{name}}",
+    "removeFailed": "Failed to remove {{name}}",
+    "addFailed": "Failed to add the member",
+    "addLabel": "Add positions",
+    "addPlaceholder": "Pick positions to add",
+    "addApply": "Add",
+    "addAllOnTeam": "Every roster position is already in this group."
   }
 }
