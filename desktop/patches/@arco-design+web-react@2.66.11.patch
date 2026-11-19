@@ -1,0 +1,74 @@
+# Pins @arco-design/web-react at 2.66.11 (upstream is at 2.66.18): the patch
+# patches the compiled preview component, so an Arco upgrade has to port it.
+
+diff --git a/es/Image/image-preview.js b/es/Image/image-preview.js
+--- a/es/Image/image-preview.js
++++ b/es/Image/image-preview.js
+@@ -144,8 +144,23 @@
+     }, [getPopupContainer]);
+     useOverflowHidden(getContainer, { hidden: visible });
+     var isFixed = useMemo(function () { return !isServerRendering && container === document.body; }, [container]);
+-    // Jump to image at the specified index
++    // Jump to image at the specified index, or by the offset from the current one when grouped
+     function jumpTo(index) {
++        if (previewGroup) {
++            // The group's image ids come from a counter shared by every image in the app, so they are not
++            // 0..n-1; step by the offset in registration order instead of treating an id as a position.
++            var keys = Array.from(previewUrlMap.keys());
++            var pos = keys.indexOf(currentIndex);
++            var next = pos + (index - currentIndex);
++            if (infinite) {
++                next = ((next % keys.length) + keys.length) % keys.length;
++            }
++            var target = keys[next];
++            if (target !== undefined && target !== currentIndex) {
++                setCurrentIndex(target);
++            }
++            return;
++        }
+         var previewListLen = previewUrlMap.size;
+         if (infinite) {
+             index %= previewListLen;
+@@ -443,7 +458,7 @@
+                         isLoaded && (React.createElement(ImagePreviewToolbar, { prefixCls: prefixCls, previewPrefixCls: previewPrefixCls, actions: actions, actionsLayout: actionsLayout, defaultActions: defaultActions, simple: toolbarSimple })),
+                         closable && (React.createElement("div", { className: previewPrefixCls + "-close-btn", onClick: onCloseClick },
+                             React.createElement(IconClose, null))),
+-                        previewGroup && (React.createElement(ImagePreviewArrow, { previewCount: previewUrlMap.size, current: currentIndex, infinite: infinite, onPrev: onPrev, onNext: onNext })),
++                        previewGroup && (React.createElement(ImagePreviewArrow, { previewCount: previewUrlMap.size, current: Array.from(previewUrlMap.keys()).indexOf(currentIndex), infinite: infinite, onPrev: onPrev, onNext: onNext })),
+                         extraNode)))))));
+ }
+ var PreviewComponent = forwardRef(Preview);
+diff --git a/lib/Image/image-preview.js b/lib/Image/image-preview.js
+--- a/lib/Image/image-preview.js
++++ b/lib/Image/image-preview.js
+@@ -170,6 +170,21 @@
+     var isFixed = (0, react_1.useMemo)(function () { return !dom_1.isServerRendering && container === document.body; }, [container]);
+     // Jump to image at the specified index
+     function jumpTo(index) {
++        if (previewGroup) {
++            // The group's image ids come from a counter shared by every image in the app, so they are not
++            // 0..n-1; step by the offset in registration order instead of treating an id as a position.
++            var keys = Array.from(previewUrlMap.keys());
++            var pos = keys.indexOf(currentIndex);
++            var next = pos + (index - currentIndex);
++            if (infinite) {
++                next = ((next % keys.length) + keys.length) % keys.length;
++            }
++            var target = keys[next];
++            if (target !== undefined && target !== currentIndex) {
++                setCurrentIndex(target);
++            }
++            return;
++        }
+         var previewListLen = previewUrlMap.size;
+         if (infinite) {
+             index %= previewListLen;
+@@ -467,7 +482,7 @@
+                         isLoaded && (react_1.default.createElement(image_preview_toolbar_1.default, { prefixCls: prefixCls, previewPrefixCls: previewPrefixCls, actions: actions, actionsLayout: actionsLayout, defaultActions: defaultActions, simple: toolbarSimple })),
+                         closable && (react_1.default.createElement("div", { className: previewPrefixCls + "-close-btn", onClick: onCloseClick },
+                             react_1.default.createElement(IconClose_1.default, null))),
+-                        previewGroup && (react_1.default.createElement(image_preview_arrow_1.default, { previewCount: previewUrlMap.size, current: currentIndex, infinite: infinite, onPrev: onPrev, onNext: onNext })),
++                        previewGroup && (react_1.default.createElement(image_preview_arrow_1.default, { previewCount: previewUrlMap.size, current: Array.from(previewUrlMap.keys()).indexOf(currentIndex), infinite: infinite, onPrev: onPrev, onNext: onNext })),
+                         extraNode)))))));
+ }
+ var PreviewComponent = (0, react_1.forwardRef)(Preview);
