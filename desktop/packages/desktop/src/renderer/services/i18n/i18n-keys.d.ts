@@ -3352,6 +3352,11 @@ export type I18nKey =
   | 'mu.welcome.steps.judge'
   | 'mu.welcome.steps.model'
   | 'mu.welcome.steps.permissions'
+  | 'positions.noAssistant'
+  | 'positions.openFailed'
+  | 'positions.prepareFailed'
+  | 'positions.rowA11y'
+  | 'positions.title'
   | 'preview.addToChat'
   | 'preview.aiWriting'
   | 'preview.browser.addressPlaceholder'
@@ -4813,4 +4818,5 @@ export type I18nModule =
   | 'guid'
   | 'agent'
   | 'team'
-  | 'mu';
+  | 'mu'
+  | 'positions';

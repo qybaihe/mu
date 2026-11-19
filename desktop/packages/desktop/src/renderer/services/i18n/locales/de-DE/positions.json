@@ -1,0 +1,7 @@
+{
+  "title": "Positionen",
+  "rowA11y": "Mit {name} chatten",
+  "noAssistant": "Kein verfügbarer Assistent, um ein Positionsgespräch zu starten",
+  "prepareFailed": "Arbeitsbereich der Position konnte nicht vorbereitet werden",
+  "openFailed": "Positionsgespräch konnte nicht geöffnet werden"
+}

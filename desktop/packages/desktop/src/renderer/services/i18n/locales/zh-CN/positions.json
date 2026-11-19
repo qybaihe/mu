@@ -1,0 +1,7 @@
+{
+  "title": "岗位",
+  "rowA11y": "与 {name} 对话",
+  "noAssistant": "没有可用的助手，无法开启岗位会话",
+  "prepareFailed": "岗位工作区准备失败",
+  "openFailed": "岗位会话开启失败"
+}

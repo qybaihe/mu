@@ -16,6 +16,7 @@ import { initKyrnBrowserBridge } from './kyrnBrowserBridge';
 import { initNativeBridge } from './nativeBridge';
 import { initFolderGitBridge } from '../services/folderGit';
 import { initFileRefsBridge } from '../services/fileRefs';
+import { initPositionsBridge } from '../services/positions';
 
 export type BridgeDependencies = Record<string, never>;
 
@@ -32,6 +33,7 @@ export function initAllBridges(_deps: BridgeDependencies = {}): void {
   initNativeBridge();
   initFolderGitBridge();
   initFileRefsBridge();
+  initPositionsBridge();
 }
 
 export {

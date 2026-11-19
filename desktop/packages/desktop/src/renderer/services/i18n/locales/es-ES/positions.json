@@ -1,0 +1,7 @@
+{
+  "title": "Puestos",
+  "rowA11y": "Chatear con {name}",
+  "noAssistant": "No hay asistente disponible para iniciar una conversación de puesto",
+  "prepareFailed": "Error al preparar el espacio de trabajo del puesto",
+  "openFailed": "Error al abrir la conversación del puesto"
+}

@@ -258,6 +258,8 @@ export type TChatConversation =
           mcp_statuses?: IConversationMcpStatus[];
           /** Session-only MCP server snapshot persisted at creation time. */
           session_mcp_servers?: ISessionMcpServer[];
+          /** Position-bot marker: which position of the user's position library this 1:1 conversation belongs to / 岗位会话标记 */
+          position?: string;
           /** 预设助手 ID，用于在会话面板显示助手名称和头像 / Preset assistant ID for displaying name and avatar in conversation panel */
           preset_assistant_id?: string;
           /** 是否置顶会话 / Whether this conversation is pinned */

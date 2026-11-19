@@ -1,0 +1,7 @@
+{
+  "title": "Positions",
+  "rowA11y": "Chat with {name}",
+  "noAssistant": "No available assistant to start a position conversation",
+  "prepareFailed": "Failed to prepare the position workspace",
+  "openFailed": "Failed to open the position conversation"
+}

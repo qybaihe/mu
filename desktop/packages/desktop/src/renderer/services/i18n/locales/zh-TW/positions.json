@@ -1,0 +1,7 @@
+{
+  "title": "崗位",
+  "rowA11y": "與 {name} 對話",
+  "noAssistant": "沒有可用的助理，無法開啟崗位會話",
+  "prepareFailed": "崗位工作區準備失敗",
+  "openFailed": "崗位會話開啟失敗"
+}

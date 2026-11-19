@@ -1,0 +1,7 @@
+{
+  "title": "Posições",
+  "rowA11y": "Conversar com {name}",
+  "noAssistant": "Nenhum assistente disponível para iniciar uma conversa de posição",
+  "prepareFailed": "Falha ao preparar o espaço de trabalho da posição",
+  "openFailed": "Falha ao abrir a conversa da posição"
+}

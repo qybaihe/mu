@@ -1807,6 +1807,8 @@ export interface ICreateConversationParams {
   extra: {
     workspace?: string;
     custom_workspace?: boolean;
+    /** Position-bot marker binding the conversation to one position of the user's library. */
+    position?: string;
     default_files?: string[];
     cli_path?: string;
     gateway?: {

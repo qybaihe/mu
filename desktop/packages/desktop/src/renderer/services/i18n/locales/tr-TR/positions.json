@@ -1,0 +1,7 @@
+{
+  "title": "Pozisyonlar",
+  "rowA11y": "{name} ile sohbet et",
+  "noAssistant": "Pozisyon sohbetini başlatacak uygun asistan yok",
+  "prepareFailed": "Pozisyon çalışma alanı hazırlanamadı",
+  "openFailed": "Pozisyon sohbeti açılamadı"
+}
