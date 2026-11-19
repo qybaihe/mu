@@ -22,6 +22,26 @@ const OWN_DESCRIPTIONS = [
 const FULL_AUTO_MODE = 'full';
 const LEGACY_FULL_AUTO = ['yolo', 'yoloNoSandbox'];
 const needsFullAuto = (row) => !row.yolo_id?.trim() || LEGACY_FULL_AUTO.includes(row.yolo_id.trim());
+// Team membership: `supports_team` marks mu team-selectable (the backend's default for a custom agent is no), and the
+// team CLI needs `AIONUI_RUNTIME_TOKEN`, which mu's credential-scrubbed command env drops by name — `MU_PASS_ENV` is
+// the harness's exemption list. Same rules as product.ts.
+const TEAM_RUNTIME_TOKEN = 'AIONUI_RUNTIME_TOKEN';
+const TEAM_ENV_PASS_NAME = 'MU_PASS_ENV';
+const envRows = (env) =>
+  (env ?? []).filter(
+    (row) => row && typeof row === 'object' && typeof row.name === 'string' && typeof row.value === 'string'
+  );
+const withTeamEnvPass = (env) => {
+  const rows = envRows(env);
+  const pass = rows.find((row) => row.name === TEAM_ENV_PASS_NAME);
+  if (pass) {
+    if (pass.value.split(/[\s,]+/).includes(TEAM_RUNTIME_TOKEN)) return rows;
+    return rows.map((row) => (row === pass ? { ...row, value: `${pass.value} ${TEAM_RUNTIME_TOKEN}` } : row));
+  }
+  return [...rows, { name: TEAM_ENV_PASS_NAME, value: TEAM_RUNTIME_TOKEN }];
+};
+const withTeamSupport = (policy) => ({ ...(policy && typeof policy === 'object' ? policy : {}), supports_team: true });
+const needsTeamCapabilities = (row) => row.behavior_policy?.supports_team !== true;
 // The launcher the registration runs: the bash `acp`, on Windows acp.cmd. On Windows a path with a space is registered
 // by another spelling, as the app does it (packages/desktop/src/process/agent/kyrn/windows/launcherCommand.ts, loaded
 // through Node's own type stripping: Node 22.18 or newer, which a Windows checkout needs anyway).
@@ -66,11 +86,11 @@ async function update(before) {
       command,
       icon: record.icon,
       args: record.args ?? [],
-      env: record.env ?? [],
+      env: withTeamEnvPass(record.env),
       advanced: {
         yolo_id: needsFullAuto(record) ? FULL_AUTO_MODE : record.yolo_id,
         native_skills_dirs: record.native_skills_dirs,
-        behavior_policy: record.behavior_policy,
+        behavior_policy: withTeamSupport(record.behavior_policy),
         description: ours ? DESCRIPTION : record.description,
       },
     },
@@ -87,7 +107,10 @@ let agent =
   agents.find((item) => namesake(item) && typeof item.command === 'string' && sameFile(item.command));
 if (!agent && agents.some(namesake))
   throw new Error('A different mu registration already exists; inspect it in Settings');
-if (agent && (agent.command !== command || agent.name !== NAME || needsFullAuto(agent))) {
+if (
+  agent &&
+  (agent.command !== command || agent.name !== NAME || needsFullAuto(agent) || needsTeamCapabilities(agent))
+) {
   const before = agent;
   agent = await update(before).catch((error) => {
     console.error(`Kept the registration as it was ("${before.name}"): ${error.message}`);
@@ -98,8 +121,8 @@ agent ??= await request('/api/agents/custom', {
   name: NAME,
   command,
   args: [],
-  env: [],
-  advanced: { description: DESCRIPTION, yolo_id: FULL_AUTO_MODE },
+  env: withTeamEnvPass([]),
+  advanced: { description: DESCRIPTION, yolo_id: FULL_AUTO_MODE, behavior_policy: withTeamSupport(undefined) },
 });
 const checked = await request(`/api/agents/${encodeURIComponent(agent.id)}/health-check`, {});
 console.log(

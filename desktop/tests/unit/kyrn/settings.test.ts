@@ -6,6 +6,8 @@ import type { JudgeType } from '../../../packages/desktop/src/common/kyrn/types'
 import { SettingsStore } from '../../../packages/desktop/src/process/agent/kyrn/settings';
 import {
   AGENT_DESCRIPTION,
+  TEAM_ENV_PASS_NAME,
+  TEAM_RUNTIME_TOKEN,
   findRegistration,
   initializeKyrn,
   recheckKyrn,
@@ -14,6 +16,9 @@ import {
 } from '../../../packages/desktop/src/process/agent/kyrn/product';
 import { ownLauncher } from '../../../packages/desktop/src/process/agent/kyrn/windows/launcherCommand';
 import { configPath, muEnv, muHome } from '../../../packages/desktop/src/process/agent/kyrn/naming';
+
+/** The team-capability rows every registration now carries (product.ts). */
+const teamEnvPass = { name: TEAM_ENV_PASS_NAME, value: TEAM_RUNTIME_TOKEN };
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'kyrn-settings-'));
@@ -667,11 +672,11 @@ describe('mu-only backend catalog', () => {
             command: current,
             icon: row.icon,
             args: row.args,
-            env: row.env,
+            env: [...row.env, teamEnvPass],
             advanced: {
               description: row.description,
               native_skills_dirs: row.native_skills_dirs,
-              behavior_policy: row.behavior_policy,
+              behavior_policy: { ...row.behavior_policy, supports_team: true },
               yolo_id: 'judge',
             },
           },
@@ -716,13 +721,20 @@ describe('mu-only backend catalog', () => {
 
   it('disables other runtimes and assistants before exposing the sole product engine', async () => {
     const { calls, request } = backend([
-      { id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, yolo_id: 'full' },
+      {
+        id: 'k',
+        name: 'mu',
+        command: '/kyrn/acp',
+        enabled: true,
+        yolo_id: 'full',
+        behavior_policy: { supports_team: true },
+      },
       { id: 'other', enabled: true },
     ]);
     expect((await initializeKyrn(request, '/kyrn/acp')).assistants).toHaveLength(1);
     expect(calls).toContainEqual({ method: 'PATCH', path: '/api/agents/other/enabled', body: { enabled: false } });
     expect(calls).toContainEqual({ method: 'PATCH', path: '/api/assistants/ao/state', body: { enabled: false } });
-    // Already called mu, with full auto set: nothing to read, nothing to update, nothing to create.
+    // Already called mu, with full auto and team support set: nothing to read, nothing to update, nothing to create.
     expect(calls.filter((call) => call.method === 'PUT' || call.path === '/api/agents/custom')).toEqual([]);
     expect(switches(calls, 'k')).toEqual([]);
   });
@@ -759,12 +771,12 @@ describe('mu-only backend catalog', () => {
           command: '/kyrn/acp',
           icon: 'icon.svg',
           args: ['--flag'],
-          env: [{ name: 'A', value: 'b' }],
+          env: [{ name: 'A', value: 'b' }, teamEnvPass],
           advanced: {
             // The backend's own word for full auto, which mu does not know, becomes mu's full access.
             yolo_id: 'full',
             native_skills_dirs: ['/skills'],
-            behavior_policy: { supports_side_question: true },
+            behavior_policy: { supports_side_question: true, supports_team: true },
             description: 'mu harness · local Codex login · judge model',
           },
         },
@@ -840,7 +852,14 @@ describe('mu-only backend catalog', () => {
   });
   it('gives a registration without a full-auto mode mu’s full access, and keeps one of mu’s modes someone chose', async () => {
     const { calls, request } = backend([
-      { id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, env: [{ name: 'A', value: 'b' }] },
+      {
+        id: 'k',
+        name: 'mu',
+        command: '/kyrn/acp',
+        enabled: true,
+        env: [{ name: 'A', value: 'b' }],
+        behavior_policy: { supports_team: true },
+      },
     ]);
     await initializeKyrn(request, '/kyrn/acp');
     // A scheduled task asks the backend for full auto: without it, the run would wait on a question nobody answers.
@@ -850,12 +869,21 @@ describe('mu-only backend catalog', () => {
         path: '/api/agents/custom/k',
         body: expect.objectContaining({
           name: 'mu',
-          env: [{ name: 'A', value: 'b' }],
+          env: [{ name: 'A', value: 'b' }, teamEnvPass],
           advanced: expect.objectContaining({ yolo_id: 'full' }),
         }),
       },
     ]);
-    const chosen = backend([{ id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, yolo_id: 'judge' }]);
+    const chosen = backend([
+      {
+        id: 'k',
+        name: 'mu',
+        command: '/kyrn/acp',
+        enabled: true,
+        yolo_id: 'judge',
+        behavior_policy: { supports_team: true },
+      },
+    ]);
     await initializeKyrn(chosen.request, '/kyrn/acp');
     expect(puts(chosen.calls)).toEqual([]);
   });
@@ -923,6 +951,7 @@ describe('mu-only backend catalog', () => {
             enabled: true,
             yolo_id: 'full',
             env: [{ name: 'A', value: 'b' }],
+            behavior_policy: { supports_team: true },
           },
           { id: 'other', enabled: true },
         ]);
@@ -936,7 +965,11 @@ describe('mu-only backend catalog', () => {
           {
             method: 'PUT',
             path: '/api/agents/custom/k',
-            body: expect.objectContaining({ name: 'mu', command: short, env: [{ name: 'A', value: 'b' }] }),
+            body: expect.objectContaining({
+              name: 'mu',
+              command: short,
+              env: [{ name: 'A', value: 'b' }, teamEnvPass],
+            }),
           },
         ]);
       }

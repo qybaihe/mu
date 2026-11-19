@@ -50,6 +50,53 @@ const LEGACY_FULL_AUTO = new Set(['yolo', 'yoloNoSandbox']);
 const needsFullAuto = (row: AgentRow): boolean => !row.yolo_id?.trim() || LEGACY_FULL_AUTO.has(row.yolo_id.trim());
 
 /**
+ * Team membership: the backend marks mu team-selectable through this capability flag (its default for a custom agent
+ * is no team support), and spawns a team agent's process with `AIONUI_RUNTIME_TOKEN`, which the team CLI (`"$AIONUI_HELPER_BIN"
+ * team …`, the transport ACP agents get instead of MCP) must present. mu's commands run with a credential-scrubbed
+ * environment (`withoutCredentials` in the harness), which drops that token by name, so the registration passes it
+ * through `MU_PASS_ENV`, the harness's exemption list. Verified live: without the flag a team refuses mu; without the
+ * pass the lead's every team CLI call answers `runtime_context_missing`.
+ */
+export const TEAM_RUNTIME_TOKEN = 'AIONUI_RUNTIME_TOKEN';
+export const TEAM_ENV_PASS_NAME = 'MU_PASS_ENV';
+
+type EnvRow = { name: string; value: string };
+
+/** The env rows as the registration API accepts them; anything not shaped like a row is dropped. */
+const envRows = (env: unknown[]): EnvRow[] =>
+  env.filter((row): row is EnvRow => {
+    if (row === null || typeof row !== 'object') return false;
+    const { name, value } = row as Record<string, unknown>;
+    return typeof name === 'string' && typeof value === 'string';
+  });
+
+/**
+ * The env rows with the team token on `MU_PASS_ENV`: a row the user set keeps its other names, and one already naming
+ * the token is left as it is, so a user's own pass list is never narrowed.
+ */
+export function withTeamEnvPass(env: unknown[]): EnvRow[] {
+  const rows = envRows(env);
+  const pass = rows.find((row) => row.name === TEAM_ENV_PASS_NAME);
+  if (pass) {
+    if (pass.value.split(/[\s,]+/).includes(TEAM_RUNTIME_TOKEN)) return rows;
+    return rows.map((row) => (row === pass ? { ...row, value: `${pass.value} ${TEAM_RUNTIME_TOKEN}` } : row));
+  }
+  return [...rows, { name: TEAM_ENV_PASS_NAME, value: TEAM_RUNTIME_TOKEN }];
+}
+
+/** The behavior policy with team support on; every other field of the policy goes back untouched. */
+export function withTeamSupport(behaviorPolicy: unknown): Record<string, unknown> {
+  return {
+    ...(behaviorPolicy === null || typeof behaviorPolicy !== 'object' ? {} : behaviorPolicy),
+    supports_team: true,
+  };
+}
+
+/** Whether a registration still needs the update that turns mu into a team-capable agent. */
+export const needsTeamCapabilities = (row: AgentRow): boolean =>
+  (row.behavior_policy as { supports_team?: boolean } | undefined)?.supports_team !== true;
+
+/**
  * mu's command as the backend may hold it: `command`, the one this start registers, and `sameFile`, whether a command
  * a registration holds runs the same launcher by another spelling. On Windows a launcher has several (any case, its 8.3
  * short path, the forwarder written for it: windows/launcherCommand.ts); a plain string is only itself.
@@ -121,11 +168,11 @@ export function updated(row: AgentRow, command: string): Record<string, unknown>
     command,
     icon: row.icon,
     args: row.args ?? [],
-    env: row.env ?? [],
+    env: withTeamEnvPass(row.env ?? []),
     advanced: {
       yolo_id: needsFullAuto(row) ? FULL_AUTO_MODE : row.yolo_id,
       native_skills_dirs: row.native_skills_dirs,
-      behavior_policy: row.behavior_policy,
+      behavior_policy: withTeamSupport(row.behavior_policy),
       description: description ? AGENT_DESCRIPTION : row.description,
     },
   };
@@ -145,7 +192,10 @@ export async function initializeKyrn(request: BackendRequest, own: string | OwnC
   const { command, sameFile } = ownCommand(own);
   const agents = await request<AgentRow[]>('GET', '/api/agents/management');
   let agent = findRegistration(agents, own);
-  if (agent && (agent.command !== command || agent.name !== AGENT_NAME || needsFullAuto(agent))) {
+  if (
+    agent &&
+    (agent.command !== command || agent.name !== AGENT_NAME || needsFullAuto(agent) || needsTeamCapabilities(agent))
+  ) {
     const before = agent;
     // A label or the mode of scheduled runs must not keep the app from starting: the registration works without
     // them, and the next start tries again. The backend probes the agent before it saves, so a refusal is possible.
@@ -159,8 +209,12 @@ export async function initializeKyrn(request: BackendRequest, own: string | OwnC
     name: AGENT_NAME,
     command,
     args: [],
-    env: [],
-    advanced: { description: AGENT_DESCRIPTION, yolo_id: FULL_AUTO_MODE },
+    env: withTeamEnvPass([]),
+    advanced: {
+      description: AGENT_DESCRIPTION,
+      yolo_id: FULL_AUTO_MODE,
+      behavior_policy: withTeamSupport(undefined),
+    },
   });
   // This is a backend state change, not CSS hiding of other runtimes.
   await Promise.all(
