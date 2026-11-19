@@ -4673,6 +4673,13 @@ export type I18nKey =
   | 'settings.vertexApiKey'
   | 'settings.workDir'
   | 'settings.yoloMode'
+  | 'supervisor.conversationName'
+  | 'supervisor.noAssistant'
+  | 'supervisor.openFailed'
+  | 'supervisor.prepareFailed'
+  | 'supervisor.rowA11y'
+  | 'supervisor.title'
+  | 'supervisor.tooltip'
   | 'team.create.chooseDifferentFolder'
   | 'team.create.errorWithDetail'
   | 'team.create.recentLabel'
@@ -4819,4 +4826,5 @@ export type I18nModule =
   | 'agent'
   | 'team'
   | 'mu'
-  | 'positions';
+  | 'positions'
+  | 'supervisor';

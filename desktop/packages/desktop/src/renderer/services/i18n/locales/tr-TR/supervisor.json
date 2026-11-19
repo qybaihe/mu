@@ -1,0 +1,9 @@
+{
+  "title": "Süpervizör",
+  "rowA11y": "Süpervizör ile konuş",
+  "conversationName": "Süpervizör",
+  "tooltip": "Görevleri Süpervizör'e verin: geçici ekipler otomatik kurulur veya yeniden kullanılır",
+  "noAssistant": "Süpervizör görüşmesini başlatacak asistan yok",
+  "prepareFailed": "Süpervizör çalışma alanı hazırlanamadı",
+  "openFailed": "Süpervizör görüşmesi açılamadı"
+}

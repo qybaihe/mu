@@ -1,0 +1,9 @@
+{
+  "title": "主管",
+  "rowA11y": "與主管對話",
+  "conversationName": "主管",
+  "tooltip": "把任務交給主管：自動組建或複用臨時團隊並跟蹤交付",
+  "noAssistant": "沒有可用的助手，無法開啟主管會話",
+  "prepareFailed": "主管工作區準備失敗",
+  "openFailed": "主管會話開啟失敗"
+}

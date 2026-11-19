@@ -1,0 +1,9 @@
+{
+  "title": "Supervisor",
+  "rowA11y": "Mit dem Supervisor chatten",
+  "conversationName": "Supervisor",
+  "tooltip": "Aufgaben an den Supervisor übergeben: Temporäre Teams werden automatisch gebildet oder wiederverwendet",
+  "noAssistant": "Kein verfügbarer Assistent, um die Supervisor-Konversation zu starten",
+  "prepareFailed": "Vorbereiten des Supervisor-Arbeitsbereichs fehlgeschlagen",
+  "openFailed": "Supervisor-Konversation konnte nicht geöffnet werden"
+}

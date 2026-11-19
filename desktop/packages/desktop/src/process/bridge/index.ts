@@ -17,6 +17,7 @@ import { initNativeBridge } from './nativeBridge';
 import { initFolderGitBridge } from '../services/folderGit';
 import { initFileRefsBridge } from '../services/fileRefs';
 import { initPositionsBridge } from '../services/positions';
+import { initSupervisorBridge } from '../services/supervisor';
 
 export type BridgeDependencies = Record<string, never>;
 
@@ -34,6 +35,7 @@ export function initAllBridges(_deps: BridgeDependencies = {}): void {
   initFolderGitBridge();
   initFileRefsBridge();
   initPositionsBridge();
+  initSupervisorBridge();
 }
 
 export {

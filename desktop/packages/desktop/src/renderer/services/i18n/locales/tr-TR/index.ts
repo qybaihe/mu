@@ -19,6 +19,7 @@ import agent from './agent.json';
 import team from './team.json';
 import mu from './mu.json';
 import positions from './positions.json';
+import supervisor from './supervisor.json';
 
 export default {
   common,
@@ -41,4 +42,5 @@ export default {
   team,
   mu,
   positions,
+  supervisor,
 };

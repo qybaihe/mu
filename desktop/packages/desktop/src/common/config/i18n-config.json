@@ -36,6 +36,7 @@
     "agent",
     "team",
     "mu",
-    "positions"
+    "positions",
+    "supervisor"
   ]
 }

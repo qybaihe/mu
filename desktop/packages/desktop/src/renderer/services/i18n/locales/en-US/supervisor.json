@@ -1,0 +1,9 @@
+{
+  "title": "Supervisor",
+  "rowA11y": "Chat with the Supervisor",
+  "conversationName": "Supervisor",
+  "tooltip": "Hand tasks to the Supervisor: temporary teams are assembled or reused automatically",
+  "noAssistant": "No available assistant to start the supervisor conversation",
+  "prepareFailed": "Failed to prepare the supervisor workspace",
+  "openFailed": "Failed to open the supervisor conversation"
+}

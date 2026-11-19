@@ -1,0 +1,9 @@
+{
+  "title": "Supervisor",
+  "rowA11y": "Conversar com o Supervisor",
+  "conversationName": "Supervisor",
+  "tooltip": "Entregue tarefas ao Supervisor: equipes temporárias são montadas ou reutilizadas automaticamente",
+  "noAssistant": "Nenhum assistente disponível para iniciar a conversa com o Supervisor",
+  "prepareFailed": "Falha ao preparar o espaço de trabalho do Supervisor",
+  "openFailed": "Falha ao abrir a conversa com o Supervisor"
+}
