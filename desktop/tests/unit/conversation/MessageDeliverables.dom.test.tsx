@@ -52,6 +52,26 @@ describe('deliverables', () => {
     expect(read?.files[0]).toEqual({ path: 'E:/out/0.png', name: '0.png', bytes: 0 });
   });
 
+  it('reads the files the present tool carries in its result details (the payload the harness sends)', () => {
+    const message = {
+      type: 'acp_tool_call',
+      content: {
+        update: {
+          title: 'present',
+          status: 'completed',
+          raw_output: {
+            content: [{ type: 'text', text: 'Presented to the user (1 file)' }],
+            details: { files: [{ path: 'E:/out/deck.mp4', name: 'deck.mp4', bytes: 2048 }] },
+            status: 'completed',
+          },
+        },
+      },
+    } as unknown as TMessage;
+    expect(deliverables(message)).toEqual({
+      files: [{ path: 'E:/out/deck.mp4', name: 'deck.mp4', bytes: 2048 }],
+    });
+  });
+
   it('stays away from any other row', () => {
     expect(deliverables(presentCall([]))).toBeUndefined();
     expect(
