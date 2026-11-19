@@ -1,0 +1,38 @@
+{
+  "title": "Moniteur de répartition",
+  "entryA11y": "Ouvrir le moniteur de répartition",
+  "summary": "{{positions}} postes · {{teams}} discussions · {{active}} en cours",
+  "positions": {
+    "title": "Postes",
+    "state": {
+      "working": "Au travail",
+      "waiting": "En attente",
+      "idle": "Inactif"
+    },
+    "workingSession": "Session en cours",
+    "awaitingYou": "Attend votre réponse",
+    "noSession": "Pas encore de session",
+    "inProgress": "{{count}} en cours",
+    "openA11y": "Ouvrir la session de {{name}}"
+  },
+  "teams": {
+    "title": "Discussions de groupe",
+    "none": "Pas encore de discussion de groupe.",
+    "todo": "À faire {{count}}",
+    "inProgress": "En cours {{count}}",
+    "done": "Terminé {{count}}",
+    "ttl": "{{days}} j restants",
+    "openA11y": "Ouvrir la discussion {{name}}",
+    "retiredFold": "{{count}} équipes retirées"
+  },
+  "empty": {
+    "hint": "Demande une tâche au superviseur : un message et il assemble ou réutilise une équipe jusqu'au bout.",
+    "action": "Parler au superviseur"
+  },
+  "relative": {
+    "now": "à l'instant",
+    "minutes": "il y a {{count}} min",
+    "hours": "il y a {{count}} h",
+    "days": "il y a {{count}} j"
+  }
+}

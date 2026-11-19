@@ -1,0 +1,38 @@
+{
+  "title": "分工監控",
+  "entryA11y": "開啟分工監控面板",
+  "summary": "{{positions}} 崗 · {{teams}} 隊 · {{active}} 在跑",
+  "positions": {
+    "title": "崗位",
+    "state": {
+      "working": "工作中",
+      "waiting": "等待",
+      "idle": "空閒"
+    },
+    "workingSession": "會話進行中",
+    "awaitingYou": "等待你的輸入",
+    "noSession": "還沒有會話",
+    "inProgress": "{{count}} 項進行中",
+    "openA11y": "開啟{{name}}的會話"
+  },
+  "teams": {
+    "title": "群聊",
+    "none": "還沒有群聊。",
+    "todo": "待辦 {{count}}",
+    "inProgress": "進行中 {{count}}",
+    "done": "完成 {{count}}",
+    "ttl": "剩餘 {{days}} 天",
+    "openA11y": "開啟{{name}}群聊",
+    "retiredFold": "已退役 {{count}} 隊"
+  },
+  "empty": {
+    "hint": "找主管派個活試試：跟主管說一句話，它會自動組建或複用團隊並跟到底。",
+    "action": "去找主管"
+  },
+  "relative": {
+    "now": "剛剛",
+    "minutes": "{{count}} 分鐘前",
+    "hours": "{{count}} 小時前",
+    "days": "{{count}} 天前"
+  }
+}

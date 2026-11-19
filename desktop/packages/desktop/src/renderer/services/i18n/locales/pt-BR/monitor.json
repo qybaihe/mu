@@ -1,0 +1,38 @@
+{
+  "title": "Monitor de divisão",
+  "entryA11y": "Abrir o monitor de divisão de trabalho",
+  "summary": "{{positions}} posições · {{teams}} grupos · {{active}} em execução",
+  "positions": {
+    "title": "Posições",
+    "state": {
+      "working": "Trabalhando",
+      "waiting": "Aguardando",
+      "idle": "Ocioso"
+    },
+    "workingSession": "Sessão em andamento",
+    "awaitingYou": "Aguardando sua resposta",
+    "noSession": "Sem sessão ainda",
+    "inProgress": "{{count}} em andamento",
+    "openA11y": "Abrir a sessão de {{name}}"
+  },
+  "teams": {
+    "title": "Chats de grupo",
+    "none": "Ainda não há chats de grupo.",
+    "todo": "A fazer {{count}}",
+    "inProgress": "Em andamento {{count}}",
+    "done": "Concluídas {{count}}",
+    "ttl": "restam {{days}} d",
+    "openA11y": "Abrir o chat {{name}}",
+    "retiredFold": "{{count}} equipes aposentadas"
+  },
+  "empty": {
+    "hint": "Peça uma tarefa ao supervisor: uma mensagem e ele monta ou reutiliza uma equipe até o fim.",
+    "action": "Falar com o supervisor"
+  },
+  "relative": {
+    "now": "agora mesmo",
+    "minutes": "há {{count}} min",
+    "hours": "há {{count}} h",
+    "days": "há {{count}} d"
+  }
+}

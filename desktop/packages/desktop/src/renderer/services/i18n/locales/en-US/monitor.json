@@ -1,0 +1,38 @@
+{
+  "title": "Division monitor",
+  "entryA11y": "Open the division-of-labor monitor",
+  "summary": "{{positions}} positions · {{teams}} group chats · {{active}} running",
+  "positions": {
+    "title": "Positions",
+    "state": {
+      "working": "Working",
+      "waiting": "Waiting",
+      "idle": "Idle"
+    },
+    "workingSession": "Session in progress",
+    "awaitingYou": "Waiting for your input",
+    "noSession": "No session yet",
+    "inProgress": "{{count}} in progress",
+    "openA11y": "Open the session of {{name}}"
+  },
+  "teams": {
+    "title": "Group chats",
+    "none": "No group chats yet.",
+    "todo": "To do {{count}}",
+    "inProgress": "In progress {{count}}",
+    "done": "Done {{count}}",
+    "ttl": "{{days}}d left",
+    "openA11y": "Open the group chat {{name}}",
+    "retiredFold": "{{count}} retired teams"
+  },
+  "empty": {
+    "hint": "Ask the supervisor for a job: one message and it assembles or reuses a team and follows it through.",
+    "action": "Talk to the supervisor"
+  },
+  "relative": {
+    "now": "just now",
+    "minutes": "{{count}} min ago",
+    "hours": "{{count}} h ago",
+    "days": "{{count}} d ago"
+  }
+}

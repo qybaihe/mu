@@ -1,0 +1,38 @@
+{
+  "title": "Monitor de reparto",
+  "entryA11y": "Abrir el monitor de reparto",
+  "summary": "{{positions}} puestos · {{teams}} chats · {{active}} activos",
+  "positions": {
+    "title": "Puestos",
+    "state": {
+      "working": "Trabajando",
+      "waiting": "En espera",
+      "idle": "Inactivo"
+    },
+    "workingSession": "Sesión en curso",
+    "awaitingYou": "Espera tu respuesta",
+    "noSession": "Sin sesión aún",
+    "inProgress": "{{count}} en curso",
+    "openA11y": "Abrir la sesión de {{name}}"
+  },
+  "teams": {
+    "title": "Chats de grupo",
+    "none": "Aún no hay chats de grupo.",
+    "todo": "Pendientes {{count}}",
+    "inProgress": "En curso {{count}}",
+    "done": "Hechos {{count}}",
+    "ttl": "quedan {{days}} d",
+    "openA11y": "Abrir el chat {{name}}",
+    "retiredFold": "{{count}} equipos retirados"
+  },
+  "empty": {
+    "hint": "Pídele una tarea al supervisor: un mensaje y monta o reutiliza un equipo hasta el final.",
+    "action": "Hablar con el supervisor"
+  },
+  "relative": {
+    "now": "ahora mismo",
+    "minutes": "hace {{count}} min",
+    "hours": "hace {{count}} h",
+    "days": "hace {{count}} d"
+  }
+}

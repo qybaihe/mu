@@ -1,0 +1,38 @@
+{
+  "title": "분업 모니터",
+  "entryA11y": "분업 모니터 열기",
+  "summary": "포지션 {{positions}} · 팀 {{teams}} · 실행 중 {{active}}",
+  "positions": {
+    "title": "포지션",
+    "state": {
+      "working": "작업 중",
+      "waiting": "대기 중",
+      "idle": "유휴"
+    },
+    "workingSession": "세션 진행 중",
+    "awaitingYou": "입력 대기 중",
+    "noSession": "세션 없음",
+    "inProgress": "진행 중 {{count}}건",
+    "openA11y": "{{name}}의 세션 열기"
+  },
+  "teams": {
+    "title": "그룹 채팅",
+    "none": "그룹 채팅이 아직 없습니다.",
+    "todo": "할 일 {{count}}",
+    "inProgress": "진행 중 {{count}}",
+    "done": "완료 {{count}}",
+    "ttl": "남은 {{days}}일",
+    "openA11y": "그룹 채팅 {{name}} 열기",
+    "retiredFold": "은퇴한 팀 {{count}}개"
+  },
+  "empty": {
+    "hint": "주관에게 일을 맡겨 보세요: 한마디면 팀을 꾸려 끝까지 추적합니다.",
+    "action": "주관에게 가기"
+  },
+  "relative": {
+    "now": "방금",
+    "minutes": "{{count}}분 전",
+    "hours": "{{count}}시간 전",
+    "days": "{{count}}일 전"
+  }
+}

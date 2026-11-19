@@ -1,0 +1,211 @@
+/**
+ * The monitor page's lamel skin: a self-contained dark style layer for the
+ * two walls. The scope class re-declares, inside its own subtree only, every
+ * design token this page's utilities resolve against (project vars like
+ * --text-primary and Arco triplets like --success-6), so the app's global
+ * theme and every other page stay untouched.
+ *
+ * The walls read as layered material, Apple-style: the page base is the
+ * darkest solid layer, the cards are translucent glass (blur + saturate)
+ * with a 1px light edge on top — light falls from above — and chips and
+ * other small parts stay flat fills on that glass, never glass on glass.
+ * The semantic states (working green, waiting yellow, idle grey) tint the
+ * glass itself via color-mix and keep their state-colored borders; the
+ * single accent red stays reserved for live progress, the lead chip and the
+ * empty-state call to action. Motion is spring-like: hovers lift on
+ * cubic-bezier(.32,.72,0,1), presses scale down for immediate feedback, and
+ * cards enter once with a small rise+fade stagger; reduced-motion users get
+ * opacity-only transitions.
+ */
+
+.root {
+  /* Lamel palette (user HTML spec, 2026-11-15). */
+  --m-bg: #0c0d0f;
+  --m-side: #0e0f11; /* kept for spec completeness; the page has no side panel */
+  --m-card: #1d2023;
+  --m-card-hi: #232629;
+  --m-line: rgba(255, 255, 255, 0.07);
+  --m-line-hi: rgba(255, 255, 255, 0.13);
+  --m-t1: #f2f3f5;
+  --m-t2: #9aa0a6;
+  --m-t3: #7d838a;
+  --m-t4: #6a7178;
+  --m-acc: #e5484d;
+  /* Semantic states toned down to the lamel base (RGB triplets for Arco). */
+  --m-ok: 74, 178, 111; /* #4ab26f working */
+  --m-warn: 214, 168, 63; /* #d6a83f waiting / near-TTL */
+
+  /* Glass tokens: the card surface is --m-card at 55% alpha so the page
+   * base shows through blurred and saturated; the hover variant lifts both
+   * brightness and alpha a step, the way a lit glass pane reads. */
+  --m-glass: rgba(29, 32, 35, 0.55);
+  --m-glass-hi: rgba(38, 41, 45, 0.62);
+  --m-top-edge: rgba(255, 255, 255, 0.35);
+
+  /* Token remap: what the page's utilities resolve against inside the scope. */
+  --text-primary: var(--m-t1);
+  --text-secondary: var(--m-t2);
+  --bg-2: var(--m-card); /* card surfaces */
+  --bg-6: var(--m-t3); /* text-t-tertiary */
+  --color-text-3: var(--m-t4); /* text-t-quaternary */
+  /* Flat fills for chips and tracks sitting on the glass: a touch denser
+   * than the old 0.05 so they stay readable over the translucent card. */
+  --color-fill-2: rgba(255, 255, 255, 0.08); /* idle chips, bar track */
+  --color-fill-3: rgba(255, 255, 255, 0.2); /* idle dot */
+  --color-border-2: var(--m-line);
+  --primary: var(--m-acc); /* bg-primary / text-primary, focus ring, CTA */
+  --primary-3: 243, 164, 167;
+  --primary-5: 238, 109, 113; /* Arco Button hover (empty-state CTA) */
+  --primary-6: 229, 72, 77;
+  --primary-7: 199, 58, 63; /* Arco Button active */
+  --success-6: var(--m-ok);
+  --warning-6: var(--m-warn);
+
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: var(--m-t2);
+  background:
+    radial-gradient(1100px 560px at 80% -12%, #23272c, transparent),
+    linear-gradient(115deg, transparent 46%, rgba(255, 255, 255, 0.035) 50%, transparent 54%), var(--m-bg);
+  background-attachment: fixed, fixed;
+}
+
+/* Card walls are glass: translucent over the page base, blurred and
+ * saturated behind, with a bright 1px top edge (light from above) and the
+ * thin --m-line on the remaining sides. Motion is spring-like — transform
+ * rides the Apple settle curve (.32,.72,0,1), colors cross-fade faster. */
+.card {
+  background-color: var(--m-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--m-line);
+  border-top-color: var(--m-top-edge);
+  border-radius: 16px;
+  transition:
+    transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    backdrop-filter 0.2s ease;
+  animation: card-in 0.5s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+}
+
+/* Hover: the glass brightens (denser alpha + a touch more saturation and
+ * brightness behind it) and the card rises 3px on the same spring. */
+.card:hover {
+  transform: translateY(-3px);
+  background-color: var(--m-glass-hi);
+  backdrop-filter: blur(20px) saturate(190%) brightness(1.06);
+  border-color: var(--m-line-hi);
+  border-top-color: rgba(255, 255, 255, 0.45);
+}
+
+/* Press (pointer-down): immediate small scale-down, reached fast — the
+ * spring curve takes over again on release. */
+.card:active {
+  transform: translateY(-1px) scale(0.985);
+  transition-duration: 0.1s;
+}
+
+/* Entry: one rise+fade per card, staggered by grid position (30ms per
+ * sibling; 12 steps covers both walls' first screens). */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.card:nth-child(2) {
+  animation-delay: 30ms;
+}
+.card:nth-child(3) {
+  animation-delay: 60ms;
+}
+.card:nth-child(4) {
+  animation-delay: 90ms;
+}
+.card:nth-child(5) {
+  animation-delay: 120ms;
+}
+.card:nth-child(6) {
+  animation-delay: 150ms;
+}
+.card:nth-child(7) {
+  animation-delay: 180ms;
+}
+.card:nth-child(8) {
+  animation-delay: 210ms;
+}
+.card:nth-child(9) {
+  animation-delay: 240ms;
+}
+.card:nth-child(10) {
+  animation-delay: 270ms;
+}
+.card:nth-child(11) {
+  animation-delay: 300ms;
+}
+.card:nth-child(12) {
+  animation-delay: 330ms;
+}
+
+/* State skins: the glass itself carries the state — the state color is
+ * mixed into the glass fill (color-mix keeps alpha live) while the border
+ * stays the state color; the top edge takes a brighter state tone so the
+ * light-from-above read survives on tinted cards. Hover keeps the wash and
+ * swaps in the brighter glass. */
+.card.cardWorking {
+  background-color: color-mix(in srgb, rgb(var(--m-ok)) 10%, var(--m-glass));
+  border-color: rgba(var(--m-ok), 0.45);
+  border-top-color: rgba(var(--m-ok), 0.7);
+}
+
+.card.cardWorking:hover {
+  background-color: color-mix(in srgb, rgb(var(--m-ok)) 10%, var(--m-glass-hi));
+  border-color: rgba(var(--m-ok), 0.6);
+  border-top-color: rgba(var(--m-ok), 0.8);
+}
+
+.card.cardWaiting {
+  background-color: color-mix(in srgb, rgb(var(--m-warn)) 10%, var(--m-glass));
+  border-color: rgba(var(--m-warn), 0.45);
+  border-top-color: rgba(var(--m-warn), 0.7);
+}
+
+.card.cardWaiting:hover {
+  background-color: color-mix(in srgb, rgb(var(--m-warn)) 10%, var(--m-glass-hi));
+  border-color: rgba(var(--m-warn), 0.6);
+  border-top-color: rgba(var(--m-warn), 0.8);
+}
+
+/* Reduced motion: no rise, no scale, no stagger — plain opacity fades for
+ * both the entry and the hover/press states. */
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: card-fade 0.25s ease backwards;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  .card:hover,
+  .card:active {
+    transform: none;
+  }
+
+  @keyframes card-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

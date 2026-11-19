@@ -1,0 +1,38 @@
+{
+  "title": "İşbölümü izleyici",
+  "entryA11y": "İşbölümü izleyicisini aç",
+  "summary": "{{positions}} pozisyon · {{teams}} sohbet · {{active}} çalışıyor",
+  "positions": {
+    "title": "Pozisyonlar",
+    "state": {
+      "working": "Çalışıyor",
+      "waiting": "Bekliyor",
+      "idle": "Boşta"
+    },
+    "workingSession": "Oturum sürüyor",
+    "awaitingYou": "Yanıtını bekliyor",
+    "noSession": "Henüz oturum yok",
+    "inProgress": "{{count}} sürüyor",
+    "openA11y": "{{name}} oturumunu aç"
+  },
+  "teams": {
+    "title": "Grup sohbetleri",
+    "none": "Henüz grup sohbeti yok.",
+    "todo": "Bekleyen {{count}}",
+    "inProgress": "Süren {{count}}",
+    "done": "Biten {{count}}",
+    "ttl": "{{days}} gün kaldı",
+    "openA11y": "{{name}} sohbetini aç",
+    "retiredFold": "{{count}} emekli takım"
+  },
+  "empty": {
+    "hint": "Süpervizöre bir iş ver: tek mesajla bir ekip kurar ya da yeniden kullanır ve sonuna kadar izler.",
+    "action": "Süpervizöre git"
+  },
+  "relative": {
+    "now": "şimdi",
+    "minutes": "{{count}} dk önce",
+    "hours": "{{count}} sa önce",
+    "days": "{{count}} gün önce"
+  }
+}

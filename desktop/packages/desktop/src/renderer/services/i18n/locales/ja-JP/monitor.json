@@ -1,0 +1,38 @@
+{
+  "title": "分業モニター",
+  "entryA11y": "分業モニターを開く",
+  "summary": "ポジション {{positions}} · チーム {{teams}} · 実行中 {{active}}",
+  "positions": {
+    "title": "ポジション",
+    "state": {
+      "working": "作業中",
+      "waiting": "待機中",
+      "idle": "空き"
+    },
+    "workingSession": "セッション進行中",
+    "awaitingYou": "入力待ち",
+    "noSession": "セッションなし",
+    "inProgress": "進行中 {{count}} 件",
+    "openA11y": "{{name}} のセッションを開く"
+  },
+  "teams": {
+    "title": "グループチャット",
+    "none": "グループチャットはまだありません。",
+    "todo": "未着手 {{count}}",
+    "inProgress": "進行中 {{count}}",
+    "done": "完了 {{count}}",
+    "ttl": "残り {{days}} 日",
+    "openA11y": "グループチャット {{name}} を開く",
+    "retiredFold": "退役 {{count}} チーム"
+  },
+  "empty": {
+    "hint": "主管に仕事を頼んでみましょう：一言送れば、チームを組み立てて最後まで追跡します。",
+    "action": "主管に話す"
+  },
+  "relative": {
+    "now": "たった今",
+    "minutes": "{{count}} 分前",
+    "hours": "{{count}} 時間前",
+    "days": "{{count}} 日前"
+  }
+}

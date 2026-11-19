@@ -1,0 +1,38 @@
+{
+  "title": "分工监控",
+  "entryA11y": "打开分工监控面板",
+  "summary": "{{positions}} 岗 · {{teams}} 队 · {{active}} 在跑",
+  "positions": {
+    "title": "岗位",
+    "state": {
+      "working": "工作中",
+      "waiting": "等待",
+      "idle": "空闲"
+    },
+    "workingSession": "会话进行中",
+    "awaitingYou": "等待你的输入",
+    "noSession": "还没有会话",
+    "inProgress": "{{count}} 项进行中",
+    "openA11y": "打开{{name}}的会话"
+  },
+  "teams": {
+    "title": "群聊",
+    "none": "还没有群聊。",
+    "todo": "待办 {{count}}",
+    "inProgress": "进行中 {{count}}",
+    "done": "完成 {{count}}",
+    "ttl": "剩余 {{days}} 天",
+    "openA11y": "打开{{name}}群聊",
+    "retiredFold": "已退役 {{count}} 队"
+  },
+  "empty": {
+    "hint": "找主管派个活试试：跟主管说一句话，它会自动组建或复用团队并跟到底。",
+    "action": "去找主管"
+  },
+  "relative": {
+    "now": "刚刚",
+    "minutes": "{{count}} 分钟前",
+    "hours": "{{count}} 小时前",
+    "days": "{{count}} 天前"
+  }
+}

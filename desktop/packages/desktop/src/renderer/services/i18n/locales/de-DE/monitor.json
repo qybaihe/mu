@@ -1,0 +1,38 @@
+{
+  "title": "Arbeitsteilung-Monitor",
+  "entryA11y": "Arbeitsteilungs-Monitor öffnen",
+  "summary": "{{positions}} Positionen · {{teams}} Gruppenchats · {{active}} laufen",
+  "positions": {
+    "title": "Positionen",
+    "state": {
+      "working": "Arbeitet",
+      "waiting": "Wartet",
+      "idle": "Inaktiv"
+    },
+    "workingSession": "Sitzung läuft",
+    "awaitingYou": "Wartet auf deine Eingabe",
+    "noSession": "Noch keine Sitzung",
+    "inProgress": "{{count}} in Arbeit",
+    "openA11y": "Sitzung von {{name}} öffnen"
+  },
+  "teams": {
+    "title": "Gruppenchats",
+    "none": "Noch keine Gruppenchats.",
+    "todo": "Offen {{count}}",
+    "inProgress": "In Arbeit {{count}}",
+    "done": "Fertig {{count}}",
+    "ttl": "noch {{days}} T.",
+    "openA11y": "Gruppenchat {{name}} öffnen",
+    "retiredFold": "{{count}} zurückgezogene Teams"
+  },
+  "empty": {
+    "hint": "Gib dem Supervisor eine Aufgabe: eine Nachricht, und er stellt ein Team zusammen oder nutzt eines und verfolgt alles bis zum Ende.",
+    "action": "Zum Supervisor"
+  },
+  "relative": {
+    "now": "gerade eben",
+    "minutes": "vor {{count}} Min.",
+    "hours": "vor {{count}} Std.",
+    "days": "vor {{count}} T."
+  }
+}
