@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "La tâche de l'équipe « {{name}} » a échoué",
     "bodyWaitingStall": "Une équipe attend un coéquipier",
     "bodyWaitingStallNamed": "L'équipe « {{name}} » attend un coéquipier"
+  },
+  "sider": {
+    "title": "Discussions d’équipe",
+    "titleA11y": "Section des discussions d’équipe, {{count}} équipes actives",
+    "memberCount": "{{count}} membres",
+    "retired": "Retiré",
+    "rowA11y": "Ouvrir la discussion d’équipe {{name}}, {{count}} membres"
+  },
+  "header": {
+    "groupChatPill": "Groupe · {{count}}",
+    "teamPill": "Équipe · {{count}}",
+    "members": "Membres : {{names}}"
   }
 }

@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "チーム「{{name}}」のタスクが失敗しました",
     "bodyWaitingStall": "チームがメンバーの返信を待機しています",
     "bodyWaitingStallNamed": "チーム「{{name}}」がメンバーの返信を待機しています"
+  },
+  "sider": {
+    "title": "チームチャット",
+    "titleA11y": "チームチャット、稼働中のチーム {{count}} 件",
+    "memberCount": "{{count}} 人",
+    "retired": "終了",
+    "rowA11y": "チームチャット「{{name}}」を開く、{{count}} 人"
+  },
+  "header": {
+    "groupChatPill": "グループチャット · {{count}}人",
+    "teamPill": "チーム · {{count}}人",
+    "members": "メンバー：{{names}}"
   }
 }

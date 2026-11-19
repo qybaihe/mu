@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "Завдання команди «{{name}}» завершилося помилкою",
     "bodyWaitingStall": "Команда очікує на відповідь учасника",
     "bodyWaitingStallNamed": "Команда «{{name}}» очікує на відповідь учасника"
+  },
+  "sider": {
+    "title": "Командні чати",
+    "titleA11y": "Розділ командних чатів, активних команд: {{count}}",
+    "memberCount": "{{count}} учасників",
+    "retired": "Розформована",
+    "rowA11y": "Відкрити чат команди {{name}}, учасників: {{count}}"
+  },
+  "header": {
+    "groupChatPill": "Груповий чат · {{count}}",
+    "teamPill": "Команда · {{count}}",
+    "members": "Учасники: {{names}}"
   }
 }

@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "팀 \"{{name}}\" 작업이 실패했습니다",
     "bodyWaitingStall": "팀이 팀원 응답을 기다리고 있습니다",
     "bodyWaitingStallNamed": "팀 \"{{name}}\"이(가) 팀원 응답을 기다리고 있습니다"
+  },
+  "sider": {
+    "title": "팀 채팅",
+    "titleA11y": "팀 채팅 섹션, 활성 팀 {{count}}개",
+    "memberCount": "{{count}}명",
+    "retired": "만료",
+    "rowA11y": "팀 채팅 {{name}} 열기, {{count}}명"
+  },
+  "header": {
+    "groupChatPill": "그룹 채팅 · {{count}}명",
+    "teamPill": "팀 · {{count}}명",
+    "members": "구성원: {{names}}"
   }
 }

@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "The team \"{{name}}\" hit a failed run",
     "bodyWaitingStall": "A team is waiting on a teammate",
     "bodyWaitingStallNamed": "The team \"{{name}}\" is waiting on a teammate"
+  },
+  "sider": {
+    "title": "Team chats",
+    "titleA11y": "Team chats section, {{count}} active teams",
+    "memberCount": "{{count}} members",
+    "retired": "Retired",
+    "rowA11y": "Open the team chat {{name}}, {{count}} members"
+  },
+  "header": {
+    "groupChatPill": "Group chat · {{count}}",
+    "teamPill": "Team · {{count}}",
+    "members": "Members: {{names}}"
   }
 }

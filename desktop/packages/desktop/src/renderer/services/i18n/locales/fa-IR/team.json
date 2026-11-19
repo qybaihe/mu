@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "کار تیم «{{name}}» ناموفق بود",
     "bodyWaitingStall": "یک تیم در انتظار پاسخ هم‌تیمی است",
     "bodyWaitingStallNamed": "تیم «{{name}}» در انتظار پاسخ هم‌تیمی است"
+  },
+  "sider": {
+    "title": "چت‌های تیمی",
+    "titleA11y": "بخش چت‌های تیمی، {{count}} تیم فعال",
+    "memberCount": "{{count}} عضو",
+    "retired": "غیرفعال",
+    "rowA11y": "باز کردن چت تیمی {{name}}، {{count}} عضو"
+  },
+  "header": {
+    "groupChatPill": "چت گروهی · {{count}}",
+    "teamPill": "تیم · {{count}}",
+    "members": "اعضا: {{names}}"
   }
 }

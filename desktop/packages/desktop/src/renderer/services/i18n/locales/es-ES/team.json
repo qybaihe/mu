@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "La tarea del equipo \"{{name}}\" falló",
     "bodyWaitingStall": "Un equipo espera a un compañero",
     "bodyWaitingStallNamed": "El equipo \"{{name}}\" espera a un compañero"
+  },
+  "sider": {
+    "title": "Chats de equipo",
+    "titleA11y": "Sección de chats de equipo, {{count}} equipos activos",
+    "memberCount": "{{count}} integrantes",
+    "retired": "Retirado",
+    "rowA11y": "Abrir el chat de equipo {{name}}, {{count}} integrantes"
+  },
+  "header": {
+    "groupChatPill": "Chat de grupo · {{count}}",
+    "teamPill": "Equipo · {{count}}",
+    "members": "Integrantes: {{names}}"
   }
 }

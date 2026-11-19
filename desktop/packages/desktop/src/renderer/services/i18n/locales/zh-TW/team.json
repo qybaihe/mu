@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "隊伍「{{name}}」任務執行失敗",
     "bodyWaitingStall": "隊伍正在等待成員回覆",
     "bodyWaitingStallNamed": "隊伍「{{name}}」正在等待成員回覆"
+  },
+  "sider": {
+    "title": "團隊群聊",
+    "titleA11y": "團隊群聊分組，{{count}} 個現役團隊",
+    "memberCount": "{{count}} 人",
+    "retired": "已退役",
+    "rowA11y": "打開團隊群聊 {{name}}，{{count}} 名成員"
+  },
+  "header": {
+    "groupChatPill": "群聊 · {{count}} 人",
+    "teamPill": "團隊 · {{count}} 人",
+    "members": "成員：{{names}}"
   }
 }

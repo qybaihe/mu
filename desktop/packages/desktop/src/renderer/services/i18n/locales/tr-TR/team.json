@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "\"{{name}}\" ekibinin görevi başarısız oldu",
     "bodyWaitingStall": "Bir ekip takım arkadaşı bekliyor",
     "bodyWaitingStallNamed": "\"{{name}}\" ekibi bir takım arkadaşı bekliyor"
+  },
+  "sider": {
+    "title": "Ekip sohbetleri",
+    "titleA11y": "Ekip sohbetleri bölümü, {{count}} aktif ekip",
+    "memberCount": "{{count}} üye",
+    "retired": "Kapatıldı",
+    "rowA11y": "{{name}} ekip sohbetini aç, {{count}} üye"
+  },
+  "header": {
+    "groupChatPill": "Grup sohbeti · {{count}}",
+    "teamPill": "Ekip · {{count}}",
+    "members": "Üyeler: {{names}}"
   }
 }

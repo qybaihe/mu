@@ -59,5 +59,17 @@
     "bodyRunFailedNamed": "Der Lauf des Teams „{{name}}“ ist fehlgeschlagen",
     "bodyWaitingStall": "Ein Team wartet auf ein Teammitglied",
     "bodyWaitingStallNamed": "Das Team „{{name}}“ wartet auf ein Teammitglied"
+  },
+  "sider": {
+    "title": "Team-Chats",
+    "titleA11y": "Team-Chats-Bereich, {{count}} aktive Teams",
+    "memberCount": "{{count}} Mitglieder",
+    "retired": "Beendet",
+    "rowA11y": "Team-Chat {{name}} öffnen, {{count}} Mitglieder"
+  },
+  "header": {
+    "groupChatPill": "Gruppenchat · {{count}}",
+    "teamPill": "Team · {{count}}",
+    "members": "Mitglieder: {{names}}"
   }
 }
