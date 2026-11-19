@@ -23,6 +23,33 @@
     "attention.question": "Aguardando sua resposta",
     "attention.failure": "Falha na execução",
     "attention.markHandled": "Marcar como tratado",
-    "attention.markHandledA11y": "Marcar a falha em {{name}} como tratada"
+    "attention.markHandledA11y": "Marcar a falha em {{name}} como tratada",
+    "claims.inProgress": "Anuncia trabalho em andamento, mas este turno não usou nenhuma ferramenta",
+    "claims.missingFiles": "O arquivo vinculado não existe: {{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "A fazer",
+      "inProgress": "Em andamento",
+      "review": "Revisão",
+      "blocked": "Bloqueada",
+      "done": "Concluída"
+    },
+    "cancelled": "Cancelada",
+    "failed": "Falhou",
+    "owner": "Responsável",
+    "unassigned": "Sem responsável",
+    "createdAt": "Criada",
+    "updatedAt": "Atualizada",
+    "cyclic": "ciclo",
+    "hint": "As tarefas vêm do repositório de tarefas do time — criadas e atualizadas pelos membros com suas ferramentas de time."
+  },
+  "search": {
+    "trigger": "Pesquisar nas conversas do time",
+    "placeholder": "Pesquisar nas conversas do time",
+    "hint": "Todas as palavras devem corresponder; um resultado salta para a mensagem.",
+    "noHits": "Nenhuma correspondência neste time",
+    "toolCall": "Chamada de ferramenta",
+    "loadMore": "Carregar mais"
   }
 }

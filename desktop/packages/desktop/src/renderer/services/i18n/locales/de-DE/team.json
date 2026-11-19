@@ -23,6 +23,33 @@
     "attention.question": "Wartet auf deine Antwort",
     "attention.failure": "Lauf fehlgeschlagen",
     "attention.markHandled": "Als erledigt markieren",
-    "attention.markHandledA11y": "Den Fehlschlag in {{name}} als erledigt markieren"
+    "attention.markHandledA11y": "Den Fehlschlag in {{name}} als erledigt markieren",
+    "claims.inProgress": "Kündigt laufende Arbeit an, aber dieser Durchlauf nutzte kein Werkzeug",
+    "claims.missingFiles": "Verlinkte Datei existiert nicht: {{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "Offen",
+      "inProgress": "Läuft",
+      "review": "Review",
+      "blocked": "Blockiert",
+      "done": "Fertig"
+    },
+    "cancelled": "Abgebrochen",
+    "failed": "Fehlgeschlagen",
+    "owner": "Verantwortlich",
+    "unassigned": "Nicht zugewiesen",
+    "createdAt": "Erstellt",
+    "updatedAt": "Aktualisiert",
+    "cyclic": "Zyklus",
+    "hint": "Aufgaben stammen aus dem Aufgabenbestand des Teams — Angelegt und aktualisiert von Mitgliedern über ihre Team-Werkzeuge."
+  },
+  "search": {
+    "trigger": "Gespräche dieses Teams durchsuchen",
+    "placeholder": "Gespräche dieses Teams durchsuchen",
+    "hint": "Jedes Wort muss passen; ein Treffer springt zu seiner Nachricht.",
+    "noHits": "Keine Treffer in diesem Team",
+    "toolCall": "Werkzeugaufruf",
+    "loadMore": "Mehr laden"
   }
 }

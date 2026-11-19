@@ -23,6 +23,33 @@
     "attention.question": "Waiting for your answer",
     "attention.failure": "Run failed",
     "attention.markHandled": "Mark as handled",
-    "attention.markHandledA11y": "Mark the failure in {{name}} as handled"
+    "attention.markHandledA11y": "Mark the failure in {{name}} as handled",
+    "claims.inProgress": "Announces work in progress, but this turn ran no tool",
+    "claims.missingFiles": "Linked file does not exist: {{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "To do",
+      "inProgress": "In progress",
+      "review": "Review",
+      "blocked": "Blocked",
+      "done": "Done"
+    },
+    "cancelled": "Cancelled",
+    "failed": "Failed",
+    "owner": "Owner",
+    "unassigned": "Unassigned",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "cyclic": "cycle",
+    "hint": "Tasks come from the team's task store — agents create and update them through their team tools."
+  },
+  "search": {
+    "trigger": "Search this team's conversations",
+    "placeholder": "Search the team's conversations",
+    "hint": "Every word must match; a hit jumps to its message.",
+    "noHits": "No matches in this team",
+    "toolCall": "Tool call",
+    "loadMore": "Load more"
   }
 }

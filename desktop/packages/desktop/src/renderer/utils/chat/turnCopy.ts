@@ -29,10 +29,19 @@ export interface AiCopyRows {
   copyRowIds: Set<string>;
   /** Copy-row id → raw contents of EVERY text segment in that turn, in order. */
   turnTextsById: Map<string, string[]>;
+  /** Copy-row id → whether the turn ran any tool (the claims marker's `worked`). */
+  turnWorkedById: Map<string, boolean>;
 }
 
 /** Pseudo timeline entries that neither end a turn nor carry copyable text. */
 const PSEUDO_TYPES = new Set(['file_summary', 'tool_summary', 'artifact']);
+
+/** A teammate's group-chat bubble: real text, but not the assistant's own words — it closes the assistant's turn, then stands alone. */
+const isTeammateText = (item: TurnCopyItem): boolean =>
+  item.type === 'text' && Boolean((item.content as { teammateMessage?: unknown } | undefined)?.teammateMessage);
+
+/** Timeline entries that mean real work happened in the turn (a tool ran). */
+const TOOL_TYPES = new Set(['tool_call', 'tool_group', 'acp_tool_call']);
 
 /**
  * Group the visible timeline into AI turns. A turn runs until the next user
@@ -44,13 +53,21 @@ const PSEUDO_TYPES = new Set(['file_summary', 'tool_summary', 'artifact']);
 export function collectAiCopyRows(items: TurnCopyItem[], isProcessing: boolean): AiCopyRows {
   const copyRowIds = new Set<string>();
   const turnTextsById = new Map<string, string[]>();
+  const turnWorkedById = new Map<string, boolean>();
   let pendingTextId: string | undefined;
   let turnTexts: string[] = [];
+  let turnWorked = false;
 
   const flush = () => {
     if (pendingTextId) {
       copyRowIds.add(pendingTextId);
       turnTextsById.set(pendingTextId, turnTexts);
+      turnWorkedById.set(pendingTextId, turnWorked);
+      // Tools count per visible reply: once a reply closed the burst, the next
+      // one starts clean. A burst that ends without any text (a mid-turn user
+      // message arriving before the agent wrote anything) keeps its tool use:
+      // the reply that follows answers both messages and ran in the same turn.
+      turnWorked = false;
     }
     pendingTextId = undefined;
     turnTexts = [];
@@ -60,8 +77,12 @@ export function collectAiCopyRows(items: TurnCopyItem[], isProcessing: boolean):
     if (item.type && PSEUDO_TYPES.has(item.type)) {
       continue;
     }
-    if (item.position === 'right') {
+    if (item.position === 'right' || isTeammateText(item)) {
       flush();
+      continue;
+    }
+    if (item.type && TOOL_TYPES.has(item.type)) {
+      turnWorked = true;
       continue;
     }
     if (item.type === 'text') {
@@ -78,8 +99,9 @@ export function collectAiCopyRows(items: TurnCopyItem[], isProcessing: boolean):
   if (isProcessing && lastTurnTextId) {
     copyRowIds.delete(lastTurnTextId);
     turnTextsById.delete(lastTurnTextId);
+    turnWorkedById.delete(lastTurnTextId);
   }
-  return { copyRowIds, turnTextsById };
+  return { copyRowIds, turnTextsById, turnWorkedById };
 }
 
 /**

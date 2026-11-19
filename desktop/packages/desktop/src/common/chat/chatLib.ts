@@ -59,6 +59,7 @@ export const joinPath = (basePath: string, relativePath: string): string => {
 
 type TMessageType =
   | 'text'
+  | 'team_handoff'
   | 'tips'
   | 'tool_call'
   | 'tool_group'
@@ -415,6 +416,27 @@ export type IMessageThinking = IMessage<
 // Available commands from ACP agents (Claude, etc.)
 export type AvailableCommand = AcpAvailableCommand;
 
+/**
+ * RESERVED for the delegated-work card (a member handing work to another
+ * member, or a child bot's report landing in a team conversation). Type slot
+ * only, matched to the rakazo `child_bot`/approval-ask block shapes: no
+ * backend produces it yet, no renderer consumes it — it exists so later
+ * phases (P8 team orchestration) extend the union without rewiring every
+ * consumer. Do not widen `content` beyond these fields when that lands.
+ */
+export type IMessageTeamHandoff = IMessage<
+  'team_handoff',
+  {
+    /** Which slot the work came from and which slot (or 'user') it goes to. */
+    from_slot_id?: string;
+    to_slot_id?: string;
+    /** Task this handoff belongs to, when it carries one. */
+    task_id?: string;
+    /** One-line subject of the handed work. */
+    subject?: string;
+  }
+>;
+
 export type IMessageAvailableCommands = IMessage<
   'available_commands',
   {
@@ -425,6 +447,7 @@ export type IMessageAvailableCommands = IMessage<
 // eslint-disable-next-line max-len
 export type TMessage =
   | IMessageText
+  | IMessageTeamHandoff
   | IMessageTips
   | IMessageToolCall
   | IMessageToolGroup

@@ -23,6 +23,33 @@
     "attention.question": "Esperando tu respuesta",
     "attention.failure": "Ejecución fallida",
     "attention.markHandled": "Marcar como gestionado",
-    "attention.markHandledA11y": "Marcar el fallo en {{name}} como gestionado"
+    "attention.markHandledA11y": "Marcar el fallo en {{name}} como gestionado",
+    "claims.inProgress": "Anuncia trabajo en curso, pero este turno no usó ninguna herramienta",
+    "claims.missingFiles": "El archivo enlazado no existe: {{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "Pendiente",
+      "inProgress": "En curso",
+      "review": "Revisión",
+      "blocked": "Bloqueada",
+      "done": "Hecha"
+    },
+    "cancelled": "Cancelada",
+    "failed": "Fallida",
+    "owner": "Responsable",
+    "unassigned": "Sin asignar",
+    "createdAt": "Creada",
+    "updatedAt": "Actualizada",
+    "cyclic": "ciclo",
+    "hint": "Las tareas vienen del almacén de tareas del equipo; los miembros las crean y actualizan con sus herramientas de equipo."
+  },
+  "search": {
+    "trigger": "Buscar en las conversaciones del equipo",
+    "placeholder": "Buscar en las conversaciones del equipo",
+    "hint": "Deben coincidir todas las palabras; un acierto salta a su mensaje.",
+    "noHits": "Sin coincidencias en este equipo",
+    "toolCall": "Llamada de herramienta",
+    "loadMore": "Cargar más"
   }
 }

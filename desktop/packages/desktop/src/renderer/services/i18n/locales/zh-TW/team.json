@@ -23,6 +23,33 @@
     "attention.question": "等你回答",
     "attention.failure": "執行失敗",
     "attention.markHandled": "標記已處理",
-    "attention.markHandledA11y": "將 {{name}} 的失敗標記為已處理"
+    "attention.markHandledA11y": "將 {{name}} 的失敗標記為已處理",
+    "claims.inProgress": "宣稱正在幹活，但本回合沒有調用任何工具",
+    "claims.missingFiles": "鏈接的文件不存在：{{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "待辦",
+      "inProgress": "進行中",
+      "review": "待審查",
+      "blocked": "受阻",
+      "done": "完成"
+    },
+    "cancelled": "已取消",
+    "failed": "失敗",
+    "owner": "負責人",
+    "unassigned": "未指派",
+    "createdAt": "建立",
+    "updatedAt": "更新",
+    "cyclic": "成環",
+    "hint": "任務來自團隊任務庫——成員透過團隊工具建立與更新。"
+  },
+  "search": {
+    "trigger": "搜尋本團隊的會話",
+    "placeholder": "搜尋本團隊的會話",
+    "hint": "所有詞都要命中；點擊命中會跳到對應訊息。",
+    "noHits": "本團隊內無匹配",
+    "toolCall": "工具調用",
+    "loadMore": "載入更多"
   }
 }

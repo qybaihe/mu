@@ -23,6 +23,33 @@
     "attention.question": "Yanıtınız bekleniyor",
     "attention.failure": "Çalışma başarısız",
     "attention.markHandled": "İşlendi olarak işaretle",
-    "attention.markHandledA11y": "{{name}} içindeki hatayı işlendi olarak işaretle"
+    "attention.markHandledA11y": "{{name}} içindeki hatayı işlendi olarak işaretle",
+    "claims.inProgress": "İş devam ediyor diyor ama bu turda hiçbir araç çalıştırmadı",
+    "claims.missingFiles": "Bağlantılı dosya mevcut değil: {{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "Yapılacak",
+      "inProgress": "Devam ediyor",
+      "review": "İnceleme",
+      "blocked": "Engelli",
+      "done": "Bitti"
+    },
+    "cancelled": "İptal",
+    "failed": "Başarısız",
+    "owner": "Sorumlu",
+    "unassigned": "Atanmamış",
+    "createdAt": "Oluşturuldu",
+    "updatedAt": "Güncellendi",
+    "cyclic": "döngü",
+    "hint": "Görevler ekibin görev deposundan gelir — üyeler takım araçlarıyla oluşturur ve günceller."
+  },
+  "search": {
+    "trigger": "Bu ekibin konuşmalarında ara",
+    "placeholder": "Bu ekibin konuşmalarında ara",
+    "hint": "Tüm kelimeler eşleşmeli; bir sonuç kendi mesajına atlar.",
+    "noHits": "Bu ekipte eşleşme yok",
+    "toolCall": "Araç çağrısı",
+    "loadMore": "Daha fazla yükle"
   }
 }

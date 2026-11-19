@@ -23,6 +23,33 @@
     "attention.question": "답변 대기 중",
     "attention.failure": "실행 실패",
     "attention.markHandled": "처리됨으로 표시",
-    "attention.markHandledA11y": "{{name}}의 실패를 처리됨으로 표시"
+    "attention.markHandledA11y": "{{name}}의 실패를 처리됨으로 표시",
+    "claims.inProgress": "작업 진행 중이라고 했지만 이 턴에는 도구를 실행하지 않았습니다",
+    "claims.missingFiles": "링크된 파일이 존재하지 않습니다: {{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "할 일",
+      "inProgress": "진행 중",
+      "review": "검토",
+      "blocked": "차단됨",
+      "done": "완료"
+    },
+    "cancelled": "취소됨",
+    "failed": "실패",
+    "owner": "담당자",
+    "unassigned": "미할당",
+    "createdAt": "생성",
+    "updatedAt": "갱신",
+    "cyclic": "순환",
+    "hint": "작업은 팀 작업 저장소에서 나옵니다. 멤버가 팀 도구로 만들고 갱신합니다."
+  },
+  "search": {
+    "trigger": "이 팀의 대화 검색",
+    "placeholder": "이 팀의 대화 검색",
+    "hint": "모든 단어가 일치해야 합니다. 결과를 클릭하면 해당 메시지로 이동합니다.",
+    "noHits": "이 팀에 일치 없음",
+    "toolCall": "도구 호출",
+    "loadMore": "더 불러오기"
   }
 }

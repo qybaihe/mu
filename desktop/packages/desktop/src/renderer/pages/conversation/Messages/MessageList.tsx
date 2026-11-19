@@ -60,6 +60,16 @@ import MessageCronTrigger from './components/MessageCronTrigger';
 import MessageSkillSuggest from './components/MessageSkillSuggest';
 import MessageText from './components/MessageText';
 import MessageThinking, { ThoughtHistory } from './components/MessageThinking';
+import TeamTaskCard from './components/TeamTaskCard';
+import {
+  augmentDeliveredTeamMessages,
+  deliveredMsgIdsOf,
+  interleaveTeamTasks,
+  memberMessagesFromMailbox,
+  type TeamTaskRow,
+} from './teamTaskEvents';
+import { dependencyEdgesOf } from '@renderer/pages/workbench/team/teamDataCore';
+import { useTeamTaskEvents } from './useTeamTaskEvents';
 import type { WriteFileResult } from './types';
 import { useAutoScroll } from './useAutoScroll';
 import { useCoalescedMessages } from './useCoalescedMessages';
@@ -91,7 +101,7 @@ type IThoughtHistoryVO = {
   sourceMessageIds: string[];
   created_at: number;
 };
-type IProcessedItem = IMessageVO | IArtifactVO | IThoughtHistoryVO;
+type IProcessedItem = IMessageVO | IArtifactVO | IThoughtHistoryVO | TeamTaskRow;
 
 type CompactAcpToolCallContent = IMessageAcpToolCall['content'] & {
   _compact?: {
@@ -141,7 +151,7 @@ type ConversationLocationState = {
 };
 
 const getProcessedItemSourceMessageIds = (item: IProcessedItem): string[] => {
-  if ('type' in item && item.type === 'artifact') {
+  if ('type' in item && (item.type === 'artifact' || item.type === 'team_task')) {
     return [item.id];
   }
   if ('type' in item && item.type === 'tool_summary') {
@@ -203,6 +213,7 @@ const EARLIER_ROWS_MS = 2000;
 /** The grouped rows are memoised so an unchanged group is not redrawn when another row streams. */
 const ThoughtHistoryRow = React.memo(ThoughtHistory);
 const FileChangesRow = React.memo(MessageFileChanges);
+const TeamTaskCardRow = React.memo(TeamTaskCard);
 
 const sameRefs = (a: readonly unknown[], b: readonly unknown[]): boolean =>
   a.length === b.length && a.every((item, index) => item === b[index]);
@@ -233,8 +244,17 @@ const reuseUnchangedGroups = (previous: Map<string, IProcessedItem>, items: IPro
     return item;
   });
 
+// Same shape as the grouped rows before it: a pseudo row always carries its own
+// `created_at`; a message's may be absent (legacy rows) and reads as zero.
 const getProcessedItemCreatedAt = (item: IProcessedItem): number => {
-  if ('type' in item && ['file_summary', 'tool_summary', 'thinking_history', 'artifact'].includes(item.type)) {
+  if (
+    'type' in item &&
+    (item.type === 'file_summary' ||
+      item.type === 'tool_summary' ||
+      item.type === 'thinking_history' ||
+      item.type === 'artifact' ||
+      item.type === 'team_task')
+  ) {
     return item.created_at;
   }
   return item.created_at ?? 0;
@@ -362,7 +382,8 @@ const isPseudoProcessedItem = (item: IProcessedItem): item is Exclude<IProcessed
   (item.type === 'file_summary' ||
     item.type === 'tool_summary' ||
     item.type === 'thinking_history' ||
-    item.type === 'artifact');
+    item.type === 'artifact' ||
+    item.type === 'team_task');
 
 const hasRenderedCopyRow = (item: IProcessedItem, aiCopyRowTextIds: ReadonlySet<string>): boolean => {
   if (isPseudoProcessedItem(item) || item.type !== 'text') return false;
@@ -400,6 +421,8 @@ const MessageItem: React.FC<{
   isLastMessage?: boolean;
   hasForkAnchor?: boolean;
   turnTexts?: string[];
+  /** Whether this turn ran any tool (the claims marker's `worked`). */
+  turnWorked?: boolean;
   thinkingActive?: boolean;
   thinkingExpanded?: boolean;
   onThinkingExpandedChange?: ThoughtExpandedChange;
@@ -444,6 +467,7 @@ const MessageItem: React.FC<{
       isLastMessage,
       hasForkAnchor,
       turnTexts,
+      turnWorked,
       thinkingActive,
       thinkingExpanded,
       onThinkingExpandedChange,
@@ -456,6 +480,7 @@ const MessageItem: React.FC<{
       isLastMessage?: boolean;
       hasForkAnchor?: boolean;
       turnTexts?: string[];
+      turnWorked?: boolean;
       thinkingActive?: boolean;
       thinkingExpanded?: boolean;
       onThinkingExpandedChange?: ThoughtExpandedChange;
@@ -470,6 +495,7 @@ const MessageItem: React.FC<{
               isLastMessage={isLastMessage}
               hasForkAnchor={hasForkAnchor}
               turnTexts={turnTexts}
+              turnWorked={turnWorked}
             ></MessageText>
           );
         case 'tips':
@@ -509,9 +535,11 @@ const MessageItem: React.FC<{
         // Both are filtered out of `processedList` above and never reach this
         // switch. These arms exist only to keep the `default` branch's
         // exhaustiveness check (`getUnhandledMessageType`) satisfied — a plan
-        // renders in ConversationPlanBar, not as a stream row.
+        // renders in ConversationPlanBar, not as a stream row; team_handoff is a
+        // reserved P8 row type and renders nothing until a backend produces it.
         case 'available_commands':
         case 'plan':
+        case 'team_handoff':
           return null;
         default:
           return <div>{t('messages.unknownMessageType', { type: getUnhandledMessageType(message) })}</div>;
@@ -531,6 +559,7 @@ const MessageItem: React.FC<{
     prev.hasForkAnchor === next.hasForkAnchor &&
     prev.thinkingActive === next.thinkingActive &&
     prev.thinkingExpanded === next.thinkingExpanded &&
+    prev.turnWorked === next.turnWorked &&
     prev.onThinkingExpandedChange === next.onThinkingExpandedChange &&
     // Compare by content: the map is rebuilt per render, so reference equality
     // would defeat the memo for the one row that carries the copy button.
@@ -562,6 +591,9 @@ const MessageList: React.FC<{
   // avoid the row flashing in and the layout reflowing mid-stream.
   const runtime = useConversationRuntimeView(run ? '' : (conversationId ?? ''));
   const { isProcessing, hydrated } = run ?? runtime;
+  // The group conversation's task events: the lead conversation of a team
+  // interleaves the team's task cards into the flow (the flow is the ledger).
+  const teamTaskEvents = useTeamTaskEvents(run ? undefined : conversationId);
   const { t } = useTranslation();
   const location = useLocation();
   const locationState = (location.state || {}) as ConversationLocationState;
@@ -805,11 +837,40 @@ const MessageList: React.FC<{
 
     const items = reuseUnchangedGroups(
       previousItemsRef.current,
-      [...result, ...visibleArtifacts].toSorted((a, b) => getProcessedItemCreatedAt(a) - getProcessedItemCreatedAt(b))
+      [
+        ...augmentDeliveredTeamMessages(result, teamTaskEvents?.mailbox ?? [], {
+          teamId: teamTaskEvents?.teamId ?? '',
+          members: teamTaskEvents?.members ?? [],
+        }),
+        ...visibleArtifacts,
+        ...memberMessagesFromMailbox(
+          teamTaskEvents?.mailbox ?? [],
+          {
+            teamId: teamTaskEvents?.teamId ?? '',
+            conversationId: conversationId ?? '',
+            members: teamTaskEvents?.members ?? [],
+          },
+          deliveredMsgIdsOf(list)
+        ),
+      ].toSorted((a, b) => getProcessedItemCreatedAt(a) - getProcessedItemCreatedAt(b))
     );
-    previousItemsRef.current = new Map(items.map((item) => [item.id, item]));
-    return { items, activeThinkingId: liveThoughtId };
-  }, [artifacts, isProcessing, list, openThoughtIds]);
+    // Team task cards merge in after the reuse pass: their objects come from
+    // the team store and are stable between refetches, so an unchanged task
+    // keeps the object (and the open card its state) while another streams.
+    const mergedItems = interleaveTeamTasks(items, teamTaskEvents?.tasks ?? [], getProcessedItemCreatedAt);
+    previousItemsRef.current = new Map(mergedItems.map((item) => [item.id, item]));
+    return { items: mergedItems, activeThinkingId: liveThoughtId };
+  }, [
+    artifacts,
+    conversationId,
+    isProcessing,
+    list,
+    openThoughtIds,
+    teamTaskEvents?.mailbox,
+    teamTaskEvents?.members,
+    teamTaskEvents?.tasks,
+    teamTaskEvents?.teamId,
+  ]);
 
   // An AI reply can be split into several messages (thinking / multiple text /
   // tool blocks). The hover copy + timestamp row should appear once per turn,
@@ -820,13 +881,14 @@ const MessageList: React.FC<{
   // by tool blocks. While the conversation is still streaming, the final turn's
   // row is withheld (it would otherwise appear then shift down as more text
   // streams in); earlier, already-finished turns always keep their row.
-  const { copyRowIds: aiCopyRowTextIds, turnTextsById: aiTurnTextsById } = useMemo(
-    () => collectAiCopyRows(processedList as TurnCopyItem[], isProcessing),
-    [processedList, isProcessing]
-  );
+  const {
+    copyRowIds: aiCopyRowTextIds,
+    turnTextsById: aiTurnTextsById,
+    turnWorkedById: aiTurnWorkedById,
+  } = useMemo(() => collectAiCopyRows(processedList as TurnCopyItem[], isProcessing), [processedList, isProcessing]);
 
   // The last REAL message in the visible timeline (pseudo entries like
-  // file/tool summaries don't count). HEAD-fork backends (claude/ACP) only
+  // file/tool summaries and team task cards don't count). HEAD-fork backends (claude/ACP) only
   // show the fork entry point here — see `isForkEnabled`.
   const lastMessageId = useMemo(() => {
     for (let i = processedList.length - 1; i >= 0; i--) {
@@ -836,7 +898,8 @@ const MessageList: React.FC<{
         (item.type === 'file_summary' ||
           item.type === 'tool_summary' ||
           item.type === 'thinking_history' ||
-          item.type === 'artifact')
+          item.type === 'artifact' ||
+          item.type === 'team_task')
       ) {
         continue;
       }
@@ -858,7 +921,8 @@ const MessageList: React.FC<{
         (item.type === 'file_summary' ||
           item.type === 'tool_summary' ||
           item.type === 'thinking_history' ||
-          item.type === 'artifact')
+          item.type === 'artifact' ||
+          item.type === 'team_task')
       ) {
         continue;
       }
@@ -1035,7 +1099,8 @@ const MessageList: React.FC<{
           (item as { type?: string }).type === 'file_summary' ||
           (item as { type?: string }).type === 'tool_summary' ||
           (item as { type?: string }).type === 'thinking_history' ||
-          (item as { type?: string }).type === 'artifact'
+          (item as { type?: string }).type === 'artifact' ||
+          (item as { type?: string }).type === 'team_task'
         ) {
           return false;
         }
@@ -1086,6 +1151,17 @@ const MessageList: React.FC<{
     hideScrollButton();
     scrollToBottom('smooth');
   };
+
+  // Cyclic dependency edges of the team's tasks, once per task fetch: cards mark
+  // blockers that can never clear instead of each card re-walking the graph.
+  const cyclicTaskBlockerIds = useMemo(() => {
+    const tasks = teamTaskEvents?.tasks ?? [];
+    return new Set(
+      dependencyEdgesOf(tasks)
+        .filter((edge) => edge.cyclic)
+        .map((edge) => edge.blocker_id)
+    );
+  }, [teamTaskEvents?.tasks]);
 
   const renderItem = (index: number, item: (typeof processedList)[0]) => {
     const highlighted = matchesTargetMessage(item, highlightedMessageId);
@@ -1139,6 +1215,24 @@ const MessageList: React.FC<{
         </div>
       );
     }
+    if ('type' in item && item.type === 'team_task') {
+      return (
+        <div
+          key={item.id}
+          id={`message-${item.id}`}
+          data-testid='team-task-card-row'
+          className={`${rowWidthClass} min-w-0 message-item px-8px ${topMarginClass} team_task`}
+          style={highlighted ? highlightStyle : undefined}
+        >
+          <TeamTaskCardRow
+            task={item.task}
+            tasks={teamTaskEvents?.tasks ?? []}
+            members={teamTaskEvents?.members ?? []}
+            cyclicBlockerIds={cyclicTaskBlockerIds}
+          />
+        </div>
+      );
+    }
     const message = item as TMessage;
     // User messages keep their own copy row; AI text only shows it at the turn end.
     const showCopyRow = message.position !== 'left' || message.type !== 'text' || aiCopyRowTextIds.has(message.id);
@@ -1154,6 +1248,7 @@ const MessageList: React.FC<{
         isLastMessage={message.id === lastMessageId}
         hasForkAnchor={forkAnchoredIds.has(message.id)}
         turnTexts={aiTurnTextsById.get(message.id)}
+        turnWorked={aiTurnWorkedById.get(message.id)}
         thinkingActive={isThought ? message.id === activeThinkingId : undefined}
         thinkingExpanded={isThought ? openThoughtIds.has(message.id) : undefined}
         onThinkingExpandedChange={isThought ? handleThoughtExpandedChange : undefined}

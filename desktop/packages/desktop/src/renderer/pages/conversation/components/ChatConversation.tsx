@@ -5,6 +5,7 @@
  */
 
 import { ipcBridge } from '@/common';
+import type { ChatFileRef } from '@/common/types/chatFile';
 import type { IConversationMcpStatus, IProvider, TChatConversation, TProviderWithModel } from '@/common/config/storage';
 import { uuid } from '@/common/utils';
 import addChatIcon from '@/renderer/assets/icons/add-chat.svg';
@@ -37,6 +38,9 @@ import { isLegacyReadOnlyConversationType } from '../utils/conversationRuntime';
 import { resolveConversationBackend } from '../utils/conversationAssistantIdentity';
 import LegacyReadOnlyConversation from '../platforms/legacy/LegacyReadOnlyConversation';
 import SingleChatEmptyState from './SingleChatEmptyState';
+import TeamChatSearch from './TeamChatSearch';
+import TeamHeaderIdentity from '@renderer/pages/workbench/team/TeamHeaderIdentity';
+import { stripGroupChatMarker } from '@renderer/pages/workbench/team/teamIdentity';
 import { useActiveLease } from '../hooks/useActiveLease';
 import { BUILTIN_AGENT, type BuiltinAgent } from '@/common/platform/backendNames';
 // import SkillRuleGenerator from './components/SkillRuleGenerator'; // Temporarily hidden
@@ -295,6 +299,23 @@ const ChatConversation: React.FC<{
   useActiveLease({ type: 'conversation', id: conversation?.id });
   const workspaceEnabled = Boolean(conversation?.extra?.workspace) && !conversation?.project_id;
   const cronJobId = resolveCronJobId(conversation?.extra);
+  // A conversation owned by a team never sends through the ordinary route:
+  // the backend rejects that with FORBIDDEN. The lead addresses the whole
+  // team; a teammate slot is addressed directly.
+  const teamExtra = (conversation?.extra ?? {}) as { teamId?: string; slot_id?: string; role?: string };
+  const teamId = teamExtra.teamId;
+  const teamSlotId = teamExtra.slot_id;
+  const teamRole = teamExtra.role;
+  const teamSendMessage = useMemo(() => {
+    if (!teamId) return undefined;
+    return async ({ input, files }: { input: string; files: ChatFileRef[] }) => {
+      if (teamRole === 'lead' || !teamSlotId) {
+        await ipcBridge.team.sendMessage.invoke({ team_id: teamId, input, files });
+        return;
+      }
+      await ipcBridge.team.sendMessageToAgent.invoke({ team_id: teamId, slot_id: teamSlotId, input, files });
+    };
+  }, [teamId, teamRole, teamSlotId]);
   const layout = useLayoutContext();
   const isMobile = Boolean(layout?.isMobile);
 
@@ -352,6 +373,7 @@ const ChatConversation: React.FC<{
             hideSendBox={resolvedHideSendBox}
             emptySlot={emptySlot}
             headerSlot={headerSlot}
+            teamSendMessage={teamSendMessage}
             loadedSkills={(conversation.extra as { skills?: string[] } | undefined)?.skills}
             loadedMcpServers={(conversation.extra as { mcp_servers?: string[] } | undefined)?.mcp_servers}
             loadedMcpStatuses={
@@ -403,8 +425,19 @@ const ChatConversation: React.FC<{
           agent_name: conversationAgentName,
         };
 
+  // The group conversation's own search lives in its header; teammate
+  // conversations keep the plain header (their flow is a private thread).
+  const groupTeamId = teamExtra.teamId && teamExtra.role === 'lead' ? teamExtra.teamId : undefined;
+  // A team conversation carries its team's identity in place of the agent
+  // logo — the member strip and the pill that says which kind of thread this
+  // is. The lead's title drops the “（群聊）” marker: the pill already says it.
+  const teamIdentity = teamId ? <TeamHeaderIdentity teamId={teamId} role={teamRole} /> : undefined;
+  const displayedTitle =
+    teamId && teamRole === 'lead' && conversation ? stripGroupChatMarker(conversation.name) : conversation?.name;
+
   const headerExtraNode = (
     <div className='flex items-center gap-8px'>
+      {groupTeamId ? <TeamChatSearch teamId={groupTeamId} /> : null}
       {conversation && (
         <div className='shrink-0'>
           <CronJobManager conversation_id={conversation.id} cron_job_id={cronJobId} />
@@ -420,8 +453,9 @@ const ChatConversation: React.FC<{
 
   return (
     <ChatLayout
-      title={conversation?.name}
+      title={displayedTitle}
       {...chatLayoutProps}
+      headerLeading={teamIdentity}
       headerExtra={headerExtraNode}
       siderTitle={sliderTitle}
       sider={<ChatSlider conversation={conversation} />}

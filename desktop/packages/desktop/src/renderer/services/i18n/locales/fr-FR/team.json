@@ -23,6 +23,33 @@
     "attention.question": "En attente de votre réponse",
     "attention.failure": "Échec de l'exécution",
     "attention.markHandled": "Marquer comme traité",
-    "attention.markHandledA11y": "Marquer l'échec dans {{name}} comme traité"
+    "attention.markHandledA11y": "Marquer l'échec dans {{name}} comme traité",
+    "claims.inProgress": "Annonce un travail en cours, mais ce tour n'a utilisé aucun outil",
+    "claims.missingFiles": "Le fichier lié n'existe pas : {{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "À faire",
+      "inProgress": "En cours",
+      "review": "Revue",
+      "blocked": "Bloquée",
+      "done": "Terminée"
+    },
+    "cancelled": "Annulée",
+    "failed": "Échouée",
+    "owner": "Responsable",
+    "unassigned": "Non assignée",
+    "createdAt": "Créée",
+    "updatedAt": "Mise à jour",
+    "cyclic": "cycle",
+    "hint": "Les tâches viennent du magasin de tâches de l'équipe — créées et mises à jour par les membres via leurs outils d'équipe."
+  },
+  "search": {
+    "trigger": "Rechercher dans les conversations de l'équipe",
+    "placeholder": "Rechercher dans les conversations de l'équipe",
+    "hint": "Tous les mots doivent correspondre ; un résultat saute à son message.",
+    "noHits": "Aucun résultat dans cette équipe",
+    "toolCall": "Appel d’outil",
+    "loadMore": "Charger plus"
   }
 }

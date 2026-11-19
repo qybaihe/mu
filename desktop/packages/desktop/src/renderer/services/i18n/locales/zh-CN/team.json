@@ -23,6 +23,33 @@
     "attention.question": "等你回答",
     "attention.failure": "运行失败",
     "attention.markHandled": "标记已处理",
-    "attention.markHandledA11y": "将 {{name}} 的失败标记为已处理"
+    "attention.markHandledA11y": "将 {{name}} 的失败标记为已处理",
+    "claims.inProgress": "宣称正在干活，但本回合没有调用任何工具",
+    "claims.missingFiles": "链接的文件不存在：{{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "待办",
+      "inProgress": "进行中",
+      "review": "待审查",
+      "blocked": "受阻",
+      "done": "完成"
+    },
+    "cancelled": "已取消",
+    "failed": "失败",
+    "owner": "负责人",
+    "unassigned": "未指派",
+    "createdAt": "创建",
+    "updatedAt": "更新",
+    "cyclic": "成环",
+    "hint": "任务来自团队任务库——成员通过团队工具创建与更新。"
+  },
+  "search": {
+    "trigger": "搜索本团队的会话",
+    "placeholder": "搜索本团队的会话",
+    "hint": "所有词都要命中；点击命中会跳到对应消息。",
+    "noHits": "本团队内无匹配",
+    "toolCall": "工具调用",
+    "loadMore": "加载更多"
   }
 }

@@ -23,6 +23,33 @@
     "attention.question": "回答待ち",
     "attention.failure": "実行に失敗",
     "attention.markHandled": "対応済みにする",
-    "attention.markHandledA11y": "{{name}} の失敗を対応済みにする"
+    "attention.markHandledA11y": "{{name}} の失敗を対応済みにする",
+    "claims.inProgress": "作業中と述べていますが、このターンはツールを実行していません",
+    "claims.missingFiles": "リンクされたファイルが存在しません：{{files}}"
+  },
+  "taskCard": {
+    "status": {
+      "todo": "未着手",
+      "inProgress": "進行中",
+      "review": "レビュー",
+      "blocked": "ブロック中",
+      "done": "完了"
+    },
+    "cancelled": "キャンセル",
+    "failed": "失敗",
+    "owner": "担当者",
+    "unassigned": "未割り当て",
+    "createdAt": "作成",
+    "updatedAt": "更新",
+    "cyclic": "循環",
+    "hint": "タスクはチームのタスクストアから——メンバーがチームツールで作成・更新します。"
+  },
+  "search": {
+    "trigger": "このチームの会話を検索",
+    "placeholder": "このチームの会話を検索",
+    "hint": "すべての語が一致する必要があります。ヒットはそのメッセージへジャンプします。",
+    "noHits": "このチームに一致なし",
+    "toolCall": "ツール呼び出し",
+    "loadMore": "さらに読み込む"
   }
 }

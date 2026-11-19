@@ -23,6 +23,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 import CollapsibleContent from '@renderer/components/chat/CollapsibleContent';
+import ClaimsMarker from './ClaimsMarker';
 import FilePreview from '@renderer/components/media/FilePreview';
 import HorizontalFileList from '@renderer/components/media/HorizontalFileList';
 import MarkdownView from '@renderer/components/Markdown';
@@ -110,7 +111,9 @@ const MessageText: React.FC<{
   /** All text segments of this message's turn, in order — the copy button
    * copies the whole reply, not just the segment it happens to sit on. */
   turnTexts?: string[];
-}> = ({ message, showCopyRow = true, isLastMessage = false, hasForkAnchor = false, turnTexts }) => {
+  /** Whether this turn ran any tool (the claims marker's `worked`). */
+  turnWorked?: boolean;
+}> = ({ message, showCopyRow = true, isLastMessage = false, hasForkAnchor = false, turnTexts, turnWorked }) => {
   const logos = useAgentLogos();
   // Filter think tags from content before rendering
   // 在渲染前过滤 think 标签
@@ -418,6 +421,17 @@ const MessageText: React.FC<{
           <div className='text-12px text-t-secondary mt-4px select-none' data-testid='message-status-badge'>
             {t('messages.delivery.pending', { defaultValue: 'Unread' })}
           </div>
+        )}
+        {/* Claims markers (team conversations only): the reply's own words checked
+            against the machine — file links that point at nothing, work announced
+            with no tool run. Rendered under the turn's final text, reader-only. */}
+        {!isUserMessage && showCopyRow && (
+          <ClaimsMarker
+            conversationId={message.conversation_id}
+            text={contentToRender}
+            worked={turnWorked}
+            isTeammateDelivery={isTeammateMessage}
+          />
         )}
         {/* Hover-revealed copy + timestamp row. Mobile has no hover affordance,
             so we drop the row entirely — system-level long-press still copies.
