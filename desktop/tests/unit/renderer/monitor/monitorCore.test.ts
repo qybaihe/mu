@@ -13,13 +13,13 @@ import { describe, expect, it } from 'vitest';
 import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
 import type { ITeamSlotWork, ITeamTaskItem, TTeam, TeamAssistant } from '@/common/types/team/teamTypes';
 import type { TeamRosterEntry } from '@renderer/pages/workbench/team/teamIdentity';
+import { slotMatchesPosition } from '@renderer/pages/workbench/team/teamIdentity';
 import {
   isNearExpiry,
   memberDotOf,
   monitorActiveCount,
   positionCardsOf,
   relativeTimeBucket,
-  slotMatchesPosition,
   teamCardsOf,
   ttlDaysOf,
   type SlotWorkIndex,

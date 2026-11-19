@@ -15,7 +15,7 @@ import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
 import { findPositionConversationId } from '@/common/chat/positions/positionLibraryCore';
 import type { ITeamSlotWork, ITeamTaskItem } from '@/common/types/team/teamTypes';
 import { boardColumnOf } from '@renderer/pages/workbench/team/teamDataCore';
-import type { TeamRosterEntry } from '@renderer/pages/workbench/team/teamIdentity';
+import { slotMatchesPosition, type TeamRosterEntry } from '@renderer/pages/workbench/team/teamIdentity';
 
 /** The team's slot-work map, as the wire store keeps it per team. */
 export type SlotWorkBySlot = ReadonlyMap<string, ITeamSlotWork>;
@@ -23,10 +23,6 @@ export type SlotWorkBySlot = ReadonlyMap<string, ITeamSlotWork>;
 export type SlotWorkIndex = ReadonlyMap<string, SlotWorkBySlot>;
 
 export const TEAM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** Whether a team slot's name belongs to a position: exact, or a numbered second slot (`货代 2`). */
-export const slotMatchesPosition = (slotName: string, displayName: string): boolean =>
-  slotName === displayName || slotName.startsWith(`${displayName} `);
 
 // --- position wall ---
 

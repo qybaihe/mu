@@ -19,6 +19,7 @@ import { Tooltip } from '@arco-design/web-react';
 import { Robot, Right, Connect } from '@icon-park/react';
 import classNames from 'classnames';
 import { findPositionConversationId, type PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import { positionIdentityColor } from '@/common/chat/positions/positionIdentityColor';
 import { SUPERVISOR_POSITION_NAME } from '@/common/chat/supervisor/supervisorCore';
 import { useConversationHistoryContext } from '@renderer/hooks/context/ConversationHistoryContext';
 import { useAssistantList } from '@renderer/hooks/assistant/useAssistantList';
@@ -48,6 +49,7 @@ type PositionRowProps = {
 const PositionRow: React.FC<PositionRowProps> = ({ position, conversationId, onOpen }) => {
   const { t } = useTranslation();
   const tooltip = position.projectRoot ? `${position.description}\n${position.projectRoot}` : position.description;
+  const identity = positionIdentityColor(position.name);
   return (
     <Tooltip content={tooltip} position='right' trigger='hover' unmountOnExit mini>
       <div
@@ -59,6 +61,12 @@ const PositionRow: React.FC<PositionRowProps> = ({ position, conversationId, onO
         )}
         {...rowButtonProps(() => onOpen(position))}
       >
+        {/* The position's identity bar: its stable derived hue, identity only — the trailing dot stays the conversation-bound signal. */}
+        <span
+          data-testid={`sider-position-${position.name}-identity`}
+          className='w-3px h-14px rd-full shrink-0'
+          style={{ background: identity.background }}
+        />
         <Robot
           theme='outline'
           size='14'
@@ -79,6 +87,7 @@ const SupervisorRow: React.FC<{ conversationId: string | undefined; onOpen: () =
   onOpen,
 }) => {
   const { t } = useTranslation();
+  const identity = positionIdentityColor(SUPERVISOR_POSITION_NAME);
   return (
     <Tooltip content={t('supervisor.tooltip')} position='right' trigger='hover' unmountOnExit mini>
       <div
@@ -90,6 +99,12 @@ const SupervisorRow: React.FC<{ conversationId: string | undefined; onOpen: () =
         )}
         {...rowButtonProps(onOpen)}
       >
+        {/* The supervisor's identity bar: the fixed emphasis red, the one position whose hue is not hashed. */}
+        <span
+          data-testid={`sider-position-${SUPERVISOR_POSITION_NAME}-identity`}
+          className='w-3px h-14px rd-full shrink-0'
+          style={{ background: identity.background }}
+        />
         <Connect
           theme='outline'
           size='14'

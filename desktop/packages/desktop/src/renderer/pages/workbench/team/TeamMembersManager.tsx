@@ -25,6 +25,7 @@ import { supervisorBridge } from '@/common/chat/supervisor/supervisorBridge';
 import type { TTeam } from '@/common/types/team/teamTypes';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { leadConversationIdOf, teammateThreadName } from '@renderer/pages/team/createGroupChat/groupChatCore';
+import { memberIdentityColor, memberInitial } from './teamIdentity';
 import { refreshTeamsList } from './teamStore';
 import { addablePositions, isLeaderSlot, positionsAfterChange } from './teamMembersCore';
 
@@ -136,12 +137,20 @@ const TeamMembersManager: React.FC<TeamMembersManagerProps> = ({ team }) => {
       <div className='flex flex-col gap-2px max-h-200px overflow-y-auto'>
         {team.assistants.map((assistant) => {
           const leader = isLeaderSlot(assistant);
+          // The member's initial on their position identity colour, as the header's strip shows them.
+          const identity = memberIdentityColor(assistant.assistant_name, roster);
           return (
             <div
               key={assistant.slot_id}
               data-testid={`team-member-row-${assistant.slot_id}`}
               className='flex items-center gap-8px h-28px px-6px rd-6px hover:bg-fill-2 min-w-0'
             >
+              <span
+                className='size-18px rd-full flex-center text-10px font-medium shrink-0'
+                style={{ background: identity.background, color: identity.foreground }}
+              >
+                {memberInitial(assistant.assistant_name)}
+              </span>
               <span className='text-13px truncate flex-1'>{assistant.assistant_name}</span>
               {leader ? (
                 <span className='text-11px px-4px rd-full bg-[rgba(var(--primary-6),0.12)] text-primary shrink-0'>

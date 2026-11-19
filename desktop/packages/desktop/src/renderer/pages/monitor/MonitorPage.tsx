@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@arco-design/web-react';
 import classNames from 'classnames';
 import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import { positionIdentityColor } from '@/common/chat/positions/positionIdentityColor';
 import { useConversationHistoryContext } from '@renderer/hooks/context/ConversationHistoryContext';
 import { useAssistantList } from '@renderer/hooks/assistant/useAssistantList';
 import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
@@ -98,6 +99,12 @@ const PositionWallCard: React.FC<{ card: PositionCard; now: number; onOpen: (pos
       {...rowButtonProps(() => onOpen(position))}
     >
       <div className='flex items-center gap-8px min-w-0'>
+        {/* The position's identity dot: its stable derived hue — identity only, the state chip and its colours below stay untouched. */}
+        <span
+          data-testid={`monitor-position-${position.name}-identity`}
+          className='size-8px rd-full shrink-0'
+          style={{ background: positionIdentityColor(position.name).background }}
+        />
         <span className='text-16px font-600 tracking-[-0.015em] leading-[1.15] text-t-primary truncate'>
           {position.displayName}
         </span>

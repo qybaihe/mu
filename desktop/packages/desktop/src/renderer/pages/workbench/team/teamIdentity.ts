@@ -11,6 +11,8 @@
  * chip both build on these; all IO lives in their stores and services.
  */
 import type { SupervisorTeam } from '@/common/chat/supervisor/supervisorCore';
+import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import { positionIdentityColor, type PositionIdentityColor } from '@/common/chat/positions/positionIdentityColor';
 import type { TTeam } from '@/common/types/team/teamTypes';
 
 /**
@@ -28,6 +30,25 @@ export const stripGroupChatMarker = (name: string): string => {
 
 /** One member's avatar text: the first character of their slot name. */
 export const memberInitial = (name: string): string => Array.from(name.trim())[0] ?? '';
+
+/**
+ * Whether a team slot's name belongs to a position: exact, or a numbered
+ * second slot (`货代 2`). The one matching rule shared by every surface that
+ * attributes team slots back to roster positions (the monitor's walls, the
+ * member-identity colour).
+ */
+export const slotMatchesPosition = (slotName: string, displayName: string): boolean =>
+  slotName === displayName || slotName.startsWith(`${displayName} `);
+
+/**
+ * A member slot's identity colour: its position's when the roster knows the
+ * slot (a numbered second slot follows its position), the slot name's own
+ * hash otherwise, so an unknown member still reads one stable colour.
+ */
+export const memberIdentityColor = (slotName: string, positions: readonly PositionInfo[]): PositionIdentityColor => {
+  const position = positions.find((candidate) => slotMatchesPosition(slotName, candidate.displayName));
+  return positionIdentityColor(position ? position.name : slotName);
+};
 
 /** One team of the sidebar's team section, with everything a row displays. */
 export type TeamRosterEntry = {

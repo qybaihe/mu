@@ -6,8 +6,10 @@
 
 import { describe, expect, it } from 'vitest';
 import type { SupervisorTeam } from '@/common/chat/supervisor/supervisorCore';
+import { positionIdentityColor } from '@/common/chat/positions/positionIdentityColor';
 import type { TTeam } from '@/common/types/team/teamTypes';
 import {
+  memberIdentityColor,
   memberInitial,
   rosterEntryHolds,
   stripGroupChatMarker,
@@ -129,5 +131,22 @@ describe('rosterEntryHolds', () => {
     expect(rosterEntryHolds(entry, 't1-m1')).toBe(true);
     expect(rosterEntryHolds(entry, 'other')).toBe(false);
     expect(rosterEntryHolds(entry, undefined)).toBe(false);
+  });
+});
+
+describe('memberIdentityColor', () => {
+  const positions = [
+    { name: 'forwarder', displayName: '货代', description: '', body: '' },
+    { name: 'reviewer', displayName: '评审', description: '', body: '' },
+  ];
+
+  it('follows the member position, a numbered second slot its position', () => {
+    expect(memberIdentityColor('货代', positions)).toEqual(positionIdentityColor('forwarder'));
+    expect(memberIdentityColor('货代 2', positions)).toEqual(positionIdentityColor('forwarder'));
+  });
+
+  it('hashes an unknown slot name on its own, still one stable colour', () => {
+    expect(memberIdentityColor('已删岗', positions)).toEqual(positionIdentityColor('已删岗'));
+    expect(memberIdentityColor('已删岗', [])).toEqual(memberIdentityColor('已删岗', positions));
   });
 });
