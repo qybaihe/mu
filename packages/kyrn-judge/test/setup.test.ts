@@ -552,7 +552,7 @@ class FakePi implements PiAccess {
 		"zai-coding-cn": { baseUrl: "https://open.bigmodel.cn/api/coding/paas/v4", models: ["glm-5.3"] },
 		openrouter: { baseUrl: "https://openrouter.ai/api/v1", models: ["moonshotai/kimi-k2.7-code"] },
 		opencode: { baseUrl: "https://opencode.ai/zen/v1", models: ["kimi-k2.7-code", "claude-opus-5-5"] },
-		openai: { baseUrl: "https://api.openai.com/v1", models: ["gpt-6.1-sol"] },
+		openai: { baseUrl: "https://api.openai.com/v1", models: ["gpt-6.2-sol"] },
 		anthropic: { baseUrl: "https://api.anthropic.com", models: ["claude-opus-5-5"] },
 		google: { baseUrl: "https://generativelanguage.googleapis.com/v1beta", models: ["gemini-4-argon"] },
 		xai: { baseUrl: "https://api.x.ai/v1", models: ["grok-4.7"] },
@@ -933,7 +933,7 @@ describe("mu setup, asking in a terminal", () => {
 		const run = await wizard({
 			answers: ["1", "2", "n"],
 			secrets: [KEYS.openaiProject],
-			respond: () => listing("gpt-6.1-sol"),
+			respond: () => listing("gpt-6.2-sol"),
 		});
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.printed).toContain(
@@ -1397,7 +1397,7 @@ describe("mu setup in a script", () => {
 		// The OpenAI model's own key, given once or twice: nothing more to write.
 		for (const stdin of [`${KEYS.openaiProject}\n`, `${KEYS.openaiProject}\n${KEYS.openaiProject}\n`]) {
 			const own = await stdinRun(["--service", "openai", "--judge", "openai"], stdin, {
-				respond: () => listing("gpt-6.1-sol"),
+				respond: () => listing("gpt-6.2-sol"),
 			});
 			expect(own.code).toBe(SETUP_EXIT.done);
 			expect(own.read(".env")).toBeUndefined();

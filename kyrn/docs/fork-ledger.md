@@ -356,13 +356,6 @@ A `// mu:` comment next to a change in code says the same thing in place.
 - **Why**: `mu setup` checks a key with one request through the proxy a session would use, and `mu auth` lists an account's models with the one pi starts that provider on first. Both run against pi's bundle, so `index.ts` exports `applyHttpProxySettings`, `configureHttpDispatcher` and `defaultModelPerProvider`.
 - **In a merge**: Keep the three exports; if upstream moves these functions, export them from their new place.
 
-### M31 GitHub Copilot's default model is asserted
-
-- **Files**
-  - `packages/coding-agent/test/model-resolver.test.ts`
-- **Why**: Copilot's catalog has no GPT-5.4, so a default of it names a model that does not exist. The test asserts the Copilot default `gpt-6.1-sol`, which is also upstream's value in `defaultModelPerProvider`.
-- **In a merge**: Take upstream's side if the line conflicts. When upstream asserts the Copilot default itself or changes it, drop mu's line and retire this entry.
-
 ### M32 A custom system prompt section with a built-in name replaces it in place
 
 - **Files**
@@ -452,6 +445,7 @@ A `// mu:` comment next to a change in code says the same thing in place.
   - `.github/workflows/build-binaries.yml`
   - `.github/workflows/nix.yml`
   - `.github/workflows/p2-cloud-bundle.yml`
+  - `.github/workflows/p2-mac-nightly.yml`
   - `.github/workflows/preview-packages.yml`
   - `.github/workflows/publish-model-catalog.yml`
 - **Why**: They build and publish pi's releases: its binaries, Nix package, preview packages and model catalog. None of that is mu's, and pi's preview registry refuses mu's repository (its cleanup job gets 403 "Repository owner not allowed"); mu's own workflows (M43) build and release mu. The scripts they run, such as `scripts/preview-packages.mjs`, and `nix/` stay as upstream's, so upstream's changes to them merge cleanly.
@@ -564,4 +558,5 @@ A `// mu:` comment next to a change in code says the same thing in place.
 
 ## Retired
 
+- **M31**: Upstream's default-model test now checks every built-in chat provider's default against its generated catalog.
 - **M35**: Upstream deleted `packages/chord/test/manager.test.ts` in its Chord v2 restructure.

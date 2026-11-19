@@ -5,7 +5,7 @@ import { ExtensionSelectorComponent } from "../src/modes/interactive/components/
 import { initTheme } from "../src/modes/interactive/theme/theme.ts";
 import { stripAnsi } from "../src/utils/ansi.ts";
 
-const plain = (lines: string[]) => lines.map((line) => stripAnsi(line).trimEnd());
+const plain = (lines: readonly string[]) => lines.map((line) => stripAnsi(line).trimEnd());
 
 function render(selector: ExtensionSelectorComponent): string {
 	return stripAnsi(selector.render(80).join("\n"));
