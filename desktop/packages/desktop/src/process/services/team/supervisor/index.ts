@@ -13,18 +13,20 @@
 import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
 import {
+  cleanupOrphanTeamWorkspaces,
   ensureSupervisorWorkspace,
   ensureSupervisorWorkspaceWithCatalog,
   listSupervisorTeams,
   purgeDueDeletedTeams,
   registerSupervisorTeam,
   restoreSupervisorTeam,
-  reuseSupervisorTeamIn,
   setTeamLifecycle,
   softDeleteSupervisorTeam,
 } from './supervisorService';
 
 export {
+  cleanupOrphanTeamWorkspaces,
+  cleanupOrphanTeamWorkspacesIn,
   ensureSupervisorWorkspace,
   ensureSupervisorWorkspaceIn,
   ensureSupervisorWorkspaceWithCatalog,
@@ -41,6 +43,7 @@ export {
   softDeleteSupervisorTeam,
   softDeleteSupervisorTeamIn,
   type DeleteTeamForPurge,
+  type OrphanWorkspaceResult,
 } from './supervisorService';
 
 // Always answer, failures included: the generic bridge only logs a provider's exception, and the window would wait.
@@ -57,8 +60,18 @@ export function initSupervisorBridge(): void {
   // The teams read is also the lazy delete reconcile: an expired soft delete
   // is purged (backend DELETE, then the row) the moment anything re-reads the
   // index, so the monitor and sidebar stay the honest mirrors of the file.
+  // The orphan-workspace sweep rides along, best-effort: its failure never
+  // fails the read.
   supervisorBridge.teams.provider(() =>
-    result(() => purgeDueDeletedTeams().then(() => listSupervisorTeams().then((teams) => ({ teams }))))
+    result(() =>
+      purgeDueDeletedTeams()
+        .then(() =>
+          cleanupOrphanTeamWorkspaces().catch((error) =>
+            console.warn('[supervisor] orphan workspace sweep failed', error)
+          )
+        )
+        .then(() => listSupervisorTeams().then((teams) => ({ teams })))
+    )
   );
   supervisorBridge.registerTeam.provider((params) =>
     result(() => registerSupervisorTeam(params).then((teams) => ({ teams })))
@@ -73,9 +86,11 @@ export function initSupervisorBridge(): void {
     result(() => restoreSupervisorTeam(params).then((teams) => ({ teams })))
   );
   // The startup pass: the canonical rewrite (retiring expired teams), then
-  // the delete reconcile (backend DELETE for grace-expired soft deletes).
+  // the delete reconcile (backend DELETE for grace-expired soft deletes),
+  // then the orphan-workspace sweep (grace-expired folders no row explains).
   void ensureSupervisorWorkspaceWithCatalog()
     .then(() => purgeDueDeletedTeams())
+    .then(() => cleanupOrphanTeamWorkspaces())
     .catch((error) => {
       console.warn('[supervisor] startup reconciliation failed', error);
     });

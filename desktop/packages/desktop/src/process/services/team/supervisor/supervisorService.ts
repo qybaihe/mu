@@ -16,7 +16,7 @@
  * also the lifecycle reconciliation point: the canonical rewrite retires
  * teams whose TTL passed while nobody looked.
  */
-import { mkdir, rm, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getPlatformServices } from '@/common/platform';
 import { httpRequest } from '@/common/adapter/httpBridge';
@@ -29,6 +29,8 @@ import {
   POSITIONS_SCRIPT_NAME,
   SHARED_TEAMS_FOLDER,
   SUPERVISOR_FOLDER,
+  TEAM_WORKSPACES_FOLDER,
+  TEAM_WORKSPACE_GRACE_MS,
   TEAMS_FILE_NAME,
   TEAMS_SCRIPT_NAME,
   TEAM_TTL_DEFAULT_DAYS,
@@ -41,6 +43,8 @@ import {
   isTeamActive,
   isTeamDeleted,
   isTeamPurgeDue,
+  isTeamWorkspaceFolder,
+  isTeamsIndexFile,
   parseTeamsFile,
   type SupervisorTeam,
 } from '@/common/chat/team/supervisor/supervisorCore';
@@ -465,6 +469,75 @@ export async function purgeDueDeletedTeamsIn(
 /** The delete reconcile under the app data dir. */
 export const purgeDueDeletedTeams = (): Promise<PurgeResult> =>
   purgeDueDeletedTeamsIn({ dataDir: getPlatformServices().paths.getDataDir() }, { deleteTeam: deleteTeamOverHttp });
+
+/** The outcome of one orphan-workspace pass: what left the teams root, what stays, and whether the pass ran at all. */
+export type OrphanWorkspaceResult = {
+  /** Folders deleted this pass: no index row explains them, their grace had passed. */
+  deleted: string[];
+  /** Orphans still inside their grace, with whole days left (folder name → days). */
+  pending: Array<{ folder: string; daysLeft: number }>;
+  /** True when the pass declined to run: no readable index means "unknown", never "no teams". */
+  skipped: boolean;
+};
+
+/**
+ * The workspace reconcile: a folder under the teams root that no index row
+ * explains — a purged row's leftover, or a folder from an index nobody
+ * records — is an orphan, deleted once its mtime is older than the grace
+ * (so a fresh team whose row has not landed yet is never swept). Rows the
+ * index carries without a folder are NOT the sweep's business: an active
+ * team's workspace may simply not exist yet. A missing or marker-less index
+ * skips the pass whole — every folder might belong to a row it would have
+ * carried. The clock is injectable for tests. Runs with the delete
+ * reconcile: at startup and behind the `supervisor.teams` read.
+ */
+export async function cleanupOrphanTeamWorkspacesIn(
+  options: { dataDir: string },
+  now: () => number = Date.now
+): Promise<OrphanWorkspaceResult> {
+  let raw: string | undefined;
+  try {
+    raw = await readFile(teamsFileOf(options.dataDir), 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+  if (raw === undefined || !isTeamsIndexFile(raw)) return { deleted: [], pending: [], skipped: true };
+  const teams = parseTeamsFile(raw);
+  const root = join(options.dataDir, TEAM_WORKSPACES_FOLDER);
+  let entries: Array<{ name: string; isDirectory: () => boolean }>;
+  try {
+    entries = await readdir(root, { withFileTypes: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    return { deleted: [], pending: [], skipped: false };
+  }
+  const at = now();
+  const deleted: string[] = [];
+  const pending: Array<{ folder: string; daysLeft: number }> = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || isTeamWorkspaceFolder(entry.name, teams)) continue;
+    const folder = join(root, entry.name);
+    const age = at - (await stat(folder)).mtimeMs;
+    if (age < TEAM_WORKSPACE_GRACE_MS) {
+      // Days left, capped at the grace length: a clock reading from before
+      // the mtime (a skewed handoff between fake and real clocks) must not
+      // round a fresh orphan up to "8 days".
+      const days = Math.ceil((TEAM_WORKSPACE_GRACE_MS - age) / (24 * 60 * 60 * 1000));
+      pending.push({
+        folder: entry.name,
+        daysLeft: Math.min(TEAM_WORKSPACE_GRACE_MS / (24 * 60 * 60 * 1000), Math.max(1, days)),
+      });
+      continue;
+    }
+    await rm(folder, { recursive: true, force: true });
+    deleted.push(entry.name);
+  }
+  return { deleted, pending, skipped: false };
+}
+
+/** The workspace reconcile under the app data dir. */
+export const cleanupOrphanTeamWorkspaces = (): Promise<OrphanWorkspaceResult> =>
+  cleanupOrphanTeamWorkspacesIn({ dataDir: getPlatformServices().paths.getDataDir() });
 
 /**
  * The shared index as it stands on disk: every team the supervisor flow

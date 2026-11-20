@@ -9,6 +9,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync,
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  cleanupOrphanTeamWorkspacesIn,
   ensureSupervisorWorkspaceIn,
   purgeDueDeletedTeamsIn,
   registerSupervisorTeamIn,
@@ -24,6 +25,7 @@ import {
   SUPERVISOR_FOLDER,
   POSITIONS_SCRIPT_NAME,
   TEAMS_FILE_NAME,
+  buildTeamsFile,
   parseTeamsFile,
 } from '@/common/chat/team/supervisor/supervisorCore';
 
@@ -33,6 +35,9 @@ import {
  * them, and the reconciliation that retires expired teams. Real files in a
  * temp tree; the clock is injected.
  */
+
+/** The shared index's path under a data dir, as the service computes it. */
+const teamsFileOf = (dataDir: string): string => join(dataDir, 'positions', SHARED_TEAMS_FOLDER, TEAMS_FILE_NAME);
 
 const dirs: string[] = [];
 const temp = (): string => {
@@ -511,6 +516,141 @@ describe('purgeDueDeletedTeamsIn', () => {
     expect(called).toBe(0);
     expect(answer.purged).toEqual([]);
     expect(readFileSync(teamsFile, 'utf8')).toBe(before);
+  });
+});
+
+describe('the orphan-workspace sweep (cleanupOrphanTeamWorkspacesIn)', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  // Windows cannot utimes a directory, so the clock is faked instead: only
+  // Date (fs and timers stay real), which is exactly the `now` the sweep reads.
+  const withFakeClock = async (work: () => Promise<void>): Promise<void> => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      await work();
+    } finally {
+      vi.useRealTimers();
+    }
+  };
+  /** A teams-root folder, fresh at the moment it is created. */
+  const folder = (dataDir: string, name: string): string => {
+    const dir = join(dataDir, 'teams', name);
+    mkdirSync(dir, { recursive: true });
+    return dir;
+  };
+  /** Registers a team row (the index that explains its folder). */
+  const register = (dataDir: string, name: string, teamId: string) =>
+    registerSupervisorTeamIn(
+      { dataDir },
+      { name, positions: ['forwarder'], teamId, leadConversationId: `c-${teamId}` }
+    );
+
+  it("deletes only unexplained folders past their grace; fresh orphans and every row's folder stay", async () => {
+    await withFakeClock(async () => {
+      const { dataDir } = setup();
+      await register(dataDir, '现役队', 't1');
+      folder(dataDir, '现役队'); // an active team's folder: never swept, however old
+      folder(dataDir, '孤儿'); // unexplained
+      // Six days in: the orphan is inside its grace — kept, days counted down.
+      vi.setSystemTime(Date.now() + 6 * DAY);
+      const first = await cleanupOrphanTeamWorkspacesIn({ dataDir });
+      expect(first.skipped).toBe(false);
+      expect(first.deleted).toEqual([]);
+      expect(first.pending.map((entry) => entry.folder)).toEqual(['孤儿']);
+      // The frozen fake clock trails real fs time by milliseconds, so the last
+      // day reads as 1 or 2 — the count is informational, never a trigger.
+      expect(first.pending[0]?.daysLeft).toBeGreaterThanOrEqual(1);
+      expect(first.pending[0]?.daysLeft).toBeLessThanOrEqual(2);
+      expect(existsSync(join(dataDir, 'teams', '孤儿'))).toBe(true);
+      // Past the grace it goes; the row's folder stays whatever the clock says.
+      vi.setSystemTime(Date.now() + 2 * DAY + 1000);
+      const second = await cleanupOrphanTeamWorkspacesIn({ dataDir });
+      expect(second.deleted).toEqual(['孤儿']);
+      expect(second.pending).toEqual([]);
+      expect(existsSync(join(dataDir, 'teams', '现役队'))).toBe(true);
+      expect(existsSync(join(dataDir, 'teams', '孤儿'))).toBe(false);
+    });
+  });
+
+  it('counts retired and soft-deleted rows too — their folders are restore capital', async () => {
+    await withFakeClock(async () => {
+      const { dataDir, teamsFile } = setup();
+      await register(dataDir, '退役队', 't1');
+      await register(dataDir, '已删队', 't2');
+      folder(dataDir, '退役队');
+      folder(dataDir, '已删队');
+      // Age the rows past their lease, then soft-delete the second.
+      const rows = parseTeamsFile(readFileSync(teamsFile, 'utf8'));
+      const aged = rows.map((row) => ({ ...row, expiresAt: 1, deletedAt: row.teamId === 't2' ? 1 : undefined }));
+      writeFileSync(
+        teamsFile,
+        `${buildTeamsFile(aged, 2)}
+`,
+        'utf8'
+      );
+      vi.setSystemTime(Date.now() + 40 * DAY);
+      const answer = await cleanupOrphanTeamWorkspacesIn({ dataDir });
+      expect(answer.deleted).toEqual([]);
+      expect(existsSync(join(dataDir, 'teams', '退役队'))).toBe(true);
+      expect(existsSync(join(dataDir, 'teams', '已删队'))).toBe(true);
+    });
+  });
+
+  it('accepts the collision-suffixed folder a row explains, ignores plain files', async () => {
+    const { dataDir } = setup();
+    await register(dataDir, '播客队', 't1');
+    folder(dataDir, '播客队-mwovvd2m'); // add's collision variant: explained
+    writeFileSync(join(dataDir, 'teams', 'stray.txt'), 'x', 'utf8'); // not a folder: untouched
+    const answer = await cleanupOrphanTeamWorkspacesIn({ dataDir });
+    expect(answer.deleted).toEqual([]);
+    expect(existsSync(join(dataDir, 'teams', '播客队-mwovvd2m'))).toBe(true);
+    expect(existsSync(join(dataDir, 'teams', 'stray.txt'))).toBe(true);
+  });
+
+  it('skips whole when the index is missing or marker-less: unknown is never "no teams"', async () => {
+    const empty = setup(); // no index file written
+    folder(empty.dataDir, '孤儿-旧');
+    const missing = await cleanupOrphanTeamWorkspacesIn({ dataDir: empty.dataDir });
+    expect(missing.skipped).toBe(true);
+    expect(existsSync(join(empty.dataDir, 'teams', '孤儿-旧'))).toBe(true);
+
+    const corrupt = setup();
+    mkdirSync(join(corrupt.dataDir, 'positions', SHARED_TEAMS_FOLDER), { recursive: true });
+    writeFileSync(corrupt.teamsFile, `# 手改过的文件，没有 marker${String.fromCharCode(10)}`, 'utf8');
+    folder(corrupt.dataDir, '孤儿-旧');
+    const markerless = await cleanupOrphanTeamWorkspacesIn({ dataDir: corrupt.dataDir });
+    expect(markerless.skipped).toBe(true);
+    expect(existsSync(join(corrupt.dataDir, 'teams', '孤儿-旧'))).toBe(true);
+  });
+
+  it('a valid empty index is a real sweep: nothing explained, everything orphaned on its clock', async () => {
+    await withFakeClock(async () => {
+      const { dataDir } = setup();
+      mkdirSync(join(dataDir, 'positions', SHARED_TEAMS_FOLDER), { recursive: true });
+      writeFileSync(
+        teamsFileOf(dataDir),
+        `${buildTeamsFile([], 2)}
+`,
+        'utf8'
+      );
+      folder(dataDir, '孤儿-旧');
+      vi.setSystemTime(Date.now() + 8 * DAY + 1000);
+      const answer = await cleanupOrphanTeamWorkspacesIn({ dataDir });
+      expect(answer.skipped).toBe(false);
+      expect(answer.deleted).toEqual(['孤儿-旧']);
+    });
+  });
+
+  it('is a no-op without a teams root at all', async () => {
+    const { dataDir } = setup();
+    mkdirSync(join(dataDir, 'positions', SHARED_TEAMS_FOLDER), { recursive: true });
+    writeFileSync(
+      teamsFileOf(dataDir),
+      `${buildTeamsFile([], 2)}
+`,
+      'utf8'
+    );
+    const answer = await cleanupOrphanTeamWorkspacesIn({ dataDir });
+    expect(answer).toEqual({ deleted: [], pending: [], skipped: false });
   });
 });
 

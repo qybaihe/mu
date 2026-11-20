@@ -73,6 +73,49 @@ export const SHARED_TEAMS_FOLDER = '_shared';
 /** The maintenance script in the supervisor workspace; the service rewrites it on version change. */
 export const TEAMS_SCRIPT_NAME = 'teams.cjs';
 
+/**
+ * The root folder under the app data dir holding the workspaces `teams.cjs
+ * add` opens (one folder per team, named after it). The backend's own team
+ * folders under `aionui/conversations/` are the backend's storage, not this
+ * app's, so nothing here scans them.
+ */
+export const TEAM_WORKSPACES_FOLDER = 'teams';
+
+/**
+ * The workspace folder name `teams.cjs add` derives from a team name
+ * (unsafe characters and whitespace fold to `-`, leading/trailing dashes
+ * drop). The collision variant appends `-<timestamp>`; see
+ * `isTeamWorkspaceFolder`.
+ */
+export const teamWorkspaceFolderOf = (name: string): string =>
+  name.replace(/[\\/:*?"<>|\s]+/g, '-').replace(/^-+|-+$/g, '');
+
+/**
+ * How long an orphaned workspace folder stays put before the reconcile
+ * deletes it: a folder no index row explains (a purged row's leftover, or a
+ * name nobody records) is deleted only once its mtime is this old, so a
+ * freshly created team whose row has not landed yet is never swept.
+ */
+export const TEAM_WORKSPACE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Whether a folder under the teams root belongs to one of the index's rows:
+ * `teams.cjs add` names the folder after the team, appending `-<timestamp>`
+ * when the derived name is taken, so the folder a row explains is its exact
+ * derived name or anything extending it with a dash. A folder no row
+ * explains is an orphan (deletion is the reconcile's call, on its own
+ * clock). The full table counts — active, retired and soft-deleted rows
+ * alike: a deleted team's folder is its restore capital until its grace
+ * passes, and a retired team stays reusable.
+ */
+export function isTeamWorkspaceFolder(folder: string, teams: readonly SupervisorTeam[]): boolean {
+  return teams.some((team) => {
+    const derived = teamWorkspaceFolderOf(team.name);
+    if (derived === '') return false;
+    return folder === derived || folder.startsWith(`${derived}-`);
+  });
+}
+
 /** The read-only position-roster script in the supervisor workspace (the new-project dedup check). */
 export const POSITIONS_SCRIPT_NAME = 'positions.cjs';
 
@@ -181,6 +224,14 @@ export function buildTeamsFile(teams: readonly SupervisorTeam[], now: number): s
   if (deleted.length > 0) lines.push('已删除（7 天内可恢复，到期连同后端团队彻底删除）：', '', ...table(deleted));
   return lines.join('\n');
 }
+
+/**
+ * Whether a file's content carries the index marker: the bar a sweep of the
+ * teams root requires before it trusts the file as the whole truth — a
+ * missing or marker-less index means "unknown", never "no teams", so a
+ * folder it might have explained is not an orphan.
+ */
+export const isTeamsIndexFile = (content: string): boolean => content.includes(TEAMS_FILE_MARKER);
 
 /**
  * The teams an index file records. Tolerant of the file a model or an older

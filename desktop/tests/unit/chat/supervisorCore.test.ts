@@ -18,7 +18,10 @@ import {
   isTeamActive,
   isTeamDeleted,
   isTeamPurgeDue,
+  isTeamWorkspaceFolder,
+  isTeamsIndexFile,
   parseTeamsFile,
+  teamWorkspaceFolderOf,
   type SupervisorTeam,
 } from '@/common/chat/team/supervisor/supervisorCore';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
@@ -377,5 +380,43 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('主管（Supervisor）');
     expect(content).toContain('你不做业务，只做派发');
     expect(content).toContain('无条件第一个动作');
+  });
+});
+
+describe('the teams root sweep: which folders the index explains', () => {
+  it('derives workspace folder names the way teams.cjs add does', () => {
+    // The mirror of the script's teamWorkspace(): unsafe characters and
+    // whitespace fold to dashes, leading/trailing dashes drop.
+    expect(teamWorkspaceFolderOf('CNS 查重队')).toBe('CNS-查重队');
+    expect(teamWorkspaceFolderOf(' a/b:c*d?e"f<g>h|i ')).toBe('a-b-c-d-e-f-g-h-i');
+    expect(teamWorkspaceFolderOf('--货代--')).toBe('货代');
+    expect(teamWorkspaceFolderOf('///')).toBe('');
+  });
+
+  it('explains the exact derived folder, the collision-suffixed variant, and nothing else', () => {
+    const rows = [team({ name: '播客笔记队' })];
+    expect(isTeamWorkspaceFolder('播客笔记队', rows)).toBe(true);
+    // add's collision variant appends -<timestamp>: still that team's folder.
+    expect(isTeamWorkspaceFolder('播客笔记队-mwovvd2m', rows)).toBe(true);
+    expect(isTeamWorkspaceFolder('播客笔记整理队', rows)).toBe(false);
+    expect(isTeamWorkspaceFolder('other', rows)).toBe(false);
+  });
+
+  it('counts every row of the full table — active, retired, soft-deleted', () => {
+    const now = Date.now();
+    const rows = [
+      team({ name: '现役队', teamId: 'a', deletedAt: undefined }),
+      team({ name: '退役队', teamId: 'b', expiresAt: now - 1, deletedAt: undefined }),
+      team({ name: '已删队', teamId: 'c', deletedAt: now - 1 }),
+    ];
+    for (const name of ['现役队', '退役队', '已删队']) expect(isTeamWorkspaceFolder(name, rows)).toBe(true);
+    // A name that derives to nothing (all unsafe characters) explains no folder.
+    expect(isTeamWorkspaceFolder('', [team({ name: '///' })])).toBe(false);
+  });
+
+  it("recognizes index files by the marker — the sweep's truth-is-known bar", () => {
+    expect(isTeamsIndexFile(buildTeamsFile([team()], 2_000))).toBe(true);
+    expect(isTeamsIndexFile(`# 临时团队索引${'\n'}| 队名 |${'\n'}| --- |${'\n'}`)).toBe(false);
+    expect(isTeamsIndexFile('')).toBe(false);
   });
 });
