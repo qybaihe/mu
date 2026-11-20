@@ -22,6 +22,7 @@ export type SlotWorkBySlot = ReadonlyMap<string, ITeamSlotWork>;
 /** The whole index: one slot-work map per team id. */
 export type SlotWorkIndex = ReadonlyMap<string, SlotWorkBySlot>;
 
+/** How long a team stays matchable since its last reuse; the same 7 days as the supervisor's index. */
 export const TEAM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 // --- position wall ---

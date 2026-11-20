@@ -79,10 +79,11 @@ function parseArgs(argv) {
 
 /**
  * The position library's display-name aliases: a roster spells a position
- * `货代` when it has a display_name, so a model may pass any of the three
+ * `货代` (its display name) when it has one, so a model may pass any of the three
  * spellings to --positions. This maps every spelling to the id TEAMS.md keys
  * on, and ids to their display name (the team slot names carry the display
- * name, so the sidebar shows 货代, not forwarder). Best-effort: an unreadable
+ * name, so the sidebar shows 货代 (the display name), not forwarder (the
+ * id)). Best-effort: an unreadable
  * library changes nothing — tokens pass through, ids stay ids.
  */
 function positionAliases() {
@@ -130,7 +131,7 @@ function positionLabelOf(id, displayNames) {
 /**
  * The positions of an `--positions` value: split, trimmed, empty dropped,
  * duplicates kept out; every spelling of a position (id, display name, or
- * `显示名`) settles on the id.
+ * display name(id)) settles on the id.
  */
 function parsePositions(value) {
   const { aliases } = positionAliases();
@@ -307,7 +308,8 @@ async function cmdAdd(args) {
   // the whole file. Empty when the app's injection is absent (source checkout).
   if (DISPATCH_RULES_BLOCK) fs.writeFileSync(path.join(workspace, 'AGENTS.md'), `${DISPATCH_RULES_BLOCK}\n`, 'utf8');
 
-  // Slots carry the positions' display names (货代, not forwarder): the team
+  // Slots carry the positions' display names (货代, the display name, not
+  // forwarder, the id): the team
   // and its conversations are user-facing surfaces. TEAMS.md keys stay ids.
   const { displayNames } = positionAliases();
   const slots = positions.map((position, index) => ({

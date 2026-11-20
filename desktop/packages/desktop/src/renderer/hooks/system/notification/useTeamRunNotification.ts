@@ -42,6 +42,7 @@ const resolveTeam = async (
   }
 };
 
+/** Fires a native system notification when one of the user's team runs completes, fails or stalls; no-op off Electron. */
 export const useTeamRunNotification = (): void => {
   const { t } = useTranslation();
 

@@ -4,13 +4,15 @@
  * into the supervisor workspace by the desktop app
  * (process/services/supervisor/supervisorService.ts); the supervisor agent
  * runs it from that workspace as the new-project/new-position dedup check
- * (supervisor rules, 规则 5): before creating any project or position, list
+ * (supervisor rules, rule 5): before creating any project or position, list
  * every existing position and compare domains.
  *
  * The parsing mirrors common/chat/positions/positionLibraryCore.ts (the
  * contract): a position is an .md file whose frontmatter carries both `name`
  * and `description` (README.md is documentation, not a position); the project
- * root is the body's 「项目根：`E:/x/y`」 backtick line. Keep the two in sync.
+ * root is the body's 「项目根：`E:/x/y`」 backtick line (the literal "project
+ * root" marker, kept in Chinese because that is the line the library
+ * writes). Keep the two in sync.
  *
  * Subcommands:
  *   list    one `POSITION <displayName(name)|name> | <description> | project=<root|->` line per
