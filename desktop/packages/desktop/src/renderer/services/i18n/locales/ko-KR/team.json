@@ -123,5 +123,8 @@
     "open": "{{name}} 열기",
     "jump": "메시지 보기",
     "sourceUnknown": "알 수 없는 멤버"
+  },
+  "changedFiles": {
+    "title": "이번 라운드 변경 파일 {{count}}개"
   }
 }

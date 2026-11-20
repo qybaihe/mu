@@ -123,5 +123,8 @@
     "open": "Abrir {{name}}",
     "jump": "Ver mensaje",
     "sourceUnknown": "Miembro desconocido"
+  },
+  "changedFiles": {
+    "title": "{{count}} archivos modificados en esta ronda"
   }
 }

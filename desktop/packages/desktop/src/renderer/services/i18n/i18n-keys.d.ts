@@ -4761,6 +4761,7 @@ export type I18nKey =
   | 'supervisor.rowA11y'
   | 'supervisor.title'
   | 'supervisor.tooltip'
+  | 'team.changedFiles.title'
   | 'team.create.chooseDifferentFolder'
   | 'team.create.errors.needLead'
   | 'team.create.errors.needMemberName'

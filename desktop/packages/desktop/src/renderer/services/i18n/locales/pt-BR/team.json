@@ -123,5 +123,8 @@
     "open": "Abrir {{name}}",
     "jump": "Ver mensagem",
     "sourceUnknown": "Membro desconhecido"
+  },
+  "changedFiles": {
+    "title": "{{count}} arquivos alterados nesta rodada"
   }
 }

@@ -68,8 +68,13 @@ import {
   memberMessagesFromMailbox,
   type TeamTaskRow,
 } from './teamTaskEvents';
-import { useQuickDecisionNotes, type QuickDecisionNote } from '@renderer/pages/team/core/quickDecisionNotes';
+import { useQuickDecisionNotes, type QuickDecisionNote } from '@renderer/pages/team/core/notes/quickDecisionNotes';
+import {
+  useTeamChangedFileNotes,
+  type TeamChangedFilesNote,
+} from '@renderer/pages/team/core/notes/teamChangedFileNotes';
 import QuickDecisionNoteRow from '@renderer/pages/team/components/QuickDecisionNoteRow';
+import TeamChangedFilesRow from '@renderer/pages/team/components/TeamChangedFilesRow';
 import { dependencyEdgesOf } from '@renderer/pages/team/core/teamDataCore';
 import { useTeamTaskEvents } from './useTeamTaskEvents';
 import type { WriteFileResult } from './types';
@@ -103,10 +108,23 @@ type IThoughtHistoryVO = {
   sourceMessageIds: string[];
   created_at: number;
 };
-type IProcessedItem = IMessageVO | IArtifactVO | IThoughtHistoryVO | TeamTaskRow | QuickDecisionRow;
+type IProcessedItem =
+  | IMessageVO
+  | IArtifactVO
+  | IThoughtHistoryVO
+  | TeamTaskRow
+  | QuickDecisionRow
+  | TeamChangedFilesRowItem;
 
 /** One ⚡ short-circuit receipt, merged like a teammate row: nothing went through the model, so no backend message exists. */
 type QuickDecisionRow = { type: 'quick_decision'; id: string; note: QuickDecisionNote; created_at: number };
+/** One finished run's changed files, merged like a ⚡ receipt: the app wrote it, no model round exists. */
+type TeamChangedFilesRowItem = {
+  type: 'team_changed_files';
+  id: string;
+  note: TeamChangedFilesNote;
+  created_at: number;
+};
 
 type CompactAcpToolCallContent = IMessageAcpToolCall['content'] & {
   _compact?: {
@@ -220,6 +238,7 @@ const ThoughtHistoryRow = React.memo(ThoughtHistory);
 const FileChangesRow = React.memo(MessageFileChanges);
 const TeamTaskCardRow = React.memo(TeamTaskCard);
 const QuickDecisionNoteRowMemo = React.memo(QuickDecisionNoteRow);
+const TeamChangedFilesRowMemo = React.memo(TeamChangedFilesRow);
 
 const sameRefs = (a: readonly unknown[], b: readonly unknown[]): boolean =>
   a.length === b.length && a.every((item, index) => item === b[index]);
@@ -605,6 +624,7 @@ const MessageList: React.FC<{
   // The ⚡ receipts of a supervisor/position conversation: short-circuited
   // sends never became backend messages, so the notes are the only trace.
   const quickDecisionNotes = useQuickDecisionNotes(conversationId);
+  const teamChangedFileNotes = useTeamChangedFileNotes(conversationId);
   const { t } = useTranslation();
   const location = useLocation();
   const locationState = (location.state || {}) as ConversationLocationState;
@@ -871,6 +891,14 @@ const MessageList: React.FC<{
           note,
           created_at: note.createdAt,
         })),
+        // A run's changed files merge the same way: sorted by when the run
+        // finished, not appended — the user may keep chatting meanwhile.
+        ...teamChangedFileNotes.map<TeamChangedFilesRowItem>((note) => ({
+          type: 'team_changed_files',
+          id: note.id,
+          note,
+          created_at: note.createdAt,
+        })),
       ].toSorted((a, b) => getProcessedItemCreatedAt(a) - getProcessedItemCreatedAt(b))
     );
     // Team task cards merge in after the reuse pass: their objects come from
@@ -886,6 +914,7 @@ const MessageList: React.FC<{
     list,
     openThoughtIds,
     quickDecisionNotes,
+    teamChangedFileNotes,
     teamTaskEvents?.mailbox,
     teamTaskEvents?.members,
     teamTaskEvents?.tasks,
@@ -1123,7 +1152,8 @@ const MessageList: React.FC<{
           (item as { type?: string }).type === 'thinking_history' ||
           (item as { type?: string }).type === 'artifact' ||
           (item as { type?: string }).type === 'team_task' ||
-          (item as { type?: string }).type === 'quick_decision'
+          (item as { type?: string }).type === 'quick_decision' ||
+          (item as { type?: string }).type === 'team_changed_files'
         ) {
           return false;
         }
@@ -1248,6 +1278,19 @@ const MessageList: React.FC<{
           style={highlighted ? highlightStyle : undefined}
         >
           <QuickDecisionNoteRowMemo note={item.note} />
+        </div>
+      );
+    }
+    if ('type' in item && item.type === 'team_changed_files') {
+      return (
+        <div
+          key={item.id}
+          id={`message-${item.id}`}
+          data-testid='team-changed-files-row-wrapper'
+          className={`${rowWidthClass} min-w-0 message-item px-8px ${topMarginClass} team_changed_files`}
+          style={highlighted ? highlightStyle : undefined}
+        >
+          <TeamChangedFilesRowMemo note={item.note} />
         </div>
       );
     }

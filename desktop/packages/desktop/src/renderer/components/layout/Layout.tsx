@@ -38,6 +38,7 @@ import { useDeepLink } from '@renderer/hooks/system/useDeepLink';
 import { useNotificationClick } from '@renderer/hooks/system/notification/useNotificationClick';
 import { useDesktopTurnNotification } from '@renderer/hooks/system/notification/useDesktopTurnNotification';
 import { useSupervisorTeamReceipt } from '@renderer/hooks/system/notification/useSupervisorTeamReceipt';
+import { useTeamChangedFilesNotes } from '@renderer/pages/team/hooks/useTeamChangedFilesNotes';
 import { useTeamRunNotification } from '@renderer/hooks/system/notification/useTeamRunNotification';
 import { useNativeAttention } from '@renderer/pages/native/hooks/useNativeAttention';
 import { useAppBadge } from '@renderer/hooks/system/notification/useAppBadge';
@@ -153,6 +154,7 @@ const Layout: React.FC<{
   useDesktopTurnNotification();
   useTeamRunNotification();
   useSupervisorTeamReceipt();
+  useTeamChangedFilesNotes();
   useNativeAttention();
   useAppBadge();
   useKeepAwakeWhileRunning();

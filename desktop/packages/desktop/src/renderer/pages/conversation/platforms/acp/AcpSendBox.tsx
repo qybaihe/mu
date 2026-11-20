@@ -10,7 +10,7 @@ import {
 } from '@/common/chat/team/quickDecision/quickDecisionBridge';
 import { SUPERVISOR_POSITION_NAME } from '@/common/chat/team/supervisor/supervisorCore';
 import type { KyrnResult } from '@/common/kyrn/errors';
-import { appendQuickDecisionNote, shouldAskQuickDecision } from '@renderer/pages/team/core/quickDecisionNotes';
+import { appendQuickDecisionNote, shouldAskQuickDecision } from '@renderer/pages/team/core/notes/quickDecisionNotes';
 import { parseError, uuid } from '@/common/utils';
 import AgentModeSelector from '@/renderer/components/agent/AgentModeSelector';
 import ContextUsageIndicator from '@/renderer/components/agent/ContextUsageIndicator';

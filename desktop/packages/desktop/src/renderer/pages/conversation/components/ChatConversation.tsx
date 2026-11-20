@@ -7,7 +7,7 @@
 import { ipcBridge } from '@/common';
 import type { ChatFileRef } from '@/common/types/chatFile';
 import { quickDecisionBridge } from '@/common/chat/team/quickDecision/quickDecisionBridge';
-import { appendQuickDecisionNote } from '@renderer/pages/team/core/quickDecisionNotes';
+import { appendQuickDecisionNote } from '@renderer/pages/team/core/notes/quickDecisionNotes';
 import type { IConversationMcpStatus, IProvider, TChatConversation, TProviderWithModel } from '@/common/config/storage';
 import { uuid } from '@/common/utils';
 import addChatIcon from '@/renderer/assets/icons/add-chat.svg';

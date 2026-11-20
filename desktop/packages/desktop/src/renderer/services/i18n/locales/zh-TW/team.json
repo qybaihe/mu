@@ -123,5 +123,8 @@
     "open": "開啟 {{name}}",
     "jump": "定位訊息",
     "sourceUnknown": "未知成員"
+  },
+  "changedFiles": {
+    "title": "本輪變更檔案 {{count}} 個"
   }
 }

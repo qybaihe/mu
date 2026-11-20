@@ -123,5 +123,8 @@
     "open": "Ouvrir {{name}}",
     "jump": "Voir le message",
     "sourceUnknown": "Membre inconnu"
+  },
+  "changedFiles": {
+    "title": "{{count}} fichiers modifiés dans ce tour"
   }
 }

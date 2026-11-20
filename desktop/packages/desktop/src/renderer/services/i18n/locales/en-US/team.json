@@ -123,5 +123,8 @@
     "open": "Open {{name}}",
     "jump": "Show message",
     "sourceUnknown": "Unknown member"
+  },
+  "changedFiles": {
+    "title": "{{count}} files changed this round"
   }
 }

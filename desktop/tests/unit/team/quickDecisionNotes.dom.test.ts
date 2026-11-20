@@ -11,7 +11,7 @@ import {
   reloadQuickDecisionNotesForTest,
   resetQuickDecisionNotesForTest,
   shouldAskQuickDecision,
-} from '@renderer/pages/team/core/quickDecisionNotes';
+} from '@renderer/pages/team/core/notes/quickDecisionNotes';
 
 /** The ⚡ note store: what a short-circuited send leaves behind, and the guards that decide whether to ask at all. */
 

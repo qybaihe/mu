@@ -123,5 +123,8 @@
     "open": "{{name}} dosyasını aç",
     "jump": "Mesajı göster",
     "sourceUnknown": "Bilinmeyen üye"
+  },
+  "changedFiles": {
+    "title": "Bu turda {{count}} dosya değişti"
   }
 }

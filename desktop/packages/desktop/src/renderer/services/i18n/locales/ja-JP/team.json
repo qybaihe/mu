@@ -123,5 +123,8 @@
     "open": "{{name}} を開く",
     "jump": "メッセージを表示",
     "sourceUnknown": "不明なメンバー"
+  },
+  "changedFiles": {
+    "title": "今回の変更ファイル {{count}} 件"
   }
 }

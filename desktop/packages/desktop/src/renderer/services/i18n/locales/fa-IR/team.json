@@ -123,5 +123,8 @@
     "open": "باز کردن {{name}}",
     "jump": "نمایش پیام",
     "sourceUnknown": "عضو ناشناس"
+  },
+  "changedFiles": {
+    "title": "{{count}} فایل در این دور تغییر کرد"
   }
 }

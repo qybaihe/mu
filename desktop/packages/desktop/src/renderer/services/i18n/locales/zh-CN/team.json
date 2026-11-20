@@ -123,5 +123,8 @@
     "open": "打开 {{name}}",
     "jump": "定位消息",
     "sourceUnknown": "未知成员"
+  },
+  "changedFiles": {
+    "title": "本轮改动文件 {{count}} 个"
   }
 }

@@ -17,7 +17,7 @@ import { Popover } from '@arco-design/web-react';
 import { Thunderbolt } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { QuickDecisionNote } from '@renderer/pages/team/core/quickDecisionNotes';
+import type { QuickDecisionNote } from '@renderer/pages/team/core/notes/quickDecisionNotes';
 
 const QuickDecisionNoteRow: React.FC<{ note: QuickDecisionNote }> = ({ note }) => {
   const { t } = useTranslation();
