@@ -5,17 +5,13 @@
  */
 
 /**
- * The quick-decision layer on the main-process side: the cheap source that
+ * The quick-decision layer on the main-process side: the cheap model that
  * answers, before any full model round starts, whether the supervisor may
  * reuse an active team (point A) and whether a task is clearly outside a
- * position's domain (point B). The source is one of two shapes: a
- * configured provider model, or the MU decision engine — L1 jev over treg
- * gated on `probabilities[choice]`, escalating to L2 (the runtime's own
- * glm-flash judge, thinking off), every remaining doubt `full`. One `route`
- * call is one whole attempt: resolve the setting (secrets stay in the
- * provider store and the engine's in-memory secrets — the setting keeps
- * only the provider id and model name, or the engine tag), check the 24h
- * cache, ask under a 2s ceiling, parse strictly, and — on a reuse —
+ * position's domain (point B). One `route` call is one whole attempt:
+ * resolve the configured model (secrets stay in the provider store — the
+ * setting keeps only the provider id and model name), check the 24h cache,
+ * ask the model under a 2s ceiling, parse strictly, and — on a reuse —
  * deliver the task (backend team message + the TEAMS.md lifecycle refresh,
  * `teams.cjs send` semantics) before answering. Every doubt answers `full`
  * and the ordinary flow runs unchanged: the conservative direction is the
@@ -39,8 +35,6 @@ import {
   type QuickDecisionCacheEntry,
   type QuickDecisionKind,
 } from '@/common/chat/team/quickDecision/quickDecisionCore';
-import { MU_ENGINE_LABEL } from '@/common/chat/team/quickDecision/muEngineCore';
-import { askMuEngine, prodMuEngineDeps, type MuEngineAskOutcome, type MuEngineContext } from './muDecisionEngine';
 import type {
   QuickDecisionRouteParams,
   QuickDecisionRouteResult,
@@ -49,11 +43,8 @@ import { listSupervisorTeams, reuseSupervisorTeamIn } from '@process/services/te
 import { POSITION_LIBRARY_DIR, scanPositionLibrary } from '@process/services/team/positions/positionService';
 import { getPlatformServices } from '@/common/platform';
 
-/** The setting's stored shape: a provider reference plus the chosen model (the api key stays in the provider store), or the built-in MU decision engine — the jev + glm three-tier chain. */
-export type QuickDecisionModelSetting = TProviderWithModel | { engine: 'mu' };
-
-/** What the setting resolved to: one configured provider, the MU engine, or nothing (the feature is off). */
-export type QuickDecisionSelection = { kind: 'provider'; model: TProviderWithModel } | { kind: 'mu' };
+/** The setting's stored shape: a provider reference plus the chosen model; the api key stays in the provider store. */
+export type QuickDecisionModelSetting = TProviderWithModel;
 
 /** Everything injectable, so tests run no HTTP, no model and no clock. */
 export type QuickDecisionDeps = {
@@ -70,12 +61,6 @@ export type QuickDecisionDeps = {
     messages: Array<{ role: 'system' | 'user'; content: string }>,
     timeoutMs: number
   ) => Promise<string>;
-  /** One MU-engine ask: the L1 (jev) / L2 (glm) chain; injected so tests run no treg, no judge and no disk. */
-  askEngine: (
-    kind: QuickDecisionKind,
-    context: MuEngineContext,
-    prompt: { system: string; user: string }
-  ) => Promise<MuEngineAskOutcome>;
   /** Delivers the task to the team (the backend team message of `teams.cjs send`). */
   deliverTeamTask: (teamId: string, input: string) => Promise<void>;
   /** The index half of a reuse: the lifecycle refresh; undefined = the team id no longer names a live row. */
@@ -97,32 +82,19 @@ const logDecision = (
   );
 };
 
-/** What a decisive result reports: which model decided, and — engine mode — which tier and at what probability. */
-export type DecisionBasis = { model: string; tier?: 'L1' | 'L2'; probability?: number };
-
-/** One ask's outcome, provider path and engine path alike. */
-type AskOutcome =
-  | { ok: true; raw: string; model: string; tier?: 'L1' | 'L2'; probability?: number }
-  | { ok: false; reason: string };
-
-/** A resolved decision source: the live provider with the setting's model, or the MU engine. */
-const resolveSelection = async (deps: QuickDecisionDeps): Promise<QuickDecisionSelection | undefined> => {
+/** A resolved decision model: the live provider with the setting's model. */
+const resolveModel = async (deps: QuickDecisionDeps): Promise<TProviderWithModel | undefined> => {
   let setting: QuickDecisionModelSetting | undefined;
   try {
     setting = await deps.readSetting();
   } catch {
     return undefined; // An unreadable setting is an off feature, not an error surface.
   }
-  if (!setting) return undefined;
-  if ('engine' in setting) {
-    if (setting.engine === 'mu') return { kind: 'mu' };
-    return undefined; // An unknown engine tag is an off feature, not a guess.
-  }
-  if (!setting.id || !setting.use_model) return undefined;
+  if (!setting?.id || !setting.use_model) return undefined;
   const providers = await deps.listProviders();
   const provider = providers.find((candidate) => candidate.id === setting.id);
   if (!provider) return undefined; // The provider was removed: off, not broken.
-  return { kind: 'provider', model: { ...provider, use_model: setting.use_model } };
+  return { ...provider, use_model: setting.use_model };
 };
 
 /**
@@ -138,13 +110,8 @@ export async function routeQuickDecisionIn(
   counters: QuickDecisionCounters,
   params: QuickDecisionRouteParams
 ): Promise<QuickDecisionRouteResult> {
-  const selection = await resolveSelection(deps);
-  if (!selection) return { action: 'full', reason: 'no-model-configured' };
-  const providerModel = selection.kind === 'provider' ? selection.model : undefined;
-  /** The basis a cache replay reports: the replay runs no tier, so it names the configured source, not a model. */
-  const cachedBasis = (): DecisionBasis => ({
-    model: providerModel !== undefined ? providerModel.use_model : MU_ENGINE_LABEL,
-  });
+  const model = await resolveModel(deps);
+  if (!model) return { action: 'full', reason: 'no-model-configured' };
 
   const input = params.input.trim();
   if (!input) return { action: 'full', reason: 'empty-input' };
@@ -169,16 +136,13 @@ export async function routeQuickDecisionIn(
   const reuseResult = async (
     verdict: { reason: string; confidence: number },
     cached: boolean,
-    delivered: { teamName: string; leadConversationId: string; teamId: string },
-    basis: DecisionBasis
+    delivered: { teamName: string; leadConversationId: string; teamId: string }
   ) => ({
     action: 'reuse' as const,
     ...delivered,
     reason: verdict.reason,
     confidence: verdict.confidence,
-    model: basis.model,
-    ...(basis.tier !== undefined ? { tier: basis.tier } : {}),
-    ...(basis.probability !== undefined ? { probability: basis.probability } : {}),
+    model: model.use_model,
     durationMs: deps.now() - startedAt,
     cached,
   });
@@ -193,22 +157,17 @@ export async function routeQuickDecisionIn(
     const verdict = hit.verdict;
     if (kind === 'supervisor-reuse' && verdict.action === 'reuse') {
       try {
-        const result = await reuseResult(
-          verdict,
-          true,
-          {
-            teamId: verdict.teamId,
-            ...(await deliverReuse(verdict.teamId)),
-          },
-          cachedBasis()
-        );
+        const result = await reuseResult(verdict, true, {
+          teamId: verdict.teamId,
+          ...(await deliverReuse(verdict.teamId)),
+        });
         counters.shortCircuits += 1;
         counters.savedTurns += 1;
         logDecision(deps, counters, {
           action: 'reuse',
           kind,
           cached: true,
-          extra: `team=「${result.teamName}» model=${result.model} duration=${result.durationMs}ms confidence=${verdict.confidence}`,
+          extra: `team=「${result.teamName}» model=${model.use_model} duration=${result.durationMs}ms confidence=${verdict.confidence}`,
         });
         return result;
       } catch (error) {
@@ -220,14 +179,13 @@ export async function routeQuickDecisionIn(
     }
     if (kind === 'position-domain' && verdict.action === 'reject') {
       const suggested = roster.find((candidate) => candidate.name === verdict.suggest);
-      const basis = cachedBasis();
       counters.shortCircuits += 1;
       counters.savedTurns += 1;
       logDecision(deps, counters, {
         action: 'reject',
         kind,
         cached: true,
-        extra: `suggest=${verdict.suggest} model=${basis.model} confidence=${verdict.confidence}`,
+        extra: `suggest=${verdict.suggest} model=${model.use_model} confidence=${verdict.confidence}`,
       });
       return {
         action: 'reject',
@@ -235,45 +193,26 @@ export async function routeQuickDecisionIn(
         suggestLabel: suggested ? positionLabel(suggested) : verdict.suggest,
         reason: verdict.reason,
         confidence: verdict.confidence,
-        model: basis.model,
+        model: model.use_model,
         durationMs: deps.now() - startedAt,
         cached: true,
       };
     }
   }
 
-  // Miss: build the prompt, one ask under the ceiling. Point A with
+  // Miss: build the prompt, one model call under the ceiling. Point A with
   // no active team to reuse skips the call outright — nothing to decide.
-  /** One ask through whichever source is configured: the provider's one model, or the engine's L1→L2 chain. */
-  const askConfigured = async (
-    kind: QuickDecisionKind,
-    prompt: { system: string; user: string },
-    context: MuEngineContext
-  ): Promise<AskOutcome> => {
-    if (providerModel !== undefined) return askModel(deps, counters, providerModel, kind, prompt, startedAt);
-    const asked = await deps.askEngine(kind, context, prompt);
-    if (asked.ok === false) {
-      // The engine logged its own line; this is only the counters half of the same fallback.
-      counters.fallbacks += 1;
-      logDecision(deps, counters, { action: 'full', kind, cached: false, extra: `reason=${asked.reason} engine` });
-    }
-    return asked;
-  };
-  /** The basis the log line carries for a decisive ask: tier and probability only exist in engine mode. */
-  const basisExtra = (basis: DecisionBasis): string =>
-    `model=${basis.model}${basis.tier !== undefined ? ` tier=${basis.tier}` : ''}${
-      basis.probability !== undefined ? ` prob=${basis.probability.toFixed(2)}` : ''
-    }`;
-
   if (kind === 'supervisor-reuse') {
     if (activeTeams.length === 0) return { action: 'full', reason: 'no-active-teams' };
-    const ask = await askConfigured(kind, buildSupervisorReusePrompt({ task: input, teams: activeTeams, roster }), {
-      task: input,
-      teams: activeTeams,
-      roster,
-    });
+    const ask = await askModel(
+      deps,
+      counters,
+      model,
+      kind,
+      buildSupervisorReusePrompt({ task: input, teams: activeTeams, roster }),
+      startedAt
+    );
     if (ask.ok === false) return { action: 'full', reason: ask.reason };
-    const basis: DecisionBasis = { model: ask.model, tier: ask.tier, probability: ask.probability };
     const verdict = parseSupervisorReuseDecision(ask.raw);
     if (verdict.action === 'full') {
       counters.fallbacks += 1;
@@ -281,7 +220,7 @@ export async function routeQuickDecisionIn(
         action: 'full',
         kind,
         cached: false,
-        extra: `reason=${verdict.reason} ${basisExtra(basis)}`,
+        extra: `reason=${verdict.reason} model=${model.use_model}`,
       });
       return { action: 'full', reason: verdict.reason };
     }
@@ -296,15 +235,10 @@ export async function routeQuickDecisionIn(
       return { action: 'full', reason: 'team-not-active' };
     }
     try {
-      const result = await reuseResult(
-        verdict,
-        false,
-        {
-          teamId: verdict.teamId,
-          ...(await deliverReuse(verdict.teamId)),
-        },
-        basis
-      );
+      const result = await reuseResult(verdict, false, {
+        teamId: verdict.teamId,
+        ...(await deliverReuse(verdict.teamId)),
+      });
       counters.shortCircuits += 1;
       counters.savedTurns += 1;
       cache.set(key, { verdict, expiresAt: deps.now() + QUICK_DECISION_CACHE_TTL_MS });
@@ -312,7 +246,7 @@ export async function routeQuickDecisionIn(
         action: 'reuse',
         kind,
         cached: false,
-        extra: `team=「${result.teamName}» ${basisExtra(basis)} duration=${result.durationMs}ms confidence=${verdict.confidence}`,
+        extra: `team=「${result.teamName}» model=${model.use_model} duration=${result.durationMs}ms confidence=${verdict.confidence}`,
       });
       return result;
     } catch (error) {
@@ -327,14 +261,15 @@ export async function routeQuickDecisionIn(
   // narrows the type for the prompt below.
   const ownPosition = position;
   if (ownPosition === undefined) return { action: 'full', reason: 'unknown-position' };
-  const ask = await askConfigured(kind, buildPositionDomainPrompt({ task: input, position: ownPosition, roster }), {
-    task: input,
-    teams: activeTeams,
-    roster,
-    position: ownPosition,
-  });
+  const ask = await askModel(
+    deps,
+    counters,
+    model,
+    kind,
+    buildPositionDomainPrompt({ task: input, position: ownPosition, roster }),
+    startedAt
+  );
   if (ask.ok === false) return { action: 'full', reason: ask.reason };
-  const basis: DecisionBasis = { model: ask.model, tier: ask.tier, probability: ask.probability };
   const verdict = parsePositionDomainDecision(ask.raw, roster);
   if (verdict.action === 'full') {
     counters.fallbacks += 1;
@@ -342,7 +277,7 @@ export async function routeQuickDecisionIn(
       action: 'full',
       kind,
       cached: false,
-      extra: `reason=${verdict.reason} ${basisExtra(basis)}`,
+      extra: `reason=${verdict.reason} model=${model.use_model}`,
     });
     return { action: 'full', reason: verdict.reason };
   }
@@ -354,7 +289,7 @@ export async function routeQuickDecisionIn(
     action: 'reject',
     kind,
     cached: false,
-    extra: `suggest=${verdict.suggest} ${basisExtra(basis)} duration=${deps.now() - startedAt}ms confidence=${verdict.confidence}`,
+    extra: `suggest=${verdict.suggest} model=${model.use_model} duration=${deps.now() - startedAt}ms confidence=${verdict.confidence}`,
   });
   return {
     action: 'reject',
@@ -362,9 +297,7 @@ export async function routeQuickDecisionIn(
     suggestLabel: suggested ? positionLabel(suggested) : verdict.suggest,
     reason: verdict.reason,
     confidence: verdict.confidence,
-    model: basis.model,
-    ...(basis.tier !== undefined ? { tier: basis.tier } : {}),
-    ...(basis.probability !== undefined ? { probability: basis.probability } : {}),
+    model: model.use_model,
     durationMs: deps.now() - startedAt,
     cached: false,
   };
@@ -378,7 +311,7 @@ async function askModel(
   kind: QuickDecisionKind,
   prompt: { system: string; user: string },
   startedAt: number
-): Promise<AskOutcome> {
+): Promise<{ ok: true; raw: string } | { ok: false; reason: string }> {
   try {
     const raw = await deps.complete(
       model,
@@ -388,7 +321,7 @@ async function askModel(
       ],
       QUICK_DECISION_TIMEOUT_MS
     );
-    return { ok: true, raw, model: model.use_model };
+    return { ok: true, raw };
   } catch (error) {
     counters.fallbacks += 1;
     const text = String(error);
@@ -454,8 +387,6 @@ const prodDeps = (): QuickDecisionDeps => ({
   listTeams: () => listSupervisorTeams(),
   readRoster: () => scanPositionLibrary(POSITION_LIBRARY_DIR),
   complete: completeUnderCeiling,
-  askEngine: (kind, context, prompt) =>
-    askMuEngine(prodMuEngineDeps(), kind, context, prompt, QUICK_DECISION_TIMEOUT_MS),
   deliverTeamTask: async (teamId, input) => {
     await httpRequest('POST', `/api/teams/${teamId}/messages`, { content: input, files: [] });
   },

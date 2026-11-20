@@ -48,13 +48,10 @@ const ConversationPreferences: React.FC = () => {
   const [previewLimitMb, setPreviewLimitMb] = useState<number>(DEFAULT_TEXT_PREVIEW_LIMIT_MB);
   const previewLimitDraftRef = useRef<string>(String(DEFAULT_TEXT_PREVIEW_LIMIT_MB));
   const [saveUploadToWorkspace, setSaveUploadToWorkspace] = useState(false);
-  // The quick-decision source: the built-in MU decision engine (the
-  // recommended three-tier chain — jev over treg, glm fallback, then the
-  // ordinary full flow; needs no further configuration), or a provider
-  // model reference (secrets stay in the provider store), undefined = off.
+  // The quick-decision model: stored as a provider id + model reference
+  // (secrets stay in the provider store), undefined = the feature is off.
   const { data: providers } = useProvidersQuery();
   const [quickDecisionModel, setQuickDecisionModel] = useState<{ providerId: string; useModel: string } | undefined>();
-  const [quickDecisionEngine, setQuickDecisionEngine] = useState(false);
 
   useEffect(() => {
     setSaveUploadToWorkspace(configService.get('upload.saveToWorkspace') ?? false);
@@ -89,15 +86,11 @@ const ConversationPreferences: React.FC = () => {
           previewLimitDraftRef.current = String(stored);
         }
         const storedQuickDecisionModel = await getClientBusinessSetting('tools.quickDecisionModel');
-        if (storedQuickDecisionModel !== undefined) {
-          if ('engine' in storedQuickDecisionModel) {
-            if (storedQuickDecisionModel.engine === 'mu') setQuickDecisionEngine(true);
-          } else if (storedQuickDecisionModel.id && storedQuickDecisionModel.use_model) {
-            setQuickDecisionModel({
-              providerId: storedQuickDecisionModel.id,
-              useModel: storedQuickDecisionModel.use_model,
-            });
-          }
+        if (storedQuickDecisionModel?.id && storedQuickDecisionModel.use_model) {
+          setQuickDecisionModel({
+            providerId: storedQuickDecisionModel.id,
+            useModel: storedQuickDecisionModel.use_model,
+          });
         }
       } catch {
         // Keep the in-memory defaults when backend settings are unavailable.
@@ -192,22 +185,10 @@ const ConversationPreferences: React.FC = () => {
     });
   }, []);
 
-  // Selecting writes the sanitized reference (no key, no base URL): the
-  // engine option stores only its tag, a provider option the id + model —
-  // and clearing removes the setting, so the quick-decision layer is off
-  // until one is chosen.
-  const ENGINE_OPTION_VALUE = 'mu-engine';
+  // Selecting writes the sanitized reference (no key, no base URL); clearing
+  // removes the setting — the quick-decision layer is off until one is chosen.
   const handleQuickDecisionModelChange = useCallback(
     (value: string | undefined) => {
-      if (value === ENGINE_OPTION_VALUE) {
-        setQuickDecisionEngine(true);
-        setQuickDecisionModel(undefined);
-        setClientBusinessSetting('tools.quickDecisionModel', { engine: 'mu' }).catch(() => {
-          Message.error(t('quickDecision.settings.saveFailed'));
-        });
-        return;
-      }
-      setQuickDecisionEngine(false);
       if (value === undefined || value === '') {
         setQuickDecisionModel(undefined);
         removeClientBusinessSetting('tools.quickDecisionModel').catch(() => {});
@@ -232,13 +213,8 @@ const ConversationPreferences: React.FC = () => {
     [providers, t]
   );
   const quickDecisionSelectValue = useMemo(
-    () =>
-      quickDecisionEngine
-        ? ENGINE_OPTION_VALUE
-        : quickDecisionModel
-          ? `${quickDecisionModel.providerId}|${quickDecisionModel.useModel}`
-          : undefined,
-    [quickDecisionEngine, quickDecisionModel]
+    () => (quickDecisionModel ? `${quickDecisionModel.providerId}|${quickDecisionModel.useModel}` : undefined),
+    [quickDecisionModel]
   );
 
   const preferenceItems = [
@@ -317,9 +293,6 @@ const ConversationPreferences: React.FC = () => {
             placeholder={t('quickDecision.settings.off')}
             onChange={(value: string | undefined) => handleQuickDecisionModelChange(value)}
           >
-            <MuSelect.Option key='mu-engine' value={ENGINE_OPTION_VALUE}>
-              {t('quickDecision.settings.engineOption')}
-            </MuSelect.Option>
             {(providers ?? []).map((platform) =>
               platform.models.map((modelName) => (
                 <MuSelect.Option key={`${platform.id}|${modelName}`} value={`${platform.id}|${modelName}`}>

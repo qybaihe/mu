@@ -30,10 +30,6 @@ export type QuickDecisionNote = {
   reason?: string;
   confidence?: number;
   model?: string;
-  /** Engine mode: which tier decided (L1 jev / L2 glm). */
-  tier?: 'L1' | 'L2';
-  /** Engine mode, L1: the acting `probabilities[choice]` — the gate's number. */
-  probability?: number;
   durationMs?: number;
   cached?: boolean;
 };
@@ -119,8 +115,6 @@ export const appendQuickDecisionNote = (
           reason: verdict.reason,
           confidence: verdict.confidence,
           model: verdict.model,
-          tier: verdict.tier,
-          probability: verdict.probability,
           durationMs: verdict.durationMs,
           cached: verdict.cached,
         }
@@ -134,8 +128,6 @@ export const appendQuickDecisionNote = (
           reason: verdict.reason,
           confidence: verdict.confidence,
           model: verdict.model,
-          tier: verdict.tier,
-          probability: verdict.probability,
           durationMs: verdict.durationMs,
           cached: verdict.cached,
         };

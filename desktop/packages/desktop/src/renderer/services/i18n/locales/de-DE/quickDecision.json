@@ -1,10 +1,9 @@
 {
   "settings": {
     "modelLabel": "Modell für Hochfrequenz-Entscheidungen",
-    "modelHint": "Beantwortet Team-Wiederverwendung des Supervisors und Ablehnungen außerhalb der Domäne in Sekunden, ohne eine volle Modellrunde zu verbrennen. Wähle ein günstiges, schnelles Modell; leer = aus. Die MU-Entscheidungs-Engine ist die eingebaute Dreistufenkette (jev-Schnellentscheid → glm-Fallback → der normale Ablauf) und braucht keine weitere Konfiguration.",
+    "modelHint": "Beantwortet Team-Wiederverwendung des Supervisors und Ablehnungen außerhalb der Domäne in Sekunden, ohne eine volle Modellrunde zu verbrennen. Wähle ein günstiges, schnelles Modell; leer = aus.",
     "off": "Nicht konfiguriert (aus)",
-    "saveFailed": "Entscheidungsmodell konnte nicht gespeichert werden",
-    "engineOption": "MU-Entscheidungs-Engine (empfohlen)"
+    "saveFailed": "Entscheidungsmodell konnte nicht gespeichert werden"
   },
   "reuse": {
     "title": "Schnellentscheidung: „{{team}}“ wiederverwenden",
@@ -21,11 +20,7 @@
     "confidence": "Konfidenz",
     "cached": "Cache-Treffer (kein Modellaufruf)",
     "fresh": "Modellurteil",
-    "reason": "Grund",
-    "tier": "Stufe",
-    "tierL1": "L1 · jev-Schnellentscheid",
-    "tierL2": "L2 · glm-Fallback",
-    "probability": "Wahrscheinlichkeit"
+    "reason": "Grund"
   },
   "taskLabel": "Aufgabe"
 }

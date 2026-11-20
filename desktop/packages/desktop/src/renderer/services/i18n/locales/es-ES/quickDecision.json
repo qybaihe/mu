@@ -1,10 +1,9 @@
 {
   "settings": {
     "modelLabel": "Modelo de decisiones frecuentes",
-    "modelHint": "Responde en segundos la reutilización de equipos del supervisor y el rechazo de tareas fuera de dominio, sin gastar una ronda completa del modelo. Elige uno barato y rápido; vacío = desactivado. El motor de decisiones MU es la cadena de tres niveles integrada (decisión rápida jev → respaldo glm → el flujo ordinario) y no requiere configuración adicional.",
+    "modelHint": "Responde en segundos la reutilización de equipos del supervisor y el rechazo de tareas fuera de dominio, sin gastar una ronda completa del modelo. Elige uno barato y rápido; vacío = desactivado.",
     "off": "Sin configurar (desactivado)",
-    "saveFailed": "No se pudo guardar el modelo de decisión",
-    "engineOption": "Motor de decisiones MU (recomendado)"
+    "saveFailed": "No se pudo guardar el modelo de decisión"
   },
   "reuse": {
     "title": "Decisión rápida: reutilizar «{{team}}»",
@@ -21,11 +20,7 @@
     "confidence": "Confianza",
     "cached": "Acierto de caché (cero llamadas al modelo)",
     "fresh": "Veredicto del modelo",
-    "reason": "Motivo",
-    "tier": "Nivel",
-    "tierL1": "L1 · jev vía rápida",
-    "tierL2": "L2 · respaldo glm",
-    "probability": "Probabilidad"
+    "reason": "Motivo"
   },
   "taskLabel": "Tarea"
 }

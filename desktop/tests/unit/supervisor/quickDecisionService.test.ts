@@ -89,7 +89,6 @@ const baseDeps = (over: DepsOverrides = {}): FakeDeps => {
       calls.complete += 1;
       return '{"action":"full","reason":"不确定","confidence":0.9}';
     },
-    askEngine: async () => ({ ok: false, reason: 'engine-not-asked' }), // The provider-path default; engine tests override it.
     deliverTeamTask: async (teamId) => {
       calls.deliver.push(teamId);
     },
@@ -274,131 +273,6 @@ describe('routeQuickDecisionIn — the short-circuits', () => {
         (line) => line.includes('[quickDecision]') && line.includes('action=reuse') && line.includes('savedTurns=1')
       )
     ).toBe(true);
-  });
-});
-
-describe('routeQuickDecisionIn — the MU decision engine (jev L1 → glm L2 → full)', () => {
-  const engineDeps = (over: DepsOverrides = {}) => baseDeps({ readSetting: async () => ({ engine: 'mu' }), ...over });
-  const l1Reuse = {
-    ok: true as const,
-    raw: '{"action":"reuse","teamId":"t1","reason":"同域","confidence":0.93}',
-    tier: 'L1' as const,
-    model: 'jev-1.13',
-    probability: 0.93,
-  };
-
-  it('the engine tag alone selects the engine: no provider resolution happens', async () => {
-    const deps = engineDeps({ listProviders: async () => Promise.reject(new Error('must not resolve providers')) });
-    await run(deps, { input: '任务' });
-  });
-  it('an L1 verdict short-circuits: delivered, tier and probability carried, cached for the next send', async () => {
-    const cache = new Map<string, QuickDecisionCacheEntry>();
-    const deps = engineDeps({ askEngine: async () => l1Reuse });
-    const verdict = await routeQuickDecisionIn(
-      deps,
-      cache,
-      { shortCircuits: 0, fallbacks: 0, savedTurns: 0 },
-      {
-        input: '查一下 CNS 客户',
-        positionMarker: 'supervisor',
-      }
-    );
-    expect(verdict).toMatchObject({
-      action: 'reuse',
-      teamId: 't1',
-      tier: 'L1',
-      probability: 0.93,
-      model: 'jev-1.13',
-      cached: false,
-    });
-    expect(deps.calls.complete).toBe(0);
-    expect(deps.calls.deliver).toEqual(['t1']);
-    expect(cache.size).toBe(1);
-  });
-  it('a second identical send replays from the cache: zero engine calls, the receipt names the engine', async () => {
-    const cache = new Map<string, QuickDecisionCacheEntry>();
-    let asks = 0;
-    const deps = engineDeps({
-      askEngine: async () => {
-        asks += 1;
-        return l1Reuse;
-      },
-    });
-    await routeQuickDecisionIn(
-      deps,
-      cache,
-      { shortCircuits: 0, fallbacks: 0, savedTurns: 0 },
-      {
-        input: '查一下 CNS 客户',
-        positionMarker: 'supervisor',
-      }
-    );
-    const verdict = await routeQuickDecisionIn(
-      deps,
-      cache,
-      { shortCircuits: 0, fallbacks: 0, savedTurns: 0 },
-      {
-        input: '查一下 CNS 客户',
-        positionMarker: 'supervisor',
-      }
-    );
-    if (verdict.action !== 'reuse') throw new Error('expected a reuse replay');
-    expect(verdict).toMatchObject({ action: 'reuse', cached: true, model: 'MU 决策引擎' });
-    expect(verdict.tier).toBeUndefined(); // A replay runs no tier.
-    expect(asks).toBe(1);
-    expect(deps.calls.deliver).toEqual(['t1', 't1']);
-  });
-  it('an escalated L2 full verdict answers full and counts one fallback', async () => {
-    const deps = engineDeps({
-      askEngine: async () => ({
-        ok: true,
-        raw: '{"action":"full","reason":"不确定","confidence":0.9}',
-        tier: 'L2',
-        model: 'glm-5.3-flash',
-      }),
-    });
-    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
-    const verdict = await routeQuickDecisionIn(deps, new Map(), counters, {
-      input: '模糊任务',
-      positionMarker: 'supervisor',
-    });
-    expect(verdict).toEqual({ action: 'full', reason: '不确定' });
-    expect(counters).toEqual({ shortCircuits: 0, fallbacks: 1, savedTurns: 0 });
-  });
-  it('an engine failure outcome answers full with the engine reason', async () => {
-    const deps = engineDeps({ askEngine: async () => ({ ok: false, reason: 'l2-timeout' }) });
-    expect(await run(deps, { input: '任务' })).toEqual({ action: 'full', reason: 'l2-timeout' });
-  });
-  it('an L1 reject on the position kind carries tier and probability too', async () => {
-    const deps = engineDeps({
-      askEngine: async () => ({
-        ok: true,
-        raw: '{"action":"reject","suggest":"video-lab","reason":"域外","confidence":0.91}',
-        tier: 'L1',
-        model: 'jev-1.13',
-        probability: 0.91,
-      }),
-    });
-    const verdict = await run(deps, { input: '剪视频', positionMarker: 'forwarder' });
-    expect(verdict).toMatchObject({
-      action: 'reject',
-      suggestId: 'video-lab',
-      tier: 'L1',
-      probability: 0.91,
-      model: 'jev-1.13',
-    });
-  });
-  it('an L1 verdict naming an inactive team still answers full — the engine gets no pass on validation', async () => {
-    const deps = engineDeps({
-      askEngine: async () => ({
-        ok: true,
-        raw: '{"action":"reuse","teamId":"别的队","reason":"x","confidence":0.95}',
-        tier: 'L1',
-        model: 'jev-1.13',
-        probability: 0.95,
-      }),
-    });
-    expect(await run(deps, { input: '任务' })).toEqual({ action: 'full', reason: 'team-not-active' });
   });
 });
 

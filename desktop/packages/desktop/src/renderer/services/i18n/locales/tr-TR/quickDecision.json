@@ -1,10 +1,9 @@
 {
   "settings": {
     "modelLabel": "Yüksek frekanslı karar modeli",
-    "modelHint": "Süpervizörün ekip yeniden kullanımını ve alan dışı görev reddini saniyeler içinde yanıtlar; tam model turu harcamaz. Ucuz ve hızlı bir model seçin; boş = kapalı. MU karar motoru, yerleşik üç katmanlı zincirdir (jev hızlı karar → glm yedek → olağan akış) ve ek yapılandırma gerektirmez.",
+    "modelHint": "Süpervizörün ekip yeniden kullanımını ve alan dışı görev reddini saniyeler içinde yanıtlar; tam model turu harcamaz. Ucuz ve hızlı bir model seçin; boş = kapalı.",
     "off": "Yapılandırılmadı (kapalı)",
-    "saveFailed": "Karar modeli kaydedilemedi",
-    "engineOption": "MU karar motoru (önerilen)"
+    "saveFailed": "Karar modeli kaydedilemedi"
   },
   "reuse": {
     "title": "Hızlı karar: \"{{team}}\" yeniden kullan",
@@ -21,11 +20,7 @@
     "confidence": "Güven",
     "cached": "Önbellek isabeti (sıfır model çağrısı)",
     "fresh": "Model kararı",
-    "reason": "Gerekçe",
-    "tier": "Katman",
-    "tierL1": "L1 · jev hızlı yol",
-    "tierL2": "L2 · glm yedek",
-    "probability": "Olasılık"
+    "reason": "Gerekçe"
   },
   "taskLabel": "Görev"
 }

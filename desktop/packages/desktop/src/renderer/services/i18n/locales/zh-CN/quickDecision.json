@@ -1,10 +1,9 @@
 {
   "settings": {
     "modelLabel": "高频决策模型",
-    "modelHint": "主管复用现役队与岗位域外拒判两类高频决策由它秒级短路，不烧整轮大模型。选个便宜快速的；留空=功能关闭。MU 决策引擎=本机三层链（jev 快判→glm 兜底→原流程），无需另配。",
+    "modelHint": "主管复用现役队与岗位域外拒判两类高频决策由它秒级短路，不烧整轮大模型。选个便宜快速的；留空=功能关闭。",
     "off": "未配置（关闭）",
-    "saveFailed": "保存高频决策模型失败",
-    "engineOption": "MU 决策引擎（推荐）"
+    "saveFailed": "保存高频决策模型失败"
   },
   "reuse": {
     "title": "快速决策：复用「{{team}}」",
@@ -21,11 +20,7 @@
     "confidence": "置信",
     "cached": "缓存命中（零模型调用）",
     "fresh": "模型判定",
-    "reason": "理由",
-    "tier": "层级",
-    "tierL1": "L1 · jev 快路",
-    "tierL2": "L2 · glm 兜底",
-    "probability": "概率"
+    "reason": "理由"
   },
   "taskLabel": "任务"
 }
