@@ -179,6 +179,9 @@ const unescapeCell = (text) => text.replace(/\\(.)/g, (match, next) => (next ===
 /** A row's cells, split on the pipes that are not the `\|` escape. */
 const splitCells = (row) => row.split(/(?<!\\)\|/).map((cell) => unescapeCell(cell.trim()));
 
+/** The shape a backend team id may take: ids flow into backend URL paths, so anything with separators or dots reads as a malformed row. */
+const TEAM_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
 function parseTeams(content) {
   if (!content.includes(TEAMS_MARKER)) return [];
   const teams = [];
@@ -194,6 +197,9 @@ function parseTeams(content) {
     const expiresAt = Date.parse(cells[4]);
     if (!Number.isFinite(createdAt) || !Number.isFinite(lastUsedAt) || !Number.isFinite(expiresAt)) continue;
     if (!cells[0] || !cells[5] || !cells[6]) continue;
+    // A teamId or conversation id outside its shape would flow into backend
+    // URL paths (send, purge); the row reads as malformed, like any other.
+    if (!TEAM_ID_RE.test(cells[5]) || !TEAM_ID_RE.test(cells[6])) continue;
     // A ten-cell row's empty last cell reads as not deleted, as do the older
     // seven- and nine-cell formats.
     const deletedAt = cells.length === 10 ? Date.parse(cells[9]) : Number.NaN;

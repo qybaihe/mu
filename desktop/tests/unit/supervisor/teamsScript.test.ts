@@ -257,6 +257,31 @@ describe('teams.cjs against a stub backend', () => {
     expect(existsSync(join(dataDir, 'AGENTS.md'))).toBe(false);
   });
 
+  it('drops rows whose team id is not a backend id shape, exactly like the app parser', async () => {
+    const at = Date.now();
+    const iso = new Date(at).toISOString();
+    const future = new Date(at + 86_400_000).toISOString();
+    const row = (teamId: string) => `| 队 | forwarder | ${iso} | ${iso} | ${future} | ${teamId} | conv-x |`;
+    writeTeamsRaw(
+      [
+        '<!-- mu-supervisor-teams v1 -->',
+        '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 | 删除时间 |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        row('../x'),
+        row('ok-team_1'),
+        row('a/b'),
+      ].join('\n')
+    );
+    const teams = teamsNow();
+    // The app-side parser already refuses these rows; the script must agree.
+    expect(teams.map((team) => team.teamId)).toEqual(['ok-team_1']);
+    const answer = await run(['list', '--positions', 'forwarder']);
+    expect(answer.status).toBe(0);
+    expect(answer.out).toContain('ok-team_1');
+    expect(answer.out).not.toContain('../x');
+    expect(answer.out).not.toContain('a/b');
+  });
+
   it('never matches an expired team', async () => {
     const expiredAt = Date.now() - 1;
     const iso = new Date(expiredAt).toISOString();

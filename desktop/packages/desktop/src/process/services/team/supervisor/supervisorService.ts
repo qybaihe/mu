@@ -31,6 +31,7 @@ import {
   TEAMS_FILE_NAME,
   TEAMS_SCRIPT_NAME,
   TEAM_TTL_DEFAULT_DAYS,
+  TEAM_ID_RE,
   TEMPLATES_SCRIPT_NAME,
   buildSupervisorOverrideContent,
   buildTeamsFile,
@@ -183,6 +184,11 @@ export async function registerSupervisorTeamIn(
   params: { name: string; positions: string[]; teamId: string; leadConversationId: string } & RegisterTeamLifecycle,
   now: () => number = Date.now
 ): Promise<SupervisorTeam[]> {
+  // A teamId or conversation id outside the backend's id shape would flow
+  // into backend URL paths from this row; the registration refuses it up front.
+  if (!TEAM_ID_RE.test(params.teamId) || !TEAM_ID_RE.test(params.leadConversationId)) {
+    throw new Error('registerTeam: the team id or lead conversation id is not a backend id');
+  }
   const at = now();
   const teams = await readTeamsIn(options.dataDir);
   const existing = teams.find((team) => team.teamId === params.teamId);

@@ -162,6 +162,24 @@ describe('parseTeamsFile / buildTeamsFile', () => {
     expect(parsed[0].positions).toEqual(['forwarder', 'worker']);
   });
 
+  it('drops rows whose team id or lead conversation id is not a backend id shape — they flow into backend URL paths', () => {
+    const row = (teamId: string, lead: string) =>
+      `| 队 | forwarder | 2026-01-01T00:00:00.000Z | 2026-01-02T00:00:00.000Z | 2026-01-08T00:00:00.000Z | ${teamId} | ${lead} |`;
+    const content = [
+      '<!-- mu-supervisor-teams v1 -->',
+      '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 |',
+      '| --- | --- | --- | --- | --- | --- | --- |',
+      row('01a1f939-ec89-7302-ace9-6d27a944968d', '3d19b983'),
+      row('../x', '3d19b983'),
+      row('a b', '3d19b983'),
+      row('ok/id', '3d19b983'),
+      row('3d19b983', 'a/b'),
+    ].join('\n');
+    const parsed = parseTeamsFile(content);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].teamId).toBe('01a1f939-ec89-7302-ace9-6d27a944968d');
+  });
+
   it('builds the empty index for no teams', () => {
     const file = buildTeamsFile([], Date.now());
     expect(parseTeamsFile(file)).toEqual([]);

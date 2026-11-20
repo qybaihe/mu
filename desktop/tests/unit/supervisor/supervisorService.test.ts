@@ -171,6 +171,25 @@ describe('ensureSupervisorWorkspaceIn', () => {
 });
 
 describe('registerSupervisorTeamIn', () => {
+  it('refuses ids outside the backend id shape — they would flow into backend URL paths', async () => {
+    const { dataDir, teamsFile } = setup();
+    for (const bad of ['../x', 'a b', 'a/b']) {
+      await expect(
+        registerSupervisorTeamIn(
+          { dataDir },
+          { name: '测试群', positions: ['forwarder'], teamId: bad, leadConversationId: 'c-lead' }
+        )
+      ).rejects.toThrow(/backend id/);
+    }
+    await expect(
+      registerSupervisorTeamIn(
+        { dataDir },
+        { name: '测试群', positions: ['forwarder'], teamId: 'ok-team_1', leadConversationId: '../c' }
+      )
+    ).rejects.toThrow(/backend id/);
+    expect(existsSync(teamsFile)).toBe(false);
+  });
+
   it('writes a fresh row with the 7-day lifecycle for a new team', async () => {
     const { dataDir, teamsFile } = setup();
     const now = 1_800_000_000_000;

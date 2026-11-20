@@ -41,6 +41,15 @@ export const TEAM_TTL_MAX_DAYS = 365;
 /** The TTL every row without one reads as: the format's 7-day origin. */
 export const TEAM_TTL_DEFAULT_DAYS = 7;
 
+/**
+ * The shape a backend team id may take: the backend mints UUIDv7 ids, and a
+ * teamId flows into backend URL paths (`/api/teams/${teamId}/messages`, the
+ * purge's DELETE) — an id a hand edit or a model slipped into the index
+ * must never become a path. Anything outside letters, digits, underscore
+ * and hyphen reads as a malformed row.
+ */
+export const TEAM_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** A day count as the index stores it: clamped into the allowed range, the default when unparsable. */
@@ -187,6 +196,9 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
     const teamId = cells[5];
     const leadConversationId = cells[6];
     if (!name || !teamId || !leadConversationId) continue;
+    // A teamId or conversation id outside its shape would flow into backend
+    // URL paths — it reads as the malformed row it is, like any other.
+    if (!TEAM_ID_RE.test(teamId) || !TEAM_ID_RE.test(leadConversationId)) continue;
     const ttlDays = cells.length >= 9 ? clampTeamTtlDays(Number.parseInt(cells[7], 10)) : TEAM_TTL_DEFAULT_DAYS;
     const deletedStamp = cells.length === 10 ? Date.parse(cells[9]) : Number.NaN;
     teams.push({
