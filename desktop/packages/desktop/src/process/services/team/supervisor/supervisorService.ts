@@ -20,6 +20,7 @@ import { mkdir, rm, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getPlatformServices } from '@/common/platform';
 import { httpRequest } from '@/common/adapter/httpBridge';
+import { withTeamsIndexLock, writeFileAtomic } from './teamsFileLock';
 import positionsScriptSource from '@/common/chat/team/supervisor/positions.cjs?raw';
 import templatesScriptSource from '@/common/chat/team/supervisor/templates.cjs?raw';
 import { shippedTeamsScript } from './teamScripts';
@@ -102,18 +103,27 @@ export async function ensureSupervisorWorkspaceIn(
       return undefined;
     }
   };
-  let existing = await readOptional(teamsFile);
-  const legacy = await readOptional(legacyTeamsFile);
-  if (existing === undefined && legacy !== undefined) {
-    existing = legacy;
-    changed = true;
-  }
-  const next = `${buildTeamsFile(parseTeamsFile(existing ?? ''), now())}\n`;
-  changed = (await writeIfChanged(teamsFile, next)) || changed;
-  if (legacy !== undefined) {
-    // The moved file is app-owned (marker-managed); the shared copy replaces it.
-    await rm(legacyTeamsFile, { force: true });
-  }
+  // The index rewrite is a read-modify-write on the ONE shared file — teams.cjs
+  // may be mid-write in another process — so it takes the index lock like
+  // every writer, and lands by rename so unlocked readers never see a torn
+  // file. The moved file is app-owned (marker-managed); the shared copy
+  // replaces it.
+  await withTeamsIndexLock(options.dataDir, async () => {
+    let existing = await readOptional(teamsFile);
+    const legacy = await readOptional(legacyTeamsFile);
+    if (existing === undefined && legacy !== undefined) {
+      existing = legacy;
+      changed = true;
+    }
+    const next = `${buildTeamsFile(parseTeamsFile(existing ?? ''), now())}\n`;
+    if (existing !== next) {
+      await writeFileAtomic(teamsFile, next);
+      changed = true;
+    }
+    if (legacy !== undefined) {
+      await rm(legacyTeamsFile, { force: true });
+    }
+  });
   return { workspace, changed };
 }
 
@@ -166,10 +176,10 @@ const uniqueNameAmong = (name: string, teams: readonly SupervisorTeam[], now: nu
   }
 };
 
-/** Writes the index's canonical form: the shared reconcile every mutation ends with. */
+/** Writes the index's canonical form: the shared reconcile every mutation ends with. The lock is held around the caller's whole read-modify-write; the rename keeps unlocked readers from a torn file. */
 async function writeTeamsIn(dataDir: string, teams: readonly SupervisorTeam[], at: number): Promise<void> {
   await mkdir(join(dataDir, 'positions', SHARED_TEAMS_FOLDER), { recursive: true });
-  await writeFile(teamsFileOf(dataDir), `${buildTeamsFile(teams, at)}\n`, 'utf8');
+  await writeFileAtomic(teamsFileOf(dataDir), `${buildTeamsFile(teams, at)}\n`);
 }
 
 /**
@@ -192,48 +202,52 @@ export async function registerSupervisorTeamIn(
     throw new Error('registerTeam: the team id or lead conversation id is not a backend id');
   }
   const at = now();
-  const teams = await readTeamsIn(options.dataDir);
-  const existing = teams.find((team) => team.teamId === params.teamId);
-  let next: SupervisorTeam;
-  if (existing) {
-    // A retired row only takes the new positions: a membership edit must not
-    // resurrect a team past its TTL, whatever lifecycle params came along.
-    if (!isTeamActive(existing, at)) {
-      next = { ...existing, positions: params.positions };
+  // The whole cycle — read, splice, write — under the index lock: a teams.cjs
+  // add or send in another process must not interleave its own read-write.
+  return withTeamsIndexLock(options.dataDir, async () => {
+    const teams = await readTeamsIn(options.dataDir);
+    const existing = teams.find((team) => team.teamId === params.teamId);
+    let next: SupervisorTeam;
+    if (existing) {
+      // A retired row only takes the new positions: a membership edit must not
+      // resurrect a team past its TTL, whatever lifecycle params came along.
+      if (!isTeamActive(existing, at)) {
+        next = { ...existing, positions: params.positions };
+      } else {
+        const ttlDays = params.ttlDays !== undefined ? clampTeamTtlDays(params.ttlDays) : existing.ttlDays;
+        const permanent = params.permanent ?? existing.permanent;
+        next = {
+          ...existing,
+          name: uniqueNameAmong(params.name, teams, at),
+          positions: params.positions,
+          ttlDays,
+          permanent,
+          // A permanent row's recorded expiry is informational; a normal row's
+          // touch extends to `now + ttlDays`.
+          expiresAt: permanent ? existing.expiresAt : expiryAfterTtl(ttlDays, at),
+          lastUsedAt: at,
+        };
+      }
     } else {
-      const ttlDays = params.ttlDays !== undefined ? clampTeamTtlDays(params.ttlDays) : existing.ttlDays;
-      const permanent = params.permanent ?? existing.permanent;
+      const ttlDays = clampTeamTtlDays(params.ttlDays ?? TEAM_TTL_DEFAULT_DAYS);
+      const permanent = params.permanent ?? false;
       next = {
-        ...existing,
         name: uniqueNameAmong(params.name, teams, at),
         positions: params.positions,
+        createdAt: at,
+        lastUsedAt: at,
+        expiresAt: expiryAfterTtl(ttlDays, at),
         ttlDays,
         permanent,
-        // A permanent row's recorded expiry is informational; a normal row's
-        // touch extends to `now + ttlDays`.
-        expiresAt: permanent ? existing.expiresAt : expiryAfterTtl(ttlDays, at),
-        lastUsedAt: at,
+        deletedAt: undefined,
+        teamId: params.teamId,
+        leadConversationId: params.leadConversationId,
       };
     }
-  } else {
-    const ttlDays = clampTeamTtlDays(params.ttlDays ?? TEAM_TTL_DEFAULT_DAYS);
-    const permanent = params.permanent ?? false;
-    next = {
-      name: uniqueNameAmong(params.name, teams, at),
-      positions: params.positions,
-      createdAt: at,
-      lastUsedAt: at,
-      expiresAt: expiryAfterTtl(ttlDays, at),
-      ttlDays,
-      permanent,
-      deletedAt: undefined,
-      teamId: params.teamId,
-      leadConversationId: params.leadConversationId,
-    };
-  }
-  const rows = teams.filter((team) => team.teamId !== params.teamId).concat(next);
-  await writeTeamsIn(options.dataDir, rows, at);
-  return rows;
+    const rows = teams.filter((team) => team.teamId !== params.teamId).concat(next);
+    await writeTeamsIn(options.dataDir, rows, at);
+    return rows;
+  });
 }
 
 /** Registers one team in the shared index under the app data dir. */
@@ -259,19 +273,22 @@ export async function setTeamLifecycleIn(
   now: () => number = Date.now
 ): Promise<SupervisorTeam[]> {
   const at = now();
-  const teams = await readTeamsIn(options.dataDir);
-  const rows: SupervisorTeam[] = [];
-  for (const team of teams) {
-    if (team.teamId !== params.teamId) {
-      rows.push(team);
-      continue;
+  // Under the index lock: the read and the write are one cycle.
+  return withTeamsIndexLock(options.dataDir, async () => {
+    const teams = await readTeamsIn(options.dataDir);
+    const rows: SupervisorTeam[] = [];
+    for (const team of teams) {
+      if (team.teamId !== params.teamId) {
+        rows.push(team);
+        continue;
+      }
+      const ttlDays = params.ttlDays !== undefined ? clampTeamTtlDays(params.ttlDays) : team.ttlDays;
+      const permanent = params.permanent ?? team.permanent;
+      rows.push({ ...team, ttlDays, permanent, expiresAt: permanent ? team.expiresAt : expiryAfterTtl(ttlDays, at) });
     }
-    const ttlDays = params.ttlDays !== undefined ? clampTeamTtlDays(params.ttlDays) : team.ttlDays;
-    const permanent = params.permanent ?? team.permanent;
-    rows.push({ ...team, ttlDays, permanent, expiresAt: permanent ? team.expiresAt : expiryAfterTtl(ttlDays, at) });
-  }
-  await writeTeamsIn(options.dataDir, rows, at);
-  return rows;
+    await writeTeamsIn(options.dataDir, rows, at);
+    return rows;
+  });
 }
 
 /** Sets one team's lifecycle under the app data dir. */
@@ -294,13 +311,16 @@ export async function softDeleteSupervisorTeamIn(
   now: () => number = Date.now
 ): Promise<SupervisorTeam[]> {
   const at = now();
-  const teams = await readTeamsIn(options.dataDir);
-  const rows: SupervisorTeam[] = [];
-  for (const team of teams) {
-    rows.push(team.teamId === params.teamId && !isTeamDeleted(team) ? { ...team, deletedAt: at } : team);
-  }
-  await writeTeamsIn(options.dataDir, rows, at);
-  return rows;
+  // Under the index lock: the read and the write are one cycle.
+  return withTeamsIndexLock(options.dataDir, async () => {
+    const teams = await readTeamsIn(options.dataDir);
+    const rows: SupervisorTeam[] = [];
+    for (const team of teams) {
+      rows.push(team.teamId === params.teamId && !isTeamDeleted(team) ? { ...team, deletedAt: at } : team);
+    }
+    await writeTeamsIn(options.dataDir, rows, at);
+    return rows;
+  });
 }
 
 /** Soft-deletes one team under the app data dir. */
@@ -321,22 +341,25 @@ export async function restoreSupervisorTeamIn(
   now: () => number = Date.now
 ): Promise<SupervisorTeam[]> {
   const at = now();
-  const teams = await readTeamsIn(options.dataDir);
-  const rows: SupervisorTeam[] = [];
-  for (const team of teams) {
-    if (team.teamId !== params.teamId || !isTeamDeleted(team)) {
-      rows.push(team);
-      continue;
+  // Under the index lock: the read and the write are one cycle.
+  return withTeamsIndexLock(options.dataDir, async () => {
+    const teams = await readTeamsIn(options.dataDir);
+    const rows: SupervisorTeam[] = [];
+    for (const team of teams) {
+      if (team.teamId !== params.teamId || !isTeamDeleted(team)) {
+        rows.push(team);
+        continue;
+      }
+      rows.push({
+        ...team,
+        deletedAt: undefined,
+        expiresAt: team.permanent ? team.expiresAt : expiryAfterTtl(team.ttlDays, at),
+        lastUsedAt: at,
+      });
     }
-    rows.push({
-      ...team,
-      deletedAt: undefined,
-      expiresAt: team.permanent ? team.expiresAt : expiryAfterTtl(team.ttlDays, at),
-      lastUsedAt: at,
-    });
-  }
-  await writeTeamsIn(options.dataDir, rows, at);
-  return rows;
+    await writeTeamsIn(options.dataDir, rows, at);
+    return rows;
+  });
 }
 
 /** Restores one soft-deleted team under the app data dir. */
@@ -357,20 +380,23 @@ export async function reuseSupervisorTeamIn(
   options: { dataDir: string },
   params: { teamId: string; at: number }
 ): Promise<SupervisorTeam | undefined> {
-  const teams = await readTeamsIn(options.dataDir);
-  const row = teams.find((team) => team.teamId === params.teamId && !isTeamDeleted(team));
-  if (!row) return undefined;
-  const next: SupervisorTeam = {
-    ...row,
-    lastUsedAt: params.at,
-    expiresAt: row.permanent ? row.expiresAt : expiryAfterTtl(row.ttlDays, params.at),
-  };
-  await writeTeamsIn(
-    options.dataDir,
-    teams.map((team) => (team.teamId === params.teamId ? next : team)),
-    params.at
-  );
-  return next;
+  // Under the index lock: the read and the write are one cycle.
+  return withTeamsIndexLock(options.dataDir, async () => {
+    const teams = await readTeamsIn(options.dataDir);
+    const row = teams.find((team) => team.teamId === params.teamId && !isTeamDeleted(team));
+    if (!row) return undefined;
+    const next: SupervisorTeam = {
+      ...row,
+      lastUsedAt: params.at,
+      expiresAt: row.permanent ? row.expiresAt : expiryAfterTtl(row.ttlDays, params.at),
+    };
+    await writeTeamsIn(
+      options.dataDir,
+      teams.map((team) => (team.teamId === params.teamId ? next : team)),
+      params.at
+    );
+    return next;
+  });
 }
 
 /** How the purge deletes a backend team; injectable so tests need no backend. */
@@ -422,8 +448,17 @@ export async function purgeDueDeletedTeamsIn(
     })
   );
   const purged = answers.filter((answer) => answer.purged).map((answer) => answer.team);
-  const kept = answers.filter((answer) => !answer.purged).map((answer) => answer.team);
-  await writeTeamsIn(options.dataDir, kept, at);
+  // The row drop is its own locked read-modify-write (the DELETEs above may
+  // take seconds — holding the lock across them would starve every writer):
+  // the index is re-read, and only the rows THIS pass deleted leave it, so a
+  // teams.cjs add that landed meanwhile survives.
+  const purgedIds = new Set(purged.map((team) => team.teamId));
+  const kept = await withTeamsIndexLock(options.dataDir, async () => {
+    const fresh = await readTeamsIn(options.dataDir);
+    const rows = fresh.filter((team) => !purgedIds.has(team.teamId));
+    if (rows.length !== fresh.length) await writeTeamsIn(options.dataDir, rows, at);
+    return rows;
+  });
   return { purged, kept };
 }
 

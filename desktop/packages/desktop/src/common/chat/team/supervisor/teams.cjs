@@ -54,6 +54,10 @@ const DEFAULT_TTL_DAYS = 7;
 const MIN_TTL_DAYS = 1;
 const MAX_TTL_DAYS = 365;
 const TEAMS_FILE = path.resolve(__dirname, '..', '_shared', 'TEAMS.md');
+/** The lock file guarding TEAMS.md read-modify-write cycles: same policy as the desktop's teamsFileLock.ts (O_EXCL create, stale takeover) — this script and the desktop are separate processes mutating one file. */
+const TEAMS_LOCK_FILE = `${TEAMS_FILE}.lock`;
+/** A lock file older than this holds nothing: its writer died, so a waiter takes it over. */
+const LOCK_STALE_MS = 5000;
 const TEAMS_MARKER = '<!-- mu-supervisor-teams v1 -->';
 /** The dispatch rules block for a fresh team workspace; the app injects the canonical text in place of this whole `null` expression when it ships the script. */
 const DISPATCH_RULES_BLOCK = /* mu-dispatch-rules-block */ null;
@@ -254,7 +258,58 @@ function readTeams() {
 
 function writeTeams(teams) {
   fs.mkdirSync(path.dirname(TEAMS_FILE), { recursive: true });
-  fs.writeFileSync(TEAMS_FILE, buildTeams(teams, Date.now()), 'utf8');
+  // Temp-then-rename: an unlocked reader (the desktop's sidebar, another
+  // command) never sees a torn half-written file.
+  const temp = `${TEAMS_FILE}.write`;
+  fs.writeFileSync(temp, buildTeams(teams, Date.now()), 'utf8');
+  fs.renameSync(temp, TEAMS_FILE);
+}
+
+/** A synchronous sleep (the script is sync): Atomics.wait on the main thread blocks without burning CPU. */
+const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+/**
+ * Runs `work` holding the index lock: O_EXCL create, so exactly one holder;
+ * a held lock older than LOCK_STALE_MS is a dead writer's leftover and is
+ * taken over (unlinked only when a second stat still shows the same stale
+ * mtime, never a fresh lock another waiter just won); the winner unlinks in
+ * `finally`. Holders hold for milliseconds (read, splice, write), so waiting
+ * is a short poll.
+ */
+function withTeamsLock(work) {
+  fs.mkdirSync(path.dirname(TEAMS_LOCK_FILE), { recursive: true });
+  for (;;) {
+    try {
+      fs.closeSync(fs.openSync(TEAMS_LOCK_FILE, 'wx'));
+      break;
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+    }
+    let held;
+    try {
+      held = fs.statSync(TEAMS_LOCK_FILE);
+    } catch (error) {
+      if (error.code === 'ENOENT') continue;
+      throw error;
+    }
+    if (Date.now() - held.mtimeMs > LOCK_STALE_MS) {
+      try {
+        const again = fs.statSync(TEAMS_LOCK_FILE);
+        if (again.mtimeMs === held.mtimeMs) fs.unlinkSync(TEAMS_LOCK_FILE);
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
+      continue;
+    }
+    sleepSync(25);
+  }
+  try {
+    return work();
+  } finally {
+    try {
+      fs.unlinkSync(TEAMS_LOCK_FILE);
+    } catch {}
+  }
 }
 
 async function api(method, apiPath, body) {
@@ -415,7 +470,10 @@ async function cmdAdd(args) {
     teamId: team.id,
     leadConversationId: lead.conversation_id,
   };
-  writeTeams([...teams, row]);
+  // The registration is its own locked read-modify-write: the teams read at
+  // the top predates the backend calls, so the write re-reads inside the
+  // lock — a team another process added meanwhile survives.
+  withTeamsLock(() => writeTeams([...readTeams(), row]));
   console.log(
     `TEAM_ADDED name=${name} team_id=${team.id} lead_conversation=${lead.conversation_id} positions=${positions.join(',')} workspace=${workspace}`
   );
@@ -449,15 +507,25 @@ async function cmdSend(args) {
     ) || fail(`no team named "${name}" in ${TEAMS_FILE} (run: node teams.cjs list)`);
   await api('POST', `/api/teams/${team.teamId}/messages`, { content, files: [] });
 
-  const now = Date.now();
-  team.lastUsedAt = now;
-  // The team's own lifecycle: a reuse extends to `now + ttlDays`; a permanent
-  // team never expires, so its recorded expiry stays untouched.
-  if (!team.permanent) team.expiresAt = now + team.ttlDays * DAY_MS;
-  writeTeams(teams);
+  // The refresh is its own locked read-modify-write: re-read inside the
+  // lock and refresh the row by team id; a row that vanished between the
+  // POST and here (a purge raced this send) is left gone — not resurrected.
+  const refreshed = withTeamsLock(() => {
+    const fresh = readTeams();
+    const row = fresh.find((t) => t.teamId === team.teamId);
+    if (!row) return undefined;
+    const now = Date.now();
+    row.lastUsedAt = now;
+    // The team's own lifecycle: a reuse extends to `now + ttlDays`; a permanent
+    // team never expires, so its recorded expiry stays untouched.
+    if (!row.permanent) row.expiresAt = now + row.ttlDays * DAY_MS;
+    writeTeams(fresh);
+    return row;
+  });
+  const logged = refreshed || team;
   console.log(
-    `SENT team=${team.name} to_conversation=${team.leadConversationId} refreshed_until=${
-      team.permanent ? 'permanent' : iso(team.expiresAt)
+    `SENT team=${logged.name} to_conversation=${logged.leadConversationId} refreshed_until=${
+      logged.permanent ? 'permanent' : iso(logged.expiresAt)
     }`
   );
 }

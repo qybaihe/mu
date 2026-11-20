@@ -82,6 +82,17 @@ export const TEMPLATES_SCRIPT_NAME = 'templates.cjs';
 /** Marks the index file as app-managed; parse rejects a file without it. */
 const TEAMS_FILE_MARKER = '<!-- mu-supervisor-teams v1 -->';
 
+/**
+ * The lock file guarding every TEAMS.md read-modify-write cycle: the desktop
+ * service (`teamsFileLock.ts`) and every `teams.cjs` copy create it with
+ * O_EXCL next to the index and unlink it when done. A holder that died with
+ * the lock in hand is freed once the file is older than the stale span.
+ */
+export const TEAMS_LOCK_SUFFIX = '.lock';
+
+/** A lock file older than this holds nothing: its writer died, so a waiter takes it over. */
+export const TEAMS_LOCK_STALE_MS = 5000;
+
 /** One temporary team of the index: the row `teams.cjs` appends and refreshes. */
 export type SupervisorTeam = {
   /** The team's display name, unique among active teams. */

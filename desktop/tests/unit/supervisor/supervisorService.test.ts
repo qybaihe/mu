@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,9 +13,11 @@ import {
   purgeDueDeletedTeamsIn,
   registerSupervisorTeamIn,
   restoreSupervisorTeamIn,
+  reuseSupervisorTeamIn,
   setTeamLifecycleIn,
   softDeleteSupervisorTeamIn,
 } from '@process/services/team/supervisor';
+import { teamsLockFileOf } from '@process/services/team/supervisor/teamsFileLock';
 import { TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/team/teamDispatch/dispatchRules';
 import {
   SHARED_TEAMS_FOLDER,
@@ -509,5 +511,58 @@ describe('purgeDueDeletedTeamsIn', () => {
     expect(called).toBe(0);
     expect(answer.purged).toEqual([]);
     expect(readFileSync(teamsFile, 'utf8')).toBe(before);
+  });
+});
+
+describe('the TEAMS.md write lock (every mutation under withTeamsIndexLock)', () => {
+  /** Registers one team with a distinct id, the parallel-mutation unit. */
+  const register = (dataDir: string, teamId: string) =>
+    registerSupervisorTeamIn(
+      { dataDir },
+      { name: `队${teamId}`, positions: ['forwarder'], teamId, leadConversationId: `c-${teamId}` }
+    );
+
+  it('loses no row when registrations race: eight parallel writes, eight rows on disk', async () => {
+    const { dataDir, teamsFile } = setup();
+    await Promise.all(['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8'].map((id) => register(dataDir, id)));
+    const onDisk = parseTeamsFile(readFileSync(teamsFile, 'utf8'));
+    expect(onDisk.map((row) => row.teamId).sort()).toEqual(['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8']);
+    // The lock is gone when the last writer leaves.
+    expect(existsSync(teamsLockFileOf(dataDir))).toBe(false);
+  });
+
+  it('also serializes mixed mutations racing one another', async () => {
+    const { dataDir, teamsFile } = setup();
+    await register(dataDir, 't1');
+    await Promise.all([
+      register(dataDir, 't2'),
+      softDeleteSupervisorTeamIn({ dataDir }, { teamId: 't1' }),
+      setTeamLifecycleIn({ dataDir }, { teamId: 't1', ttlDays: 3 }),
+      reuseSupervisorTeamIn({ dataDir }, { teamId: 't1', at: 9_999 }),
+    ]);
+    const ids = parseTeamsFile(readFileSync(teamsFile, 'utf8'))
+      .map((row) => row.teamId)
+      .sort();
+    expect(ids).toEqual(['t1', 't2']);
+    expect(existsSync(teamsLockFileOf(dataDir))).toBe(false);
+  });
+
+  it('takes over a stale lock (a dead holder) instead of waiting forever', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const { dataDir, teamsFile } = setup();
+      mkdirSync(join(dataDir, 'positions', SHARED_TEAMS_FOLDER), { recursive: true });
+      writeFileSync(teamsLockFileOf(dataDir), '', 'utf8'); // the dead holder's leftover
+      // Ten seconds pass (only Date is faked; the fs above stays real).
+      vi.setSystemTime(Date.now() + 10_000);
+      const started = Date.now();
+      await register(dataDir, 't1');
+      // Far under the 5s stale span + poll: the takeover was immediate.
+      expect(Date.now() - started).toBeLessThan(3_000);
+      expect(parseTeamsFile(readFileSync(teamsFile, 'utf8')).map((row) => row.teamId)).toEqual(['t1']);
+      expect(existsSync(teamsLockFileOf(dataDir))).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

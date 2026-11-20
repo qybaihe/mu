@@ -14,6 +14,7 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -490,5 +491,34 @@ describe('teams.cjs against a stub backend', () => {
     ]);
     expect(add.status).toBe(0);
     expect((await run(['match', '--positions', 'forwarder,worker'])).out).toBe('MATCH 岗位建的队');
+  });
+});
+
+describe('teams.cjs under the TEAMS.md write lock', () => {
+  const lockFile = `${teamsFile}.lock`;
+
+  it('takes over a stale lock: a dead holder never blocks the script', async () => {
+    mkdirSync(join(dataDir, 'positions', '_shared'), { recursive: true });
+    writeFileSync(lockFile, '', 'utf8');
+    const deadFor = new Date(Date.now() - 10_000); // Date, not ms: raw numbers read as seconds
+    utimesSync(lockFile, deadFor, deadFor);
+    const answer = await run(['add', '--name', '锁死队', '--positions', 'forwarder']);
+    expect(answer.status).toBe(0);
+    expect(teamsNow().map((team) => team.name)).toContain('锁死队');
+    expect(existsSync(lockFile)).toBe(false);
+  });
+
+  it('waits for a live holder instead of barging in', async () => {
+    mkdirSync(join(dataDir, 'positions', '_shared'), { recursive: true });
+    writeFileSync(lockFile, '', 'utf8'); // the live holder's lock
+    const pending = run(['add', '--name', '排队队', '--positions', 'forwarder']);
+    // Give the script time to reach the lock and sit on it.
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(teamsNow().map((team) => team.name)).not.toContain('排队队'); // not written past the held lock
+    rmSync(lockFile, { force: true }); // the holder leaves
+    const answer = await pending;
+    expect(answer.status).toBe(0);
+    expect(teamsNow().map((team) => team.name)).toContain('排队队');
+    expect(existsSync(lockFile)).toBe(false);
   });
 });
