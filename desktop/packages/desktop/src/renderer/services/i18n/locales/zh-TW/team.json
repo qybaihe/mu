@@ -72,7 +72,7 @@
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",
-    "subtitle": "Pick positions to join; every slot runs mu. Reusable for 7 days.",
+    "subtitle": "選擇崗位入群，全員 mu 陣容；生命週期預設 7 天，可自訂或永久。",
     "nameLabel": "Group name",
     "namePlaceholder": "Optional — the positions name it",
     "nameAutoHint": "Leave it empty and the picked positions name the group.",
@@ -83,7 +83,11 @@
     "submit": "Create",
     "errorWithDetail": "Failed to create the group chat: {{error}}",
     "errors.noPositions": "Pick at least one position.",
-    "errors.tooManyPositions": "Pick at most 6 positions."
+    "errors.tooManyPositions": "Pick at most 6 positions.",
+    "lifecycleLabel": "生命週期",
+    "lifecycleDays": "天",
+    "lifecyclePermanent": "永久",
+    "lifecycleHint": "預設 7 天；到期未複用自動退役，每次複用續命；開啟永久則不過期。"
   },
   "members": {
     "manageA11y": "Manage members",

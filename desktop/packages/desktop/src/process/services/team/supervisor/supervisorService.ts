@@ -27,8 +27,12 @@ import {
   SUPERVISOR_FOLDER,
   TEAMS_FILE_NAME,
   TEAMS_SCRIPT_NAME,
+  TEAM_TTL_DEFAULT_DAYS,
   buildSupervisorOverrideContent,
   buildTeamsFile,
+  clampTeamTtlDays,
+  expiryAfterTtl,
+  isTeamActive,
   parseTeamsFile,
   type SupervisorTeam,
 } from '@/common/chat/team/supervisor/supervisorCore';
@@ -123,12 +127,14 @@ async function readTeamsIn(dataDir: string): Promise<SupervisorTeam[]> {
   }
 }
 
-/** How long a fresh registration stays active: the same 7 days as teams.cjs. */
-const TEAM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/** The lifecycle a registration carries: the creating surface's choice (the
+ *  modal's or popover's ttlDays/permanent), absent when a refresh re-registers
+ *  an existing team — then the row keeps the lifecycle it already has. */
+export type RegisterTeamLifecycle = { ttlDays?: number; permanent?: boolean };
 
 /** The next `N` past every name an active row already uses, so `send --team <name>` stays unambiguous. */
 const uniqueNameAmong = (name: string, teams: readonly SupervisorTeam[], now: number): string => {
-  const taken = new Set(teams.filter((team) => team.expiresAt > now).map((team) => team.name));
+  const taken = new Set(teams.filter((team) => isTeamActive(team, now)).map((team) => team.name));
   if (!taken.has(name)) return name;
   for (let n = 2; ; n++) {
     const candidate = `${name} ${n}`;
@@ -136,16 +142,24 @@ const uniqueNameAmong = (name: string, teams: readonly SupervisorTeam[], now: nu
   }
 };
 
+/** Writes the index's canonical form: the shared reconcile every mutation ends with. */
+async function writeTeamsIn(dataDir: string, teams: readonly SupervisorTeam[], at: number): Promise<void> {
+  await mkdir(join(dataDir, 'positions', SHARED_TEAMS_FOLDER), { recursive: true });
+  await writeFile(teamsFileOf(dataDir), `${buildTeamsFile(teams, at)}\n`, 'utf8');
+}
+
 /**
  * Upserts one team row in the shared index (by team id): a manually created
  * group chat's registration, or the refresh a member change writes. A new row
- * starts its 7-day lifecycle; an existing active row's touch refreshes it,
- * while a retired row only takes the new positions — a membership edit must
- * not resurrect a team past its TTL. The clock is injectable for tests.
+ * starts its lifecycle at the creating surface's choice (default 7 days); an
+ * existing active row's touch refreshes it with the team's OWN ttlDays — a
+ * membership edit must not stretch or shorten the lifecycle — while a retired
+ * row only takes the new positions: a membership edit must not resurrect a
+ * team past its TTL. The clock is injectable for tests.
  */
 export async function registerSupervisorTeamIn(
   options: { dataDir: string },
-  params: { name: string; positions: string[]; teamId: string; leadConversationId: string },
+  params: { name: string; positions: string[]; teamId: string; leadConversationId: string } & RegisterTeamLifecycle,
   now: () => number = Date.now
 ): Promise<SupervisorTeam[]> {
   const at = now();
@@ -153,38 +167,89 @@ export async function registerSupervisorTeamIn(
   const existing = teams.find((team) => team.teamId === params.teamId);
   let next: SupervisorTeam;
   if (existing) {
-    const active = existing.expiresAt > at;
-    next = {
-      ...existing,
-      name: active ? uniqueNameAmong(params.name, teams, at) : existing.name,
-      positions: params.positions,
-      ...(active ? { lastUsedAt: at, expiresAt: at + TEAM_TTL_MS } : {}),
-    };
+    // A retired row only takes the new positions: a membership edit must not
+    // resurrect a team past its TTL, whatever lifecycle params came along.
+    if (!isTeamActive(existing, at)) {
+      next = { ...existing, positions: params.positions };
+    } else {
+      const ttlDays = params.ttlDays !== undefined ? clampTeamTtlDays(params.ttlDays) : existing.ttlDays;
+      const permanent = params.permanent ?? existing.permanent;
+      next = {
+        ...existing,
+        name: uniqueNameAmong(params.name, teams, at),
+        positions: params.positions,
+        ttlDays,
+        permanent,
+        // A permanent row's recorded expiry is informational; a normal row's
+        // touch extends to `now + ttlDays`.
+        expiresAt: permanent ? existing.expiresAt : expiryAfterTtl(ttlDays, at),
+        lastUsedAt: at,
+      };
+    }
   } else {
+    const ttlDays = clampTeamTtlDays(params.ttlDays ?? TEAM_TTL_DEFAULT_DAYS);
+    const permanent = params.permanent ?? false;
     next = {
       name: uniqueNameAmong(params.name, teams, at),
       positions: params.positions,
       createdAt: at,
       lastUsedAt: at,
-      expiresAt: at + TEAM_TTL_MS,
+      expiresAt: expiryAfterTtl(ttlDays, at),
+      ttlDays,
+      permanent,
       teamId: params.teamId,
       leadConversationId: params.leadConversationId,
     };
   }
   const rows = teams.filter((team) => team.teamId !== params.teamId).concat(next);
-  await mkdir(join(options.dataDir, 'positions', SHARED_TEAMS_FOLDER), { recursive: true });
-  await writeFile(teamsFileOf(options.dataDir), `${buildTeamsFile(rows, at)}\n`, 'utf8');
+  await writeTeamsIn(options.dataDir, rows, at);
   return rows;
 }
 
 /** Registers one team in the shared index under the app data dir. */
-export const registerSupervisorTeam = (params: {
-  name: string;
-  positions: string[];
-  teamId: string;
-  leadConversationId: string;
-}): Promise<SupervisorTeam[]> =>
-  registerSupervisorTeamIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
+export const registerSupervisorTeam = (
+  params: {
+    name: string;
+    positions: string[];
+    teamId: string;
+    leadConversationId: string;
+  } & RegisterTeamLifecycle
+): Promise<SupervisorTeam[]> => registerSupervisorTeamIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
+
+/**
+ * Sets one team's lifecycle from the monitor card's popover: the day count
+ * (clamped 1-365) and/or the permanent flag, applied to the row it finds. A
+ * non-permanent row's expiry restarts from `now` with the new ttlDays; a
+ * permanent row's recorded expiry stays as it was. An unknown team id changes
+ * nothing. The clock is injectable for tests.
+ */
+export async function setTeamLifecycleIn(
+  options: { dataDir: string },
+  params: { teamId: string } & RegisterTeamLifecycle,
+  now: () => number = Date.now
+): Promise<SupervisorTeam[]> {
+  const at = now();
+  const teams = await readTeamsIn(options.dataDir);
+  const rows: SupervisorTeam[] = [];
+  for (const team of teams) {
+    if (team.teamId !== params.teamId) {
+      rows.push(team);
+      continue;
+    }
+    const ttlDays = params.ttlDays !== undefined ? clampTeamTtlDays(params.ttlDays) : team.ttlDays;
+    const permanent = params.permanent ?? team.permanent;
+    rows.push({ ...team, ttlDays, permanent, expiresAt: permanent ? team.expiresAt : expiryAfterTtl(ttlDays, at) });
+  }
+  await writeTeamsIn(options.dataDir, rows, at);
+  return rows;
+}
+
+/** Sets one team's lifecycle under the app data dir. */
+export const setTeamLifecycle = (
+  params: {
+    teamId: string;
+  } & RegisterTeamLifecycle
+): Promise<SupervisorTeam[]> => setTeamLifecycleIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
 
 /**
  * The shared index as it stands on disk: every team the supervisor flow

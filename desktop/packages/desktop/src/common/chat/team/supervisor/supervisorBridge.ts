@@ -26,7 +26,13 @@ export type SupervisorRegisterTeamParams = {
   positions: string[];
   teamId: string;
   leadConversationId: string;
+  /** The creating surface's lifecycle choice; absent on refresh re-registrations. */
+  ttlDays?: number;
+  permanent?: boolean;
 };
+
+/** Sets one team's lifecycle (day count and/or permanent flag): what the monitor card's popover saves. */
+export type SupervisorTeamLifecycleParams = { teamId: string; ttlDays?: number; permanent?: boolean };
 
 export const supervisorBridge = {
   /** Prepares (and refreshes) the supervisor workspace: rules, script, teams index. */
@@ -36,5 +42,9 @@ export const supervisorBridge = {
   /** Upserts one team row in the shared index (by team id): registration and member-change refreshes. */
   registerTeam: bridge.buildProvider<KyrnResult<SupervisorTeamsResult>, SupervisorRegisterTeamParams>(
     'supervisor.registerTeam'
+  ),
+  /** Sets one team's lifecycle (ttlDays / permanent) in the shared index. */
+  setTeamLifecycle: bridge.buildProvider<KyrnResult<SupervisorTeamsResult>, SupervisorTeamLifecycleParams>(
+    'supervisor.setTeamLifecycle'
   ),
 };

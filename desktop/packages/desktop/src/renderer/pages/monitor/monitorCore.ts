@@ -22,9 +22,6 @@ export type SlotWorkBySlot = ReadonlyMap<string, ITeamSlotWork>;
 /** The whole index: one slot-work map per team id. */
 export type SlotWorkIndex = ReadonlyMap<string, SlotWorkBySlot>;
 
-/** How long a team stays matchable since its last reuse; the same 7 days as the supervisor's index. */
-export const TEAM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
 // --- position wall ---
 
 export type PositionCardState = 'working' | 'waiting' | 'idle';
@@ -144,6 +141,8 @@ export type TeamCard = {
   counts: TeamProgressCounts;
   /** Whole days left before the shared index retires the team. */
   ttlDays: number | undefined;
+  /** A permanent team never retires; its card reads 生命周期：永久. */
+  permanent: boolean;
 };
 
 /** A slot's dot: running work lights green, queued or parked work amber. */
@@ -202,6 +201,7 @@ export const teamCardsOf = (inputs: TeamWallInputs): TeamWall => {
       running: members.some((member) => member.kind !== 'idle'),
       counts: progressCountsOf(inputs.tasksByTeam.get(entry.team.id)),
       ttlDays: ttlDaysOf(entry.expiresAt, inputs.now),
+      permanent: entry.permanent,
     };
   });
   const active = cards.filter((card) => !card.entry.retired);

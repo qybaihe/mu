@@ -11,7 +11,7 @@
  * session, the group chat itself.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
@@ -24,6 +24,7 @@ import styles from '@renderer/pages/monitor/MonitorPage.module.css';
 let overview: MonitorOverview;
 const openPosition = vi.fn();
 const openSupervisor = vi.fn();
+const setTeamLifecycle = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -52,6 +53,40 @@ vi.mock('@renderer/pages/positions/openPosition', () => ({
 }));
 vi.mock('@renderer/pages/positions/openSupervisor', () => ({
   useOpenSupervisor: () => openSupervisor,
+}));
+// Arco's real portals are motion-driven and unreliable under jsdom; the two
+// popup shells stand in as plain toggles so the flows (open, edit, confirm)
+// stay testable. Everything else comes from the real library.
+vi.mock('@arco-design/web-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@arco-design/web-react')>();
+  const { useState } = await import('react');
+  const FakePopover = (props: {
+    content?: React.ReactNode;
+    children?: React.ReactNode;
+    popupVisible?: boolean;
+    onVisibleChange?: (visible: boolean) => void;
+  }) => {
+    const [selfOpen, setSelfOpen] = useState(false);
+    const open = props.popupVisible ?? selfOpen;
+    return (
+      <span
+        onClick={(event) => {
+          event.stopPropagation();
+          if (props.onVisibleChange) props.onVisibleChange(true);
+          else setSelfOpen(true);
+        }}
+      >
+        {props.children}
+        {open ? props.content : null}
+      </span>
+    );
+  };
+  return { ...actual, Popover: FakePopover };
+});
+vi.mock('@/common/chat/team/supervisor/supervisorBridge', () => ({
+  supervisorBridge: {
+    setTeamLifecycle: { invoke: (...args: unknown[]) => setTeamLifecycle(...args) },
+  },
 }));
 import MonitorPage from '@renderer/pages/monitor/MonitorPage';
 
@@ -88,7 +123,9 @@ const rosterEntry = (
   source: TTeam,
   leadConversationId: string,
   retired: boolean,
-  expiresAt?: number
+  expiresAt?: number,
+  ttlDays?: number,
+  permanent?: boolean
 ): TeamRosterEntry => ({
   team: source,
   memberCount: 1,
@@ -96,6 +133,8 @@ const rosterEntry = (
   conversationIds: [leadConversationId],
   retired,
   expiresAt,
+  ttlDays,
+  permanent: permanent ?? false,
 });
 
 const teamCard = (entry: TeamRosterEntry, patch: Partial<TeamCard> = {}): TeamCard => ({
@@ -104,6 +143,7 @@ const teamCard = (entry: TeamRosterEntry, patch: Partial<TeamCard> = {}): TeamCa
   running: false,
   counts: { todo: 0, inProgress: 0, done: 0 },
   ttlDays: undefined,
+  permanent: false,
   ...patch,
 });
 
@@ -133,6 +173,8 @@ describe('MonitorPage', () => {
   beforeEach(() => {
     openPosition.mockClear();
     openSupervisor.mockClear();
+    setTeamLifecycle.mockClear();
+    setTeamLifecycle.mockResolvedValue({ ok: true, data: { teams: [] } });
   });
   afterEach(cleanup);
 
@@ -154,6 +196,7 @@ describe('MonitorPage', () => {
       positionCount: 3,
       activeTeamCount: 0,
       loading: false,
+      refreshTeamsIndex: () => undefined,
     };
     renderPage();
     expect(screen.getByTestId('monitor-position-forwarder')).toBeTruthy();
@@ -190,6 +233,7 @@ describe('MonitorPage', () => {
       positionCount: 0,
       activeTeamCount: 1,
       loading: false,
+      refreshTeamsIndex: () => undefined,
     };
     const { container } = renderPage();
     expect(screen.getByTestId('monitor-team-t1').textContent).toContain('货代');
@@ -217,6 +261,7 @@ describe('MonitorPage', () => {
       positionCount: 1,
       activeTeamCount: 1,
       loading: false,
+      refreshTeamsIndex: () => undefined,
     };
     renderPage();
     fireEvent.click(screen.getByTestId('monitor-position-forwarder'));
@@ -233,10 +278,58 @@ describe('MonitorPage', () => {
       positionCount: 0,
       activeTeamCount: 0,
       loading: false,
+      refreshTeamsIndex: () => undefined,
     };
     renderPage();
     expect(screen.getByTestId('monitor-page').textContent).toContain('monitor.empty.hint');
     fireEvent.click(screen.getByText('monitor.empty.action'));
     expect(openSupervisor).toHaveBeenCalled();
+  });
+
+  it('shows the lifecycle text on the TTL chip: days left, or permanent', () => {
+    const days = teamCard(rosterEntry(team('t1'), 'lead-1', false, Date.now() + 3 * 86_400_000, 3), { ttlDays: 3 });
+    const forever = teamCard(rosterEntry(team('t2'), 'lead-2', false, Date.now() + 86_400_000, 7, true), {
+      ttlDays: 1,
+      permanent: true,
+    });
+    overview = {
+      positionCards: [],
+      teamWall: { active: [days, forever], retired: [] } satisfies TeamWall,
+      activeCount: 0,
+      positionCount: 0,
+      activeTeamCount: 2,
+      loading: false,
+      refreshTeamsIndex: () => undefined,
+    };
+    renderPage();
+    expect(screen.getByTestId('monitor-team-t1-ttl').textContent).toContain('monitor.teams.ttl:days=3');
+    expect(screen.getByTestId('monitor-team-t2-ttl').textContent).toContain('monitor.teams.ttlPermanent');
+    // A permanent team never reads as near expiry.
+    expect(screen.getByTestId('monitor-team-t2')).not.toHaveClass(styles.cardWaiting);
+  });
+
+  it('the TTL chip opens the lifecycle editor; apply writes the lifecycle and refreshes the index', async () => {
+    const refreshTeamsIndex = vi.fn();
+    const card = teamCard(rosterEntry(team('t1'), 'lead-1', false, Date.now() + 86_400_000, 3), { ttlDays: 1 });
+    overview = {
+      positionCards: [],
+      teamWall: { active: [card], retired: [] } satisfies TeamWall,
+      activeCount: 0,
+      positionCount: 0,
+      activeTeamCount: 1,
+      loading: false,
+      refreshTeamsIndex,
+    };
+    renderPage();
+    fireEvent.click(screen.getByTestId('monitor-team-t1-ttl'));
+    const editor = await screen.findByTestId('team-lifecycle-editor');
+    expect(editor).toBeTruthy();
+    // Flip permanent and apply: the write carries the pair, the index re-reads.
+    fireEvent.click(screen.getByTestId('team-lifecycle-permanent'));
+    fireEvent.click(screen.getByTestId('team-lifecycle-apply'));
+    await waitFor(() => expect(setTeamLifecycle).toHaveBeenCalledWith({ teamId: 't1', ttlDays: 3, permanent: true }));
+    await waitFor(() => expect(refreshTeamsIndex).toHaveBeenCalled());
+    // The chip's press never opened the group chat underneath.
+    expect(screen.getByTestId('where').textContent).not.toBe('/conversation/lead-1');
   });
 });

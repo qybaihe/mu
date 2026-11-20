@@ -10,10 +10,11 @@
  * it — so this module builds the rules injected into its workspace
  * (`AGENTS.override.md`, same seam as a library position's gate), and owns the
  * TEAMS.md index format the workspace's `teams.cjs` script reads and writes:
- * one pipe-table row per team, ISO timestamps, and a 7-day TTL that a reuse
- * (a `send`) refreshes. The workspace also carries `positions.cjs`, the
- * read-only roster listing behind the supervisor's new-project dedup gate.
- * All IO lives in the service and the scripts.
+ * one pipe-table row per team, ISO timestamps, and a per-team lifecycle — a
+ * TTL of 1-365 days (7 by default) that a reuse (a `send`) refreshes, or a
+ * `permanent` flag that never retires. The workspace also carries
+ * `positions.cjs`, the read-only roster listing behind the supervisor's
+ * new-project dedup gate. All IO lives in the service and the scripts.
  */
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import { positionLabel } from '@/common/chat/team/positions/positionLibraryCore';
@@ -24,8 +25,23 @@ export const SUPERVISOR_POSITION_NAME = 'supervisor';
 /** The supervisor workspace's folder under the app data dir's `positions/`. */
 export const SUPERVISOR_FOLDER = '_supervisor';
 
-/** How long a team lives: created for this span, every reuse extends it to `now + TTL`. */
+/** How long a team lives by default: created for this span, every reuse extends it to `now + TTL`. */
 export const TEAM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** The lifecycle a team may carry, in whole days: at least one, at most a year. */
+export const TEAM_TTL_MIN_DAYS = 1;
+export const TEAM_TTL_MAX_DAYS = 365;
+/** The TTL every row without one reads as: the format's 7-day origin. */
+export const TEAM_TTL_DEFAULT_DAYS = 7;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** A day count as the index stores it: clamped into the allowed range, the default when unparsable. */
+export const clampTeamTtlDays = (days: number): number =>
+  Math.min(TEAM_TTL_MAX_DAYS, Math.max(TEAM_TTL_MIN_DAYS, Math.round(days))) || TEAM_TTL_DEFAULT_DAYS;
+
+/** The epoch-ms expiry a `ttlDays` lifecycle reads as from `at`. */
+export const expiryAfterTtl = (ttlDays: number, at: number): number => at + ttlDays * DAY_MS;
 
 /** The team index file every workspace's `teams.cjs` maintains. */
 export const TEAMS_FILE_NAME = 'TEAMS.md';
@@ -59,6 +75,10 @@ export type SupervisorTeam = {
   lastUsedAt: number;
   /** Epoch ms after which the team is retired and never matched. */
   expiresAt: number;
+  /** The team's own lifecycle length in days; a reuse extends to `now + ttlDays`. */
+  ttlDays: number;
+  /** A permanent team never retires, whatever `expiresAt` says. */
+  permanent: boolean;
   /** The backend team id, for `send`. */
   teamId: string;
   /** The lead slot's conversation, where a task is delivered. */
@@ -88,13 +108,18 @@ const unescapeCell = (text: string): string =>
 const splitCells = (row: string): string[] => row.split(/(?<!\\)\|/).map((cell) => unescapeCell(cell.trim()));
 
 /** The header row both tables share; the parser recognizes data rows by shape, not by this text. */
-const TABLE_HEADER = '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 |';
-const TABLE_RULE = '| --- | --- | --- | --- | --- | --- | --- |';
+const TABLE_HEADER = '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 |';
+const TABLE_RULE = '| --- | --- | --- | --- | --- | --- | --- | --- | --- |';
+
+/** The permanent flag's cell text; anything else reads as false. */
+const PERMANENT_CELL = '是';
 
 const teamRow = (team: SupervisorTeam): string =>
   `| ${escapeCell(team.name)} | ${escapeCell(team.positions.join(', '))} | ${iso(team.createdAt)} | ${iso(
     team.lastUsedAt
-  )} | ${iso(team.expiresAt)} | ${escapeCell(team.teamId)} | ${escapeCell(team.leadConversationId)} |`;
+  )} | ${iso(team.expiresAt)} | ${escapeCell(team.teamId)} | ${escapeCell(team.leadConversationId)} | ${
+    team.ttlDays
+  } | ${team.permanent ? PERMANENT_CELL : ''} |`;
 
 const table = (teams: readonly SupervisorTeam[]): string[] =>
   teams.length === 0 ? [] : [TABLE_HEADER, TABLE_RULE, ...teams.map(teamRow)];
@@ -105,8 +130,8 @@ const table = (teams: readonly SupervisorTeam[]): string[] =>
  * history but are never matched again.
  */
 export function buildTeamsFile(teams: readonly SupervisorTeam[], now: number): string {
-  const active = teams.filter((team) => team.expiresAt > now).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
-  const retired = teams.filter((team) => team.expiresAt <= now).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
+  const active = teams.filter((team) => isTeamActive(team, now)).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
+  const retired = teams.filter((team) => !isTeamActive(team, now)).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
   const lines = [TEAMS_FILE_MARKER, '# 临时团队索引（由 teams.cjs 维护，勿手改）', '', ...table(active)];
   if (active.length > 0) lines.push('');
   if (retired.length > 0) lines.push('已退役（到期未复用，不再匹配）：', '', ...table(retired));
@@ -115,8 +140,10 @@ export function buildTeamsFile(teams: readonly SupervisorTeam[], now: number): s
 
 /**
  * The teams an index file records. Tolerant of the file a model or an older
- * script version wrote: rows are recognized by shape (seven cells, parseable
- * dates), and anything else — prose, headings, malformed rows — is skipped.
+ * script version wrote: rows are recognized by shape (seven or nine cells,
+ * parseable dates), and anything else — prose, headings, malformed rows — is
+ * skipped. A seven-cell row is the format before per-team lifecycles: it
+ * reads as the default 7-day, non-permanent team it was.
  */
 export function parseTeamsFile(content: string): SupervisorTeam[] {
   if (!content.includes(TEAMS_FILE_MARKER)) return [];
@@ -125,7 +152,7 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
     const trimmed = line.trim();
     if (!trimmed.startsWith('|')) continue;
     const cells = splitCells(trimmed.slice(1, -1));
-    if (cells.length !== 7) continue;
+    if (cells.length !== 7 && cells.length !== 9) continue;
     const createdAt = Date.parse(cells[2]);
     const lastUsedAt = Date.parse(cells[3]);
     const expiresAt = Date.parse(cells[4]);
@@ -134,6 +161,7 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
     const teamId = cells[5];
     const leadConversationId = cells[6];
     if (!name || !teamId || !leadConversationId) continue;
+    const ttlDays = cells.length === 9 ? clampTeamTtlDays(Number.parseInt(cells[7], 10)) : TEAM_TTL_DEFAULT_DAYS;
     teams.push({
       name,
       positions: cells[1]
@@ -143,6 +171,8 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
       createdAt,
       lastUsedAt,
       expiresAt,
+      ttlDays,
+      permanent: cells.length === 9 && cells[8] === PERMANENT_CELL,
       teamId,
       leadConversationId,
     });
@@ -150,8 +180,8 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
   return teams;
 }
 
-/** Whether a team is still matchable at `now`. */
-export const isTeamActive = (team: SupervisorTeam, now: number): boolean => team.expiresAt > now;
+/** Whether a team is still matchable at `now`: a permanent team never retires. */
+export const isTeamActive = (team: SupervisorTeam, now: number): boolean => team.permanent || team.expiresAt > now;
 
 /** The rules text injected into the supervisor's workspace. */
 export function buildSupervisorOverrideContent(roster: readonly PositionInfo[]): string {
@@ -167,7 +197,7 @@ export function buildSupervisorOverrideContent(roster: readonly PositionInfo[]):
     '`node teams.cjs match --positions 岗位A,岗位B`（岗位用名册中的英文 id，逗号分隔，如 forwarder,video-lab；传中文名或「中文」形式也会自动对齐到 id）',
     '在 match 运行之前，禁止调用任何其他工具：不 read、不 bash 其他命令、不 edit、不读任何技能文件。用户消息里没有明写「不用派队，你直接做」时，不存在任何默许授权，不允许自己执行任务。',
     '',
-    '**规则 1（match 输出 `MATCH <队名>`）**→复用：把用户任务原文写入 `task.txt`，运行 `node teams.cjs send --team <队名> --file task.txt`（send 自动刷新该队 7 天生命周期）。回复用户一句话：已复用团队 <队名>（成员岗位），任务已转交该队 lead。',
+    '**规则 1（match 输出 `MATCH <队名>`）**→复用：把用户任务原文写入 `task.txt`，运行 `node teams.cjs send --team <队名> --file task.txt`（send 自动刷新该队生命周期）。回复用户一句话：已复用团队 <队名>（成员岗位），任务已转交该队 lead。',
     '',
     '**规则 2（match 输出 `NONE`）**→建队：`node teams.cjs add --name <中文短语队名> --positions 岗位A,岗位B`（队名概括任务域，如「CNS 查重队」；岗位顺序即主次，第一个岗位任 lead；只需一个岗位时脚本会自动补同岗位第二成员）。成功后再按规则 1 的 send 发任务。回复用户一句话：已组建团队 <队名>（成员岗位），任务已派出。',
     '',

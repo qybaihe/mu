@@ -17,8 +17,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@arco-design/web-react';
+import { Button, Message, Popover } from '@arco-design/web-react';
 import classNames from 'classnames';
+import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import { positionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
 import { useConversationHistoryContext } from '@renderer/hooks/context/ConversationHistoryContext';
@@ -27,6 +28,7 @@ import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
 import { useOpenPosition } from '@renderer/pages/positions/openPosition';
 import { useOpenSupervisor } from '@renderer/pages/positions/openSupervisor';
 import { rowButtonProps } from '@renderer/utils/ui/rowButton';
+import TeamLifecycleEditor from './TeamLifecycleEditor';
 import { isNearExpiry, relativeTimeBucket, type PositionCard, type TeamCard, type MemberDotKind } from './monitorCore';
 import { useMonitorOverview } from './useMonitorOverview';
 import styles from './MonitorPage.module.css';
@@ -50,6 +52,14 @@ const stateDotClass = (state: PositionCard['state']): string =>
 /** The card-surface skin mirroring the state (undefined = idle, plain card). */
 const stateSkinClass = (state: PositionCard['state']): string | undefined =>
   state === 'working' ? styles.cardWorking : state === 'waiting' ? styles.cardWaiting : undefined;
+
+/** Keeps an interactive card child (the TTL chip, the hover icons) from
+ *  pressing the card itself: clicks and Enter/Space stop before the row
+ *  button's handlers. */
+const stopBubble = {
+  onClick: (event: React.MouseEvent) => event.stopPropagation(),
+  onKeyDown: (event: React.KeyboardEvent) => event.stopPropagation(),
+};
 
 const RelativeTime: React.FC<{ ts: number | undefined; now: number }> = ({ ts, now }) => {
   const { t } = useTranslation();
@@ -134,15 +144,19 @@ const PositionWallCard: React.FC<{ card: PositionCard; now: number; onOpen: (pos
   );
 };
 
-const TeamWallCard: React.FC<{ card: TeamCard; now: number; onOpen: (card: TeamCard) => void }> = ({
-  card,
-  now,
-  onOpen,
-}) => {
+const TeamWallCard: React.FC<{
+  card: TeamCard;
+  now: number;
+  onOpen: (card: TeamCard) => void;
+  onSetLifecycle: (card: TeamCard, ttlDays: number, permanent: boolean) => Promise<void>;
+}> = ({ card, now, onOpen, onSetLifecycle }) => {
   const { t } = useTranslation();
+  const [lifecycleOpen, setLifecycleOpen] = useState(false);
   const { entry } = card;
   const total = card.counts.todo + card.counts.inProgress + card.counts.done;
-  const ttlNear = card.ttlDays !== undefined && !entry.retired && isNearExpiry(card.ttlDays);
+  // Near-expiry only reads on a team that can expire: a permanent team never
+  // turns amber for its lifecycle.
+  const ttlNear = !card.permanent && card.ttlDays !== undefined && !entry.retired && isNearExpiry(card.ttlDays);
   // The surface mirrors the wall's most urgent signal: any member running
   // tints the whole card green; with no one running, a near-TTL team shows the
   // yellow skin (the TTL chip keeps its own badge); running wins if both.
@@ -166,14 +180,40 @@ const TeamWallCard: React.FC<{ card: TeamCard; now: number; onOpen: (card: TeamC
         {entry.retired ? (
           <span className='text-12px text-t-quaternary shrink-0'>{t('team.sider.retired')}</span>
         ) : card.ttlDays !== undefined ? (
-          <span
-            data-testid={`monitor-team-${entry.team.id}-ttl`}
-            className={classNames(
-              'text-12px px-6px py-1px rd-10px shrink-0',
-              ttlNear ? 'bg-[rgba(var(--warning-6),0.12)] text-[rgb(var(--warning-6))]' : 'bg-fill-2 text-t-tertiary'
-            )}
-          >
-            {t('monitor.teams.ttl', { days: card.ttlDays })}
+          // The TTL area is also its editor: the chip opens the lifecycle
+          // popover (days 1-365, or permanent — either can become the other).
+          // Stopped, so pressing the chip never opens the group chat underneath.
+          <span {...stopBubble}>
+            <Popover
+              trigger='click'
+              position='top'
+              popupVisible={lifecycleOpen}
+              onVisibleChange={(visible) => setLifecycleOpen(visible)}
+              content={
+                <TeamLifecycleEditor
+                  ttlDays={entry.ttlDays ?? 7}
+                  permanent={card.permanent}
+                  onApply={async (ttlDays, permanent) => {
+                    await onSetLifecycle(card, ttlDays, permanent);
+                    setLifecycleOpen(false);
+                  }}
+                  onCancel={() => setLifecycleOpen(false)}
+                />
+              }
+            >
+              <span
+                data-testid={`monitor-team-${entry.team.id}-ttl`}
+                aria-label={t('monitor.teams.lifecycle.label')}
+                className={classNames(
+                  'text-12px px-6px py-1px rd-10px shrink-0 cursor-pointer',
+                  ttlNear
+                    ? 'bg-[rgba(var(--warning-6),0.12)] text-[rgb(var(--warning-6))]'
+                    : 'bg-fill-2 text-t-tertiary'
+                )}
+              >
+                {card.permanent ? t('monitor.teams.ttlPermanent') : t('monitor.teams.ttl', { days: card.ttlDays })}
+              </span>
+            </Popover>
           </span>
         ) : null}
       </div>
@@ -244,6 +284,17 @@ const MonitorPage: React.FC = () => {
     void navigate(`/conversation/${lead}`);
   };
 
+  // The lifecycle popover's save: one bridge write, then the wall re-reads
+  // the shared index. A failed write surfaces as a toast, never as a throw.
+  const setLifecycle = async (card: TeamCard, ttlDays: number, permanent: boolean): Promise<void> => {
+    const answer = await supervisorBridge.setTeamLifecycle.invoke({ teamId: card.entry.team.id, ttlDays, permanent });
+    if (answer.ok) {
+      overview.refreshTeamsIndex();
+    } else {
+      Message.error(t('monitor.teams.lifecycle.saveFailed'));
+    }
+  };
+
   if (nothingAtAll) {
     return (
       <div data-testid='monitor-page' className={classNames('size-full overflow-y-auto', styles.root)}>
@@ -295,7 +346,13 @@ const MonitorPage: React.FC = () => {
           ) : (
             <div className='grid gap-12px grid-cols-[repeat(auto-fill,minmax(320px,1fr))]'>
               {teamWall.active.map((card) => (
-                <TeamWallCard key={card.entry.team.id} card={card} now={now} onOpen={openTeam} />
+                <TeamWallCard
+                  key={card.entry.team.id}
+                  card={card}
+                  now={now}
+                  onOpen={openTeam}
+                  onSetLifecycle={setLifecycle}
+                />
               ))}
             </div>
           )}
@@ -319,7 +376,13 @@ const MonitorPage: React.FC = () => {
               {retiredOpen ? (
                 <div className='grid gap-12px grid-cols-[repeat(auto-fill,minmax(320px,1fr))] opacity-60'>
                   {teamWall.retired.map((card) => (
-                    <TeamWallCard key={card.entry.team.id} card={card} now={now} onOpen={openTeam} />
+                    <TeamWallCard
+                      key={card.entry.team.id}
+                      card={card}
+                      now={now}
+                      onOpen={openTeam}
+                      onSetLifecycle={setLifecycle}
+                    />
                   ))}
                 </div>
               ) : null}

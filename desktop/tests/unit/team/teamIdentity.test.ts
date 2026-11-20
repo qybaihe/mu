@@ -46,12 +46,19 @@ const team = (id: string, overrides: Partial<TTeam> = {}): TTeam => ({
   ...overrides,
 });
 
-const indexEntry = (teamId: string, expiresAt: number, lastUsedAt = 5): SupervisorTeam => ({
+const indexEntry = (
+  teamId: string,
+  expiresAt: number,
+  lastUsedAt = 5,
+  lifecycle: Partial<Pick<SupervisorTeam, 'ttlDays' | 'permanent'>> = {}
+): SupervisorTeam => ({
   name: `index-${teamId}`,
   positions: [],
   createdAt: 1,
   lastUsedAt,
   expiresAt,
+  ttlDays: lifecycle.ttlDays ?? 7,
+  permanent: lifecycle.permanent ?? false,
   teamId,
   leadConversationId: `${teamId}-lead`,
 });
@@ -120,6 +127,19 @@ describe('teamRosterEntries', () => {
     const fresh = team('fresh', { updated_at: 5 });
     const entries = teamRosterEntries([stale, fresh], [indexEntry('fresh', NOW + 1, 99)], NOW);
     expect(entries.map((entry) => entry.team.id)).toEqual(['fresh', 'stale']);
+  });
+
+  it('keeps a permanent team active past its recorded expiry, carrying its lifecycle', () => {
+    const entries = teamRosterEntries(
+      [team('forever'), team('old')],
+      [indexEntry('forever', NOW - 1, 5, { ttlDays: 3, permanent: true }), indexEntry('old', NOW - 1)],
+      NOW
+    );
+    const forever = entries.find((entry) => entry.team.id === 'forever');
+    expect(forever?.retired).toBe(false);
+    expect(forever?.permanent).toBe(true);
+    expect(forever?.ttlDays).toBe(3);
+    expect(entries.find((entry) => entry.team.id === 'old')?.retired).toBe(true);
   });
 });
 

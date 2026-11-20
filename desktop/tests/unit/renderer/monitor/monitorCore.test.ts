@@ -53,13 +53,21 @@ const team = (id: string, assistants: TeamAssistant[], updatedAt = 1): TTeam => 
   updated_at: updatedAt,
 });
 
-const rosterEntry = (source: TTeam, retired: boolean, expiresAt?: number): TeamRosterEntry => ({
+const rosterEntry = (
+  source: TTeam,
+  retired: boolean,
+  expiresAt?: number,
+  ttlDays?: number,
+  permanent?: boolean
+): TeamRosterEntry => ({
   team: source,
   memberCount: source.assistants.length,
   leadConversationId: source.assistants.find((member) => member.role === 'leader')?.conversation_id,
   conversationIds: source.assistants.map((member) => member.conversation_id),
   retired,
   expiresAt,
+  ttlDays,
+  permanent: permanent ?? false,
 });
 
 const work = (slotId: string, state: ITeamSlotWork['state'], queued = 0): ITeamSlotWork => ({
@@ -246,6 +254,14 @@ describe('teamCardsOf', () => {
     });
     expect(wall.active.map((card) => card.entry.team.id)).toEqual(['t2', 't1']);
     expect(wall.retired.map((card) => card.entry.team.id)).toEqual(['t3']);
+  });
+
+  it('carries the lifecycle: a permanent team keeps its card active with its configured ttlDays on the entry', () => {
+    const forever = rosterEntry(team('t1', [assistant('s-1', '货代', 'leader')]), false, Date.now() + 3 * DAY, 3, true);
+    const wall = teamCardsOf({ roster: [forever], tasksByTeam: new Map(), slotWork: new Map(), now: 0 });
+    expect(wall.active[0].permanent).toBe(true);
+    expect(wall.active[0].entry.ttlDays).toBe(3);
+    expect(wall.active[0].entry.permanent).toBe(true);
   });
 });
 

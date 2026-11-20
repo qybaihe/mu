@@ -16,7 +16,8 @@
  *                                           the workspace's AGENTS.md dispatch rules,
  *                                           register it
  *   send --team X (--file F | --message M)  deliver a task to the team and refresh
- *                                           its 7-day lifecycle
+ *                                           its lifecycle (the team's own ttlDays;
+ *                                           permanent teams never expire)
  *
  * The dispatch block: the app injects the canonical team-dispatch rules block
  * (common/chat/teamDispatch/dispatchRules.ts, single source of truth) into the
@@ -45,13 +46,28 @@ const os = require('node:os');
 const path = require('node:path');
 
 const BASE_URL = (process.env.AIONUI_BASE_URL || 'http://127.0.0.1:13400').replace(/\/+$/, '');
-const TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** The lifecycle every row without one reads as: the format's 7-day origin. */
+const DEFAULT_TTL_DAYS = 7;
+const MIN_TTL_DAYS = 1;
+const MAX_TTL_DAYS = 365;
 const TEAMS_FILE = path.resolve(__dirname, '..', '_shared', 'TEAMS.md');
 const TEAMS_MARKER = '<!-- mu-supervisor-teams v1 -->';
 /** The dispatch rules block for a fresh team workspace; the app injects the canonical text in place of this whole `null` expression when it ships the script. */
 const DISPATCH_RULES_BLOCK = /* mu-dispatch-rules-block */ null;
-const TABLE_HEADER = '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 |';
-const TABLE_RULE = '| --- | --- | --- | --- | --- | --- | --- |';
+const TABLE_HEADER = '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 |';
+const TABLE_RULE = '| --- | --- | --- | --- | --- | --- | --- | --- | --- |';
+/** The permanent flag's cell text; anything else reads as false. */
+const PERMANENT_CELL = '是';
+
+/** A row's day count, clamped into the allowed range, the default when unparsable. */
+const clampTtlDays = (days) => {
+  const clamped = Math.min(MAX_TTL_DAYS, Math.max(MIN_TTL_DAYS, Math.round(days)));
+  return Number.isFinite(clamped) ? clamped : DEFAULT_TTL_DAYS;
+};
+
+/** Whether a team is still matchable: a permanent team never retires. */
+const isActive = (team, now) => team.permanent || team.expiresAt > now;
 
 const iso = (ms) => new Date(ms).toISOString();
 
@@ -164,7 +180,9 @@ function parseTeams(content) {
     const trimmed = line.trim();
     if (!trimmed.startsWith('|')) continue;
     const cells = splitCells(trimmed.slice(1, -1));
-    if (cells.length !== 7) continue;
+    // Seven cells is the pre-lifecycle format: it reads as the default 7-day,
+    // non-permanent team it was.
+    if (cells.length !== 7 && cells.length !== 9) continue;
     const createdAt = Date.parse(cells[2]);
     const lastUsedAt = Date.parse(cells[3]);
     const expiresAt = Date.parse(cells[4]);
@@ -179,6 +197,8 @@ function parseTeams(content) {
       createdAt,
       lastUsedAt,
       expiresAt,
+      ttlDays: cells.length === 9 ? clampTtlDays(parseInt(cells[7], 10)) : DEFAULT_TTL_DAYS,
+      permanent: cells.length === 9 && cells[8] === PERMANENT_CELL,
       teamId: cells[5],
       leadConversationId: cells[6],
     });
@@ -187,8 +207,8 @@ function parseTeams(content) {
 }
 
 function buildTeams(teams, now) {
-  const active = teams.filter((t) => t.expiresAt > now).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
-  const retired = teams.filter((t) => t.expiresAt <= now).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
+  const active = teams.filter((t) => isActive(t, now)).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
+  const retired = teams.filter((t) => !isActive(t, now)).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
   const table = (rows) => (rows.length === 0 ? [] : [TABLE_HEADER, TABLE_RULE, ...rows.map(teamRow)]);
   const lines = [TEAMS_MARKER, '# 临时团队索引（由 teams.cjs 维护，勿手改）', '', ...table(active)];
   if (active.length > 0) lines.push('');
@@ -197,7 +217,11 @@ function buildTeams(teams, now) {
 }
 
 const teamRow = (t) =>
-  `| ${escapeCell(t.name)} | ${escapeCell(t.positions.join(', '))} | ${iso(t.createdAt)} | ${iso(t.lastUsedAt)} | ${iso(t.expiresAt)} | ${escapeCell(t.teamId)} | ${escapeCell(t.leadConversationId)} |`;
+  `| ${escapeCell(t.name)} | ${escapeCell(t.positions.join(', '))} | ${iso(t.createdAt)} | ${iso(t.lastUsedAt)} | ${iso(
+    t.expiresAt
+  )} | ${escapeCell(t.teamId)} | ${escapeCell(t.leadConversationId)} | ${t.ttlDays} | ${
+    t.permanent ? PERMANENT_CELL : ''
+  } |`;
 
 function readTeams() {
   try {
@@ -266,11 +290,13 @@ const findTeam = (teams, name) => teams.find((t) => t.name === name);
 async function cmdList() {
   const teams = readTeams();
   const now = Date.now();
-  const active = teams.filter((t) => t.expiresAt > now);
+  const active = teams.filter((t) => isActive(t, now));
   const retired = teams.length - active.length;
   for (const t of active) {
     console.log(
-      `TEAM ${t.name} | positions=${t.positions.join(',')} | expires=${iso(t.expiresAt)} | team_id=${t.teamId} | lead_conversation=${t.leadConversationId}`
+      `TEAM ${t.name} | positions=${t.positions.join(',')} | expires=${
+        t.permanent ? 'permanent' : iso(t.expiresAt)
+      } | team_id=${t.teamId} | lead_conversation=${t.leadConversationId}`
     );
   }
   console.log(retired > 0 ? `RETIRED ${retired}` : 'RETIRED 0');
@@ -280,7 +306,7 @@ async function cmdMatch(args) {
   const needed = parsePositions(args.positions);
   if (needed.length === 0) fail('--positions is required (comma-separated position names)');
   const now = Date.now();
-  const candidates = readTeams().filter((t) => t.expiresAt > now && needed.every((p) => t.positions.includes(p)));
+  const candidates = readTeams().filter((t) => isActive(t, now) && needed.every((p) => t.positions.includes(p)));
   candidates.sort((a, b) => a.positions.length - b.positions.length || b.lastUsedAt - a.lastUsedAt);
   console.log(candidates.length > 0 ? `MATCH ${candidates[0].name}` : 'NONE');
 }
@@ -294,7 +320,7 @@ async function cmdAdd(args) {
   const now = Date.now();
   if (
     findTeam(
-      teams.filter((t) => t.expiresAt > now),
+      teams.filter((t) => isActive(t, now)),
       name
     )
   ) {
@@ -360,7 +386,9 @@ async function cmdAdd(args) {
     positions,
     createdAt: now,
     lastUsedAt: now,
-    expiresAt: now + TTL_MS,
+    expiresAt: now + DEFAULT_TTL_DAYS * DAY_MS,
+    ttlDays: DEFAULT_TTL_DAYS,
+    permanent: false,
     teamId: team.id,
     leadConversationId: lead.conversation_id,
   };
@@ -394,10 +422,14 @@ async function cmdSend(args) {
 
   const now = Date.now();
   team.lastUsedAt = now;
-  team.expiresAt = now + TTL_MS;
+  // The team's own lifecycle: a reuse extends to `now + ttlDays`; a permanent
+  // team never expires, so its recorded expiry stays untouched.
+  if (!team.permanent) team.expiresAt = now + team.ttlDays * DAY_MS;
   writeTeams(teams);
   console.log(
-    `SENT team=${team.name} to_conversation=${team.leadConversationId} refreshed_until=${iso(team.expiresAt)}`
+    `SENT team=${team.name} to_conversation=${team.leadConversationId} refreshed_until=${
+      team.permanent ? 'permanent' : iso(team.expiresAt)
+    }`
   );
 }
 

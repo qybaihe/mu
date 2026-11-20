@@ -12,7 +12,12 @@
  */
 import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
-import { ensureSupervisorWorkspace, listSupervisorTeams, registerSupervisorTeam } from './supervisorService';
+import {
+  ensureSupervisorWorkspace,
+  listSupervisorTeams,
+  registerSupervisorTeam,
+  setTeamLifecycle,
+} from './supervisorService';
 
 export {
   ensureSupervisorWorkspace,
@@ -20,6 +25,8 @@ export {
   listSupervisorTeams,
   registerSupervisorTeam,
   registerSupervisorTeamIn,
+  setTeamLifecycle,
+  setTeamLifecycleIn,
 } from './supervisorService';
 
 // Always answer, failures included: the generic bridge only logs a provider's exception, and the window would wait.
@@ -36,6 +43,9 @@ export function initSupervisorBridge(): void {
   supervisorBridge.teams.provider(() => result(() => listSupervisorTeams().then((teams) => ({ teams }))));
   supervisorBridge.registerTeam.provider((params) =>
     result(() => registerSupervisorTeam(params).then((teams) => ({ teams })))
+  );
+  supervisorBridge.setTeamLifecycle.provider((params) =>
+    result(() => setTeamLifecycle(params).then((teams) => ({ teams })))
   );
   void ensureSupervisorWorkspace().catch((error) => {
     console.warn('[supervisor] startup reconciliation failed', error);

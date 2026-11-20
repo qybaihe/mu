@@ -10,12 +10,13 @@
  * becomes one mu slot, the first the lead. Creating seeds the workspace's
  * dispatch rules, renames the threads (the lead is the group chat itself,
  * `测试群（群聊）`; each member thread says whose it is), and registers the
- * group in the shared TEAMS.md index, so it carries the same 7-day reuse
- * lifecycle as a supervisor-assembled team.
+ * group in the shared TEAMS.md index with the lifecycle the dialog picked
+ * (days or permanent), so it carries the same reuse semantics as a
+ * supervisor-assembled team.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Input, Message, Select } from '@arco-design/web-react';
+import { Button, Input, InputNumber, Message, Select, Switch } from '@arco-design/web-react';
 import { ipcBridge } from '@/common';
 import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import type { TTeam } from '@/common/types/team/teamTypes';
@@ -25,10 +26,13 @@ import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { getConversationCreateErrorMessage } from '@renderer/pages/conversation/utils/conversationCreateError';
 import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
 import { ensureTeamDispatchSeeded } from '@renderer/pages/team/core/teamDispatchSeed';
+import { TEAM_TTL_MAX_DAYS, TEAM_TTL_MIN_DAYS } from '@/common/chat/team/supervisor/supervisorCore';
 import {
   GROUP_NAME_MAX_LENGTH,
   autoGroupName,
   buildGroupChatCreateInput,
+  groupChatLifecycle,
+  initialGroupChatFormState,
   leadThreadName,
   leadConversationIdOf,
   positionsByIds,
@@ -56,17 +60,17 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
     [presetAssistants]
   );
 
-  const [form, setForm] = useState<GroupChatFormState>({ name: '', positionIds: [] });
+  const [form, setForm] = useState<GroupChatFormState>(initialGroupChatFormState);
   const [creating, setCreating] = useState(false);
 
   // A closed dialog forgets its form; the next open starts fresh.
   useEffect(() => {
-    if (!open) setForm({ name: '', positionIds: [] });
+    if (!open) setForm(initialGroupChatFormState());
   }, [open]);
 
   const closeAndReset = useCallback(() => {
     setCreating(false);
-    setForm({ name: '', positionIds: [] });
+    setForm(initialGroupChatFormState());
     onClose();
   }, [onClose]);
 
@@ -104,8 +108,8 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
           ];
         })
       );
-      // Register in the shared index: the same 7-day reuse lifecycle as a
-      // supervisor-built team. A failed registration never fails the creation.
+      // Register in the shared index: the lifecycle the dialog picked (days,
+      // or permanent). A failed registration never fails the creation.
       const leadConversationId = leadConversationIdOf(team);
       if (leadConversationId) {
         await supervisorBridge.registerTeam
@@ -114,6 +118,7 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
             positions: positionsByIds(form.positionIds, positions).map((position) => position.name),
             teamId: team.id,
             leadConversationId,
+            ...groupChatLifecycle(form),
           })
           .catch((): undefined => undefined);
       }
@@ -198,6 +203,36 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
             ))}
           </Select>
           <div className='mt-4px text-12px text-t-tertiary'>{t('team.groupChat.positionsHint')}</div>
+        </div>
+
+        <div>
+          <div className='mb-6px text-13px font-500 text-t-primary'>{t('team.groupChat.lifecycleLabel')}</div>
+          <div className='flex items-center gap-10px'>
+            <InputNumber
+              data-testid='new-group-chat-ttl'
+              aria-label={t('team.groupChat.lifecycleDays')}
+              value={form.ttlDays}
+              min={TEAM_TTL_MIN_DAYS}
+              max={TEAM_TTL_MAX_DAYS}
+              step={1}
+              precision={0}
+              disabled={form.permanent}
+              onChange={(value) =>
+                setForm((prev) => ({ ...prev, ttlDays: typeof value === 'number' ? value : prev.ttlDays }))
+              }
+            />
+            <span className='text-13px text-t-secondary shrink-0'>{t('team.groupChat.lifecycleDays')}</span>
+            <span className='flex-1' />
+            <Switch
+              data-testid='new-group-chat-permanent'
+              aria-label={t('team.groupChat.lifecyclePermanent')}
+              size='small'
+              checked={form.permanent}
+              onChange={(checked) => setForm((prev) => ({ ...prev, permanent: checked }))}
+            />
+            <span className='text-13px text-t-secondary shrink-0'>{t('team.groupChat.lifecyclePermanent')}</span>
+          </div>
+          <div className='mt-4px text-12px text-t-tertiary'>{t('team.groupChat.lifecycleHint')}</div>
         </div>
 
         {validation !== null ? (

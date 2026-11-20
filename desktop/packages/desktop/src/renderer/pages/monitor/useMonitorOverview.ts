@@ -37,6 +37,8 @@ export type MonitorOverview = {
   activeTeamCount: number;
   /** The conversation list is still loading its first page. */
   loading: boolean;
+  /** Rereads the shared index right away: what a lifecycle edit or a deletion calls. */
+  refreshTeamsIndex: () => void;
 };
 
 export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
@@ -47,6 +49,7 @@ export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
   const workbench = useTeamWorkbenchSnapshot(withTasks);
   const slotWork = useSlotWorkIndex();
   const [index, setIndex] = useState<readonly SupervisorTeam[]>([]);
+  const [indexTick, setIndexTick] = useState(0);
   const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {
@@ -54,7 +57,13 @@ export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
     supervisorBridge.teams
       .invoke()
       .then((answer) => {
-        if (!cancelled && answer.ok) setIndex(answer.data.teams);
+        if (!cancelled && answer.ok) {
+          setIndex(answer.data.teams);
+          // Fresh clock with every fresh index: the TTL chip ceilings whole
+          // days, and a 30s-old `now` reading a just-written expiry would
+          // round a fresh 3-day lifecycle up to 4.
+          setNow(Date.now());
+        }
       })
       .catch(() => {
         // No index: every team reads active, no TTL is shown.
@@ -64,7 +73,9 @@ export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
     };
     // The list reference changes only on a real refetch, matching the sidebar
     // section's own re-read: a `send` elsewhere refreshes TTLs with the list.
-  }, [roster.teams]);
+    // `indexTick` is the manual nudge: a lifecycle edit or a deletion changed
+    // the file without moving the team list.
+  }, [roster.teams, indexTick]);
 
   // The relative times stay honest without touching the data: a slow tick
   // re-renders, the stores do not.
@@ -108,5 +119,6 @@ export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
     positionCount: positionCards.length,
     activeTeamCount: teamWall.active.length,
     loading: roster.loading,
+    refreshTeamsIndex: () => setIndexTick((tick) => tick + 1),
   };
 };

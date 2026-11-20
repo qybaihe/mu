@@ -76,12 +76,14 @@ const team = (id: string, name: string, leadConversationId: string, updatedAt: n
   updated_at: updatedAt,
 });
 
-const indexEntry = (teamId: string, expiresAt: number): SupervisorTeam => ({
+const indexEntry = (teamId: string, expiresAt: number, permanent = false): SupervisorTeam => ({
   name: teamId,
   positions: [],
   createdAt: 1,
   lastUsedAt: 1,
   expiresAt,
+  ttlDays: 7,
+  permanent,
   teamId,
   leadConversationId: `${teamId}-lead`,
 });

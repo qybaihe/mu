@@ -13,7 +13,13 @@
     "awaitingYou": "Ждёт вашего ответа",
     "noSession": "Сессии ещё нет",
     "inProgress": "в работе {{count}}",
-    "openA11y": "Открыть сессию {{name}}"
+    "openA11y": "Открыть сессию {{name}}",
+    "hideTitle": "Hide the position {{name}}?",
+    "hideDesc": "Hides it from the monitor and the roster; the library file stays, restore from the monitor anytime.",
+    "hideOk": "Hide",
+    "hideA11y": "Hide {{name}}",
+    "hidden": "{{count}} hidden",
+    "restoreAll": "Restore all"
   },
   "teams": {
     "title": "Групповые чаты",
@@ -21,9 +27,21 @@
     "todo": "Задачи {{count}}",
     "inProgress": "В работе {{count}}",
     "done": "Готово {{count}}",
-    "ttl": "осталось {{days}} дн.",
+    "ttl": "Lifecycle: {{days}}d left",
     "openA11y": "Открыть чат {{name}}",
-    "retiredFold": "в отставке {{count}} команд"
+    "retiredFold": "в отставке {{count}} команд",
+    "ttlPermanent": "Lifecycle: permanent",
+    "lifecycle": {
+      "label": "Lifecycle",
+      "days": "days",
+      "permanent": "Permanent",
+      "saveFailed": "Failed to save the lifecycle."
+    },
+    "deleteTitle": "Delete the group chat \"{{name}}\"?",
+    "deleteDesc": "Deletes the backend team and clears its shared-index row; conversations follow the backend's delete semantics.",
+    "deleteA11y": "Delete {{name}}",
+    "deleteFailed": "Failed to delete the group chat.",
+    "deleteIndexFailed": "Group chat deleted, but clearing its index row failed."
   },
   "empty": {
     "hint": "Дайте супервайзеру задачу: одно сообщение — и он соберёт или переиспользует команду и доведёт до конца.",

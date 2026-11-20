@@ -143,9 +143,27 @@ describe('NewGroupChatModal', () => {
         positions: ['forwarder', 'reviewer'],
         teamId: 't-new',
         leadConversationId: 'c-lead',
+        ttlDays: 7,
+        permanent: false,
       })
     );
     await waitFor(() => expect(created).toHaveLength(1));
+  });
+
+  it('registers with the picked lifecycle: permanent disables the day count and passes through', async () => {
+    render(<NewGroupChatModal open onClose={() => {}} onCreated={() => {}} />);
+    fireEvent.click(screen.getByTestId('new-group-chat-positions'));
+    fireEvent.click(await screen.findByText('货代'));
+    // The default lifecycle reads 7 days and not permanent; permanent turns the day count off.
+    expect((screen.getByTestId('new-group-chat-ttl') as HTMLInputElement).disabled).toBe(false);
+    fireEvent.click(screen.getByTestId('new-group-chat-permanent'));
+    expect((screen.getByTestId('new-group-chat-ttl') as HTMLInputElement).disabled).toBe(true);
+    fireEvent.click(screen.getByTestId('new-group-chat-submit'));
+    await waitFor(() =>
+      expect(registerTeam).toHaveBeenCalledWith(
+        expect.objectContaining({ positions: ['forwarder'], ttlDays: 7, permanent: true })
+      )
+    );
   });
 
   it('sends the typed name when there is one, and forgets the form after closing', async () => {

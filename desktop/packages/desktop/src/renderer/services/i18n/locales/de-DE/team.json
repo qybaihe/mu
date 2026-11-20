@@ -72,7 +72,7 @@
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",
-    "subtitle": "Pick positions to join; every slot runs mu. Reusable for 7 days.",
+    "subtitle": "Pick positions to join; every slot runs mu. Lifecycle: 7 days by default, custom or permanent.",
     "nameLabel": "Group name",
     "namePlaceholder": "Optional — the positions name it",
     "nameAutoHint": "Leave it empty and the picked positions name the group.",
@@ -83,7 +83,11 @@
     "submit": "Create",
     "errorWithDetail": "Failed to create the group chat: {{error}}",
     "errors.noPositions": "Pick at least one position.",
-    "errors.tooManyPositions": "Pick at most 6 positions."
+    "errors.tooManyPositions": "Pick at most 6 positions.",
+    "lifecycleLabel": "Lifecycle",
+    "lifecycleDays": "days",
+    "lifecyclePermanent": "Permanent",
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
   },
   "members": {
     "manageA11y": "Manage members",

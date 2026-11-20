@@ -14,6 +14,8 @@ import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryC
 import {
   MAX_GROUP_POSITIONS,
   autoGroupName,
+  groupChatLifecycle,
+  initialGroupChatFormState,
   buildGroupChatAgents,
   buildGroupChatCreateInput,
   leadThreadName,
@@ -90,5 +92,23 @@ describe('groupChatCore', () => {
   it('labels the threads: the lead is the group chat itself, a teammate thread says whose it is', () => {
     expect(leadThreadName('测试群')).toBe('测试群（群聊）');
     expect(teammateThreadName('评审', '测试群')).toBe('评审（测试群）');
+  });
+
+  it('starts every dialog at the default lifecycle and clamps what it submits', () => {
+    expect(initialGroupChatFormState()).toEqual({ name: '', positionIds: [], ttlDays: 7, permanent: false });
+    // The day count settles inside 1-365 whatever was typed; the flag passes through.
+    expect(groupChatLifecycle(initialGroupChatFormState())).toEqual({ ttlDays: 7, permanent: false });
+    expect(groupChatLifecycle({ name: '', positionIds: [], ttlDays: 0, permanent: true })).toEqual({
+      ttlDays: 1,
+      permanent: true,
+    });
+    expect(groupChatLifecycle({ name: '', positionIds: [], ttlDays: 999, permanent: false })).toEqual({
+      ttlDays: 365,
+      permanent: false,
+    });
+    expect(groupChatLifecycle({ name: '', positionIds: [], ttlDays: Number.NaN, permanent: false })).toEqual({
+      ttlDays: 7,
+      permanent: false,
+    });
   });
 });

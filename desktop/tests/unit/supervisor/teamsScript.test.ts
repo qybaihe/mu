@@ -346,6 +346,77 @@ describe('teams.cjs against a stub backend', () => {
     expect(leadEntry?.body).toMatchObject({ name_source: 'user' });
   });
 
+  it('respects a permanent row past its recorded expiry: match still finds it, send never retires it', async () => {
+    const past = new Date(Date.now() - 86_400_000).toISOString();
+    writeTeamsRaw(
+      [
+        '<!-- mu-supervisor-teams v1 -->',
+        '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        `| 永久队 | forwarder | ${past} | ${past} | ${past} | t-forever | c-forever | 7 | 是 |`,
+      ].join('\n')
+    );
+    expect((await run(['match', '--positions', 'forwarder'])).out).toBe('MATCH 永久队');
+    const listing = await run(['list']);
+    expect(listing.out).toContain('TEAM 永久队');
+    expect(listing.out).toContain('expires=permanent');
+    expect(listing.out).toContain('RETIRED 0');
+
+    const taskFile = join(dataDir, 'positions', '_supervisor', 'task-forever.txt');
+    writeFileSync(taskFile, '再干一票', 'utf8');
+    const before = teamsNow()[0];
+    const send = await run(['send', '--team', '永久队', '--file', taskFile]);
+    expect(send.status).toBe(0);
+    expect(send.out).toContain('refreshed_until=permanent');
+    const after = teamsNow()[0];
+    expect(after.permanent).toBe(true);
+    expect(after.expiresAt).toBe(before.expiresAt);
+    expect(after.lastUsedAt).toBeGreaterThan(before.lastUsedAt);
+  });
+
+  it('send refreshes a custom lifecycle with the team own ttlDays, not the default', async () => {
+    const now = Date.now();
+    writeTeamsRaw(
+      [
+        '<!-- mu-supervisor-teams v1 -->',
+        '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        `| 三天队 | forwarder | ${new Date(now).toISOString()} | ${new Date(now).toISOString()} | ${new Date(
+          now + 3 * 86_400_000
+        ).toISOString()} | t-3d | c-3d | 3 |  |`,
+      ].join('\n')
+    );
+    const taskFile = join(dataDir, 'positions', '_supervisor', 'task-3d.txt');
+    writeFileSync(taskFile, '干活', 'utf8');
+    const send = await run(['send', '--team', '三天队', '--file', taskFile]);
+    expect(send.status).toBe(0);
+    const after = teamsNow()[0];
+    expect(after.ttlDays).toBe(3);
+    expect(after.permanent).toBe(false);
+    expect(after.expiresAt - after.lastUsedAt).toBe(3 * 86_400_000);
+  });
+
+  it('upgrades a legacy seven-cell index in place: send rewrites the row with the default lifecycle cells', async () => {
+    const now = Date.now();
+    writeTeamsRaw(
+      [
+        '<!-- mu-supervisor-teams v1 -->',
+        '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 |',
+        '| --- | --- | --- | --- | --- | --- | --- |',
+        `| 老队 | forwarder | ${new Date(now).toISOString()} | ${new Date(now).toISOString()} | ${new Date(
+          now + 86_400_000
+        ).toISOString()} | t-legacy | c-legacy |`,
+      ].join('\n')
+    );
+    const taskFile = join(dataDir, 'positions', '_supervisor', 'task-legacy.txt');
+    writeFileSync(taskFile, '继续', 'utf8');
+    const send = await run(['send', '--team', '老队', '--file', taskFile]);
+    expect(send.status).toBe(0);
+    const after = teamsNow()[0];
+    expect(after).toMatchObject({ ttlDays: 7, permanent: false });
+    expect(readFileSync(teamsFile, 'utf8')).toContain('| TTL天数 | 永久 |');
+  });
+
   it('a position workspace copy maintains the same shared index as the supervisor copy', async () => {
     // The script ships into every position workspace too; all copies resolve
     // one TEAMS.md — a team one copy adds, the other copy matches.

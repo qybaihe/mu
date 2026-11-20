@@ -8,7 +8,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ensureSupervisorWorkspaceIn, registerSupervisorTeamIn } from '@process/services/team/supervisor';
+import {
+  ensureSupervisorWorkspaceIn,
+  registerSupervisorTeamIn,
+  setTeamLifecycleIn,
+} from '@process/services/team/supervisor';
 import { TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/team/teamDispatch/dispatchRules';
 import {
   SHARED_TEAMS_FOLDER,
@@ -243,5 +247,92 @@ describe('registerSupervisorTeamIn', () => {
       .map((t) => t.name)
       .toSorted();
     expect(names).toEqual(['测试群', '测试群 2']);
+  });
+
+  it('creates a row with the lifecycle the creating surface chose: custom days, or permanent', async () => {
+    const { dataDir, teamsFile } = setup();
+    const day = 86_400_000;
+    const now = 1_800_000_000_000;
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '三天群', positions: ['forwarder'], teamId: 't3', leadConversationId: 'c3', ttlDays: 3 },
+      () => now
+    );
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '永久群', positions: ['video-lab'], teamId: 'tp', leadConversationId: 'cp', ttlDays: 5, permanent: true },
+      () => now
+    );
+    const byId = new Map(parseTeamsFile(readFileSync(teamsFile, 'utf8')).map((t) => [t.teamId, t]));
+    expect(byId.get('t3')).toMatchObject({ ttlDays: 3, permanent: false, expiresAt: now + 3 * day });
+    expect(byId.get('tp')).toMatchObject({ ttlDays: 5, permanent: true, expiresAt: now + 5 * day });
+  });
+
+  it('refreshes an active row with the team OWN ttlDays, not the default', async () => {
+    const { dataDir, teamsFile } = setup();
+    const day = 86_400_000;
+    const t0 = 1_700_000_000_000;
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '三天群', positions: ['forwarder'], teamId: 't3', leadConversationId: 'c3', ttlDays: 3 },
+      () => t0
+    );
+    const later = t0 + 2 * day;
+    // A member-change refresh carries no lifecycle params: the row keeps its 3.
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '三天群', positions: ['forwarder', 'video-lab'], teamId: 't3', leadConversationId: 'c3' },
+      () => later
+    );
+    const rows = parseTeamsFile(readFileSync(teamsFile, 'utf8'));
+    expect(rows[0]).toMatchObject({ ttlDays: 3, lastUsedAt: later, expiresAt: later + 3 * day });
+  });
+});
+
+describe('setTeamLifecycleIn', () => {
+  const day = 86_400_000;
+  const t0 = 1_700_000_000_000;
+
+  it('restarts a normal row expiry from now with the new day count, clamped into range', async () => {
+    const { dataDir, teamsFile } = setup();
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '群', positions: ['forwarder'], teamId: 't1', leadConversationId: 'c1' },
+      () => t0
+    );
+    const later = t0 + day;
+    await setTeamLifecycleIn({ dataDir }, { teamId: 't1', ttlDays: 400 }, () => later);
+    const rows = parseTeamsFile(readFileSync(teamsFile, 'utf8'));
+    expect(rows[0]).toMatchObject({ ttlDays: 365, permanent: false, expiresAt: later + 365 * day });
+  });
+
+  it('flags a row permanent: its recorded expiry stays, reconcile never retires it', async () => {
+    const { dataDir, teamsFile } = setup();
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '群', positions: ['forwarder'], teamId: 't1', leadConversationId: 'c1' },
+      () => t0
+    );
+    const later = t0 + day;
+    await setTeamLifecycleIn({ dataDir }, { teamId: 't1', permanent: true }, () => later);
+    const flagged = parseTeamsFile(readFileSync(teamsFile, 'utf8'))[0];
+    expect(flagged.permanent).toBe(true);
+    // Reconcile far past the recorded expiry: the permanent row survives it.
+    await ensureSupervisorWorkspaceIn({ libraryDir: join(dataDir, 'lib-empty-x'), dataDir }, () => later + 400 * day);
+    const reconciled = parseTeamsFile(readFileSync(teamsFile, 'utf8'))[0];
+    expect(reconciled.permanent).toBe(true);
+    expect(reconciled.expiresAt).toBe(flagged.expiresAt);
+  });
+
+  it('changes nothing for an unknown team id', async () => {
+    const { dataDir, teamsFile } = setup();
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '群', positions: ['forwarder'], teamId: 't1', leadConversationId: 'c1' },
+      () => t0
+    );
+    const before = readFileSync(teamsFile, 'utf8');
+    await setTeamLifecycleIn({ dataDir }, { teamId: 'nope', ttlDays: 3 }, () => t0 + day);
+    expect(readFileSync(teamsFile, 'utf8')).toBe(before);
   });
 });

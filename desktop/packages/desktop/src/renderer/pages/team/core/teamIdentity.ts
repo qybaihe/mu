@@ -62,6 +62,10 @@ export type TeamRosterEntry = {
   retired: boolean;
   /** Epoch ms when the index retires the team; undefined outside the index. */
   expiresAt: number | undefined;
+  /** The team's own lifecycle length from the index, in days. */
+  ttlDays: number | undefined;
+  /** A permanent team never retires, whatever its recorded expiry. */
+  permanent: boolean;
 };
 
 /**
@@ -82,8 +86,10 @@ export const teamRosterEntries = (
       memberCount: team.assistants.length,
       leadConversationId: team.assistants.find((assistant) => assistant.role === 'leader')?.conversation_id,
       conversationIds: team.assistants.map((assistant) => assistant.conversation_id),
-      retired: record !== undefined && record.expiresAt <= now,
+      retired: record !== undefined && record.expiresAt <= now && !record.permanent,
       expiresAt: record?.expiresAt,
+      ttlDays: record?.ttlDays,
+      permanent: record?.permanent ?? false,
     };
   });
   const recencyOf = (entry: TeamRosterEntry): number =>

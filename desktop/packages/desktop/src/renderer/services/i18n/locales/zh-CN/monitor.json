@@ -13,7 +13,13 @@
     "awaitingYou": "等待你的输入",
     "noSession": "还没有会话",
     "inProgress": "{{count}} 项进行中",
-    "openA11y": "打开{{name}}的会话"
+    "openA11y": "打开{{name}}的会话",
+    "hideTitle": "隐藏岗位 {{name}}？",
+    "hideDesc": "从监控与名册隐藏，不删除岗位库文件，可在监控页一键恢复。",
+    "hideOk": "隐藏",
+    "hideA11y": "隐藏{{name}}",
+    "hidden": "已隐藏 {{count}} 个岗位",
+    "restoreAll": "恢复全部"
   },
   "teams": {
     "title": "群聊",
@@ -21,9 +27,21 @@
     "todo": "待办 {{count}}",
     "inProgress": "进行中 {{count}}",
     "done": "完成 {{count}}",
-    "ttl": "剩余 {{days}} 天",
+    "ttl": "生命周期：剩余 {{days}} 天",
     "openA11y": "打开{{name}}群聊",
-    "retiredFold": "已退役 {{count}} 队"
+    "retiredFold": "已退役 {{count}} 队",
+    "ttlPermanent": "生命周期：永久",
+    "lifecycle": {
+      "label": "生命周期",
+      "days": "天数",
+      "permanent": "永久",
+      "saveFailed": "生命周期保存失败。"
+    },
+    "deleteTitle": "删除群聊「{{name}}」？",
+    "deleteDesc": "将删除后端团队并从共享索引清除该队；会话按后端删除语义处理。",
+    "deleteA11y": "删除{{name}}",
+    "deleteFailed": "删除群聊失败。",
+    "deleteIndexFailed": "群聊已删除，但索引行清除失败。"
   },
   "empty": {
     "hint": "找主管派个活试试：跟主管说一句话，它会自动组建或复用团队并跟到底。",

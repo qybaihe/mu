@@ -6,9 +6,13 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  TEAM_TTL_DEFAULT_DAYS,
+  TEAM_TTL_MAX_DAYS,
   TEAM_TTL_MS,
   buildSupervisorOverrideContent,
   buildTeamsFile,
+  clampTeamTtlDays,
+  expiryAfterTtl,
   isTeamActive,
   parseTeamsFile,
   type SupervisorTeam,
@@ -29,6 +33,8 @@ const team = (overrides: Partial<SupervisorTeam> = {}): SupervisorTeam => ({
   createdAt: 1_000,
   lastUsedAt: 2_000,
   expiresAt: 3_000,
+  ttlDays: 7,
+  permanent: false,
   teamId: 'team-1',
   leadConversationId: 'conv-lead',
   ...overrides,
@@ -86,6 +92,48 @@ describe('parseTeamsFile / buildTeamsFile', () => {
     expect(parseTeamsFile('| CNS 队 | forwarder | 2026-01-01T00:00:00.000Z | x | y | t | c |')).toEqual([]);
   });
 
+  it('round-trips the per-team lifecycle: ttlDays and the permanent flag in and out', () => {
+    const file = buildTeamsFile(
+      [
+        team({ ttlDays: 30, expiresAt: Date.now() + 30 * 86_400_000 }),
+        team({ name: '永久队', ttlDays: 3, permanent: true, expiresAt: Date.now() + 3 * 86_400_000 }),
+      ],
+      Date.now()
+    );
+    const parsed = parseTeamsFile(file);
+    expect(parsed.map((t) => [t.ttlDays, t.permanent])).toEqual([
+      [30, false],
+      [3, true],
+    ]);
+  });
+
+  it('reads a seven-cell row as the pre-lifecycle default: 7 days, not permanent', () => {
+    // The file an older script version wrote — no lifecycle cells at all.
+    const content = [
+      '<!-- mu-supervisor-teams v1 -->',
+      '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 |',
+      '| --- | --- | --- | --- | --- | --- | --- |',
+      '| 老队 | forwarder | 2026-01-01T00:00:00.000Z | 2026-01-02T00:00:00.000Z | 2026-01-08T00:00:00.000Z | t-old | c-old |',
+    ].join('\n');
+    const parsed = parseTeamsFile(content);
+    expect(parsed[0].ttlDays).toBe(TEAM_TTL_DEFAULT_DAYS);
+    expect(parsed[0].permanent).toBe(false);
+  });
+
+  it('falls back to the default ttl for an unparsable cell, clamps out-of-range ones', () => {
+    const file = [
+      '<!-- mu-supervisor-teams v1 -->',
+      '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 |',
+      '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+      `| 废队 | forwarder | 2026-01-01T00:00:00.000Z | 2026-01-02T00:00:00.000Z | 2026-01-08T00:00:00.000Z | t-1 | c-1 | NaN |  |`,
+    ].join('\n');
+    expect(parseTeamsFile(file)[0].ttlDays).toBe(TEAM_TTL_DEFAULT_DAYS);
+    expect(clampTeamTtlDays(0)).toBe(1);
+    expect(clampTeamTtlDays(400)).toBe(TEAM_TTL_MAX_DAYS);
+    expect(clampTeamTtlDays(Number.NaN)).toBe(TEAM_TTL_DEFAULT_DAYS);
+    expect(expiryAfterTtl(3, 1_000)).toBe(1_000 + 3 * 86_400_000);
+  });
+
   it('skips prose, headings and malformed rows, keeping well-shaped ones', () => {
     const content = [
       '<!-- mu-supervisor-teams v1 -->',
@@ -126,12 +174,27 @@ describe('parseTeamsFile / buildTeamsFile', () => {
     expect(expiredAt).toBeGreaterThan(retiredAt);
     expect(olderAt).toBeLessThan(retiredAt);
   });
+
+  it('never retires a permanent team: its row stays above the retired heading past its recorded expiry', () => {
+    const now = 10_000_000;
+    const forever = team({ name: '永久队', permanent: true, expiresAt: now - 1 });
+    const expired = team({ name: '过期队', expiresAt: now - 1 });
+    const file = buildTeamsFile([expired, forever], now);
+    const retiredAt = file.indexOf('已退役');
+    expect(file.indexOf('| 永久队 ')).toBeGreaterThan(-1);
+    expect(file.indexOf('| 永久队 ')).toBeLessThan(retiredAt);
+    expect(file.indexOf('| 过期队 ')).toBeGreaterThan(retiredAt);
+  });
 });
 
 describe('isTeamActive', () => {
   it('is active strictly before the expiry', () => {
     expect(isTeamActive(team({ expiresAt: 100 }), 99)).toBe(true);
     expect(isTeamActive(team({ expiresAt: 100 }), 100)).toBe(false);
+  });
+
+  it('a permanent team stays active whatever its recorded expiry says', () => {
+    expect(isTeamActive(team({ permanent: true, expiresAt: 1 }), 100)).toBe(true);
   });
 });
 
@@ -154,7 +217,7 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('node teams.cjs add --name');
     expect(content).toContain('MATCH');
     expect(content).toContain('NONE');
-    expect(content).toContain('7 天');
+    expect(content).toContain('生命周期');
     expect(content).toContain('禁止手工编辑 TEAMS.md');
     expect(content).toContain('禁止自己接手执行任务');
   });

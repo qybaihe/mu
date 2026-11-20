@@ -8,12 +8,14 @@
  * The pure decisions of the new-group-chat dialog: what a group is named when
  * the person leaves the name empty, how picked positions become team slots
  * (each position one mu slot, the first the lead — the same shape the
- * supervisor's teams.cjs `add` builds), and what the create call sends. The
- * 7-day lifecycle semantics are unchanged: a manually created group registers
- * in the shared TEAMS.md index, so the supervisor can match and reuse it.
+ * supervisor's teams.cjs `add` builds), what the create call sends, and the
+ * lifecycle the dialog offers (a day count, or permanent). A manually
+ * created group registers in the shared TEAMS.md index, so the supervisor
+ * can match and reuse it.
  */
 import type { ICreateTeamParams, TeamAssistantInput } from '@/common/adapter/teamMapper';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
+import { TEAM_TTL_DEFAULT_DAYS, clampTeamTtlDays } from '@/common/chat/team/supervisor/supervisorCore';
 import type { TTeam } from '@/common/types/team/teamTypes';
 
 /** How many positions one group chat may hold (the lead plus these at most, like the old team form's cap). */
@@ -23,7 +25,25 @@ export const GROUP_NAME_MAX_LENGTH = 60;
 export type GroupChatFormState = {
   name: string;
   positionIds: string[];
+  /** The lifecycle the dialog carries: whole days (1-365), or permanent. */
+  ttlDays: number;
+  permanent: boolean;
 };
+
+/** The form's fresh state: the default 7-day, non-permanent lifecycle. */
+export const initialGroupChatFormState = (): GroupChatFormState => ({
+  name: '',
+  positionIds: [],
+  ttlDays: TEAM_TTL_DEFAULT_DAYS,
+  permanent: false,
+});
+
+/** The lifecycle a form submits: the day count clamped into range, plus the
+ *  permanent switch — exactly what the shared index row stores. */
+export const groupChatLifecycle = (state: GroupChatFormState): { ttlDays: number; permanent: boolean } => ({
+  ttlDays: clampTeamTtlDays(state.ttlDays),
+  permanent: state.permanent,
+});
 
 export type GroupChatFormError = 'noPositions' | 'tooManyPositions';
 

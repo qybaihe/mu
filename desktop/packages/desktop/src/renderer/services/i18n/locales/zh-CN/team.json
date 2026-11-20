@@ -72,7 +72,7 @@
   "groupChat": {
     "newEntry": "新建群聊",
     "title": "新建群聊",
-    "subtitle": "选择岗位入群，全员 mu 阵容，7 天内可被复用续命。",
+    "subtitle": "选择岗位入群，全员 mu 阵容；生命周期默认 7 天，可自定义或永久。",
     "nameLabel": "群名",
     "namePlaceholder": "可留空，自动按岗位起名",
     "nameAutoHint": "留空时自动用所选岗位命名。",
@@ -83,7 +83,11 @@
     "submit": "创建",
     "errorWithDetail": "创建群聊失败：{{error}}",
     "errors.noPositions": "至少选择一个岗位。",
-    "errors.tooManyPositions": "最多选择 6 个岗位。"
+    "errors.tooManyPositions": "最多选择 6 个岗位。",
+    "lifecycleLabel": "生命周期",
+    "lifecycleDays": "天",
+    "lifecyclePermanent": "永久",
+    "lifecycleHint": "默认 7 天；到期未复用自动退役，每次复用续命；开启永久则不过期。"
   },
   "members": {
     "manageA11y": "管理成员",
