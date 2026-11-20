@@ -19,7 +19,7 @@ import {
 import { BACKEND_CONVERSATION_ID_ENV } from '../../../common/platform/backendNames.ts';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
-import { realpath } from 'node:fs/promises';
+import { readFile, realpath } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { PiRpc, array, asRecord, text, type JsonRecord, type RpcPort } from './piRpc.ts';
@@ -28,6 +28,7 @@ import { isConversationId, readImportRecord, writeImportRecord, type ImportRecor
 import { muEnv, muHome } from './naming.ts';
 import { Telemetry } from './telemetry.ts';
 import { slashCommands } from './commands.ts';
+import { GATE_FILE_NAME, watchGate, type GateReload } from './gateReload.ts';
 import { enabledModels, supportedThinkingLevels, UNOFFERED_PROVIDER_IDS } from '../../../common/kyrn/models.ts';
 import {
   answerIndex,
@@ -91,6 +92,10 @@ type Session = {
   open: Set<string>;
   /** The judge asked about the message being classified, for a row that ends without its answer. */
   judge?: string;
+  /** The watch of the workspace's gate file, hot-refreshing the session's rules when it changes. */
+  gate?: GateReload;
+  /** The gate file changed while a turn was running: reloaded when the turn ends. */
+  reloadPending?: boolean;
 };
 /** How a notice of mu's reads: an answer (`info`), or something that went wrong. */
 type NoticeLevel = 'info' | 'warning' | 'error';
@@ -142,6 +147,23 @@ const delay = (ms: number): Promise<void> =>
     setTimeout(resolve, ms);
   });
 const errorText = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+/** Reads the workspace's gate file, or undefined when it is gone or cannot be read. */
+const readGateFile = async (file: string): Promise<string | undefined> => {
+  try {
+    return await readFile(file, 'utf8');
+  } catch {
+    return undefined;
+  }
+};
+/** What the workspace's gate file says now, read synchronously (see attach), or undefined. */
+const readGateFileSync = (dir: string): string | undefined => {
+  try {
+    return readFileSync(join(dir, GATE_FILE_NAME), 'utf8');
+  } catch {
+    return undefined;
+  }
+};
 
 /** pi's placeholder while it has no model (`unknown/unknown`), and a state that names none. */
 export function isNoModel(model: unknown): boolean {
@@ -360,6 +382,10 @@ export class KyrnAgent implements Agent {
       open: new Set<string>(),
     } as Session;
     this.sessions.set(id, session);
+    // The gate file's changes reach this conversation as they happen (see gateReload.ts). What
+    // the session starts with is read here, synchronously at spawn time: an async first read
+    // loses the race to the very change it should notice.
+    session.gate = watchGate(cwd, readGateFile, () => this.reloadGate(id), readGateFileSync(cwd));
     const telemetry = new Telemetry(this.store, id);
     session.telemetry = telemetry;
     const onEvent = (event: JsonRecord): void => {
@@ -502,10 +528,28 @@ export class KyrnAgent implements Agent {
       model = state.model;
     } catch (error) {
       session.rpc.close();
+      session.gate?.close();
       this.sessions.delete(id);
       throw error;
     }
     if (isNoModel(model)) this.lookForModel(id, session, MODEL_WAITS_MS);
+  }
+  /**
+   * The session's gate file changed: its mu re-reads it now (pi's `reload`), so the new rules hold
+   * for the next message without reopening the conversation. A turn that is running is not
+   * interrupted — the reload waits for its end — and a mu that stopped needs nothing: the process
+   * a later message revives reads the file as it is by itself. Best-effort: a mu that refuses the
+   * reload keeps its rules until it restarts, which re-reads the file the same way.
+   */
+  private reloadGate(id: string): void {
+    const session = this.sessions.get(id);
+    if (!session || session.stopped) return;
+    if (session.busy) {
+      session.reloadPending = true;
+      return;
+    }
+    session.reloadPending = false;
+    session.rpc.send({ type: 'reload' }).catch(() => {});
   }
   /**
    * pi chooses a conversation's model when it starts, from the models it can use then. One that started while another
@@ -564,6 +608,7 @@ export class KyrnAgent implements Agent {
     const revival = (async () => {
       this.sessions.delete(id);
       session.rpc.close();
+      session.gate?.close();
       try {
         await this.attach(id, session.cwd, session.file, session.permissions?.mode);
       } catch (error) {
@@ -894,6 +939,8 @@ export class KyrnAgent implements Agent {
     } finally {
       session.busy = false;
       session.settled = undefined;
+      // A gate change that waited for this turn refreshes the rules now that mu is idle.
+      if (session.reloadPending) this.reloadGate(params.sessionId);
     }
   }
   /**
@@ -1116,6 +1163,7 @@ export class KyrnAgent implements Agent {
   close(): void {
     for (const session of this.sessions.values()) {
       if (session.held) clearTimeout(session.held.timer);
+      session.gate?.close();
       session.rpc.close();
     }
     this.sessions.clear();

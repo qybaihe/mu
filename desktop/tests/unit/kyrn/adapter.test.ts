@@ -1517,3 +1517,82 @@ describe('the adapter the backend starts', () => {
     expect(adapterSources(entry).size).toBeGreaterThan(5);
   });
 });
+
+/** A workspace with a gate file, for the hot-refresh tests. */
+function gateWorkspace(content: string): string {
+  const dir = mkdtempSync(join(tmpdir(), 'gate-ws-'));
+  writeFileSync(join(dir, 'AGENTS.override.md'), content);
+  return dir;
+}
+const soon = async (predicate: () => boolean, ms = 5000): Promise<boolean> => {
+  for (let i = 0; i < ms / 50 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 50));
+  return predicate();
+};
+
+describe('gate file hot refresh', () => {
+  it('asks a live session to re-read its gate file when the file changes, silently', async () => {
+    const workspace = gateWorkspace('rules v1\n');
+    const f = fixture();
+    try {
+      await f.agent.newSession({ cwd: workspace, mcpServers: [] });
+      writeFileSync(join(workspace, 'AGENTS.override.md'), 'rules v2\n');
+      const reloaded = await soon(() => f.commands.some((command) => command.type === 'reload'));
+      expect(reloaded).toBe(true);
+      // Silent by design: no message row, no notice, no visible turn for the refresh.
+      expect(f.commands.some((command) => command.type === 'prompt')).toBe(false);
+      expect(f.updates.filter((update) => update.update.sessionUpdate === 'user_message_chunk')).toEqual([]);
+    } finally {
+      f.cleanup();
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
+  it('does not reload for a rewrite of the same words', async () => {
+    const workspace = gateWorkspace('rules v1\n');
+    const f = fixture();
+    try {
+      await f.agent.newSession({ cwd: workspace, mcpServers: [] });
+      writeFileSync(join(workspace, 'AGENTS.override.md'), 'rules v1\n');
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      expect(f.commands.some((command) => command.type === 'reload')).toBe(false);
+    } finally {
+      f.cleanup();
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
+  it('waits for a running turn: the reload lands when the turn ends', async () => {
+    const workspace = gateWorkspace('rules v1\n');
+    const f = fixture();
+    try {
+      const { sessionId } = await f.agent.newSession({ cwd: workspace, mcpServers: [] });
+      const running = f.agent.prompt({ sessionId, prompt: [{ type: 'text', text: 'Work' }] });
+      writeFileSync(join(workspace, 'AGENTS.override.md'), 'rules v2\n');
+      await new Promise((resolve) => setTimeout(resolve, 1200)); // the change settled mid-turn
+      expect(f.commands.some((command) => command.type === 'reload')).toBe(false);
+      f.finish();
+      await running;
+      expect(f.commands.some((command) => command.type === 'reload')).toBe(true);
+    } finally {
+      f.cleanup();
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+
+  it('leaves a session whose mu stopped alone: its revival reads the file by itself', async () => {
+    const workspace = gateWorkspace('rules v1\n');
+    const f = fixture();
+    try {
+      const { sessionId } = await f.agent.newSession({ cwd: workspace, mcpServers: [] });
+      f.stop();
+      writeFileSync(join(workspace, 'AGENTS.override.md'), 'rules v2\n');
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      expect(f.commands.some((command) => command.type === 'reload')).toBe(false);
+      expect(f.updates.some((update) => update.update.sessionUpdate === 'agent_message_chunk')).toBe(false);
+      void sessionId;
+    } finally {
+      f.cleanup();
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  });
+});

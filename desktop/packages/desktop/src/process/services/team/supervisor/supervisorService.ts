@@ -67,7 +67,9 @@ async function writeIfChanged(file: string, content: string): Promise<boolean> {
  * scripts (rewritten when the app ships new ones: the team maintenance CLI
  * and the read-only roster listing), and the teams index (created as an empty
  * index, or rewritten into its canonical form, which retires expired teams).
- * The clock is injectable for tests.
+ * A supervisor conversation already open re-reads the rules through the
+ * adapter's gate watch (see agent/kyrn/gateReload.ts). The clock is
+ * injectable for tests.
  */
 export async function ensureSupervisorWorkspaceIn(
   options: { libraryDir: string; dataDir: string },

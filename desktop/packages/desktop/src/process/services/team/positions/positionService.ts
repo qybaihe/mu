@@ -14,7 +14,9 @@
  * AGENTS.override.md is the injection seam the harness reads at a session's
  * start (the highest-priority context file of the working directory), so it is
  * regenerated from the library whenever it changed and rewritten before a
- * position conversation opens.
+ * position conversation opens; a conversation that is already open re-reads
+ * it through the adapter's gate watch (see agent/kyrn/gateReload.ts), so a
+ * rules upgrade reaches live sessions without reopening them.
  */
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
