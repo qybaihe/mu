@@ -239,6 +239,13 @@ describe('teams.cjs against a stub backend', () => {
     expect(readFileSync(teamsFile, 'utf8')).toBe(before);
   });
 
+  it('refuses a name that would escape the teams root: `..` never becomes a workspace folder', async () => {
+    const answer = await run(['add', '--name', '..', '--positions', 'forwarder']);
+    expect(answer.status).toBe(1);
+    expect(answer.err).toContain('safe workspace folder');
+    expect(existsSync(join(dataDir, 'AGENTS.md'))).toBe(false);
+  });
+
   it('never matches an expired team', async () => {
     const expiredAt = Date.now() - 1;
     const iso = new Date(expiredAt).toISOString();

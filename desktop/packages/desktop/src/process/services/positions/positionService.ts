@@ -17,6 +17,7 @@ import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { getPlatformServices } from '@/common/platform';
+import { KyrnError } from '@/common/kyrn/errors';
 import { shippedTeamsScript } from '@process/services/supervisor/teamScripts';
 import {
   buildPositionOverrideContent,
@@ -33,8 +34,19 @@ const GATE_FILE_NAME = 'AGENTS.override.md';
 /** The team maintenance script the position's gate rules reference (on-demand team forming). */
 const TEAMS_SCRIPT_NAME = 'teams.cjs';
 
-/** Folder names stay filesystem-safe even for a position name with odd characters. */
-export const safeFolderName = (name: string): string => name.replace(/[^A-Za-z0-9._-]+/g, '-');
+/**
+ * Folder names stay filesystem-safe even for a position name with odd
+ * characters. The name comes from the user's library (frontmatter), a
+ * trust boundary the types cannot speak for, so a name that sanitizes to a
+ * folder-traversal segment — `.` or `..`, the only ones that escape, since
+ * separators never survive — is refused, not written.
+ */
+export const safeFolderName = (name: string): string => {
+  const safe = name.replace(/[^A-Za-z0-9._-]+/g, '-');
+  if (safe === '.' || safe === '..')
+    throw new KyrnError('invalid', 'A position name cannot become a safe folder name', { name });
+  return safe;
+};
 
 /** Cache of the last scan of one library directory, reused until its mtime moves. */
 const cacheByDir = new Map<string, { dirMtimeMs: number; positions: PositionInfo[] }>();

@@ -9,9 +9,10 @@
  */
 import { dispatchSeedBridge } from '@/common/chat/teamDispatch/dispatchSeedBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
-import { seedDispatchRules } from './dispatchSeedService';
+import { getPlatformServices } from '@/common/platform';
+import { isSeedableTeamWorkspace, seedDispatchRulesIn } from './dispatchSeedService';
 
-export { seedDispatchRules } from './dispatchSeedService';
+export { isSeedableTeamWorkspace, seedDispatchRulesIn } from './dispatchSeedService';
 
 // Always answer, failures included: the generic bridge only logs a provider's exception, and the window would wait.
 async function result<T>(work: () => Promise<T>): Promise<KyrnResult<T>> {
@@ -24,6 +25,13 @@ async function result<T>(work: () => Promise<T>): Promise<KyrnResult<T>> {
 
 export function initTeamDispatchBridge(): void {
   dispatchSeedBridge.seed.provider(({ workspace }) =>
-    result(async () => ({ changed: await seedDispatchRules(workspace) }))
+    result(async () => {
+      const dataDir = getPlatformServices().paths.getDataDir();
+      // The refusal is logged, not just answered: a workspace outside the app
+      // data dir means a compromised renderer aiming the write somewhere else.
+      if (!isSeedableTeamWorkspace(workspace, dataDir))
+        console.warn(`[teamDispatch] refused to seed a workspace outside the app data dir: ${workspace}`);
+      return { changed: await seedDispatchRulesIn(workspace, { dataDir }) };
+    })
   );
 }

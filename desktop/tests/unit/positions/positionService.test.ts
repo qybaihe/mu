@@ -137,4 +137,12 @@ describe('safeFolderName', () => {
     expect(safeFolderName('mu-dev')).toBe('mu-dev');
     expect(safeFolderName('a/b\\c:d')).toBe('a-b-c-d');
   });
+
+  it('refuses a name that sanitizes to a folder-traversal segment: `..` escapes the positions root', () => {
+    expect(() => safeFolderName('..')).toThrow();
+    expect(() => safeFolderName('.')).toThrow();
+    // inner dots are ordinary folder-name characters, and a space folds to a dash
+    expect(safeFolderName('a..b')).toBe('a..b');
+    expect(safeFolderName('. .')).toBe('.-.');
+  });
 });
