@@ -185,6 +185,24 @@ Response:
 
 The `model` field is a full [Model](#model-object) object, or omitted when no model is selected. The `sessionName` field is the display name set via `set_session_name`, or omitted if not set.
 
+### reload
+
+Reload settings, extensions and the context files of the working directory (what `/reload` runs in the TUI). Changed prompt sections are patched into the next request, so an RPC client can hot-refresh a live session after a workspace context file changed on disk.
+
+```json
+{"type": "reload"}
+```
+
+Response:
+```json
+{"type": "response", "command": "reload", "success": true}
+```
+
+Errors while a response is streaming or compaction is running:
+```json
+{"type": "response", "command": "reload", "success": false, "error": "Wait for the current response to finish before reloading."}
+```
+
 ### get_messages
 
 Get all messages in the conversation.

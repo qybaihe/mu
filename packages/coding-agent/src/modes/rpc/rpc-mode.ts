@@ -496,6 +496,15 @@ export async function runRpcMode(
 				return success(id, "get_state", state);
 			}
 
+			case "reload": {
+				// What /reload runs in the TUI: settings, extensions and the context files of the working
+				// directory re-read, the changed prompt sections patched into the next request. An RPC
+				// client (the desktop app) uses it to hot-refresh a live session after a workspace context
+				// file changed on disk.
+				await session.reload();
+				return success(id, "reload");
+			}
+
 			// =================================================================
 			// Model
 			// =================================================================

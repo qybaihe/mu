@@ -29,6 +29,7 @@ export type RpcCommand =
 
 	// State
 	| { id?: string; type: "get_state" }
+	| { id?: string; type: "reload" }
 
 	// Model
 	| { id?: string; type: "set_model"; provider: string; modelId: string }

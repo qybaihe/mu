@@ -254,6 +254,14 @@ export class RpcClient {
 	}
 
 	/**
+	 * Reload settings, extensions and context files of the working directory (the TUI's /reload).
+	 * Rejects while a response is streaming or compaction is running.
+	 */
+	async reload(): Promise<void> {
+		await this.send({ type: "reload" });
+	}
+
+	/**
 	 * Set model by provider and ID.
 	 */
 	async setModel(provider: string, modelId: string): Promise<{ provider: string; id: string }> {
