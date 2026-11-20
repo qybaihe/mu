@@ -85,6 +85,19 @@ describe('parseTrashManifest / buildTrashManifest', () => {
     ).toEqual([]);
   });
 
+  it('drops rows whose file or trashFile is not a bare file name — a hand-edited manifest must not steer the restore or the purge out of their folders', () => {
+    const good = JSON.stringify([{ name: 'x', file: 'x.md', trashFile: 'x.md', deletedAt: 5 }]);
+    const rows = (over: Record<string, string>) => [{ ...JSON.parse(good)[0], ...over }];
+    // Every separator-bearing or dot-folder shape reads as malformed, on both fields.
+    expect(parseTrashManifest(JSON.stringify(rows({ file: '../agents/forwarder.md' })))).toEqual([]);
+    expect(parseTrashManifest(JSON.stringify(rows({ trashFile: '..\\evil.md' })))).toEqual([]);
+    expect(parseTrashManifest(JSON.stringify(rows({ file: 'sub/x.md' })))).toEqual([]);
+    expect(parseTrashManifest(JSON.stringify(rows({ trashFile: '..' })))).toEqual([]);
+    expect(parseTrashManifest(JSON.stringify(rows({ file: '.' })))).toEqual([]);
+    // The well-shaped row beside them survives.
+    expect(parseTrashManifest(`[${good.slice(1, -1)},${JSON.stringify(rows({ trashFile: '../evil.md' })[0])}]`)).toHaveLength(1);
+  });
+
   it('a missing displayName falls back to the name; the grace helpers count down to the purge', () => {
     const parsed = parseTrashManifest(JSON.stringify([{ name: 'x', file: 'x.md', trashFile: 'x.md', deletedAt: 5 }]));
     expect(parsed[0]?.displayName).toBe('x');

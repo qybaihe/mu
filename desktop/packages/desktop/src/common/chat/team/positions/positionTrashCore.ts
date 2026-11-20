@@ -26,6 +26,15 @@ export const POSITION_DELETE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * A manifest path the quarantine accepts: a bare file name. The restore and
+ * the purge join it onto the trash or library directory, so a `../`-bearing
+ * or otherwise separated value would escape the folder it belongs to — the
+ * manifest is local and hand-editable, and this is the same sanitize-then-refuse
+ * gate the teams index and the workspace folders already apply.
+ */
+const isSafeBasename = (value: string): boolean => value !== '.' && value !== '..' && !value.includes('/') && !value.includes('\\');
+
 /** One quarantined position: the file's place of origin and its delete stamp. */
 export type TrashedPosition = {
   /** The position's frontmatter name — what the roster and the walls keyed on. */
@@ -43,7 +52,8 @@ export type TrashedPosition = {
 /**
  * The manifest's contents, tolerant of the file a hand edit or an older
  * version wrote: a JSON array of well-shaped entries, everything else —
- * prose, a missing file, malformed rows — reads as an empty manifest.
+ * prose, a missing file, malformed rows, a path that is not a bare file
+ * name — reads as an empty manifest or drops that row.
  */
 export function parseTrashManifest(content: string): TrashedPosition[] {
   let parsed: unknown;
@@ -62,8 +72,8 @@ export function parseTrashManifest(content: string): TrashedPosition[] {
     const trashFile = entry.trashFile;
     const deletedAt = entry.deletedAt;
     if (typeof name !== 'string' || name === '') continue;
-    if (typeof file !== 'string' || file === '') continue;
-    if (typeof trashFile !== 'string' || trashFile === '') continue;
+    if (typeof file !== 'string' || file === '' || !isSafeBasename(file)) continue;
+    if (typeof trashFile !== 'string' || trashFile === '' || !isSafeBasename(trashFile)) continue;
     if (typeof deletedAt !== 'number' || !Number.isFinite(deletedAt)) continue;
     const displayName = typeof entry.displayName === 'string' && entry.displayName !== '' ? entry.displayName : name;
     entries.push({ name, displayName, file, trashFile, deletedAt });
