@@ -44,6 +44,8 @@ const AcpChat: React.FC<{
   loadedMcpStatuses?: IConversationMcpStatus[];
   teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
+  /** The conversation's `extra.position` marker: the supervisor's or a library position's id; absent on plain chats. */
+  positionMarker?: string;
   assistantId?: string;
   forkCapability?: { at_turn: boolean };
   promptCapability?: { image: boolean; audio: boolean };
@@ -62,6 +64,7 @@ const AcpChat: React.FC<{
   loadedMcpStatuses,
   teamSendMessage,
   teamRuntime,
+  positionMarker,
   assistantId,
   forkCapability,
   promptCapability,
@@ -107,6 +110,7 @@ const AcpChat: React.FC<{
               messageState={messageState}
               teamSendMessage={teamSendMessage}
               teamRuntime={teamRuntime}
+              positionMarker={positionMarker}
             ></AcpSendBox>
           )}
         </div>

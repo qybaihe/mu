@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "modelLabel": "Modell für Hochfrequenz-Entscheidungen",
+    "modelHint": "Beantwortet Team-Wiederverwendung des Supervisors und Ablehnungen außerhalb der Domäne in Sekunden, ohne eine volle Modellrunde zu verbrennen. Wähle ein günstiges, schnelles Modell; leer = aus.",
+    "off": "Nicht konfiguriert (aus)",
+    "saveFailed": "Entscheidungsmodell konnte nicht gespeichert werden"
+  },
+  "reuse": {
+    "title": "Schnellentscheidung: „{{team}}“ wiederverwenden",
+    "body": "Die Aufgabe wurde wortgetreu an den Gruppenchat des Teams zugestellt und seine Lebensdauer verlängert. {{reason}}"
+  },
+  "reject": {
+    "title": "Schnellentscheidung: außerhalb der Domäne",
+    "body": "Diese Aufgabe liegt außerhalb der Domäne dieser Position; Übergabe an „{{suggest}}“ empfohlen. {{reason}}"
+  },
+  "details": {
+    "trigger": "Entscheidungsgrundlage",
+    "model": "Modell",
+    "duration": "Dauer",
+    "confidence": "Konfidenz",
+    "cached": "Cache-Treffer (kein Modellaufruf)",
+    "fresh": "Modellurteil",
+    "reason": "Grund"
+  },
+  "taskLabel": "Aufgabe"
+}

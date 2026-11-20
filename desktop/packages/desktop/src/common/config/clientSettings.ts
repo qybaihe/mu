@@ -8,10 +8,20 @@ export type ImageGenerationModelSetting = TProviderWithModel & {
   switch?: boolean;
 };
 
+/**
+ * The high-frequency decision model: the cheap model behind the ⚡
+ * short-circuits (supervisor team reuse, position off-domain rejection).
+ * Stored as a provider reference plus the model name — `api_key` and
+ * `base_url` stay empty because secrets stay in the provider store; the
+ * service resolves them at call time. Undefined = the feature is off.
+ */
+export type QuickDecisionModelSetting = TProviderWithModel;
+
 export type ClientBusinessSettingMap = {
   'google.config': GoogleClientSetting;
   'mcp.config': IMcpServer[] | undefined;
   'tools.imageGenerationModel': ImageGenerationModelSetting | undefined;
+  'tools.quickDecisionModel': QuickDecisionModelSetting | undefined;
   'acp.promptTimeout': number | undefined;
   'acp.agentIdleTimeout': number | undefined;
   /**

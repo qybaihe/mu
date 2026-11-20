@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "modelLabel": "Modelo de decisiones frecuentes",
+    "modelHint": "Responde en segundos la reutilización de equipos del supervisor y el rechazo de tareas fuera de dominio, sin gastar una ronda completa del modelo. Elige uno barato y rápido; vacío = desactivado.",
+    "off": "Sin configurar (desactivado)",
+    "saveFailed": "No se pudo guardar el modelo de decisión"
+  },
+  "reuse": {
+    "title": "Decisión rápida: reutilizar «{{team}}»",
+    "body": "La tarea se entregó al chat de grupo del equipo tal cual y su ciclo de vida se renovó. {{reason}}"
+  },
+  "reject": {
+    "title": "Decisión rápida: fuera de dominio",
+    "body": "Esta tarea está fuera del dominio de este puesto; sugiero pasarla a «{{suggest}}». {{reason}}"
+  },
+  "details": {
+    "trigger": "Base de la decisión",
+    "model": "Modelo",
+    "duration": "Duración",
+    "confidence": "Confianza",
+    "cached": "Acierto de caché (cero llamadas al modelo)",
+    "fresh": "Veredicto del modelo",
+    "reason": "Motivo"
+  },
+  "taskLabel": "Tarea"
+}

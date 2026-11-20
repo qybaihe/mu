@@ -5,8 +5,15 @@
  */
 
 import { configService } from '@/common/config/configService';
+import type { TProviderWithModel } from '@/common/config/storage';
 import { useCrossSessionMessageEnabled } from '@/renderer/hooks/chat/useCrossSessionMessageEnabled';
-import { getClientBusinessSetting, setClientBusinessSetting } from '@/renderer/services/clientBusinessSettings';
+import { useProvidersQuery } from '@/renderer/hooks/agent/useModelProviderList';
+import {
+  getClientBusinessSetting,
+  removeClientBusinessSetting,
+  setClientBusinessSetting,
+} from '@/renderer/services/clientBusinessSettings';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import {
   DEFAULT_TEXT_PREVIEW_LIMIT_MB,
   MAX_TEXT_PREVIEW_LIMIT_MB,
@@ -14,7 +21,7 @@ import {
   normalizeTextPreviewLimitMb,
 } from '@/renderer/utils/file/previewPayload';
 import { InputNumber, Message, Switch } from '@arco-design/web-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PreferenceRow from './PreferenceRow';
 
@@ -41,6 +48,10 @@ const ConversationPreferences: React.FC = () => {
   const [previewLimitMb, setPreviewLimitMb] = useState<number>(DEFAULT_TEXT_PREVIEW_LIMIT_MB);
   const previewLimitDraftRef = useRef<string>(String(DEFAULT_TEXT_PREVIEW_LIMIT_MB));
   const [saveUploadToWorkspace, setSaveUploadToWorkspace] = useState(false);
+  // The quick-decision model: stored as a provider id + model reference
+  // (secrets stay in the provider store), undefined = the feature is off.
+  const { data: providers } = useProvidersQuery();
+  const [quickDecisionModel, setQuickDecisionModel] = useState<{ providerId: string; useModel: string } | undefined>();
 
   useEffect(() => {
     setSaveUploadToWorkspace(configService.get('upload.saveToWorkspace') ?? false);
@@ -73,6 +84,13 @@ const ConversationPreferences: React.FC = () => {
           const stored = normalizeTextPreviewLimitMb(storedPreviewLimitMb);
           setPreviewLimitMb(stored);
           previewLimitDraftRef.current = String(stored);
+        }
+        const storedQuickDecisionModel = await getClientBusinessSetting('tools.quickDecisionModel');
+        if (storedQuickDecisionModel?.id && storedQuickDecisionModel.use_model) {
+          setQuickDecisionModel({
+            providerId: storedQuickDecisionModel.id,
+            useModel: storedQuickDecisionModel.use_model,
+          });
         }
       } catch {
         // Keep the in-memory defaults when backend settings are unavailable.
@@ -167,6 +185,38 @@ const ConversationPreferences: React.FC = () => {
     });
   }, []);
 
+  // Selecting writes the sanitized reference (no key, no base URL); clearing
+  // removes the setting — the quick-decision layer is off until one is chosen.
+  const handleQuickDecisionModelChange = useCallback(
+    (value: string | undefined) => {
+      if (value === undefined || value === '') {
+        setQuickDecisionModel(undefined);
+        removeClientBusinessSetting('tools.quickDecisionModel').catch(() => {});
+        return;
+      }
+      const [providerId, useModel] = value.split('|');
+      const provider = providers?.find((candidate) => candidate.id === providerId);
+      if (!provider) return;
+      const sanitized: TProviderWithModel = {
+        id: provider.id,
+        platform: provider.platform,
+        name: provider.name,
+        base_url: '',
+        api_key: '',
+        use_model: useModel,
+      };
+      setQuickDecisionModel({ providerId, useModel });
+      setClientBusinessSetting('tools.quickDecisionModel', sanitized).catch(() => {
+        Message.error(t('quickDecision.settings.saveFailed'));
+      });
+    },
+    [providers, t]
+  );
+  const quickDecisionSelectValue = useMemo(
+    () => (quickDecisionModel ? `${quickDecisionModel.providerId}|${quickDecisionModel.useModel}` : undefined),
+    [quickDecisionModel]
+  );
+
   const preferenceItems = [
     {
       key: 'promptTimeout',
@@ -229,6 +279,29 @@ const ConversationPreferences: React.FC = () => {
       description: t('settings.crossSessionMessageDesc'),
       component: (
         <Switch size='small' checked={crossSessionMessageEnabled} onChange={handleCrossSessionMessageChange} />
+      ),
+    },
+    {
+      key: 'quickDecisionModel',
+      label: t('quickDecision.settings.modelLabel'),
+      description: t('quickDecision.settings.modelHint'),
+      component: (
+        <div className='w-full md:w-280px' data-testid='quick-decision-model-select'>
+          <MuSelect
+            value={quickDecisionSelectValue}
+            allowClear
+            placeholder={t('quickDecision.settings.off')}
+            onChange={(value: string | undefined) => handleQuickDecisionModelChange(value)}
+          >
+            {(providers ?? []).map((platform) =>
+              platform.models.map((modelName) => (
+                <MuSelect.Option key={`${platform.id}|${modelName}`} value={`${platform.id}|${modelName}`}>
+                  {`${platform.name} / ${modelName}`}
+                </MuSelect.Option>
+              ))
+            )}
+          </MuSelect>
+        </div>
       ),
     },
   ];

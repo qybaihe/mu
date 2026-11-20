@@ -19,6 +19,7 @@ import { initFileRefsBridge } from '../services/fileRefs';
 import { initTeamDispatchBridge } from '../services/team/teamDispatch';
 import { initPositionsBridge } from '../services/team/positions';
 import { initSupervisorBridge } from '../services/team/supervisor';
+import { initQuickDecisionBridge } from '../services/team/quickDecision';
 
 export type BridgeDependencies = Record<string, never>;
 
@@ -38,6 +39,7 @@ export function initAllBridges(_deps: BridgeDependencies = {}): void {
   initTeamDispatchBridge();
   initPositionsBridge();
   initSupervisorBridge();
+  initQuickDecisionBridge();
 }
 
 export {

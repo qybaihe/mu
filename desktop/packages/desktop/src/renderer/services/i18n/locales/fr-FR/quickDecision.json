@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "modelLabel": "Modèle de décisions fréquentes",
+    "modelHint": "répond en secondes aux réutilisations d’équipe du superviseur et aux rejets hors domaine, sans consommer un tour complet du modèle. Choisissez-en un rapide et bon marché ; vide = désactivé.",
+    "off": "Non configuré (désactivé)",
+    "saveFailed": "Échec de l’enregistrement du modèle de décision"
+  },
+  "reuse": {
+    "title": "Décision rapide : réutiliser « {{team}} »",
+    "body": "La tâche a été livrée telle quelle au chat de groupe de l’équipe et son cycle de vie a été prolongé. {{reason}}"
+  },
+  "reject": {
+    "title": "Décision rapide : hors domaine",
+    "body": "Cette tâche est hors du domaine de ce poste ; suggérez de la confier à « {{suggest}} ». {{reason}}"
+  },
+  "details": {
+    "trigger": "Base de la décision",
+    "model": "Modèle",
+    "duration": "Durée",
+    "confidence": "Confiance",
+    "cached": "Cache atteint (zéro appel au modèle)",
+    "fresh": "Verdict du modèle",
+    "reason": "Motif"
+  },
+  "taskLabel": "Tâche"
+}

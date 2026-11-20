@@ -19,6 +19,7 @@ import {
   purgeDueDeletedTeams,
   registerSupervisorTeam,
   restoreSupervisorTeam,
+  reuseSupervisorTeamIn,
   setTeamLifecycle,
   softDeleteSupervisorTeam,
 } from './supervisorService';
@@ -34,6 +35,7 @@ export {
   registerSupervisorTeamIn,
   restoreSupervisorTeam,
   restoreSupervisorTeamIn,
+  reuseSupervisorTeamIn,
   setTeamLifecycle,
   setTeamLifecycleIn,
   softDeleteSupervisorTeam,

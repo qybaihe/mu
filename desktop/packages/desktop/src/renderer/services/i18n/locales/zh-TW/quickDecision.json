@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "modelLabel": "高頻決策模型",
+    "modelHint": "主管複用現役隊與崗位域外拒判兩類高頻決策由它秒級短路，不燒整輪大模型。選個便宜快速的；留空=功能關閉。",
+    "off": "未設定（關閉）",
+    "saveFailed": "儲存高頻決策模型失敗"
+  },
+  "reuse": {
+    "title": "快速決策：複用「{{team}}」",
+    "body": "任務已原文送入該團隊群聊會話，團隊生命週期已續命。{{reason}}"
+  },
+  "reject": {
+    "title": "快速決策：本崗外拒絕",
+    "body": "此任務不屬於本崗，建議交給「{{suggest}}」崗。{{reason}}"
+  },
+  "details": {
+    "trigger": "決策依據",
+    "model": "模型",
+    "duration": "耗時",
+    "confidence": "置信",
+    "cached": "快取命中（零模型呼叫）",
+    "fresh": "模型判定",
+    "reason": "理由"
+  },
+  "taskLabel": "任務"
+}

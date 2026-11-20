@@ -68,6 +68,8 @@ import {
   memberMessagesFromMailbox,
   type TeamTaskRow,
 } from './teamTaskEvents';
+import { useQuickDecisionNotes, type QuickDecisionNote } from '@renderer/pages/team/core/quickDecisionNotes';
+import QuickDecisionNoteRow from '@renderer/pages/team/components/QuickDecisionNoteRow';
 import { dependencyEdgesOf } from '@renderer/pages/team/core/teamDataCore';
 import { useTeamTaskEvents } from './useTeamTaskEvents';
 import type { WriteFileResult } from './types';
@@ -101,7 +103,10 @@ type IThoughtHistoryVO = {
   sourceMessageIds: string[];
   created_at: number;
 };
-type IProcessedItem = IMessageVO | IArtifactVO | IThoughtHistoryVO | TeamTaskRow;
+type IProcessedItem = IMessageVO | IArtifactVO | IThoughtHistoryVO | TeamTaskRow | QuickDecisionRow;
+
+/** One ⚡ short-circuit receipt, merged like a teammate row: nothing went through the model, so no backend message exists. */
+type QuickDecisionRow = { type: 'quick_decision'; id: string; note: QuickDecisionNote; created_at: number };
 
 type CompactAcpToolCallContent = IMessageAcpToolCall['content'] & {
   _compact?: {
@@ -151,7 +156,7 @@ type ConversationLocationState = {
 };
 
 const getProcessedItemSourceMessageIds = (item: IProcessedItem): string[] => {
-  if ('type' in item && (item.type === 'artifact' || item.type === 'team_task')) {
+  if ('type' in item && (item.type === 'artifact' || item.type === 'team_task' || item.type === 'quick_decision')) {
     return [item.id];
   }
   if ('type' in item && item.type === 'tool_summary') {
@@ -214,6 +219,7 @@ const EARLIER_ROWS_MS = 2000;
 const ThoughtHistoryRow = React.memo(ThoughtHistory);
 const FileChangesRow = React.memo(MessageFileChanges);
 const TeamTaskCardRow = React.memo(TeamTaskCard);
+const QuickDecisionNoteRowMemo = React.memo(QuickDecisionNoteRow);
 
 const sameRefs = (a: readonly unknown[], b: readonly unknown[]): boolean =>
   a.length === b.length && a.every((item, index) => item === b[index]);
@@ -253,7 +259,8 @@ const getProcessedItemCreatedAt = (item: IProcessedItem): number => {
       item.type === 'tool_summary' ||
       item.type === 'thinking_history' ||
       item.type === 'artifact' ||
-      item.type === 'team_task')
+      item.type === 'team_task' ||
+      item.type === 'quick_decision')
   ) {
     return item.created_at;
   }
@@ -383,7 +390,8 @@ const isPseudoProcessedItem = (item: IProcessedItem): item is Exclude<IProcessed
     item.type === 'tool_summary' ||
     item.type === 'thinking_history' ||
     item.type === 'artifact' ||
-    item.type === 'team_task');
+    item.type === 'team_task' ||
+    item.type === 'quick_decision');
 
 const hasRenderedCopyRow = (item: IProcessedItem, aiCopyRowTextIds: ReadonlySet<string>): boolean => {
   if (isPseudoProcessedItem(item) || item.type !== 'text') return false;
@@ -594,6 +602,9 @@ const MessageList: React.FC<{
   // The group conversation's task events: the lead conversation of a team
   // interleaves the team's task cards into the flow (the flow is the ledger).
   const teamTaskEvents = useTeamTaskEvents(run ? undefined : conversationId);
+  // The ⚡ receipts of a supervisor/position conversation: short-circuited
+  // sends never became backend messages, so the notes are the only trace.
+  const quickDecisionNotes = useQuickDecisionNotes(conversationId);
   const { t } = useTranslation();
   const location = useLocation();
   const locationState = (location.state || {}) as ConversationLocationState;
@@ -852,6 +863,14 @@ const MessageList: React.FC<{
           },
           deliveredMsgIdsOf(list)
         ),
+        // ⚡ receipts merge like teammate rows: sorted by when they happened,
+        // not appended — the user may keep chatting after a short-circuit.
+        ...quickDecisionNotes.map<QuickDecisionRow>((note) => ({
+          type: 'quick_decision',
+          id: note.id,
+          note,
+          created_at: note.createdAt,
+        })),
       ].toSorted((a, b) => getProcessedItemCreatedAt(a) - getProcessedItemCreatedAt(b))
     );
     // Team task cards merge in after the reuse pass: their objects come from
@@ -866,6 +885,7 @@ const MessageList: React.FC<{
     isProcessing,
     list,
     openThoughtIds,
+    quickDecisionNotes,
     teamTaskEvents?.mailbox,
     teamTaskEvents?.members,
     teamTaskEvents?.tasks,
@@ -899,7 +919,8 @@ const MessageList: React.FC<{
           item.type === 'tool_summary' ||
           item.type === 'thinking_history' ||
           item.type === 'artifact' ||
-          item.type === 'team_task')
+          item.type === 'team_task' ||
+          item.type === 'quick_decision')
       ) {
         continue;
       }
@@ -922,7 +943,8 @@ const MessageList: React.FC<{
           item.type === 'tool_summary' ||
           item.type === 'thinking_history' ||
           item.type === 'artifact' ||
-          item.type === 'team_task')
+          item.type === 'team_task' ||
+          item.type === 'quick_decision')
       ) {
         continue;
       }
@@ -1100,7 +1122,8 @@ const MessageList: React.FC<{
           (item as { type?: string }).type === 'tool_summary' ||
           (item as { type?: string }).type === 'thinking_history' ||
           (item as { type?: string }).type === 'artifact' ||
-          (item as { type?: string }).type === 'team_task'
+          (item as { type?: string }).type === 'team_task' ||
+          (item as { type?: string }).type === 'quick_decision'
         ) {
           return false;
         }
@@ -1212,6 +1235,19 @@ const MessageList: React.FC<{
               stale={staleCallIdsRef.current}
             />
           )}
+        </div>
+      );
+    }
+    if ('type' in item && item.type === 'quick_decision') {
+      return (
+        <div
+          key={item.id}
+          id={`message-${item.id}`}
+          data-testid='quick-decision-row-wrapper'
+          className={`${rowWidthClass} min-w-0 message-item px-8px ${topMarginClass} quick_decision`}
+          style={highlighted ? highlightStyle : undefined}
+        >
+          <QuickDecisionNoteRowMemo note={item.note} />
         </div>
       );
     }

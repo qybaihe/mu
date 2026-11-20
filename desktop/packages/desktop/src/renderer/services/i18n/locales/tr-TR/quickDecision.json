@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "modelLabel": "Yüksek frekanslı karar modeli",
+    "modelHint": "Süpervizörün ekip yeniden kullanımını ve alan dışı görev reddini saniyeler içinde yanıtlar; tam model turu harcamaz. Ucuz ve hızlı bir model seçin; boş = kapalı.",
+    "off": "Yapılandırılmadı (kapalı)",
+    "saveFailed": "Karar modeli kaydedilemedi"
+  },
+  "reuse": {
+    "title": "Hızlı karar: \"{{team}}\" yeniden kullan",
+    "body": "Görev, yazıldığı gibi ekibin grup sohbetine teslim edildi ve ekibin yaşam döngüsü uzatıldı. {{reason}}"
+  },
+  "reject": {
+    "title": "Hızlı karar: alan dışı reddi",
+    "body": "Bu görev bu pozisyonun alanı dışında; \"{{suggest}}\" pozisyonuna verilmesini önerin. {{reason}}"
+  },
+  "details": {
+    "trigger": "Karar gerekçesi",
+    "model": "Model",
+    "duration": "Süre",
+    "confidence": "Güven",
+    "cached": "Önbellek isabeti (sıfır model çağrısı)",
+    "fresh": "Model kararı",
+    "reason": "Gerekçe"
+  },
+  "taskLabel": "Görev"
+}

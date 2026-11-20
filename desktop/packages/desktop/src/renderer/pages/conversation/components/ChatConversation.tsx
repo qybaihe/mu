@@ -263,6 +263,7 @@ const BuiltinAgentConversationPanel: React.FC<{
         modelSelection={modelSelection}
         session_mode={conversation.extra?.session_mode}
         cron_job_id={cronJobId}
+        positionMarker={(conversation.extra as { position?: string } | undefined)?.position}
         loadedSkills={(conversation.extra as { skills?: string[] } | undefined)?.skills}
         loadedMcpServers={(conversation.extra as { mcp_servers?: string[] } | undefined)?.mcp_servers}
         loadedMcpStatuses={
@@ -374,6 +375,7 @@ const ChatConversation: React.FC<{
             emptySlot={emptySlot}
             headerSlot={headerSlot}
             teamSendMessage={teamSendMessage}
+            positionMarker={(conversation.extra as { position?: string } | undefined)?.position}
             loadedSkills={(conversation.extra as { skills?: string[] } | undefined)?.skills}
             loadedMcpServers={(conversation.extra as { mcp_servers?: string[] } | undefined)?.mcp_servers}
             loadedMcpStatuses={

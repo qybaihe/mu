@@ -2,6 +2,10 @@ import { ipcBridge } from '@/common';
 import type { IConversationMcpStatus } from '@/common/config/storage';
 import { isBackendHttpError } from '@/common/adapter/httpBridge';
 import { isSideQuestionSupported } from '@/common/chat/sideQuestion';
+import { quickDecisionBridge } from '@/common/chat/team/quickDecision/quickDecisionBridge';
+import type { QuickDecisionRouteResult } from '@/common/chat/team/quickDecision/quickDecisionBridge';
+import type { KyrnResult } from '@/common/kyrn/errors';
+import { appendQuickDecisionNote, shouldAskQuickDecision } from '@renderer/pages/team/core/quickDecisionNotes';
 import { parseError, uuid } from '@/common/utils';
 import AgentModeSelector from '@/renderer/components/agent/AgentModeSelector';
 import ContextUsageIndicator from '@/renderer/components/agent/ContextUsageIndicator';
@@ -126,7 +130,18 @@ const AcpSendBox: React.FC<{
   messageState: UseAcpMessageReturn;
   teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
-}> = ({ conversation_id, backend, session_mode, agent_name, messageState, teamSendMessage, teamRuntime }) => {
+  /** The conversation's `extra.position` marker: the supervisor's or a library position's id; absent on plain chats. */
+  positionMarker?: string;
+}> = ({
+  conversation_id,
+  backend,
+  session_mode,
+  agent_name,
+  messageState,
+  teamSendMessage,
+  teamRuntime,
+  positionMarker,
+}) => {
   const {
     aiProcessing,
     setAiProcessing,
@@ -300,6 +315,32 @@ const AcpSendBox: React.FC<{
       // [[AION_FILES]] marker at the send edge (no front-end path/marker building).
       try {
         if (teamPermission) await teamPermission.warmupSession();
+        // The pre-send short-circuit: a supervisor/position send with no
+        // attachments and no slash command may be answered by the cheap
+        // decision model (⚡ reuse / ⚡ off-domain reject) without a full
+        // model round. `full` — the majority answer, including every doubt —
+        // falls through to the ordinary send, unchanged.
+        if (
+          shouldAskQuickDecision({
+            positionMarker,
+            hasTeamRoute: teamSendMessage !== undefined,
+            fileCount: files.length,
+            input,
+          })
+        ) {
+          let routed: KyrnResult<QuickDecisionRouteResult> | undefined;
+          try {
+            routed = await quickDecisionBridge.route.invoke({ input, positionMarker });
+          } catch {
+            routed = undefined; // The decision layer must never break a send.
+          }
+          const verdict = routed?.ok ? routed.data : undefined;
+          if (verdict && verdict.action !== 'full') {
+            appendQuickDecisionNote(conversation_id, input, verdict);
+            emitter.emit('chat.history.refresh');
+            return;
+          }
+        }
         void checkAndUpdateTitle(conversation_id, input);
         if (teamSendMessage) {
           await teamSendMessage({ input, files });
@@ -409,6 +450,7 @@ Please check your local CLI tool authentication status`,
       markSendAccepted,
       markSendFailed,
       markSendStarted,
+      positionMarker,
       resetState,
       setAiProcessing,
       t,

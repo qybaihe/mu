@@ -335,6 +335,36 @@ export async function restoreSupervisorTeamIn(
 export const restoreSupervisorTeam = (params: { teamId: string }): Promise<SupervisorTeam[]> =>
   restoreSupervisorTeamIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
 
+/**
+ * One reuse's index half, `teams.cjs send` semantics: the row the team id
+ * names gets `lastUsedAt = at` and — unless permanent — a fresh lease
+ * `at + ttlDays`, exactly what the script's `send` writes after delivering
+ * a task. A soft-deleted or unknown id refreshes nothing (undefined): the
+ * quick decision that asked then falls back to the full flow instead of
+ * reviving a team the user deleted. A RETIRED row does refresh — like the
+ * script's send, a delivered task is a reuse whatever the clock said. The
+ * clock is injectable for tests.
+ */
+export async function reuseSupervisorTeamIn(
+  options: { dataDir: string },
+  params: { teamId: string; at: number }
+): Promise<SupervisorTeam | undefined> {
+  const teams = await readTeamsIn(options.dataDir);
+  const row = teams.find((team) => team.teamId === params.teamId && !isTeamDeleted(team));
+  if (!row) return undefined;
+  const next: SupervisorTeam = {
+    ...row,
+    lastUsedAt: params.at,
+    expiresAt: row.permanent ? row.expiresAt : expiryAfterTtl(row.ttlDays, params.at),
+  };
+  await writeTeamsIn(
+    options.dataDir,
+    teams.map((team) => (team.teamId === params.teamId ? next : team)),
+    params.at
+  );
+  return next;
+}
+
 /** How the purge deletes a backend team; injectable so tests need no backend. */
 export type DeleteTeamForPurge = (teamId: string) => Promise<void>;
 

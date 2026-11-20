@@ -6,6 +6,10 @@
 
 import { ipcBridge } from '@/common';
 import type { IConversationMcpStatus } from '@/common/config/storage';
+import { quickDecisionBridge } from '@/common/chat/team/quickDecision/quickDecisionBridge';
+import type { QuickDecisionRouteResult } from '@/common/chat/team/quickDecision/quickDecisionBridge';
+import type { KyrnResult } from '@/common/kyrn/errors';
+import { appendQuickDecisionNote, shouldAskQuickDecision } from '@renderer/pages/team/core/quickDecisionNotes';
 import AgentModeSelector from '@/renderer/components/agent/AgentModeSelector';
 import CommandQueuePanel from '@/renderer/components/chat/CommandQueuePanel';
 import MobileActionSheet, {
@@ -132,7 +136,9 @@ const BuiltinAgentSendBox: React.FC<{
   agent_name?: string;
   teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
-}> = ({ conversation_id, modelSelection, session_mode, agent_name, teamSendMessage, teamRuntime }) => {
+  /** The conversation's `extra.position` marker: the supervisor's or a library position's id; absent on plain chats. */
+  positionMarker?: string;
+}> = ({ conversation_id, modelSelection, session_mode, agent_name, teamSendMessage, teamRuntime, positionMarker }) => {
   const [dynamicModes, setDynamicModes] = useState<AgentModeOption[]>([]);
   const [currentMode, setCurrentMode] = useState<string | undefined>(session_mode);
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
@@ -273,6 +279,32 @@ const BuiltinAgentSendBox: React.FC<{
       // ChatFileRef to an absolute path and injects the [[AION_FILES]] marker at
       // the send edge — the front-end no longer builds paths nor the marker.
       try {
+        // The pre-send short-circuit: a supervisor/position send with no
+        // attachments and no slash command may be answered by the cheap
+        // decision model (⚡ reuse / ⚡ off-domain reject) without a full
+        // model round. `full` — the majority answer, including every doubt —
+        // falls through to the ordinary send, unchanged.
+        if (
+          shouldAskQuickDecision({
+            positionMarker,
+            hasTeamRoute: teamSendMessage !== undefined,
+            fileCount: files.length,
+            input,
+          })
+        ) {
+          let routed: KyrnResult<QuickDecisionRouteResult> | undefined;
+          try {
+            routed = await quickDecisionBridge.route.invoke({ input, positionMarker });
+          } catch {
+            routed = undefined; // The decision layer must never break a send.
+          }
+          const verdict = routed?.ok ? routed.data : undefined;
+          if (verdict && verdict.action !== 'full') {
+            appendQuickDecisionNote(conversation_id, input, verdict);
+            emitter.emit('chat.history.refresh');
+            return;
+          }
+        }
         void checkAndUpdateTitle(conversation_id, input);
         if (teamSendMessage) {
           await teamSendMessage({ input, files });
@@ -333,6 +365,7 @@ const BuiltinAgentSendBox: React.FC<{
       markSendAccepted,
       markSendFailed,
       markSendStarted,
+      positionMarker,
       setActiveMsgId,
       setWaitingResponse,
       t,

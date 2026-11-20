@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "modelLabel": "高频决策模型",
+    "modelHint": "主管复用现役队与岗位域外拒判两类高频决策由它秒级短路，不烧整轮大模型。选个便宜快速的；留空=功能关闭。",
+    "off": "未配置（关闭）",
+    "saveFailed": "保存高频决策模型失败"
+  },
+  "reuse": {
+    "title": "快速决策：复用「{{team}}」",
+    "body": "任务已原文送入该团队群聊会话，团队生命周期已续命。{{reason}}"
+  },
+  "reject": {
+    "title": "快速决策：本岗外拒绝",
+    "body": "此任务不属于本岗，建议交给「{{suggest}}」岗。{{reason}}"
+  },
+  "details": {
+    "trigger": "决策依据",
+    "model": "模型",
+    "duration": "耗时",
+    "confidence": "置信",
+    "cached": "缓存命中（零模型调用）",
+    "fresh": "模型判定",
+    "reason": "理由"
+  },
+  "taskLabel": "任务"
+}

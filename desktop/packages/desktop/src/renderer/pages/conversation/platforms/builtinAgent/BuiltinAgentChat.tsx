@@ -41,6 +41,8 @@ const BuiltinAgentChat: React.FC<{
   agent_name?: string;
   teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
   teamRuntime?: TeamSendBoxRuntime;
+  /** The conversation's `extra.position` marker: the supervisor's or a library position's id; absent on plain chats. */
+  positionMarker?: string;
   assistantId?: string;
   forkCapability?: { at_turn: boolean };
 }> = ({
@@ -56,6 +58,7 @@ const BuiltinAgentChat: React.FC<{
   agent_name,
   teamSendMessage,
   teamRuntime,
+  positionMarker,
   assistantId,
   forkCapability,
 }) => {
@@ -100,6 +103,7 @@ const BuiltinAgentChat: React.FC<{
             agent_name={agent_name}
             teamSendMessage={teamSendMessage}
             teamRuntime={teamRuntime}
+            positionMarker={positionMarker}
           />
         </div>
       </ConversationArtifactProvider>

@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "modelLabel": "High-frequency decision model",
+    "modelHint": "Answers supervisor team-reuse and off-domain position rejections in seconds, without burning a full model round. Pick a cheap, fast one; empty = off.",
+    "off": "Not configured (off)",
+    "saveFailed": "Failed to save the decision model"
+  },
+  "reuse": {
+    "title": " Quick decision: reuse \"{{team}}\"",
+    "body": "The task was delivered to the team’s group chat as written, and its lifecycle was refreshed. {{reason}}"
+  },
+  "reject": {
+    "title": " Quick decision: off-domain rejection",
+    "body": "This task is outside this position’s domain; suggest handing it to \"{{suggest}}\". {{reason}}"
+  },
+  "details": {
+    "trigger": "Decision basis",
+    "model": "Model",
+    "duration": "Duration",
+    "confidence": "Confidence",
+    "cached": "Cache hit (zero model calls)",
+    "fresh": "Model verdict",
+    "reason": "Reason"
+  },
+  "taskLabel": "Task"
+}
