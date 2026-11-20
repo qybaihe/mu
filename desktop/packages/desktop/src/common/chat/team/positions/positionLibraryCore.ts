@@ -6,8 +6,9 @@
 
 /**
  * The position roster, pure: parsing the user's position library
- * (`~/.mu/agent/agents/*.md`, read-only — the library is the user's,
- * desktop never writes it), the ownership-gate text injected into a position
+ * (`~/.mu/agent/agents/*.md` — the library is the user's; the desktop's one
+ * write path is the creation wizard, which only adds files, and everything
+ * else treats it as read-only), the ownership-gate text injected into a position
  * conversation's workspace (the task-ownership gate, plus the wrap-up
  * fallback rules — append this task's lessons to the position's project-root
  * HANDOFF.md — and the new-project/new-position dedup gate), and finding a

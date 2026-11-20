@@ -1,0 +1,221 @@
+/**
+ * @license
+ * Copyright 2025 AionUi (aionui.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * The position creation wizard's dom: the picker step (the folder dialog's
+ * answer analyzed at once, the deep-AI button exactly when the files said
+ * nothing), the review step (the proposal editable, candidates one click
+ * away, the identity dot following the id), the overlap gate (a red warning
+ * that holds Create until the deliberate confirmation, then lets it through)
+ * and the create call itself, whose success closes the wizard and refreshes
+ * the roster.
+ */
+import React from 'react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ProjectAnalysis } from '@/common/chat/team/positions/positionBridge';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
+
+let positions: PositionInfo[];
+let pickFolder: ReturnType<typeof vi.fn>;
+let analyze: ReturnType<typeof vi.fn>;
+let create: ReturnType<typeof vi.fn>;
+let refresh: ReturnType<typeof vi.fn>;
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) =>
+      params === undefined
+        ? key
+        : `${key}:${Object.entries(params)
+            .map(([name, value]) => `${name}=${value}`)
+            .join(',')}`,
+  }),
+}));
+// Arco's Message toasts render through a legacy ReactDOM path that jsdom's
+// React 19 cannot run; the toast is not what these tests observe.
+vi.mock('@arco-design/web-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof Record<string, unknown>>()),
+  Message: { success: vi.fn(), error: vi.fn() },
+}));
+vi.mock('@/renderer/hooks/context/ThemeContext', () => ({
+  useThemeContext: () => ({ theme: 'light', fontScale: 1 }),
+}));
+vi.mock('@/common', () => ({
+  ipcBridge: {
+    dialog: {
+      showOpen: { invoke: (...args: unknown[]) => pickFolder(...args) },
+    },
+  },
+}));
+vi.mock('@/common/chat/team/positions/positionBridge', () => ({
+  positionBridge: {
+    analyzeProject: { invoke: (...args: unknown[]) => analyze(...args) },
+    createPosition: { invoke: (...args: unknown[]) => create(...args) },
+  },
+}));
+vi.mock('@renderer/pages/positions/usePositionRoster', () => ({
+  usePositionRoster: () => ({ positions, isLoading: false }),
+  refreshPositions: () => refresh(),
+}));
+import PositionCreationModal from '@renderer/pages/positions/PositionCreationModal';
+
+const analysisOf = (over: Partial<ProjectAnalysis['draft']> = {}, aiUsed = false): ProjectAnalysis => ({
+  profile: {
+    directory: 'E:/Projects/freight-lab',
+    projectName: 'freight-lab',
+    goal: '报价表自动解析与核价',
+    techStack: ['fastify', 'vitest'],
+    constraints: ['禁止未脱敏外发客户资料'],
+    sources: ['AGENTS.md', 'HANDOFF.md', 'package.json'],
+    empty: false,
+  },
+  draft: {
+    id: 'freight-lab',
+    displayNameCandidates: ['报价表自动解析', 'freight-lab'],
+    description: 'freight-lab 项目常设岗位——报价表自动解析与核价；涉及 freight-lab/fastify/vitest 相关任务时交给它',
+    body: '你是「报价表自动解析」岗位的常设负责 Bot。\n\n- 项目根：`E:/Projects/freight-lab`',
+    projectRoot: 'E:/Projects/freight-lab',
+    ...over,
+  },
+  aiUsed,
+});
+
+const rosterPosition = (over: Partial<PositionInfo>): PositionInfo => ({
+  name: 'x',
+  displayName: 'x',
+  description: '',
+  body: '',
+  ...over,
+});
+
+const openAndPick = async (): Promise<void> => {
+  render(<PositionCreationModal open onClose={() => undefined} />);
+  fireEvent.click(screen.getByTestId('position-creation-pick'));
+  await waitFor(() => {
+    expect(screen.getByTestId('position-creation-profile')).toBeDefined();
+  });
+};
+
+describe('PositionCreationModal', () => {
+  beforeEach(() => {
+    positions = [];
+    pickFolder = vi.fn(async () => ['E:/Projects/freight-lab']);
+    analyze = vi.fn(async () => ({ ok: true, data: analysisOf() }));
+    create = vi.fn(async () => ({
+      ok: true,
+      data: rosterPosition({ name: 'freight-lab', displayName: '货代实验室', description: 'd' }),
+    }));
+    refresh = vi.fn(async () => undefined);
+  });
+  afterEach(() => cleanup());
+
+  it('analyses the picked directory at once: profile shown, no AI button when the files spoke', async () => {
+    await openAndPick();
+    expect(analyze).toHaveBeenCalledWith({ dir: 'E:/Projects/freight-lab', deep: false });
+    expect(screen.getByTestId('position-creation-dir').textContent).toContain('E:/Projects/freight-lab');
+    expect(screen.getByTestId('position-creation-profile').textContent).toContain('freight-lab');
+    expect(screen.getByTestId('position-creation-profile').textContent).toContain('报价表自动解析与核价');
+    expect(screen.queryByTestId('position-creation-ai')).toBeNull();
+  });
+
+  it('offers the deep AI analysis exactly when the files said nothing, and keeps its answer marked', async () => {
+    const empty = analysisOf({
+      displayNameCandidates: ['freight-lab'],
+      description: 'freight-lab 项目常设岗位',
+    });
+    empty.profile = {
+      directory: 'E:/tmp/scratch',
+      projectName: 'scratch',
+      goal: '',
+      techStack: [],
+      constraints: [],
+      sources: [],
+      empty: true,
+    };
+    pickFolder = vi.fn(async () => ['E:/tmp/scratch']);
+    const deep = analysisOf(
+      {
+        displayNameCandidates: ['空仓分析岗', 'scratch'],
+        description: 'AI 给出的职责描述；涉及 scratch 相关任务时交给它',
+      },
+      true
+    );
+    deep.profile = { ...deep.profile, empty: false };
+    let deepAsked = false;
+    analyze = vi.fn(async () => (deepAsked ? { ok: true, data: deep } : { ok: true, data: empty }));
+    await openAndPick();
+    expect(screen.getByTestId('position-creation-ai')).toBeDefined();
+
+    deepAsked = true;
+    fireEvent.click(screen.getByTestId('position-creation-ai'));
+    await waitFor(() => {
+      expect(screen.getByTestId('position-creation-profile').textContent).toContain('positions.wizard.aiUsed');
+    });
+    expect(analyze).toHaveBeenLastCalledWith({ dir: 'E:/tmp/scratch', deep: true });
+  });
+
+  it('reviews the proposal: candidates one click, the identity dot following the id', async () => {
+    await openAndPick();
+    fireEvent.click(screen.getByTestId('position-creation-next'));
+    expect(screen.getByTestId('position-creation-id')).toHaveValue('freight-lab');
+    expect(screen.getByTestId('position-creation-name')).toHaveValue('报价表自动解析');
+    expect(screen.getByTestId('position-creation-color')).toBeDefined();
+
+    fireEvent.click(screen.getByTestId('position-creation-candidate-1'));
+    expect(screen.getByTestId('position-creation-name')).toHaveValue('freight-lab');
+    expect(screen.queryByTestId('position-creation-overlap')).toBeNull();
+  });
+
+  it('blocks creation on an invalid id', async () => {
+    await openAndPick();
+    fireEvent.click(screen.getByTestId('position-creation-next'));
+    fireEvent.change(screen.getByTestId('position-creation-id'), { target: { value: '货代' } });
+    expect(screen.getByTestId('position-creation-create')).toBeDisabled();
+  });
+
+  it('red-flags a roster overlap and holds Create until the deliberate confirmation', async () => {
+    positions = [
+      rosterPosition({
+        name: 'freight-lab',
+        displayName: '报价表自动解析',
+        description: '完全不同的描述',
+        projectRoot: 'E:/Projects/freight-lab',
+      }),
+    ];
+    await openAndPick();
+    fireEvent.click(screen.getByTestId('position-creation-next'));
+    const banner = screen.getByTestId('position-creation-overlap');
+    expect(banner.textContent).toContain('报价表自动解析'); // the overlapping position named
+    expect(screen.getByTestId('position-creation-create')).toBeDisabled();
+
+    fireEvent.click(screen.getByTestId('position-creation-overlap-force'));
+    expect(screen.getByTestId('position-creation-create')).not.toBeDisabled();
+  });
+
+  it('creates on confirm, refreshes the roster and closes', async () => {
+    await openAndPick();
+    fireEvent.click(screen.getByTestId('position-creation-next'));
+    fireEvent.click(screen.getByTestId('position-creation-create'));
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ id: 'freight-lab', displayName: '报价表自动解析' }));
+    await waitFor(() => {
+      expect(refresh).toHaveBeenCalled();
+    });
+  });
+
+  it('shows the failure and stays open when the write is refused', async () => {
+    create = vi.fn(async () => ({ ok: false, error: 'A library file of that id already exists — pick another id' }));
+    await openAndPick();
+    fireEvent.click(screen.getByTestId('position-creation-next'));
+    fireEvent.click(screen.getByTestId('position-creation-create'));
+    await waitFor(() => {
+      expect(screen.getByTestId('position-creation-error').textContent).toContain('already exists');
+    });
+  });
+});

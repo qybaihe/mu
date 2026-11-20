@@ -6,9 +6,11 @@
 
 /**
  * The sidebar's position roster as it stands in the Sider: the rows the library
- * defines, the fold that persists, and a row's click asking the open flow to
- * start (or reuse) that position's conversation. The data parsing and the open
- * flow itself live in their own tests; this is the section between them.
+ * defines, the fold that persists, the header's create-wizard button — kept
+ * even when the library is empty, an empty roster being exactly when the
+ * wizard matters — and a row's click asking the open flow to start (or reuse)
+ * that position's conversation. The data parsing and the open flow itself
+ * live in their own tests; this is the section between them.
  */
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -35,6 +37,11 @@ vi.mock('@renderer/pages/positions/openPosition', () => ({
 }));
 vi.mock('@renderer/pages/positions/openSupervisor', () => ({
   useOpenSupervisor: () => openSupervisor,
+}));
+// The wizard modal has its own test; here it stands as a stub so the section
+// under test renders without the theme provider it would pull in.
+vi.mock('@renderer/pages/positions/PositionCreationModal', () => ({
+  default: () => null,
 }));
 import SiderPositionsGroup from '@renderer/components/layout/Sider/SiderNav/SiderPositionsGroup';
 
@@ -64,10 +71,13 @@ describe('SiderPositionsGroup', () => {
     expect(['货代', 'video-lab']).toEqual([row('forwarder'), row('video-lab')].map((r) => r.textContent?.trim()));
   });
 
-  it('renders nothing when the library has no positions', () => {
+  it('keeps the section header with its create button when the library is empty', () => {
     positions = [];
-    const { container } = render(<SiderPositionsGroup />);
-    expect(container).toBeEmptyDOMElement();
+    render(<SiderPositionsGroup />);
+    expect(screen.getByTestId('sider-positions')).toBeDefined();
+    expect(screen.getByTestId('sider-positions-create')).toBeDefined();
+    expect(screen.getByTestId('sider-positions-empty')).toBeDefined();
+    expect(screen.queryByTestId('sider-position-forwarder')).toBeNull();
   });
 
   it('fixes the supervisor row at the top, above the library’s rows', () => {

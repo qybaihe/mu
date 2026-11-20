@@ -3,5 +3,46 @@
   "rowA11y": "与 {name} 对话",
   "noAssistant": "没有可用的助手，无法开启岗位会话",
   "prepareFailed": "岗位工作区准备失败",
-  "openFailed": "岗位会话开启失败"
+  "openFailed": "岗位会话开启失败",
+  "wizard": {
+    "entry": "新建岗位",
+    "title": "新建岗位",
+    "stepPick": "第 1 步 · 选择项目目录",
+    "stepReview": "第 2 步 · 确认岗位选项",
+    "pick": "选择目录…",
+    "repick": "重选目录",
+    "pickHint": "从项目目录创建：先分析项目文件，再提出岗位选项",
+    "analyzing": "正在分析项目文件…",
+    "analyzeFailed": "读取项目失败：{error}",
+    "emptyProfile": "未在该目录发现可用信息，可改用 AI 深度分析",
+    "aiAnalyze": "AI 深度分析",
+    "aiUsed": "画像由 AI 深度分析生成（未经人工核对）",
+    "aiFailed": "AI 深度分析失败：{{error}}",
+    "next": "下一步",
+    "back": "返回",
+    "idLabel": "岗位 ID（英文小写，名册内部键）",
+    "nameLabel": "中文名（名册显示名）",
+    "nameCandidates": "候选：",
+    "descLabel": "职责描述（一句话，归属判据参考）",
+    "bodyLabel": "说明书正文（含项目根行，可编辑）",
+    "colorPreview": "身份色预览（由 ID 派生）",
+    "invalidId": "ID 只能是小写字母、数字与连字符，且以字母或数字开头",
+    "overlapTitle": "与现有岗位重合，建议不新建（去重铁律）",
+    "overlapWith": "与「{{name}}」重合",
+    "overlapForce": "已知晓重合，仍要创建",
+    "create": "创建岗位",
+    "created": "已创建「{{name}}」，名册即将显示",
+    "emptyRoster": "名册为空，点上方 + 新建第一个岗位",
+    "profile": {
+      "goal": "当前目标",
+      "stack": "技术栈",
+      "constraint": "约束"
+    },
+    "overlapReason": {
+      "id": "同 ID",
+      "name": "同名称",
+      "project-root": "同项目根",
+      "description": "描述高度相似"
+    }
+  }
 }

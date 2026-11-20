@@ -3,5 +3,46 @@
   "rowA11y": "與 {name} 對話",
   "noAssistant": "沒有可用的助理，無法開啟崗位會話",
   "prepareFailed": "崗位工作區準備失敗",
-  "openFailed": "崗位會話開啟失敗"
+  "openFailed": "崗位會話開啟失敗",
+  "wizard": {
+    "entry": "新建崗位",
+    "title": "新建崗位",
+    "stepPick": "第 1 步 · 選擇專案目錄",
+    "stepReview": "第 2 步 · 確認崗位選項",
+    "pick": "選擇目錄…",
+    "repick": "重選目錄",
+    "pickHint": "從專案目錄建立：先分析專案檔案，再提出崗位選項",
+    "analyzing": "正在分析專案檔案…",
+    "analyzeFailed": "讀取專案失敗：{error}",
+    "emptyProfile": "未在該目錄發現可用資訊，可改用 AI 深度分析",
+    "aiAnalyze": "AI 深度分析",
+    "aiUsed": "畫像由 AI 深度分析產生（未經人工核對）",
+    "aiFailed": "AI 深度分析失敗：{{error}}",
+    "next": "下一步",
+    "back": "返回",
+    "idLabel": "崗位 ID（英文小寫，名冊內部鍵）",
+    "nameLabel": "中文名（名冊顯示名）",
+    "nameCandidates": "候選：",
+    "descLabel": "職責描述（一句話，歸屬判據參考）",
+    "bodyLabel": "說明書正文（含專案根行，可編輯）",
+    "colorPreview": "身份色預覽（由 ID 衍生）",
+    "invalidId": "ID 只能是小寫字母、數字與連字號，且以字母或數字開頭",
+    "overlapTitle": "與現有崗位重合，建議不新建（去重鐵律）",
+    "overlapWith": "與「{{name}}」重合",
+    "overlapForce": "已知曉重合，仍要建立",
+    "create": "建立崗位",
+    "created": "已建立「{{name}}」，名冊即將顯示",
+    "emptyRoster": "名冊為空，點上方 + 新建第一個崗位",
+    "profile": {
+      "goal": "當前目標",
+      "stack": "技術棧",
+      "constraint": "約束"
+    },
+    "overlapReason": {
+      "id": "同 ID",
+      "name": "同名稱",
+      "project-root": "同專案根",
+      "description": "描述高度相似"
+    }
+  }
 }

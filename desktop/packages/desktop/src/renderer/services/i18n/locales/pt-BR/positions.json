@@ -3,5 +3,46 @@
   "rowA11y": "Conversar com {name}",
   "noAssistant": "Nenhum assistente disponível para iniciar uma conversa de posição",
   "prepareFailed": "Falha ao preparar o espaço de trabalho da posição",
-  "openFailed": "Falha ao abrir a conversa da posição"
+  "openFailed": "Falha ao abrir a conversa da posição",
+  "wizard": {
+    "entry": "Nova posição",
+    "title": "Nova posição",
+    "stepPick": "Etapa 1 · Escolher a pasta do projeto",
+    "stepReview": "Etapa 2 · Revisar a proposta",
+    "pick": "Escolher pasta…",
+    "repick": "Trocar pasta",
+    "pickHint": "Criar de uma pasta de projeto: os arquivos são lidos primeiro, depois a proposta",
+    "analyzing": "Lendo os arquivos do projeto…",
+    "analyzeFailed": "Falha ao ler o projeto: {error}",
+    "emptyProfile": "Nada aproveitável nessa pasta — tente a análise profunda com IA",
+    "aiAnalyze": "Análise profunda com IA",
+    "aiUsed": "Perfil gerado pela análise profunda com IA (sem revisão humana)",
+    "aiFailed": "A análise profunda com IA falhou: {{error}}",
+    "next": "Avançar",
+    "back": "Voltar",
+    "idLabel": "Id da posição (slug minúsculo, a chave do registro)",
+    "nameLabel": "Nome exibido (o que o registro mostra)",
+    "nameCandidates": "Candidatos:",
+    "descLabel": "Responsabilidade (uma linha, a referência de atribuição)",
+    "bodyLabel": "Corpo das instruções (contém a raiz do projeto; editável)",
+    "colorPreview": "Prévia da cor de identidade (derivada do id)",
+    "invalidId": "O id usa apenas minúsculas, dígitos e hífens, começando por letra ou dígito",
+    "overlapTitle": "Sobrepõe uma posição existente — criar mesmo assim é desencorajado",
+    "overlapWith": "sobrepõe «{{name}}»",
+    "overlapForce": "Sei da sobreposição; criar mesmo assim",
+    "create": "Criar posição",
+    "created": "«{{name}}» criada — o registro a exibirá em instantes",
+    "emptyRoster": "O registro está vazio — use o + acima para criar a primeira posição",
+    "profile": {
+      "goal": "Objetivo atual",
+      "stack": "Stack",
+      "constraint": "Restrição"
+    },
+    "overlapReason": {
+      "id": "mesmo id",
+      "name": "mesmo nome",
+      "project-root": "mesma raiz de projeto",
+      "description": "descrição muito parecida"
+    }
+  }
 }

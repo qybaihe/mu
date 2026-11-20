@@ -3,5 +3,46 @@
   "rowA11y": "Mit {name} chatten",
   "noAssistant": "Kein verfügbarer Assistent, um ein Positionsgespräch zu starten",
   "prepareFailed": "Arbeitsbereich der Position konnte nicht vorbereitet werden",
-  "openFailed": "Positionsgespräch konnte nicht geöffnet werden"
+  "openFailed": "Positionsgespräch konnte nicht geöffnet werden",
+  "wizard": {
+    "entry": "Neue Position",
+    "title": "Neue Position",
+    "stepPick": "Schritt 1 · Projektordner wählen",
+    "stepReview": "Schritt 2 · Vorschlag prüfen",
+    "pick": "Ordner wählen…",
+    "repick": "Ordner wechseln",
+    "pickHint": "Aus einem Projektordner anlegen: erst werden die Dateien gelesen, dann der Vorschlag",
+    "analyzing": "Projektdateien werden gelesen…",
+    "analyzeFailed": "Lesen des Projekts fehlgeschlagen: {error}",
+    "emptyProfile": "Nichts Verwertbares in diesem Ordner — die tiefe KI-Analyse versuchen",
+    "aiAnalyze": "Tiefe KI-Analyse",
+    "aiUsed": "Profil aus der tiefen KI-Analyse (nicht manuell geprüft)",
+    "aiFailed": "Die tiefe KI-Analyse ist fehlgeschlagen: {{error}}",
+    "next": "Weiter",
+    "back": "Zurück",
+    "idLabel": "Positions-ID (Kleinbuchstaben-Kürzel, der Namenschlüssel)",
+    "nameLabel": "Anzeigename (was das Namensverzeichnis zeigt)",
+    "nameCandidates": "Vorschläge:",
+    "descLabel": "Verantwortung (eine Zeile, die Referenz für die Zuordnung)",
+    "bodyLabel": "Anweisungstext (enthält die Projektwurzel; editierbar)",
+    "colorPreview": "Identitätsfarbe-Vorschau (aus der ID abgeleitet)",
+    "invalidId": "Die ID besteht nur aus Kleinbuchstaben, Ziffern und Bindestrichen und beginnt mit einem Buchstaben oder einer Ziffer",
+    "overlapTitle": "Überschneidung mit einer bestehenden Position — Neuanlage wird abgeraten",
+    "overlapWith": "überschneidet „{{name}}“",
+    "overlapForce": "Ich kenne die Überschneidung; trotzdem anlegen",
+    "create": "Position anlegen",
+    "created": "„{{name}}“ angelegt — das Verzeichnis übernimmt sie in Kürze",
+    "emptyRoster": "Das Verzeichnis ist leer — oben mit + die erste Position anlegen",
+    "profile": {
+      "goal": "Aktuelles Ziel",
+      "stack": "Stack",
+      "constraint": "Randbedingung"
+    },
+    "overlapReason": {
+      "id": "gleiche ID",
+      "name": "gleicher Name",
+      "project-root": "gleiche Projektwurzel",
+      "description": "sehr ähnliche Beschreibung"
+    }
+  }
 }

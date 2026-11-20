@@ -61,6 +61,11 @@ vi.mock('@renderer/pages/positions/openPosition', () => ({
 vi.mock('@renderer/pages/positions/openSupervisor', () => ({
   useOpenSupervisor: () => openSupervisor,
 }));
+// The creation wizard modal has its own test; a stub keeps this page's tests
+// free of the theme provider it would pull in.
+vi.mock('@renderer/pages/positions/PositionCreationModal', () => ({
+  default: () => null,
+}));
 // Arco's real portals are motion-driven and unreliable under jsdom; the two
 // popup shells stand in as plain toggles so the flows (open, edit, confirm)
 // stay testable. Everything else comes from the real library.

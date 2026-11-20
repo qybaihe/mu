@@ -3,5 +3,46 @@
   "rowA11y": "{name} とチャット",
   "noAssistant": "利用可能なアシスタントがないため、ポジション会話を開始できません",
   "prepareFailed": "ポジションのワークスペース準備に失敗しました",
-  "openFailed": "ポジション会話を開けませんでした"
+  "openFailed": "ポジション会話を開けませんでした",
+  "wizard": {
+    "entry": "ポジションを作成",
+    "title": "ポジションを作成",
+    "stepPick": "ステップ 1 · プロジェクトフォルダーを選択",
+    "stepReview": "ステップ 2 · 提案を確認",
+    "pick": "フォルダーを選択…",
+    "repick": "フォルダーを変更",
+    "pickHint": "プロジェクトフォルダーから作成：まずファイルを読み、それから提案します",
+    "analyzing": "プロジェクトファイルを読み取り中…",
+    "analyzeFailed": "プロジェクトの読み取りに失敗しました：{error}",
+    "emptyProfile": "このフォルダーから有用な情報が得られませんでした。AI 詳細分析を試せます",
+    "aiAnalyze": "AI 詳細分析",
+    "aiUsed": "プロフィールは AI 詳細分析による生成です（人手未確認）",
+    "aiFailed": "AI 詳細分析に失敗しました：{{error}}",
+    "next": "次へ",
+    "back": "戻る",
+    "idLabel": "ポジション ID（小文字スラグ、名簿の内部キー）",
+    "nameLabel": "表示名（名簿に表示される名前）",
+    "nameCandidates": "候補：",
+    "descLabel": "職責（一行、割り当て判断の参照）",
+    "bodyLabel": "指示本文（プロジェクトルート行を含む、編集可）",
+    "colorPreview": "識別色プレビュー（ID から生成）",
+    "invalidId": "ID は小文字・数字・ハイフンのみで、字母または数字で始めてください",
+    "overlapTitle": "既存のポジションと重複しています。作成はお勧めしません",
+    "overlapWith": "「{{name}}」と重複",
+    "overlapForce": "重複を了解した上で作成する",
+    "create": "作成",
+    "created": "「{{name}}」を作成しました。名簿にまもなく表示されます",
+    "emptyRoster": "名簿は空です。上の + から最初のポジションを作成してください",
+    "profile": {
+      "goal": "現在の目標",
+      "stack": "技術スタック",
+      "constraint": "制約"
+    },
+    "overlapReason": {
+      "id": "同じ ID",
+      "name": "同じ名前",
+      "project-root": "同じプロジェクトルート",
+      "description": "記述が酷似"
+    }
+  }
 }

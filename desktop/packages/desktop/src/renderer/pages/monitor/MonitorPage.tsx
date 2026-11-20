@@ -18,7 +18,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Button, Message, Popconfirm, Popover } from '@arco-design/web-react';
-import { Delete } from '@icon-park/react';
+import { Delete, Plus } from '@icon-park/react';
 import classNames from 'classnames';
 import { positionBridge } from '@/common/chat/team/positions/positionBridge';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
@@ -33,6 +33,7 @@ import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
 import { useOpenPosition } from '@renderer/pages/positions/openPosition';
 import { useOpenSupervisor } from '@renderer/pages/positions/openSupervisor';
 import { refreshPositions } from '@renderer/pages/positions/usePositionRoster';
+import PositionCreationModal from '@renderer/pages/positions/PositionCreationModal';
 import { refreshTeamsList } from '@renderer/pages/team/core/teamStore';
 import { rowButtonProps } from '@renderer/utils/ui/rowButton';
 import TeamLifecycleEditor from './TeamLifecycleEditor';
@@ -374,6 +375,7 @@ const MonitorPage: React.FC = () => {
   const [retiredOpen, setRetiredOpen] = useState(false);
   const [deletedTeamsOpen, setDeletedTeamsOpen] = useState(false);
   const [deletedPositionsOpen, setDeletedPositionsOpen] = useState(false);
+  const [creatingPosition, setCreatingPosition] = useState(false);
   const [trashed, setTrashed] = useState<readonly TrashedPosition[]>([]);
   const [now, setNow] = useState(() => Date.now());
 
@@ -515,6 +517,15 @@ const MonitorPage: React.FC = () => {
         <section data-testid='monitor-positions-wall' className='flex flex-col gap-12px'>
           <div className='flex items-center gap-10px'>
             <span className='text-13px font-500 text-t-secondary'>{t('monitor.positions.title')}</span>
+            {/* The creation wizard's monitor entry, the same dialog the sidebar's + opens. */}
+            <Button
+              data-testid='monitor-positions-create'
+              size='mini'
+              onClick={() => setCreatingPosition(true)}
+              icon={<Plus theme='outline' size='12' fill='currentColor' style={{ lineHeight: 0 }} />}
+            >
+              {t('positions.wizard.entry')}
+            </Button>
             {trashed.length > 0 ? (
               <RestoreFoldHeader
                 testId='monitor-positions-deleted-toggle'
@@ -637,6 +648,7 @@ const MonitorPage: React.FC = () => {
             </div>
           ) : null}
         </section>
+        <PositionCreationModal open={creatingPosition} onClose={() => setCreatingPosition(false)} />
       </div>
     </div>
   );

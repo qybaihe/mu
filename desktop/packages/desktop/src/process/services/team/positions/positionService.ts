@@ -6,8 +6,11 @@
 
 /**
  * The position roster on the main-process side: reading the user's position
- * library (`~/.mu/agent/agents`, read-only — never written) and preparing each
- * position's dedicated workspace under the app's data dir. The workspace's
+ * library (`~/.mu/agent/agents`) and preparing each position's dedicated
+ * workspace under the app's data dir. The library is the user's: the app's
+ * one write path is the creation wizard, which only ever adds a new file —
+ * `createPositionIn` refuses an id that already exists as a file or a
+ * position, and nothing else in the app writes there. The workspace's
  * AGENTS.override.md is the injection seam the harness reads at a session's
  * start (the highest-priority context file of the working directory), so it is
  * regenerated from the library whenever it changed and rewritten before a
@@ -19,6 +22,16 @@ import { join } from 'node:path';
 import { getPlatformServices } from '@/common/platform';
 import { KyrnError } from '@/common/kyrn/errors';
 import { shippedTeamsScript } from '@process/services/team/supervisor/teamScripts';
+import {
+  analyzeProjectProfile,
+  buildPositionDocument,
+  buildPositionDraft,
+  FILE_READ_CHARS,
+  POSITION_ID_RE,
+  PROJECT_CONTEXT_FILES,
+  type PositionDraft,
+  type ProjectProfile,
+} from '@/common/chat/team/positions/positionProjectProfile';
 import {
   buildPositionOverrideContent,
   parsePositionDocument,
@@ -147,6 +160,102 @@ export async function ensurePositionWorkspaceIn(
 
 /** The user's roster, from the user's position library. */
 export const listPositions = (): Promise<PositionInfo[]> => scanPositionLibrary(POSITION_LIBRARY_DIR);
+
+// --- the creation wizard's analysis and write ---
+
+/**
+ * The wizard's heuristic analysis of one picked directory: the first screen
+ * of each context file (AGENTS.md, HANDOFF.md, README.md, package.json) plus
+ * the top-level entries, read into a profile and the wizard's draft. No
+ * model calls, no walking — seconds at most. A directory that does not
+ * exist answers an empty profile (the wizard's cue for the AI deep
+ * analysis) rather than an error: the picker just gave it to us.
+ */
+export async function analyzeProjectDirectory(directory: string): Promise<{
+  profile: ProjectProfile;
+  draft: PositionDraft;
+}> {
+  const files: Partial<Record<(typeof PROJECT_CONTEXT_FILES)[number], string>> = {};
+  await Promise.all(
+    PROJECT_CONTEXT_FILES.map(async (name) => {
+      try {
+        files[name] = (await readFile(join(directory, name), 'utf8')).slice(0, FILE_READ_CHARS);
+      } catch {
+        // Absent or unreadable: not a contributor, the heuristic says so by its absence.
+      }
+    })
+  );
+  let entries: string[] = [];
+  try {
+    entries = await readdir(directory);
+  } catch {
+    // Gone between pick and read: the empty profile answers honestly.
+  }
+  const profile = analyzeProjectProfile({ directory, files, entries });
+  return { profile, draft: buildPositionDraft(profile) };
+}
+
+/** What the wizard's create step asks for; the body carries the project-root line. */
+export type CreatePositionParams = {
+  id: string;
+  displayName: string;
+  description: string;
+  body: string;
+};
+
+/** True when the file exists; anything but a clean miss rethrows. */
+async function fileExists(file: string): Promise<boolean> {
+  try {
+    await stat(file);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    return false;
+  }
+}
+
+/**
+ * The wizard's write: one new library file, added and nothing else. The safe
+ * semantics are hard refusals, not overwrites — an id that already exists as
+ * a file or as a position (another session may have created it since the
+ * wizard last looked) is a conflict; a non-slug id or a multi-line name or
+ * description is invalid. The document is parsed back before the write, so
+ * the library only ever gains files it can read again. The scan cache is
+ * dropped so the roster's next poll (30s, or the wizard's explicit refresh)
+ * sees the new position at once.
+ */
+export async function createPositionIn(
+  options: { libraryDir: string },
+  params: CreatePositionParams
+): Promise<PositionInfo> {
+  const id = params.id.trim();
+  if (!POSITION_ID_RE.test(id))
+    throw new KyrnError('invalid', 'A position id is a lowercase slug (letters, digits, dashes)', { id });
+  const displayName = params.displayName.trim();
+  const description = params.description.trim();
+  if (!displayName || /[\r\n]/.test(displayName))
+    throw new KyrnError('invalid', 'A display name is one non-empty line', { displayName });
+  if (!description || /[\r\n]/.test(description))
+    throw new KyrnError('invalid', 'A description is one non-empty line', { description });
+
+  await mkdir(options.libraryDir, { recursive: true });
+  const file = join(options.libraryDir, `${id}.md`);
+  if (await fileExists(file))
+    throw new KyrnError('invalid', 'A library file of that id already exists — pick another id', { file: `${id}.md` });
+  if ((await scanPositionLibrary(options.libraryDir)).some((position) => position.name === id))
+    throw new KyrnError('invalid', 'A position of that id already exists — pick another id', { id });
+
+  const content = buildPositionDocument(params);
+  const parsed = parsePositionDocument(`${id}.md`, content);
+  if (!parsed) throw new KyrnError('invalid', 'The generated document does not parse as a position', { id });
+  await writeFile(file, content, 'utf8');
+  cacheByDir.delete(options.libraryDir); // the write moves the dir mtime; this keeps even same-ms honest
+  return parsed;
+}
+
+/** The wizard's write, under the user's library. */
+export const createPosition = (params: CreatePositionParams): Promise<PositionInfo> =>
+  createPositionIn({ libraryDir: POSITION_LIBRARY_DIR }, params);
 
 // --- the delete quarantine (.trash) ---
 

@@ -3,5 +3,46 @@
   "rowA11y": "Chat with {name}",
   "noAssistant": "No available assistant to start a position conversation",
   "prepareFailed": "Failed to prepare the position workspace",
-  "openFailed": "Failed to open the position conversation"
+  "openFailed": "Failed to open the position conversation",
+  "wizard": {
+    "entry": "New position",
+    "title": "New position",
+    "stepPick": "Step 1 · Pick the project folder",
+    "stepReview": "Step 2 · Review the proposal",
+    "pick": "Choose folder…",
+    "repick": "Change folder",
+    "pickHint": "Create from a project folder: its files are read first, then the proposal",
+    "analyzing": "Reading the project files…",
+    "analyzeFailed": "Reading the project failed: {error}",
+    "emptyProfile": "Nothing usable in that folder — try the deep AI analysis",
+    "aiAnalyze": "Deep AI analysis",
+    "aiUsed": "Profile produced by the deep AI analysis (not human-checked)",
+    "aiFailed": "The deep AI analysis failed: {{error}}",
+    "next": "Next",
+    "back": "Back",
+    "idLabel": "Position id (lowercase slug, the roster key)",
+    "nameLabel": "Display name (what the roster shows)",
+    "nameCandidates": "Candidates:",
+    "descLabel": "Responsibility (one line, the ownership reference)",
+    "bodyLabel": "Instructions body (holds the project root line; editable)",
+    "colorPreview": "Identity colour preview (derived from the id)",
+    "invalidId": "The id is lowercase letters, digits and dashes only, starting with a letter or digit",
+    "overlapTitle": "Overlaps an existing position — creating anyway is discouraged",
+    "overlapWith": "overlaps “{{name}}”",
+    "overlapForce": "I know about the overlap; create anyway",
+    "create": "Create position",
+    "created": "Created “{{name}}” — the roster picks it up shortly",
+    "emptyRoster": "The roster is empty — use the + above to create the first position",
+    "profile": {
+      "goal": "Current goal",
+      "stack": "Stack",
+      "constraint": "Constraint"
+    },
+    "overlapReason": {
+      "id": "same id",
+      "name": "same name",
+      "project-root": "same project root",
+      "description": "very similar description"
+    }
+  }
 }

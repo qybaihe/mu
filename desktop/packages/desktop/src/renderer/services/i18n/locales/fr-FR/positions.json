@@ -3,5 +3,46 @@
   "rowA11y": "Discuter avec {name}",
   "noAssistant": "Aucun assistant disponible pour démarrer une conversation de poste",
   "prepareFailed": "Échec de la préparation de l’espace de travail du poste",
-  "openFailed": "Échec de l’ouverture de la conversation du poste"
+  "openFailed": "Échec de l’ouverture de la conversation du poste",
+  "wizard": {
+    "entry": "Nouvelle position",
+    "title": "Nouvelle position",
+    "stepPick": "Étape 1 · Choisir le dossier projet",
+    "stepReview": "Étape 2 · Vérifier la proposition",
+    "pick": "Choisir un dossier…",
+    "repick": "Changer de dossier",
+    "pickHint": "Créer depuis un dossier projet : ses fichiers sont lus d’abord, puis la proposition",
+    "analyzing": "Lecture des fichiers du projet…",
+    "analyzeFailed": "La lecture du projet a échoué : {error}",
+    "emptyProfile": "Rien d’utilisable dans ce dossier — essayez l’analyse IA approfondie",
+    "aiAnalyze": "Analyse IA approfondie",
+    "aiUsed": "Profil issu de l’analyse IA approfondie (non vérifié à la main)",
+    "aiFailed": "L’analyse IA approfondie a échoué : {{error}}",
+    "next": "Suivant",
+    "back": "Retour",
+    "idLabel": "Identifiant (slug minuscule, la clé du répertoire)",
+    "nameLabel": "Nom affiché (ce que montre le répertoire)",
+    "nameCandidates": "Propositions :",
+    "descLabel": "Responsabilité (une ligne, la référence d’attribution)",
+    "bodyLabel": "Corps des instructions (contient la racine du projet ; modifiable)",
+    "colorPreview": "Aperçu de la couleur d’identité (dérivée de l’identifiant)",
+    "invalidId": "L’identifiant ne contient que des minuscules, chiffres et tirets, et commence par une lettre ou un chiffre",
+    "overlapTitle": "Chevauche une position existante — la création est déconseillée",
+    "overlapWith": "chevauche « {{name}} »",
+    "overlapForce": "Je connais le chevauchement ; créer quand même",
+    "create": "Créer la position",
+    "created": "« {{name}} » créée — le répertoire l’affiche sous peu",
+    "emptyRoster": "Le répertoire est vide — utilisez le + ci-dessus pour créer la première position",
+    "profile": {
+      "goal": "Objectif actuel",
+      "stack": "Pile",
+      "constraint": "Contrainte"
+    },
+    "overlapReason": {
+      "id": "même identifiant",
+      "name": "même nom",
+      "project-root": "même racine de projet",
+      "description": "descriptions très proches"
+    }
+  }
 }

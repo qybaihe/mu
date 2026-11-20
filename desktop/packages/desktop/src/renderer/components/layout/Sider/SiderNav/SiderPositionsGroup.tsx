@@ -11,12 +11,14 @@
  * temporary teams. A section of its own at the top of the conversation list,
  * foldable like the list's sections and folded the same way across reloads.
  * The library's rows follow the library's order; the desktop adds nothing
- * below them.
+ * below them. The section header's + button opens the creation wizard, and
+ * the header stays (with the button, no rows) when the library is empty —
+ * an empty roster is exactly when creating the first position matters.
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@arco-design/web-react';
-import { Robot, Right, Connect } from '@icon-park/react';
+import { Robot, Right, Connect, Plus } from '@icon-park/react';
 import classNames from 'classnames';
 import { findPositionConversationId, type PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import { positionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
@@ -27,6 +29,7 @@ import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
 import { useOpenPosition } from '@renderer/pages/positions/openPosition';
 import { useOpenSupervisor } from '@renderer/pages/positions/openSupervisor';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
+import PositionCreationModal from '@renderer/pages/positions/PositionCreationModal';
 import { rowButtonProps } from '@renderer/utils/ui/rowButton';
 
 const FOLDED_KEY = 'sider-positions-folded';
@@ -119,7 +122,8 @@ const SupervisorRow: React.FC<{ conversationId: string | undefined; onOpen: () =
   );
 };
 
-/** The roster section: a fold of positions, each row opening that position's 1:1 conversation. */
+/** The roster section: a fold of positions, each row opening that position's 1:1 conversation — plus
+ *  the section header's + button, the sidebar's entry to the creation wizard. */
 const SiderPositionsGroup: React.FC<{ onSessionClick?: () => void }> = ({ onSessionClick }) => {
   const { t } = useTranslation();
   const { positions } = usePositionRoster();
@@ -131,6 +135,7 @@ const SiderPositionsGroup: React.FC<{ onSessionClick?: () => void }> = ({ onSess
   const openPosition = useOpenPosition(conversations, primaryAssistantId);
   const openSupervisor = useOpenSupervisor(conversations, primaryAssistantId);
   const [folded, setFolded] = useState<boolean>(readFolded);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     try {
@@ -139,8 +144,6 @@ const SiderPositionsGroup: React.FC<{ onSessionClick?: () => void }> = ({ onSess
       // The fold simply does not persist; the section still works.
     }
   }, [folded]);
-
-  if (positions.length === 0) return null;
 
   const handleOpen = (position: PositionInfo) => {
     openPosition(position);
@@ -170,6 +173,33 @@ const SiderPositionsGroup: React.FC<{ onSessionClick?: () => void }> = ({ onSess
         <span className='text-12px text-t-tertiary sider-section-title group-hover/label:text-t-secondary transition-colors font-[500] leading-none'>
           {t('positions.title')}
         </span>
+        <Tooltip content={t('positions.wizard.entry')} position='right' trigger='hover' unmountOnExit mini>
+          <span
+            role='button'
+            tabIndex={0}
+            aria-label={t('positions.wizard.entry')}
+            data-testid='sider-positions-create'
+            className='ms-auto me-8px size-18px rd-6px flex-center text-t-tertiary hover:text-t-primary hover:bg-fill-3 active:bg-fill-4 cursor-pointer shrink-0'
+            onClick={(event) => {
+              event.stopPropagation();
+              setCreating(true);
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter' && event.key !== ' ') return;
+              event.preventDefault();
+              event.stopPropagation();
+              setCreating(true);
+            }}
+          >
+            <Plus
+              theme='outline'
+              size='12'
+              fill='currentColor'
+              className='block leading-none'
+              style={{ lineHeight: 0 }}
+            />
+          </span>
+        </Tooltip>
         <span className='ms-2px flex items-center justify-center opacity-0 group-hover/label:opacity-100 transition-opacity text-t-tertiary shrink-0'>
           <Right
             theme='outline'
@@ -180,6 +210,14 @@ const SiderPositionsGroup: React.FC<{ onSessionClick?: () => void }> = ({ onSess
       </div>
       {folded ? null : (
         <div className='flex flex-col gap-1px pb-4px'>
+          {positions.length === 0 ? (
+            <div
+              data-testid='sider-positions-empty'
+              className='h-28px mx-8px ps-14px pe-8px flex items-center text-12px text-t-quaternary'
+            >
+              {t('positions.wizard.emptyRoster')}
+            </div>
+          ) : null}
           <SupervisorRow
             conversationId={findPositionConversationId(conversations, SUPERVISOR_POSITION_NAME)}
             onOpen={handleOpenSupervisor}
@@ -194,6 +232,7 @@ const SiderPositionsGroup: React.FC<{ onSessionClick?: () => void }> = ({ onSess
           ))}
         </div>
       )}
+      <PositionCreationModal open={creating} onClose={() => setCreating(false)} />
     </div>
   );
 };

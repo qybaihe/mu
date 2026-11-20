@@ -3,5 +3,46 @@
   "rowA11y": "Chatear con {name}",
   "noAssistant": "No hay asistente disponible para iniciar una conversación de puesto",
   "prepareFailed": "Error al preparar el espacio de trabajo del puesto",
-  "openFailed": "Error al abrir la conversación del puesto"
+  "openFailed": "Error al abrir la conversación del puesto",
+  "wizard": {
+    "entry": "Nueva posición",
+    "title": "Nueva posición",
+    "stepPick": "Paso 1 · Elegir la carpeta del proyecto",
+    "stepReview": "Paso 2 · Revisar la propuesta",
+    "pick": "Elegir carpeta…",
+    "repick": "Cambiar carpeta",
+    "pickHint": "Crear desde una carpeta de proyecto: primero se leen sus archivos, luego la propuesta",
+    "analyzing": "Leyendo los archivos del proyecto…",
+    "analyzeFailed": "Falló la lectura del proyecto: {error}",
+    "emptyProfile": "Nada aprovechable en esa carpeta: prueba el análisis profundo con IA",
+    "aiAnalyze": "Análisis profundo con IA",
+    "aiUsed": "Perfil generado por el análisis profundo con IA (sin revisión humana)",
+    "aiFailed": "El análisis profundo con IA falló: {{error}}",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "idLabel": "Id de posición (slug en minúsculas, la clave del registro)",
+    "nameLabel": "Nombre visible (lo que muestra el registro)",
+    "nameCandidates": "Candidatos:",
+    "descLabel": "Responsabilidad (una línea, la referencia de asignación)",
+    "bodyLabel": "Cuerpo de instrucciones (incluye la raíz del proyecto; editable)",
+    "colorPreview": "Vista previa del color de identidad (derivado del id)",
+    "invalidId": "El id solo lleva minúsculas, dígitos y guiones, y empieza por letra o dígito",
+    "overlapTitle": "Se solapa con una posición existente: se desaconseja crearla",
+    "overlapWith": "se solapa con «{{name}}»",
+    "overlapForce": "Conozco el solapamiento; crear de todos modos",
+    "create": "Crear posición",
+    "created": "«{{name}}» creada: el registro la mostrará enseguida",
+    "emptyRoster": "El registro está vacío: usa el + de arriba para crear la primera posición",
+    "profile": {
+      "goal": "Objetivo actual",
+      "stack": "Stack",
+      "constraint": "Restricción"
+    },
+    "overlapReason": {
+      "id": "mismo id",
+      "name": "mismo nombre",
+      "project-root": "misma raíz de proyecto",
+      "description": "descripción muy parecida"
+    }
+  }
 }

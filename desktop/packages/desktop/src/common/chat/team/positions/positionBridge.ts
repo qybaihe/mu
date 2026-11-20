@@ -14,10 +14,22 @@
 import { bridge } from '../../../platform/bridge';
 import type { KyrnResult } from '../../../kyrn/errors';
 import type { PositionInfo } from './positionLibraryCore';
+import type { PositionDraft, ProjectProfile } from './positionProjectProfile';
 import type { TrashedPosition } from './positionTrashCore';
 
 /** The position's workspace folder, and whether its injected rules file changed. */
 export type PositionWorkspaceResult = { workspace: string; changed: boolean };
+
+/** The wizard's analysis of one picked directory. */
+export type ProjectAnalysis = {
+  profile: ProjectProfile;
+  draft: PositionDraft;
+  /** True when a one-shot mu run produced this answer (the AI deep analysis). */
+  aiUsed: boolean;
+};
+
+/** What the wizard's create step writes; the body carries the project-root line. */
+export type CreatePositionParams = { id: string; displayName: string; description: string; body: string };
 
 export const positionBridge = {
   /** The roster, in library order; empty when the user has no position library. */
@@ -26,6 +38,16 @@ export const positionBridge = {
   ensureWorkspace: bridge.buildProvider<KyrnResult<PositionWorkspaceResult>, { name: string }>(
     'positions.ensure-workspace'
   ),
+  /**
+   * The creation wizard's analysis of a directory: heuristic (zero model
+   * calls) unless `deep`, which runs a one-shot mu analysis there instead —
+   * the wizard offers it when the heuristic found nothing.
+   */
+  analyzeProject: bridge.buildProvider<KyrnResult<ProjectAnalysis>, { dir: string; deep?: boolean }>(
+    'positions.analyze-project'
+  ),
+  /** The wizard's write: one new library file, added and nothing else. */
+  createPosition: bridge.buildProvider<KyrnResult<PositionInfo>, CreatePositionParams>('positions.create'),
   /**
    * The delete quarantine's manifest (also its lazy reconcile: grace-expired
    * entries are purged before the list answers), as the monitor lists it.

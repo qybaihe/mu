@@ -3,5 +3,46 @@
   "rowA11y": "{name} ile sohbet et",
   "noAssistant": "Pozisyon sohbetini başlatacak uygun asistan yok",
   "prepareFailed": "Pozisyon çalışma alanı hazırlanamadı",
-  "openFailed": "Pozisyon sohbeti açılamadı"
+  "openFailed": "Pozisyon sohbeti açılamadı",
+  "wizard": {
+    "entry": "Yeni pozisyon",
+    "title": "Yeni pozisyon",
+    "stepPick": "Adım 1 · Proje klasörünü seç",
+    "stepReview": "Adım 2 · Öneriyi gözden geçir",
+    "pick": "Klasör seç…",
+    "repick": "Klasörü değiştir",
+    "pickHint": "Bir proje klasöründen oluştur: önce dosyalar okunur, sonra öneri gelir",
+    "analyzing": "Proje dosyaları okunuyor…",
+    "analyzeFailed": "Proje okunamadı: {error}",
+    "emptyProfile": "Bu klasörde kullanılabilir bilgi yok — derin yapay zekâ analizini deneyin",
+    "aiAnalyze": "Derin yapay zekâ analizi",
+    "aiUsed": "Profil derin yapay zekâ analiziyle üretildi (insan denetimi yok)",
+    "aiFailed": "Derin yapay zekâ analizi başarısız: {{error}}",
+    "next": "İleri",
+    "back": "Geri",
+    "idLabel": "Pozisyon kimliği (küçük harf slug, listenin anahtarı)",
+    "nameLabel": "Görünen ad (listede gösterilen)",
+    "nameCandidates": "Adaylar:",
+    "descLabel": "Sorumluluk (tek satır, atıf referansı)",
+    "bodyLabel": "Yönerge metni (proje kök satırını içerir; düzenlenebilir)",
+    "colorPreview": "Kimlik rengi önizlemesi (kimlikten türetilir)",
+    "invalidId": "Kimlik yalnızca küçük harf, rakam ve tire içerir; harf veya rakamla başlar",
+    "overlapTitle": "Var olan bir pozisyonla çakışıyor — oluşturulması önerilmez",
+    "overlapWith": "«{{name}}» ile çakışıyor",
+    "overlapForce": "Çakışmayı biliyorum; yine de oluştur",
+    "create": "Pozisyon oluştur",
+    "created": "«{{name}}» oluşturuldu — liste kısa sürede gösterir",
+    "emptyRoster": "Liste boş — ilk pozisyonu yukarıdaki + ile oluşturun",
+    "profile": {
+      "goal": "Mevcut hedef",
+      "stack": "Yığın",
+      "constraint": "Kısıt"
+    },
+    "overlapReason": {
+      "id": "aynı kimlik",
+      "name": "aynı ad",
+      "project-root": "aynı proje kökü",
+      "description": "açıklamalar çok benzer"
+    }
+  }
 }

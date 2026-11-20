@@ -3,5 +3,46 @@
   "rowA11y": "{name} 과(와) 대화",
   "noAssistant": "사용 가능한 어시스턴트가 없어 포지션 대화를 시작할 수 없습니다",
   "prepareFailed": "포지션 작업 공간을 준비하지 못했습니다",
-  "openFailed": "포지션 대화를 열지 못했습니다"
+  "openFailed": "포지션 대화를 열지 못했습니다",
+  "wizard": {
+    "entry": "포지션 만들기",
+    "title": "포지션 만들기",
+    "stepPick": "1단계 · 프로젝트 폴더 선택",
+    "stepReview": "2단계 · 제안 검토",
+    "pick": "폴더 선택…",
+    "repick": "폴더 변경",
+    "pickHint": "프로젝트 폴더에서 만들기: 파일을 먼저 읽은 뒤 제안합니다",
+    "analyzing": "프로젝트 파일 읽는 중…",
+    "analyzeFailed": "프로젝트 읽기 실패: {error}",
+    "emptyProfile": "이 폴더에서 쓸 만한 정보를 찾지 못했습니다. AI 심층 분석을 시도해 보세요",
+    "aiAnalyze": "AI 심층 분석",
+    "aiUsed": "프로필은 AI 심층 분석으로 생성되었습니다 (사람이 검토하지 않음)",
+    "aiFailed": "AI 심층 분석 실패: {{error}}",
+    "next": "다음",
+    "back": "뒤로",
+    "idLabel": "포지션 ID (소문자 슬러그, 명부의 내부 키)",
+    "nameLabel": "표시 이름 (명부에 보이는 이름)",
+    "nameCandidates": "후보:",
+    "descLabel": "책임 (한 줄, 소속 판정 참조)",
+    "bodyLabel": "지침 본문 (프로젝트 루트 줄 포함, 편집 가능)",
+    "colorPreview": "정체성 색 미리보기 (ID에서 도출)",
+    "invalidId": "ID는 소문자·숫자·하이픈만 사용하고 문자나 숫자로 시작해야 합니다",
+    "overlapTitle": "기존 포지션과 겹칩니다. 새로 만들지 않기를 권합니다",
+    "overlapWith": "「{{name}}」와(과) 겹침",
+    "overlapForce": "겹침을 알고 있으며 그래도 만듭니다",
+    "create": "포지션 만들기",
+    "created": "「{{name}}」을(를) 만들었습니다. 명부에 곧 표시됩니다",
+    "emptyRoster": "명부가 비어 있습니다. 위의 + 로 첫 포지션을 만드세요",
+    "profile": {
+      "goal": "현재 목표",
+      "stack": "기술 스택",
+      "constraint": "제약"
+    },
+    "overlapReason": {
+      "id": "같은 ID",
+      "name": "같은 이름",
+      "project-root": "같은 프로젝트 루트",
+      "description": "설명이 매우 유사"
+    }
+  }
 }
