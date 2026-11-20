@@ -16,6 +16,7 @@ import type {
 } from '@/common/chat/team/quickDecision/quickDecisionBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
 import { routeQuickDecision } from './quickDecisionService';
+import { warmMuEngineSecrets } from './muDecisionEngine';
 
 export {
   routeQuickDecision,
@@ -37,5 +38,8 @@ async function result(work: () => Promise<QuickDecisionRouteResult>): Promise<Ky
 }
 
 export function initQuickDecisionBridge(): void {
+  // Startup parse of the engine's secrets (apis.env + mu.json/auth.json):
+  // in memory only, and the one log line that says which tiers will run.
+  warmMuEngineSecrets(console.log);
   quickDecisionBridge.route.provider((params: QuickDecisionRouteParams) => result(() => routeQuickDecision(params)));
 }

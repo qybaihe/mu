@@ -59,6 +59,18 @@ describe('appendQuickDecisionNote / quickDecisionNotesOf', () => {
     expect(quickDecisionNotesOf('conv-2')[0]).toMatchObject({ kind: 'reject', suggestLabel: '视频实验室(video-lab)' });
     expect(quickDecisionNotesOf('conv-3')).toHaveLength(0);
   });
+  it('an engine verdict keeps its tier and probability in the receipt', () => {
+    const note = appendQuickDecisionNote('conv-1', '查一下 CNS 客户', {
+      ...reuseVerdict,
+      model: 'jev-1.13',
+      tier: 'L1',
+      probability: 0.93,
+    });
+    expect(note).toMatchObject({ tier: 'L1', probability: 0.93, model: 'jev-1.13' });
+    const plain = appendQuickDecisionNote('conv-1', '再查一个', reuseVerdict);
+    expect(plain.tier).toBeUndefined();
+    expect(plain.probability).toBeUndefined();
+  });
   it('persists across a store reload (localStorage round trip)', () => {
     appendQuickDecisionNote('conv-1', '任务', reuseVerdict);
     // A second module instance would read the same localStorage; here the round

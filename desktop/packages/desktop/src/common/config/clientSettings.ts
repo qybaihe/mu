@@ -15,7 +15,7 @@ export type ImageGenerationModelSetting = TProviderWithModel & {
  * `base_url` stay empty because secrets stay in the provider store; the
  * service resolves them at call time. Undefined = the feature is off.
  */
-export type QuickDecisionModelSetting = TProviderWithModel;
+export type QuickDecisionModelSetting = TProviderWithModel | { engine: 'mu' };
 
 export type ClientBusinessSettingMap = {
   'google.config': GoogleClientSetting;

@@ -25,6 +25,17 @@ const QuickDecisionNoteRow: React.FC<{ note: QuickDecisionNote }> = ({ note }) =
       <div>
         {t('quickDecision.details.model')}: {note.model ?? '—'}
       </div>
+      {note.tier !== undefined && (
+        <div data-testid='quick-decision-tier'>
+          {t('quickDecision.details.tier')}:{' '}
+          {note.tier === 'L1' ? t('quickDecision.details.tierL1') : t('quickDecision.details.tierL2')}
+        </div>
+      )}
+      {note.probability !== undefined && (
+        <div data-testid='quick-decision-probability'>
+          {t('quickDecision.details.probability')}: {note.probability.toFixed(2)}
+        </div>
+      )}
       <div>
         {t('quickDecision.details.duration')}: {note.durationMs ?? 0}ms
       </div>

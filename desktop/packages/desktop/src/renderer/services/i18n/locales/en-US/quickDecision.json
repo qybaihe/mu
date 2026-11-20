@@ -1,9 +1,10 @@
 {
   "settings": {
     "modelLabel": "High-frequency decision model",
-    "modelHint": "Answers supervisor team-reuse and off-domain position rejections in seconds, without burning a full model round. Pick a cheap, fast one; empty = off.",
+    "modelHint": "Answers supervisor team-reuse and off-domain position rejections in seconds, without burning a full model round. Pick a cheap, fast one; empty = off. The MU decision engine is the built-in three-tier chain (jev fast call → glm fallback → the ordinary flow) and needs no extra setup.",
     "off": "Not configured (off)",
-    "saveFailed": "Failed to save the decision model"
+    "saveFailed": "Failed to save the decision model",
+    "engineOption": "MU decision engine (recommended)"
   },
   "reuse": {
     "title": " Quick decision: reuse \"{{team}}\"",
@@ -20,7 +21,11 @@
     "confidence": "Confidence",
     "cached": "Cache hit (zero model calls)",
     "fresh": "Model verdict",
-    "reason": "Reason"
+    "reason": "Reason",
+    "tier": "Tier",
+    "tierL1": "L1 · jev fast call",
+    "tierL2": "L2 · glm fallback",
+    "probability": "Probability"
   },
   "taskLabel": "Task"
 }

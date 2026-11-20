@@ -1,9 +1,10 @@
 {
   "settings": {
     "modelLabel": "Modèle de décisions fréquentes",
-    "modelHint": "répond en secondes aux réutilisations d’équipe du superviseur et aux rejets hors domaine, sans consommer un tour complet du modèle. Choisissez-en un rapide et bon marché ; vide = désactivé.",
+    "modelHint": "répond en secondes aux réutilisations d’équipe du superviseur et aux rejets hors domaine, sans consommer un tour complet du modèle. Choisissez-en un rapide et bon marché ; vide = désactivé. Le moteur de décision MU est la chaîne à trois niveaux intégrée (décision rapide jev → repli glm → le flux ordinaire) et ne nécessite aucune configuration.",
     "off": "Non configuré (désactivé)",
-    "saveFailed": "Échec de l’enregistrement du modèle de décision"
+    "saveFailed": "Échec de l’enregistrement du modèle de décision",
+    "engineOption": "Moteur de décision MU (recommandé)"
   },
   "reuse": {
     "title": "Décision rapide : réutiliser « {{team}} »",
@@ -20,7 +21,11 @@
     "confidence": "Confiance",
     "cached": "Cache atteint (zéro appel au modèle)",
     "fresh": "Verdict du modèle",
-    "reason": "Motif"
+    "reason": "Motif",
+    "tier": "Niveau",
+    "tierL1": "L1 · jev voie rapide",
+    "tierL2": "L2 · repli glm",
+    "probability": "Probabilité"
   },
   "taskLabel": "Tâche"
 }

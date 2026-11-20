@@ -32,6 +32,10 @@ export type QuickDecisionReuseResult = {
   reason: string;
   confidence: number;
   model: string;
+  /** Engine mode only: which tier decided (L1 jev / L2 glm); absent on a provider-path or cached decision. */
+  tier?: 'L1' | 'L2';
+  /** Engine mode, L1 only: the acting `probabilities[choice]` — the gate's number, not the model's `confidence`. */
+  probability?: number;
   durationMs: number;
   cached: boolean;
 };
@@ -44,6 +48,10 @@ export type QuickDecisionRejectResult = {
   reason: string;
   confidence: number;
   model: string;
+  /** Engine mode only: which tier decided (L1 jev / L2 glm); absent on a provider-path or cached decision. */
+  tier?: 'L1' | 'L2';
+  /** Engine mode, L1 only: the acting `probabilities[choice]`. */
+  probability?: number;
   durationMs: number;
   cached: boolean;
 };
