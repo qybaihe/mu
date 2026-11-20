@@ -56,6 +56,8 @@
       "statusStale": "快取已超 30 天，建議重新整理",
       "refresh": "重新整理",
       "unavailable": "模板庫不可用（尚未下載或下載失敗）",
+      "errorDownloadFailed": "模板庫下載失敗（無網路或來源不可達），可稍後重試",
+      "errorUnparseable": "模板庫下載內容無法解析，已保留原快取",
       "retry": "重試",
       "downloading": "正在取得模板庫…",
       "adopt": "採用",

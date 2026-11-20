@@ -56,6 +56,8 @@
       "statusStale": "Más de 30 días — conviene actualizar",
       "refresh": "Actualizar",
       "unavailable": "Catálogo de plantillas no disponible (sin descargar o descarga fallida)",
+      "errorDownloadFailed": "No se pudo descargar el catálogo de plantillas (sin conexión o origen inaccesible) — reintenta más tarde",
+      "errorUnparseable": "El catálogo descargado no se pudo analizar; se conserva la caché anterior",
       "retry": "Reintentar",
       "downloading": "Descargando el catálogo de plantillas…",
       "adopt": "Adoptar",

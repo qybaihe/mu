@@ -3407,6 +3407,8 @@ export type I18nKey =
   | 'positions.wizard.template.categoryLabel'
   | 'positions.wizard.template.downloading'
   | 'positions.wizard.template.empty'
+  | 'positions.wizard.template.errorDownloadFailed'
+  | 'positions.wizard.template.errorUnparseable'
   | 'positions.wizard.template.hint'
   | 'positions.wizard.template.nameHint'
   | 'positions.wizard.template.refresh'

@@ -116,12 +116,12 @@ describe('PositionCreationModal', () => {
     refresh = vi.fn(async () => undefined);
     templatesEnsure = vi.fn(async () => ({
       ok: true,
-      data: { available: true, count: 2, fetchedAt: 1_800_000_000_000, stale: false, error: undefined },
+      data: { available: true, count: 2, fetchedAt: 1_800_000_000_000, stale: false, errorCode: undefined },
     }));
     templatesSearch = vi.fn(async () => ({
       ok: true,
       data: {
-        status: { available: true, count: 2, fetchedAt: 1_800_000_000_000, stale: false, error: undefined },
+        status: { available: true, count: 2, fetchedAt: 1_800_000_000_000, stale: false, errorCode: undefined },
         results: [
           {
             slug: 'podcast-notes',
@@ -293,7 +293,7 @@ describe('PositionCreationModal', () => {
     templatesSearch = vi.fn(async () => ({
       ok: true,
       data: {
-        status: { available: false, count: 0, fetchedAt: undefined, stale: false, error: undefined },
+        status: { available: false, count: 0, fetchedAt: undefined, stale: false, errorCode: undefined },
         results: [],
         categories: [],
       },
@@ -307,5 +307,22 @@ describe('PositionCreationModal', () => {
       'positions.wizard.template.unavailable'
     );
     expect(screen.getByTestId('position-template-search')).toBeDisabled();
+  });
+
+  it("maps the catalog's fetch failure code to localized text, never a main-process string", async () => {
+    templatesEnsure = vi.fn(async () => ({
+      ok: true,
+      data: { available: false, count: 0, fetchedAt: undefined, stale: false, errorCode: 'download-failed' },
+    }));
+    render(<PositionCreationModal open onClose={() => undefined} />);
+    fireEvent.click(screen.getAllByRole('radio')[1]);
+    await waitFor(() => {
+      expect(screen.getByTestId('position-template-retry')).toBeDefined();
+    });
+    // The test i18n echoes keys, so the key itself proves the renderer localized the code.
+    expect(screen.getByTestId('position-template-status').textContent).toContain(
+      'positions.wizard.template.errorDownloadFailed'
+    );
+    expect(screen.getByTestId('position-template-status').textContent).not.toContain('download-failed');
   });
 });

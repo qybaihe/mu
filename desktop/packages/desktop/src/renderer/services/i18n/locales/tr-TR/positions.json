@@ -56,6 +56,8 @@
       "statusStale": "30 günden eski — yenileme önerilir",
       "refresh": "Yenile",
       "unavailable": "Şablon kataloğu kullanılamıyor (indirilmedi veya indirme başarısız)",
+      "errorDownloadFailed": "Şablon kataloğu indirilemedi (çevrimdışı veya kaynağa ulaşılamıyor) — daha sonra tekrar deneyin",
+      "errorUnparseable": "İndirilen katalog ayrıştırılamadı; önceki önbellek korunuyor",
       "retry": "Yeniden dene",
       "downloading": "Şablon kataloğu alınıyor…",
       "adopt": "Kullan",

@@ -171,9 +171,16 @@ export type TemplateCatalogStatus = {
   fetchedAt: number | undefined;
   /** True when the cache is older than the stale span (30 days) — the refresh hint. */
   stale: boolean;
-  /** The last failure worth showing, when there was one. */
-  error: string | undefined;
+  /**
+   * Why the last fetch attempt failed, when it did. A code, not text: the
+   * main process cannot localize, so the renderer maps it to the wizard's
+   * language; the raw cause goes to the dev log instead.
+   */
+  errorCode: TemplateCatalogErrorCode | undefined;
 };
+
+/** The fetch failures the status can carry; the wizard maps each to localized text. */
+export type TemplateCatalogErrorCode = 'download-failed' | 'unparseable';
 
 /** Whether a cached catalog is old enough that the wizard offers a refresh. */
 export const isTemplateCatalogStale = (fetchedAt: number, now: number): boolean =>

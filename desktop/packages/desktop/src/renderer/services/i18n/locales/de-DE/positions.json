@@ -56,6 +56,8 @@
       "statusStale": "Älter als 30 Tage — Aktualisierung empfohlen",
       "refresh": "Aktualisieren",
       "unavailable": "Vorlagenkatalog nicht verfügbar (nicht geladen oder Download fehlgeschlagen)",
+      "errorDownloadFailed": "Der Vorlagenkatalog konnte nicht geladen werden (offline oder Quelle unerreichbar) — später erneut versuchen",
+      "errorUnparseable": "Der geladene Katalog ließ sich nicht auswerten; der bisherige Cache bleibt erhalten",
       "retry": "Erneut versuchen",
       "downloading": "Vorlagenkatalog wird geladen…",
       "adopt": "Übernehmen",

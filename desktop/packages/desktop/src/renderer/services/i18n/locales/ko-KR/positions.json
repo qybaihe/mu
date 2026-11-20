@@ -56,6 +56,8 @@
       "statusStale": "30일 경과 — 갱신 권장",
       "refresh": "갱신",
       "unavailable": "템플릿 카탈로그를 사용할 수 없음(미다운로드 또는 실패)",
+      "errorDownloadFailed": "템플릿 카탈로그를 다운로드할 수 없습니다(오프라인 또는 소스 접근 불가) — 나중에 다시 시도하세요",
+      "errorUnparseable": "다운로드한 카탈로그를 해석할 수 없어 이전 캐시를 유지합니다",
       "retry": "재시도",
       "downloading": "템플릿 카탈로그 가져오는 중…",
       "adopt": "채택",

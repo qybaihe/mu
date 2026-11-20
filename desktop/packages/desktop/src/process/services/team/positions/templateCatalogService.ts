@@ -27,6 +27,7 @@ import {
   parseTemplateCatalog,
   searchTemplateEntries,
   templateCategoriesOf,
+  type TemplateCatalogErrorCode,
   type TemplateCatalogStatus,
   type TemplateEntry,
 } from '@/common/chat/team/positions/templateCatalogCore';
@@ -69,16 +70,20 @@ async function readCachedCatalog(templatesDir: string): Promise<CachedCatalog | 
   return { entries, fetchedAt };
 }
 
-/** A cache as the status the wizard shows. */
-const statusOf = (cached: CachedCatalog | undefined, now: number, error?: string): TemplateCatalogStatus =>
+/** A cache as the status the wizard shows: the failure arrives as a code the renderer localizes. */
+const statusOf = (
+  cached: CachedCatalog | undefined,
+  now: number,
+  errorCode?: TemplateCatalogErrorCode
+): TemplateCatalogStatus =>
   cached === undefined
-    ? { available: false, count: 0, fetchedAt: undefined, stale: false, error }
+    ? { available: false, count: 0, fetchedAt: undefined, stale: false, errorCode }
     : {
         available: true,
         count: cached.entries.length,
         fetchedAt: cached.fetchedAt,
         stale: cached.fetchedAt === undefined || isTemplateCatalogStale(cached.fetchedAt, now),
-        error,
+        errorCode,
       };
 
 /** How the catalog text arrives; injectable so tests need no network. */
@@ -127,11 +132,15 @@ export async function ensureTemplateCatalogIn(
     text = await deps.fetchText(TEMPLATE_CATALOG_URL);
     if (text.length > TEMPLATE_CATALOG_MAX_BYTES) throw new Error('the catalog download exceeded the size cap');
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return statusOf(cached, deps.now(), `模板库下载失败：${message}`);
+    // The raw cause stays in the dev log; the renderer only ever sees the code.
+    console.warn('[templateCatalog] download failed, keeping the cache:', error);
+    return statusOf(cached, deps.now(), 'download-failed');
   }
   const entries = parseTemplateCatalog(text);
-  if (entries === undefined) return statusOf(cached, deps.now(), '模板库下载内容无法解析为目录（保持原缓存）');
+  if (entries === undefined) {
+    console.warn('[templateCatalog] the downloaded text did not parse as a catalog, keeping the cache');
+    return statusOf(cached, deps.now(), 'unparseable');
+  }
   const at = deps.now();
   await writeCachedCatalog(options.templatesDir, text, entries, at);
   return statusOf({ entries, fetchedAt: at }, at);

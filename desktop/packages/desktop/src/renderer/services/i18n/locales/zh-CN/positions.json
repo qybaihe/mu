@@ -56,6 +56,8 @@
       "statusStale": "缓存已超 30 天，建议刷新",
       "refresh": "刷新",
       "unavailable": "模板库不可用（尚未下载或下载失败）",
+      "errorDownloadFailed": "模板库下载失败（无网络或源不可达），可稍后重试",
+      "errorUnparseable": "模板库下载内容无法解析，已保留原缓存",
       "retry": "重试",
       "downloading": "正在获取模板库…",
       "adopt": "采用",

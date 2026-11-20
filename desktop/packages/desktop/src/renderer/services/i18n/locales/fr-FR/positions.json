@@ -56,6 +56,8 @@
       "statusStale": "Plus de 30 jours — actualisation conseillée",
       "refresh": "Actualiser",
       "unavailable": "Catalogue de modèles indisponible (non téléchargé ou échec du téléchargement)",
+      "errorDownloadFailed": "Impossible de télécharger le catalogue de modèles (hors ligne ou source injoignable) — réessayez plus tard",
+      "errorUnparseable": "Le catalogue téléchargé n'a pas pu être analysé ; le cache précédent est conservé",
       "retry": "Réessayer",
       "downloading": "Récupération du catalogue de modèles…",
       "adopt": "Adopter",

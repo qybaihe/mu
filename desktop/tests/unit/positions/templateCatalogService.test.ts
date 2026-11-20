@@ -69,7 +69,7 @@ describe('ensureTemplateCatalogIn', () => {
     const dir = temp();
     const at = 1_800_000_000_000;
     const status = await ensureTemplateCatalogIn({ templatesDir: dir }, deps(CATALOG_TEXT, at));
-    expect(status).toMatchObject({ available: true, count: 2, fetchedAt: at, stale: false, error: undefined });
+    expect(status).toMatchObject({ available: true, count: 2, fetchedAt: at, stale: false, errorCode: undefined });
     const templatesDir = templateCatalogDirOf(join(dir, 'data'));
     expect(templatesDir).toContain(join('positions', '_shared', 'templates'));
     expect(await readFile(join(dir, 'catalog.json'), 'utf8')).toBe(CATALOG_TEXT);
@@ -107,12 +107,12 @@ describe('ensureTemplateCatalogIn', () => {
     });
     expect(failed.available).toBe(true);
     expect(failed.fetchedAt).toBe(1_000);
-    expect(failed.error).toContain('offline');
+    expect(failed.errorCode).toBe('download-failed');
     const garbage = await ensureTemplateCatalogIn({ templatesDir: dir }, deps('<html>bad gateway</html>', 3_000), {
       refresh: true,
     });
     expect(garbage.available).toBe(true);
-    expect(garbage.error).toContain('解析');
+    expect(garbage.errorCode).toBe('unparseable');
     expect(await readFile(join(dir, 'catalog.json'), 'utf8')).toBe(CATALOG_TEXT);
     expect(existsSync(join(dir, 'catalog.json.tmp'))).toBe(false);
   });
@@ -121,7 +121,7 @@ describe('ensureTemplateCatalogIn', () => {
     const dir = temp();
     const status = await ensureTemplateCatalogIn({ templatesDir: dir }, deps(new Error('no route'), 1_000));
     expect(status).toMatchObject({ available: false, count: 0, fetchedAt: undefined, stale: false });
-    expect(status.error).toContain('no route');
+    expect(status.errorCode).toBe('download-failed');
   });
 
   it('marks a month-old cache stale without touching it', async () => {

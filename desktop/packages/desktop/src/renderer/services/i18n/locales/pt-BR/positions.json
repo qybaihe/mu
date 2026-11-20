@@ -56,6 +56,8 @@
       "statusStale": "Mais de 30 dias — recomenda-se atualizar",
       "refresh": "Atualizar",
       "unavailable": "Catálogo de modelos indisponível (não baixado ou falha no download)",
+      "errorDownloadFailed": "O catálogo de modelos não pôde ser baixado (offline ou origem inacessível) — tente novamente mais tarde",
+      "errorUnparseable": "O catálogo baixado não foi analisado; o cache anterior foi mantido",
       "retry": "Tentar de novo",
       "downloading": "Baixando o catálogo de modelos…",
       "adopt": "Usar",

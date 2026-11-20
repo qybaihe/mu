@@ -56,6 +56,8 @@
       "statusStale": "Older than 30 days — refresh suggested",
       "refresh": "Refresh",
       "unavailable": "Template catalog unavailable (not downloaded or the download failed)",
+      "errorDownloadFailed": "The template catalog could not be downloaded (offline or the source is unreachable) — retry later",
+      "errorUnparseable": "The downloaded catalog did not parse; the previous cache is kept",
       "retry": "Retry",
       "downloading": "Fetching the template catalog…",
       "adopt": "Use",
