@@ -11,8 +11,8 @@
  * the file system).
  */
 import useSWR from 'swr';
-import { positionBridge } from '@/common/chat/positions/positionBridge';
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import { positionBridge } from '@/common/chat/team/positions/positionBridge';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 
 export const POSITIONS_SWR_KEY = 'positions.roster';
 

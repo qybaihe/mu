@@ -18,8 +18,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Tooltip } from '@arco-design/web-react';
 import { Comments, Plus, Right } from '@icon-park/react';
 import classNames from 'classnames';
-import { supervisorBridge } from '@/common/chat/supervisor/supervisorBridge';
-import type { SupervisorTeam } from '@/common/chat/supervisor/supervisorCore';
+import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
+import type { SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCore';
 import { useTeamRosterSnapshot } from '@renderer/pages/workbench/team/teamStore';
 import {
   rosterEntryHolds,

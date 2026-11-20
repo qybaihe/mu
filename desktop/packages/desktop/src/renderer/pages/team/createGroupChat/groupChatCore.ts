@@ -13,7 +13,7 @@
  * in the shared TEAMS.md index, so the supervisor can match and reuse it.
  */
 import type { ICreateTeamParams, TeamAssistantInput } from '@/common/adapter/teamMapper';
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import type { TTeam } from '@/common/types/team/teamTypes';
 
 /** How many positions one group chat may hold (the lead plus these at most, like the old team form's cap). */

@@ -6,7 +6,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { openPositionConversation, positionCreateParams } from '@renderer/pages/positions/openPosition';
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import type { TChatConversation } from '@/common/config/storage';
 
 const position: PositionInfo = { name: 'forwarder', displayName: '货代', description: '货代岗位', body: '正文' };
@@ -22,7 +22,7 @@ vi.mock('@/common', () => ({
     assistants: { get: { invoke: invokeAssistantGet } },
   },
 }));
-vi.mock('@/common/chat/positions/positionBridge', () => ({
+vi.mock('@/common/chat/team/positions/positionBridge', () => ({
   positionBridge: { ensureWorkspace: { invoke: invokeEnsure } },
 }));
 vi.mock('@renderer/pages/guid/utils/assistantDefaults', () => ({

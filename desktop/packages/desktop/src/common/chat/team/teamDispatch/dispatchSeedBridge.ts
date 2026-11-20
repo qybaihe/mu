@@ -11,8 +11,8 @@
  * versioned block (common/chat/teamDispatch/dispatchRules.ts), so a fresh team
  * dispatches a goal without anyone being named, from its very first turn.
  */
-import { bridge } from '../../platform/bridge';
-import type { KyrnResult } from '../../kyrn/errors';
+import { bridge } from '../../../platform/bridge';
+import type { KyrnResult } from '../../../kyrn/errors';
 
 /** Whether the file changed; `false` means the rules were already in place. */
 export type DispatchSeedResult = { changed: boolean };

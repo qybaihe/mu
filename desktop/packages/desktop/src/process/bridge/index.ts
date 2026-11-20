@@ -16,9 +16,9 @@ import { initKyrnBrowserBridge } from './kyrnBrowserBridge';
 import { initNativeBridge } from './nativeBridge';
 import { initFolderGitBridge } from '../services/folderGit';
 import { initFileRefsBridge } from '../services/fileRefs';
-import { initTeamDispatchBridge } from '../services/teamDispatch';
-import { initPositionsBridge } from '../services/positions';
-import { initSupervisorBridge } from '../services/supervisor';
+import { initTeamDispatchBridge } from '../services/team/teamDispatch';
+import { initPositionsBridge } from '../services/team/positions';
+import { initSupervisorBridge } from '../services/team/supervisor';
 
 export type BridgeDependencies = Record<string, never>;
 

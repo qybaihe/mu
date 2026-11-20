@@ -15,7 +15,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { KyrnError } from '@/common/kyrn/errors';
 import { hasControlCharacter } from '@/common/chat/fileRefs/pathLike';
-import { planDispatchSeed } from '@/common/chat/teamDispatch/dispatchRules';
+import { planDispatchSeed } from '@/common/chat/team/teamDispatch/dispatchRules';
 
 /**
  * The project-memory file the lead runtime reads (a mu lead reads AGENTS.md,

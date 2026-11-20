@@ -8,11 +8,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { isSeedableTeamWorkspace, seedDispatchRulesIn } from '@process/services/teamDispatch';
-import { TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/teamDispatch/dispatchRules';
+import { isSeedableTeamWorkspace, seedDispatchRulesIn } from '@process/services/team/teamDispatch';
+import { TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/team/teamDispatch/dispatchRules';
 
 /**
- * The main process's seeding service (process/services/teamDispatch/): the
+ * The main process's seeding service (process/services/team/teamDispatch/): the
  * merge rules themselves are covered in dispatchRules.test.ts; this is the fs
  * side — the file it writes, ENOENT as empty, the second call being free, and
  * the workspace gate that keeps a renderer-supplied path inside the app's own

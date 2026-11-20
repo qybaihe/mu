@@ -5,8 +5,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { SupervisorTeam } from '@/common/chat/supervisor/supervisorCore';
-import { positionIdentityColor } from '@/common/chat/positions/positionIdentityColor';
+import type { SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCore';
+import { positionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
 import type { TTeam } from '@/common/types/team/teamTypes';
 import {
   memberIdentityColor,

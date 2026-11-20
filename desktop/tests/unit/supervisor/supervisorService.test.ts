@@ -8,18 +8,18 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ensureSupervisorWorkspaceIn, registerSupervisorTeamIn } from '@process/services/supervisor';
-import { TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/teamDispatch/dispatchRules';
+import { ensureSupervisorWorkspaceIn, registerSupervisorTeamIn } from '@process/services/team/supervisor';
+import { TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/team/teamDispatch/dispatchRules';
 import {
   SHARED_TEAMS_FOLDER,
   SUPERVISOR_FOLDER,
   POSITIONS_SCRIPT_NAME,
   TEAMS_FILE_NAME,
   parseTeamsFile,
-} from '@/common/chat/supervisor/supervisorCore';
+} from '@/common/chat/team/supervisor/supervisorCore';
 
 /**
- * The supervisor workspace service (process/services/supervisor/): the
+ * The supervisor workspace service (process/services/team/supervisor/): the
  * app-owned files it ships (rules, the two scripts, index), when it rewrites
  * them, and the reconciliation that retires expired teams. Real files in a
  * temp tree; the clock is injected.

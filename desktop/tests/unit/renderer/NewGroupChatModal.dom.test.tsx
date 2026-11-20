@@ -52,7 +52,7 @@ vi.mock('@/common', () => ({
     conversation: { update: { invoke: (...args: unknown[]) => conversationUpdate(...args) } },
   },
 }));
-vi.mock('@/common/chat/supervisor/supervisorBridge', () => ({
+vi.mock('@/common/chat/team/supervisor/supervisorBridge', () => ({
   supervisorBridge: { registerTeam: { invoke: (...args: unknown[]) => registerTeam(...args) } },
 }));
 import NewGroupChatModal from '@renderer/pages/team/createGroupChat/NewGroupChatModal';

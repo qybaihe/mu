@@ -12,11 +12,11 @@ import {
   isTeamActive,
   parseTeamsFile,
   type SupervisorTeam,
-} from '@/common/chat/supervisor/supervisorCore';
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+} from '@/common/chat/team/supervisor/supervisorCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 
 /**
- * The supervisor's pure core (common/chat/supervisor/supervisorCore.ts): the
+ * The supervisor's pure core (common/chat/team/supervisor/supervisorCore.ts): the
  * TEAMS.md format — parse and canonical build, the TTL retirement the
  * canonical build applies — and the rules text injected into the workspace.
  * The file format is a contract with teams.cjs; the script's own test

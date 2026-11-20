@@ -10,7 +10,7 @@
  * validation, and the create payload.
  */
 import { describe, expect, it } from 'vitest';
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import {
   MAX_GROUP_POSITIONS,
   autoGroupName,

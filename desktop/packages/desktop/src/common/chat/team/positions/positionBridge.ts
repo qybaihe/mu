@@ -11,8 +11,8 @@
  * prepare that position's dedicated workspace, where the injected
  * AGENTS.override.md carries the position identity and the ownership gate.
  */
-import { bridge } from '../../platform/bridge';
-import type { KyrnResult } from '../../kyrn/errors';
+import { bridge } from '../../../platform/bridge';
+import type { KyrnResult } from '../../../kyrn/errors';
 import type { PositionInfo } from './positionLibraryCore';
 
 /** The position's workspace folder, and whether its injected rules file changed. */

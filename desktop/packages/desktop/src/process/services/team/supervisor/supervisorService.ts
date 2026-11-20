@@ -19,7 +19,7 @@
 import { mkdir, rm, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getPlatformServices } from '@/common/platform';
-import positionsScriptSource from '@/common/chat/supervisor/positions.cjs?raw';
+import positionsScriptSource from '@/common/chat/team/supervisor/positions.cjs?raw';
 import { shippedTeamsScript } from './teamScripts';
 import {
   POSITIONS_SCRIPT_NAME,
@@ -31,8 +31,8 @@ import {
   buildTeamsFile,
   parseTeamsFile,
   type SupervisorTeam,
-} from '@/common/chat/supervisor/supervisorCore';
-import { POSITION_LIBRARY_DIR, scanPositionLibrary } from '@/process/services/positions/positionService';
+} from '@/common/chat/team/supervisor/supervisorCore';
+import { POSITION_LIBRARY_DIR, scanPositionLibrary } from '@process/services/team/positions/positionService';
 
 /** The injected rules file: pi's first-priority context file of the workspace. */
 const RULES_FILE_NAME = 'AGENTS.override.md';

@@ -247,8 +247,7 @@ function teamWorkspace(name) {
   const safe = name.replace(/[\\/:*?"<>|\s]+/g, '-').replace(/^-+|-+$/g, '');
   // `.` and `..` are the only sanitized names that escape the teams root
   // (separators never survive the replace), so they are refused, not written.
-  if (safe === '' || safe === '.' || safe === '..')
-    fail(`team name "${name}" cannot become a safe workspace folder`);
+  if (safe === '' || safe === '.' || safe === '..') fail(`team name "${name}" cannot become a safe workspace folder`);
   const root = path.resolve(__dirname, '..', '..', 'teams');
   let dir = path.join(root, safe);
   if (fs.existsSync(dir)) dir = path.join(root, `${safe}-${Date.now().toString(36)}`);

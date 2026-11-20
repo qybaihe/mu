@@ -12,7 +12,7 @@
  * only: the working/waiting state colours keep their own semantics and are
  * never derived from here.
  */
-import { SUPERVISOR_POSITION_NAME } from '@/common/chat/supervisor/supervisorCore';
+import { SUPERVISOR_POSITION_NAME } from '@/common/chat/team/supervisor/supervisorCore';
 
 /**
  * The identity hue of an id: FNV-1a over its code units, folded to 0-359.

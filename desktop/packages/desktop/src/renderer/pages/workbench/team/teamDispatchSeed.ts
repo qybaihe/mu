@@ -12,7 +12,7 @@
  * the first message wins). A failure forgets the team so the next fetch
  * retries.
  */
-import { dispatchSeedBridge } from '@/common/chat/teamDispatch/dispatchSeedBridge';
+import { dispatchSeedBridge } from '@/common/chat/team/teamDispatch/dispatchSeedBridge';
 import type { TTeam } from '@/common/types/team/teamTypes';
 
 const seededTeamIds = new Set<string>();

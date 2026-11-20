@@ -11,8 +11,8 @@
  * Pure derivations only; all IO lives in the stores (`slotWorkStore`, the
  * team store, the conversation list sync) that feed these functions.
  */
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
-import { findPositionConversationId } from '@/common/chat/positions/positionLibraryCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
+import { findPositionConversationId } from '@/common/chat/team/positions/positionLibraryCore';
 import type { ITeamSlotWork, ITeamTaskItem } from '@/common/types/team/teamTypes';
 import { boardColumnOf } from '@renderer/pages/workbench/team/teamDataCore';
 import { slotMatchesPosition, type TeamRosterEntry } from '@renderer/pages/workbench/team/teamIdentity';

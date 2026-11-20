@@ -10,9 +10,9 @@
  * section (rows, fold, retired dimming) and the conversation header's identity
  * chip both build on these; all IO lives in their stores and services.
  */
-import type { SupervisorTeam } from '@/common/chat/supervisor/supervisorCore';
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
-import { positionIdentityColor, type PositionIdentityColor } from '@/common/chat/positions/positionIdentityColor';
+import type { SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
+import { positionIdentityColor, type PositionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
 import type { TTeam } from '@/common/types/team/teamTypes';
 
 /**

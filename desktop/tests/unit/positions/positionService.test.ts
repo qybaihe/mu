@@ -8,10 +8,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ensurePositionWorkspaceIn, safeFolderName, scanPositionLibrary } from '@process/services/positions';
+import { ensurePositionWorkspaceIn, safeFolderName, scanPositionLibrary } from '@process/services/team/positions';
 
 /**
- * The main process's position service (process/services/positions/): the
+ * The main process's position service (process/services/team/positions/): the
  * library scan (parse rules live in positionLibraryCore.test.ts) and the
  * workspace preparation — the gate file it writes, when it rewrites, and what
  * it refuses. Real files in a temp tree; the user's real library is never

@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 /**
- * The supervisor workspace's roster script (common/chat/supervisor/
+ * The supervisor workspace's roster script (common/chat/team/supervisor/
  * positions.cjs), run for real against temp position libraries: the read-only
  * listing behind the supervisor's new-project dedup gate. The parsing mirrors
  * positionLibraryCore.ts — these runs are the cross-check that the script
@@ -22,7 +22,7 @@ import { promisify } from 'node:util';
  */
 
 const SCRIPT_SRC = fileURLToPath(
-  new URL('../../../packages/desktop/src/common/chat/supervisor/positions.cjs', import.meta.url)
+  new URL('../../../packages/desktop/src/common/chat/team/supervisor/positions.cjs', import.meta.url)
 );
 const run = promisify(execFile);
 

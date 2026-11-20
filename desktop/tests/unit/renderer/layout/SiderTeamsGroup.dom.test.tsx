@@ -16,7 +16,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SupervisorTeam } from '@/common/chat/supervisor/supervisorCore';
+import type { SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCore';
 import type { TTeam } from '@/common/types/team/teamTypes';
 
 let teams: TTeam[] = [];
@@ -40,7 +40,7 @@ vi.mock('@/renderer/pages/workbench/team/teamStore', () => ({
 vi.mock('@/renderer/pages/positions/usePositionRoster', () => ({
   usePositionRoster: () => ({ positions, isLoading: false }),
 }));
-vi.mock('@/common/chat/supervisor/supervisorBridge', () => ({
+vi.mock('@/common/chat/team/supervisor/supervisorBridge', () => ({
   supervisorBridge: {
     teams: { invoke: vi.fn(async () => ({ ok: true as const, data: { teams: index } })) },
   },

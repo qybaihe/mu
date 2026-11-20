@@ -21,11 +21,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { parseTeamsFile, TEAMS_FILE_NAME, TEAM_TTL_MS } from '@/common/chat/supervisor/supervisorCore';
-import { TEAM_DISPATCH_RULES_BLOCK, TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/teamDispatch/dispatchRules';
+import { parseTeamsFile, TEAMS_FILE_NAME, TEAM_TTL_MS } from '@/common/chat/team/supervisor/supervisorCore';
+import { TEAM_DISPATCH_RULES_BLOCK, TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/team/teamDispatch/dispatchRules';
 
 /**
- * The supervisor workspace's maintenance script (common/chat/supervisor/
+ * The supervisor workspace's maintenance script (common/chat/team/supervisor/
  * teams.cjs), run for real: node spawns the script against a stub backend on
  * the loopback, in an isolated tree shaped like the app data dir. The TEAMS.md
  * the script writes must parse with the core's parser — the file format is
@@ -33,7 +33,7 @@ import { TEAM_DISPATCH_RULES_BLOCK, TEAM_DISPATCH_RULES_VERSION } from '@/common
  */
 
 const SCRIPT_SRC = fileURLToPath(
-  new URL('../../../packages/desktop/src/common/chat/supervisor/teams.cjs', import.meta.url)
+  new URL('../../../packages/desktop/src/common/chat/team/supervisor/teams.cjs', import.meta.url)
 );
 
 type Captured = { method: string; path: string; body: unknown };

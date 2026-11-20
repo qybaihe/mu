@@ -21,7 +21,7 @@ import { Button, Message, Popover, Select } from '@arco-design/web-react';
 import { Close, People } from '@icon-park/react';
 import classNames from 'classnames';
 import { ipcBridge } from '@/common';
-import { supervisorBridge } from '@/common/chat/supervisor/supervisorBridge';
+import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import type { TTeam } from '@/common/types/team/teamTypes';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { leadConversationIdOf, teammateThreadName } from '@renderer/pages/team/createGroupChat/groupChatCore';

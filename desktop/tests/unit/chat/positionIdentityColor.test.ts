@@ -11,8 +11,8 @@
  * supervisor reads its fixed emphasis red.
  */
 import { describe, expect, it } from 'vitest';
-import { SUPERVISOR_POSITION_NAME } from '@/common/chat/supervisor/supervisorCore';
-import { positionHue, positionIdentityColor } from '@/common/chat/positions/positionIdentityColor';
+import { SUPERVISOR_POSITION_NAME } from '@/common/chat/team/supervisor/supervisorCore';
+import { positionHue, positionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
 
 const HSL = /^hsl\((\d+) (\d+)% (\d+)%\)$/;
 const parts = (color: string): { h: number; s: number; l: number } => {

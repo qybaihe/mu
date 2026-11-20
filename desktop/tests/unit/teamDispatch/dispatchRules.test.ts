@@ -11,7 +11,7 @@ import {
   TEAM_DISPATCH_RULES_BODY,
   TEAM_DISPATCH_RULES_END_MARKER,
   TEAM_DISPATCH_RULES_VERSION,
-} from '@/common/chat/teamDispatch/dispatchRules';
+} from '@/common/chat/team/teamDispatch/dispatchRules';
 
 /** An older marked block, as a future version would find and replace. */
 const olderBlock = (version: number): string =>

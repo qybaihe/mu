@@ -8,7 +8,7 @@
  * Answers `positions.list` and `positions.ensure-workspace`
  * (common/chat/positions/positionBridge.ts).
  */
-import { positionBridge } from '@/common/chat/positions/positionBridge';
+import { positionBridge } from '@/common/chat/team/positions/positionBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
 import { ensurePositionWorkspace, listPositions } from './positionService';
 

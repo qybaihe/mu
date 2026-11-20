@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TTeam } from '@/common/types/team/teamTypes';
 
 const seedBridge = vi.hoisted(() => ({ invoke: vi.fn() }));
-vi.mock('@/common/chat/teamDispatch/dispatchSeedBridge', () => ({
+vi.mock('@/common/chat/team/teamDispatch/dispatchSeedBridge', () => ({
   dispatchSeedBridge: { seed: seedBridge },
 }));
 

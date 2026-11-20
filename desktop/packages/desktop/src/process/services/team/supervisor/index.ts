@@ -10,7 +10,7 @@
  * expired teams runs once when the bridge comes up, not only when the user
  * first opens the supervisor's conversation.
  */
-import { supervisorBridge } from '@/common/chat/supervisor/supervisorBridge';
+import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
 import { ensureSupervisorWorkspace, listSupervisorTeams, registerSupervisorTeam } from './supervisorService';
 

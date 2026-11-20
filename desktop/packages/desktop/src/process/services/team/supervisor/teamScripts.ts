@@ -11,8 +11,8 @@
  * script's placeholder, so a team built over REST is seeded at creation —
  * whoever's workspace ran the `add`.
  */
-import teamsScriptSource from '@/common/chat/supervisor/teams.cjs?raw';
-import { TEAM_DISPATCH_RULES_BLOCK } from '@/common/chat/teamDispatch/dispatchRules';
+import teamsScriptSource from '@/common/chat/team/supervisor/teams.cjs?raw';
+import { TEAM_DISPATCH_RULES_BLOCK } from '@/common/chat/team/teamDispatch/dispatchRules';
 
 export const shippedTeamsScript = teamsScriptSource.replace(
   '/* mu-dispatch-rules-block */ null',

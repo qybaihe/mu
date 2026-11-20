@@ -14,7 +14,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import type { TTeam } from '@/common/types/team/teamTypes';
 import type { TeamRosterEntry } from '@renderer/pages/workbench/team/teamIdentity';
 import type { PositionCard, TeamCard, TeamWall } from '@renderer/pages/monitor/monitorCore';

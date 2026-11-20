@@ -11,7 +11,7 @@ import {
   parsePositionDocument,
   positionLabel,
   POSITION_EXTRA_KEY,
-} from '@/common/chat/positions/positionLibraryCore';
+} from '@/common/chat/team/positions/positionLibraryCore';
 
 /** A library file as the user writes them: frontmatter, then the position's own instructions. */
 const libraryFile = (name: string, description: string, body: string, displayName?: string): string =>

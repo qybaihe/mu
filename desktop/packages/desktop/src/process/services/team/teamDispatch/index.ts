@@ -7,7 +7,7 @@
 /**
  * Answers `team-dispatch.seed` (common/chat/teamDispatch/dispatchSeedBridge.ts).
  */
-import { dispatchSeedBridge } from '@/common/chat/teamDispatch/dispatchSeedBridge';
+import { dispatchSeedBridge } from '@/common/chat/team/teamDispatch/dispatchSeedBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
 import { getPlatformServices } from '@/common/platform';
 import { isSeedableTeamWorkspace, seedDispatchRulesIn } from './dispatchSeedService';

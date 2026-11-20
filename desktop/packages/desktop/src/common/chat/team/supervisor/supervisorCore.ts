@@ -15,8 +15,8 @@
  * read-only roster listing behind the supervisor's new-project dedup gate.
  * All IO lives in the service and the scripts.
  */
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
-import { positionLabel } from '@/common/chat/positions/positionLibraryCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
+import { positionLabel } from '@/common/chat/team/positions/positionLibraryCore';
 
 /** The supervisor's identity: the `extra.position` marker and the roster label key. */
 export const SUPERVISOR_POSITION_NAME = 'supervisor';

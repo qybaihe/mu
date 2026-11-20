@@ -15,8 +15,8 @@
  * shapes are `monitorCore`'s.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { supervisorBridge } from '@/common/chat/supervisor/supervisorBridge';
-import type { SupervisorTeam } from '@/common/chat/supervisor/supervisorCore';
+import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
+import type { SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCore';
 import {
   useConversationActivitySets,
   useConversationListSync,

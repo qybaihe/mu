@@ -12,7 +12,7 @@
  * group's TEAMS.md positions are after a change (member display names mapped
  * back to position ids; a slot that maps to no position simply drops out).
  */
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import type { TTeam, TeamAssistant } from '@/common/types/team/teamTypes';
 
 /** The lead slot: the one member that can never be removed (the group chat is its thread). */

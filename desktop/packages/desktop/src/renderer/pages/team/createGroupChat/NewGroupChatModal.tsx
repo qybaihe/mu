@@ -17,7 +17,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Input, Message, Select } from '@arco-design/web-react';
 import { ipcBridge } from '@/common';
-import { supervisorBridge } from '@/common/chat/supervisor/supervisorBridge';
+import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import type { TTeam } from '@/common/types/team/teamTypes';
 import MuModal from '@renderer/components/base/MuModal';
 import { useConversationAssistants } from '@renderer/pages/conversation/hooks/useConversationAssistants';

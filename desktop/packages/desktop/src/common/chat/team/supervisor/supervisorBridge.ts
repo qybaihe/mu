@@ -10,8 +10,8 @@
  * the window asks the main process to prepare its workspace: the injected
  * rules file, the teams.cjs maintenance script, and the TEAMS.md index.
  */
-import { bridge } from '../../platform/bridge';
-import type { KyrnResult } from '../../kyrn/errors';
+import { bridge } from '../../../platform/bridge';
+import type { KyrnResult } from '../../../kyrn/errors';
 import type { SupervisorTeam } from './supervisorCore';
 
 /** The supervisor's workspace folder; `changed` says any app-owned file in it was rewritten. */

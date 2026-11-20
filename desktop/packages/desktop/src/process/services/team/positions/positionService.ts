@@ -18,12 +18,12 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { getPlatformServices } from '@/common/platform';
 import { KyrnError } from '@/common/kyrn/errors';
-import { shippedTeamsScript } from '@process/services/supervisor/teamScripts';
+import { shippedTeamsScript } from '@process/services/team/supervisor/teamScripts';
 import {
   buildPositionOverrideContent,
   parsePositionDocument,
   type PositionInfo,
-} from '@/common/chat/positions/positionLibraryCore';
+} from '@/common/chat/team/positions/positionLibraryCore';
 
 /** The user's position library. Read-only: the library is the user's, not ours. */
 export const POSITION_LIBRARY_DIR = join(homedir(), '.mu', 'agent', 'agents');

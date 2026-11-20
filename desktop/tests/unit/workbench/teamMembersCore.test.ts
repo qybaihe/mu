@@ -10,7 +10,7 @@
  * group's TEAMS.md positions become after a change.
  */
 import { describe, expect, it } from 'vitest';
-import type { PositionInfo } from '@/common/chat/positions/positionLibraryCore';
+import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import type { TTeam } from '@/common/types/team/teamTypes';
 import {
   addablePositions,
