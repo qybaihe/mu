@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "Teslimler",
+    "title": "Teslimler",
+    "empty": "Henüz teslim edilen dosya yok — present ile teslim edilen dosyalar burada listelenir.",
+    "error": "Teslimler okunamadı",
+    "missing": "Dosya artık yok",
+    "open": "{{name}} dosyasını aç",
+    "jump": "Mesajı göster",
+    "sourceUnknown": "Bilinmeyen üye"
   }
 }

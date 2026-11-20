@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "Здобутки",
+    "title": "Здобутки",
+    "empty": "Переданих файлів ще немає — файли, передані через present, з’являться тут.",
+    "error": "Не вдалося прочитати здобутки",
+    "missing": "Файлу більше немає",
+    "open": "Відкрити {{name}}",
+    "jump": "Показати повідомлення",
+    "sourceUnknown": "Невідомий учасник"
   }
 }

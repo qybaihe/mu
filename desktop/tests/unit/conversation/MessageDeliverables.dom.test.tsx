@@ -45,6 +45,27 @@ describe('deliverables', () => {
     });
   });
 
+  it('reads the relay-nested shape an ACP conversation stores, note included', () => {
+    const nested = {
+      type: 'acp_tool_call',
+      content: {
+        update: {
+          title: 'present',
+          status: 'completed',
+          raw_output: {
+            content: [],
+            details: { files: [{ path: 'E:/out/deck.pdf', name: 'deck.pdf', bytes: 4096 }], note: ' for the client ' },
+            status: 'completed',
+          },
+        },
+      },
+    } as unknown as TMessage;
+    expect(deliverables(nested)).toEqual({
+      files: [{ path: 'E:/out/deck.pdf', name: 'deck.pdf', bytes: 4096 }],
+      note: 'for the client',
+    });
+  });
+
   it('keeps at most eight files and skips rows that do not read', () => {
     const many = Array.from({ length: 10 }, (_, index) => ({ path: `E:/out/${index}.png`, name: `${index}.png` }));
     const read = deliverables(presentCall([...many, { path: 7 }, 'x']));

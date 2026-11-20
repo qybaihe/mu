@@ -39,6 +39,10 @@ vi.mock('@/renderer/pages/team/components/TeamMembersManager', () => ({
 vi.mock('@/renderer/pages/team/components/TeamWorkspaceHandoff', () => ({
   default: () => <div data-testid='team-handoff-stub' />,
 }));
+// The deliverables browser is its own test's subject; a stub here as well.
+vi.mock('@/renderer/pages/team/components/TeamDeliverables', () => ({
+  default: () => <div data-testid='team-deliverables-stub' />,
+}));
 import TeamHeaderIdentity from '@/renderer/pages/team/components/TeamHeaderIdentity';
 
 const member = (slotId: string, name: string, role: 'leader' | 'teammate') => ({

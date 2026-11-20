@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "Результаты",
+    "title": "Результаты",
+    "empty": "Переданных файлов пока нет — файлы, переданные через present, появятся здесь.",
+    "error": "Не удалось прочитать результаты",
+    "missing": "Файла больше нет",
+    "open": "Открыть {{name}}",
+    "jump": "Показать сообщение",
+    "sourceUnknown": "Неизвестный участник"
   }
 }

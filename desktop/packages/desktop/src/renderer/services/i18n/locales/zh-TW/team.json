@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "交付物",
+    "title": "交付物",
+    "empty": "該團隊還沒有交付檔案——成員用 present 交付後，會在這裡列出。",
+    "error": "讀取交付物失敗",
+    "missing": "檔案已不存在",
+    "open": "開啟 {{name}}",
+    "jump": "定位訊息",
+    "sourceUnknown": "未知成員"
   }
 }

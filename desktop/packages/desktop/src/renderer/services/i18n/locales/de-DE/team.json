@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "Ergebnisse",
+    "title": "Ergebnisse",
+    "empty": "Noch keine übergebenen Dateien — mit present übergebene Dateien erscheinen hier.",
+    "error": "Ergebnisse konnten nicht gelesen werden",
+    "missing": "Datei ist nicht mehr da",
+    "open": "{{name}} öffnen",
+    "jump": "Nachricht zeigen",
+    "sourceUnknown": "Unbekanntes Mitglied"
   }
 }

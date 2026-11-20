@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "Livrables",
+    "title": "Livrables",
+    "empty": "Aucun fichier livré pour l'instant — les fichiers remis avec present seront listés ici.",
+    "error": "Échec de la lecture des livrables",
+    "missing": "Le fichier n'existe plus",
+    "open": "Ouvrir {{name}}",
+    "jump": "Voir le message",
+    "sourceUnknown": "Membre inconnu"
   }
 }

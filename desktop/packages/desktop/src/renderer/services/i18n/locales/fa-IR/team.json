@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "تحویل‌شده‌ها",
+    "title": "تحویل‌شده‌ها",
+    "empty": "هنوز فایل تحویل‌شده‌ای نیست — فایل‌هایی که با present تحویل داده شوند اینجا فهرست می‌شوند.",
+    "error": "خواندن تحویل‌شده‌ها ناموفق بود",
+    "missing": "فایل دیگر وجود ندارد",
+    "open": "باز کردن {{name}}",
+    "jump": "نمایش پیام",
+    "sourceUnknown": "عضو ناشناس"
   }
 }

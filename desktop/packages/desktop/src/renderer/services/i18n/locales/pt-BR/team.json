@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "Entregáveis",
+    "title": "Entregáveis",
+    "empty": "Nenhum arquivo entregue ainda — os arquivos entregues com present serão listados aqui.",
+    "error": "Falha ao ler os entregáveis",
+    "missing": "O arquivo não existe mais",
+    "open": "Abrir {{name}}",
+    "jump": "Ver mensagem",
+    "sourceUnknown": "Membro desconhecido"
   }
 }

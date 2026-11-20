@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "成果物",
+    "title": "成果物",
+    "empty": "まだ納品ファイルがありません。present で受け渡されたファイルがここに表示されます。",
+    "error": "成果物の読み取りに失敗しました",
+    "missing": "ファイルは存在しません",
+    "open": "{{name}} を開く",
+    "jump": "メッセージを表示",
+    "sourceUnknown": "不明なメンバー"
   }
 }

@@ -28,9 +28,12 @@ export function deliverables(message: TMessage): Deliverables | undefined {
   if (message.type !== 'acp_tool_call') return undefined;
   const update = record(message.content?.update);
   if (update.title !== 'present' || update.status !== 'completed') return undefined;
-  // The relay snake-cases the keys it passes on.
+  // The relay snake-cases the keys it passes on, and the ACP path nests the
+  // call's details one level deeper than the native transcript does.
   const output = record(update.raw_output ?? update.rawOutput);
-  const files = (Array.isArray(output.files) ? output.files : [])
+  const nested = record(output.details).files;
+  const listed: readonly unknown[] = Array.isArray(output.files) ? output.files : Array.isArray(nested) ? nested : [];
+  const files = listed
     .slice(0, MAX_FILES)
     .map(record)
     .flatMap((file): DeliveredFile[] =>
@@ -38,8 +41,9 @@ export function deliverables(message: TMessage): Deliverables | undefined {
         ? [{ path: file.path, name: file.name || file.path, bytes: typeof file.bytes === 'number' ? file.bytes : 0 }]
         : []
     );
+  const noteSource = typeof output.note === 'string' && output.note.trim() ? output.note : record(output.details).note;
   if (files.length === 0) return undefined;
-  const note = typeof output.note === 'string' && output.note.trim() ? output.note.trim() : undefined;
+  const note = typeof noteSource === 'string' && noteSource.trim() ? noteSource.trim() : undefined;
   return { files, ...(note ? { note } : {}) };
 }
 

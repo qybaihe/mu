@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "Deliverables",
+    "title": "Deliverables",
+    "empty": "No delivered files yet — files the team hands over with present will be listed here.",
+    "error": "Failed to read the deliverables",
+    "missing": "File is gone",
+    "open": "Open {{name}}",
+    "jump": "Show message",
+    "sourceUnknown": "Unknown member"
   }
 }

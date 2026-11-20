@@ -113,5 +113,15 @@
     "addPlaceholder": "选择要添加的岗位",
     "addApply": "添加",
     "addAllOnTeam": "岗位名册已全部在群内。"
+  },
+  "deliverables": {
+    "entry": "交付物",
+    "title": "交付物",
+    "empty": "该团队还没有交付文件——成员用 present 交付后，会在这里列出。",
+    "error": "读取交付物失败",
+    "missing": "文件已不存在",
+    "open": "打开 {{name}}",
+    "jump": "定位消息",
+    "sourceUnknown": "未知成员"
   }
 }

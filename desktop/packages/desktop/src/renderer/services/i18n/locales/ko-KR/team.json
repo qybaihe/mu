@@ -113,5 +113,15 @@
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
     "addAllOnTeam": "Every roster position is already in this group."
+  },
+  "deliverables": {
+    "entry": "산출물",
+    "title": "산출물",
+    "empty": "아직 전달된 파일이 없습니다. present로 전달된 파일이 여기에 표시됩니다.",
+    "error": "산출물을 읽지 못했습니다",
+    "missing": "파일이 없습니다",
+    "open": "{{name}} 열기",
+    "jump": "메시지 보기",
+    "sourceUnknown": "알 수 없는 멤버"
   }
 }

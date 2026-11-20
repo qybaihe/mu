@@ -21,6 +21,7 @@ import { memberIdentityColor, memberInitial } from '../core/teamIdentity';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import TeamMembersManager from './TeamMembersManager';
 import TeamWorkspaceHandoff from './TeamWorkspaceHandoff';
+import TeamDeliverables from './TeamDeliverables';
 
 /** How many member circles the strip shows before it summarizes the rest. */
 const MAX_VISIBLE_MEMBERS = 3;
@@ -83,6 +84,9 @@ const TeamHeaderIdentity: React.FC<Props> = ({ teamId, role }) => {
         {/* The workspace record is the team's, so both threads of it — the
             group chat and a member's private thread — carry the entry. */}
         {team.workspace ? <TeamWorkspaceHandoff team={team} /> : null}
+        {/* The deliverables are the team's too: every member's `present` calls
+            are browsable from either thread of the team. */}
+        <TeamDeliverables team={team} />
         {/* Member management lives on the group chat itself: the lead thread. A teammate's
             private thread sees the identity but never the manager. */}
         {role === 'lead' ? <TeamMembersManager team={team} /> : null}
