@@ -75,6 +75,13 @@
     "teamPill": "チーム · {{count}}人",
     "members": "メンバー：{{names}}"
   },
+  "handoff": {
+    "entry": "ワークベンチ記録",
+    "title": "ワークベンチ記録",
+    "missing": "まだワークベンチ記録がありません。最初のタスクの締めくくりで HANDOFF.md が生成されます。",
+    "error": "ワークベンチ記録の読み取りに失敗しました",
+    "truncated": "記録が長いため、表示を一部省略しています。"
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",

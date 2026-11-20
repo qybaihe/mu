@@ -75,6 +75,13 @@
     "teamPill": "تیم · {{count}}",
     "members": "اعضا: {{names}}"
   },
+  "handoff": {
+    "entry": "سوابق کارگاه",
+    "title": "سوابق کارگاه",
+    "missing": "هنوز سوابقی نیست — HANDOFF.md پس از پایان نخستین کار ساخته می‌شود.",
+    "error": "خواندن سوابق ناموفق بود",
+    "truncated": "سوابق کوتاه شده است."
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",

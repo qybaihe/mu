@@ -75,6 +75,13 @@
     "teamPill": "Команда · {{count}}",
     "members": "Учасники: {{names}}"
   },
+  "handoff": {
+    "entry": "Журнал команди",
+    "title": "Журнал команди",
+    "missing": "Журналу ще немає — HANDOFF.md з'явиться після завершення першого завдання.",
+    "error": "Не вдалося прочитати журнал",
+    "truncated": "Журнал обрізано: файл триває далі."
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",

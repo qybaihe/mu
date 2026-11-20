@@ -75,6 +75,13 @@
     "teamPill": "团队 · {{count}} 人",
     "members": "成员：{{names}}"
   },
+  "handoff": {
+    "entry": "工作台记录",
+    "title": "工作台记录",
+    "missing": "该团队还没有工作台记录——成员完成首个任务后，收尾落账会生成 HANDOFF.md。",
+    "error": "读取工作台记录失败",
+    "truncated": "记录过长，已截断显示。"
+  },
   "groupChat": {
     "newEntry": "新建群聊",
     "title": "新建群聊",

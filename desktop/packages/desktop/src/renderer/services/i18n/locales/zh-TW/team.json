@@ -75,6 +75,13 @@
     "teamPill": "團隊 · {{count}} 人",
     "members": "成員：{{names}}"
   },
+  "handoff": {
+    "entry": "工作台記錄",
+    "title": "工作台記錄",
+    "missing": "該團隊還沒有工作台記錄——成員完成首個任務後，收尾落帳會生成 HANDOFF.md。",
+    "error": "讀取工作台記錄失敗",
+    "truncated": "記錄過長，已截斷顯示。"
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",

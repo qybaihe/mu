@@ -75,6 +75,13 @@
     "teamPill": "Team · {{count}}",
     "members": "Mitglieder: {{names}}"
   },
+  "handoff": {
+    "entry": "Workbench-Protokoll",
+    "title": "Workbench-Protokoll",
+    "missing": "Noch kein Workbench-Protokoll — HANDOFF.md entsteht mit Abschluss der ersten Aufgabe.",
+    "error": "Workbench-Protokoll konnte nicht gelesen werden",
+    "truncated": "Protokoll gekürzt: die Datei geht weiter."
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",

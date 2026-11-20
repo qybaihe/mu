@@ -75,6 +75,13 @@
     "teamPill": "Équipe · {{count}}",
     "members": "Membres : {{names}}"
   },
+  "handoff": {
+    "entry": "Journal d'équipe",
+    "title": "Journal d'équipe",
+    "missing": "Pas encore de journal — HANDOFF.md apparaît après la première tâche terminée.",
+    "error": "Échec de lecture du journal",
+    "truncated": "Journal tronqué : le fichier continue au-delà."
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",

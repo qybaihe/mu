@@ -75,6 +75,13 @@
     "teamPill": "팀 · {{count}}명",
     "members": "구성원: {{names}}"
   },
+  "handoff": {
+    "entry": "워크벤치 기록",
+    "title": "워크벤치 기록",
+    "missing": "아직 워크벤치 기록이 없습니다. 첫 작업을 마무리하면 HANDOFF.md가 생성됩니다.",
+    "error": "워크벤치 기록을 읽지 못했습니다",
+    "truncated": "기록이 길어 일부만 표시합니다."
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",

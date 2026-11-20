@@ -75,6 +75,13 @@
     "teamPill": "Ekip · {{count}}",
     "members": "Üyeler: {{names}}"
   },
+  "handoff": {
+    "entry": "Ekip günlüğü",
+    "title": "Ekip günlüğü",
+    "missing": "Henüz günlük yok — HANDOFF.md ilk görev tamamlandığında oluşur.",
+    "error": "Günlük okunamadı",
+    "truncated": "Günlük kısaltıldı: dosya devam ediyor."
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",

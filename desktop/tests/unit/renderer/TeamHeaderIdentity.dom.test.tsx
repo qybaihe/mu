@@ -34,6 +34,11 @@ vi.mock('@/renderer/pages/team/core/teamStore', () => ({
 vi.mock('@/renderer/pages/team/components/TeamMembersManager', () => ({
   default: () => <div data-testid='team-members-manager-stub' />,
 }));
+// The workbench record is its own test's subject too; the stub keeps MuModal's
+// theme context out of this file's render.
+vi.mock('@/renderer/pages/team/components/TeamWorkspaceHandoff', () => ({
+  default: () => <div data-testid='team-handoff-stub' />,
+}));
 import TeamHeaderIdentity from '@/renderer/pages/team/components/TeamHeaderIdentity';
 
 const member = (slotId: string, name: string, role: 'leader' | 'teammate') => ({

@@ -75,6 +75,13 @@
     "teamPill": "Equipo · {{count}}",
     "members": "Integrantes: {{names}}"
   },
+  "handoff": {
+    "entry": "Registro del equipo",
+    "title": "Registro del equipo",
+    "missing": "Aún no hay registro: HANDOFF.md se crea al terminar la primera tarea.",
+    "error": "No se pudo leer el registro",
+    "truncated": "Registro truncado: el archivo continúa."
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",

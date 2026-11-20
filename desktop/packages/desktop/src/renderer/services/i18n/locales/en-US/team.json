@@ -75,6 +75,13 @@
     "teamPill": "Team · {{count}}",
     "members": "Members: {{names}}"
   },
+  "handoff": {
+    "entry": "Workbench record",
+    "title": "Workbench record",
+    "missing": "No workbench record yet — HANDOFF.md appears once the first task wraps up.",
+    "error": "Failed to read the workbench record",
+    "truncated": "Record truncated: the file continues past what is shown."
+  },
   "groupChat": {
     "newEntry": "New group chat",
     "title": "New group chat",
