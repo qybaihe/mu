@@ -332,6 +332,24 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('同一回合里自己提议又自己继续执行 = 违规');
   });
 
+  it('teaches the requirement-coverage flow: list the task requirements first, map each to a duty, show the mapping in the proposal', () => {
+    const content = buildSupervisorOverrideContent(roster);
+    // Drafting starts from an explicit requirements list of the task.
+    expect(content).toContain('任务需求清单');
+    expect(content).toContain('能力/工具/知识域');
+    // Each requirement must be carried by the drafted duties; an unmapped requirement blocks the proposal.
+    expect(content).toContain('逐条对应需求清单');
+    expect(content).toContain('找不到承接 = 草稿未完成');
+    // The proposal itself shows the mapping, one line per requirement, for the user to verify.
+    expect(content).toContain('需求覆盖（需求 → 承接职责，一行一条');
+    expect(content).toContain('→ 〈承接职责句〉');
+    // The written position file keeps per-requirement duty bullets and learns gaps at wrap-up.
+    expect(content).toContain('逐条承接任务需求清单');
+    expect(content).toContain('职责迭代（收尾时）');
+    expect(content).toContain('回写上方「岗位职责」节');
+    expect(content).toContain('岗位随使用变准');
+  });
+
   it('declares the supervisor identity and its no-hands rule', () => {
     const content = buildSupervisorOverrideContent([]);
     expect(content).toContain('主管（Supervisor）');
