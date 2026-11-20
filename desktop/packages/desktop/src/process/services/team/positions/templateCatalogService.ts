@@ -6,7 +6,7 @@
 
 /**
  * The template catalog on the main-process side: the one-time download of
- * the community catalog (awesome-grok-bot, CC0-1.0) into the shared folder
+ * the community catalog (awesome-grokbot, CC0-1.0, pinned ref) into the shared folder
  * (`positions/_shared/templates/`), the status of that cache, and the search
  * the wizard's template tab asks for. The catalog file is stored verbatim
  * next to a small meta file (`fetched_at`); a download that fails or does
@@ -22,6 +22,7 @@ import { getPlatformServices } from '@/common/platform';
 import { SHARED_TEAMS_FOLDER } from '@/common/chat/team/supervisor/supervisorCore';
 import {
   TEMPLATE_CATALOG_MAX_BYTES,
+  TEMPLATE_CATALOG_REF,
   TEMPLATE_CATALOG_URL,
   isTemplateCatalogStale,
   parseTemplateCatalog,
@@ -40,7 +41,7 @@ const CATALOG_FILE_NAME = 'catalog.json';
 const META_FILE_NAME = 'catalog.meta.json';
 
 /** One fetched catalog with its stamp. */
-type CachedCatalog = { entries: TemplateEntry[]; fetchedAt: number | undefined };
+type CachedCatalog = { entries: TemplateEntry[]; fetchedAt: number | undefined; source: string | undefined };
 
 const readOptional = async (file: string): Promise<string | undefined> => {
   try {
@@ -58,16 +59,19 @@ async function readCachedCatalog(templatesDir: string): Promise<CachedCatalog | 
   const entries = parseTemplateCatalog(text);
   if (entries === undefined) return undefined;
   let fetchedAt: number | undefined;
+  let source: string | undefined;
   const meta = await readOptional(join(templatesDir, META_FILE_NAME));
   if (meta !== undefined) {
     try {
-      const stamp = Date.parse((JSON.parse(meta) as { fetched_at?: unknown }).fetched_at as string);
-      if (Number.isFinite(stamp)) fetchedAt = stamp;
+      const stamp = JSON.parse(meta) as { fetched_at?: unknown; source?: unknown };
+      const parsed = Date.parse(stamp.fetched_at as string);
+      if (Number.isFinite(parsed)) fetchedAt = parsed;
+      if (typeof stamp.source === 'string' && stamp.source !== '') source = stamp.source;
     } catch {
       // A broken meta file means "unknown when"; the catalog itself still serves.
     }
   }
-  return { entries, fetchedAt };
+  return { entries, fetchedAt, source };
 }
 
 /** A cache as the status the wizard shows: the failure arrives as a code the renderer localizes. */
@@ -106,7 +110,11 @@ async function writeCachedCatalog(
   at: number
 ): Promise<void> {
   await mkdir(templatesDir, { recursive: true });
-  const meta = `${JSON.stringify({ fetched_at: new Date(at).toISOString(), source: TEMPLATE_CATALOG_URL, count: entries.length }, null, 2)}\n`;
+  const meta = `${JSON.stringify(
+    { fetched_at: new Date(at).toISOString(), source: TEMPLATE_CATALOG_URL, source_ref: TEMPLATE_CATALOG_REF, count: entries.length },
+    null,
+    2
+  )}\n`;
   await writeFile(join(templatesDir, `${CATALOG_FILE_NAME}.tmp`), text, 'utf8');
   await writeFile(join(templatesDir, `${META_FILE_NAME}.tmp`), meta, 'utf8');
   await rename(join(templatesDir, `${CATALOG_FILE_NAME}.tmp`), join(templatesDir, CATALOG_FILE_NAME));
@@ -126,7 +134,12 @@ export async function ensureTemplateCatalogIn(
   params: { refresh?: boolean } = {}
 ): Promise<TemplateCatalogStatus> {
   const cached = await readCachedCatalog(options.templatesDir);
-  if (cached !== undefined && params.refresh !== true) return statusOf(cached, deps.now());
+  // A cache another source wrote (an older pin, or a pre-official-repo
+  // download) must not keep serving: the pin moved, so the cache moves too.
+  // A failed refetch keeps it serving — the ordinary failure semantics.
+  if (cached !== undefined && cached.source === TEMPLATE_CATALOG_URL && params.refresh !== true) {
+    return statusOf(cached, deps.now());
+  }
   let text: string;
   try {
     text = await deps.fetchText(TEMPLATE_CATALOG_URL);
@@ -143,7 +156,7 @@ export async function ensureTemplateCatalogIn(
   }
   const at = deps.now();
   await writeCachedCatalog(options.templatesDir, text, entries, at);
-  return statusOf({ entries, fetchedAt: at }, at);
+  return statusOf({ entries, fetchedAt: at, source: TEMPLATE_CATALOG_URL }, at);
 }
 
 /** The one download the app may have in flight; concurrent callers join it. */

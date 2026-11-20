@@ -48,7 +48,7 @@
       "description": "記述が酷似"
     },
     "template": {
-      "hint": "コミュニティテンプレートから始める（awesome-grok-bot、CC0）：検索して採用し、草案は自由に編集できます",
+      "hint": "コミュニティテンプレートから始める（awesome-grokbot、CC0）：検索して採用し、草案は自由に編集できます",
       "searchPlaceholder": "テンプレートを検索（中国語・英語可）",
       "categoryLabel": "カテゴリ",
       "categoryAll": "すべてのカテゴリ",

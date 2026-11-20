@@ -48,7 +48,7 @@
       "description": "very similar description"
     },
     "template": {
-      "hint": "Start from a community template (awesome-grok-bot, CC0): search, adopt one, then edit the draft as you like",
+      "hint": "Start from a community template (awesome-grokbot, CC0): search, adopt one, then edit the draft as you like",
       "searchPlaceholder": "Search templates (Chinese or English)",
       "categoryLabel": "Category",
       "categoryAll": "All categories",

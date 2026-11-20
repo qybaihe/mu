@@ -48,7 +48,7 @@
       "description": "descripción muy parecida"
     },
     "template": {
-      "hint": "Empieza con una plantilla de la comunidad (awesome-grok-bot, CC0): busca, adopta una y edita el borrador",
+      "hint": "Empieza con una plantilla de la comunidad (awesome-grokbot, CC0): busca, adopta una y edita el borrador",
       "searchPlaceholder": "Buscar plantillas (chino o inglés)",
       "categoryLabel": "Categoría",
       "categoryAll": "Todas las categorías",

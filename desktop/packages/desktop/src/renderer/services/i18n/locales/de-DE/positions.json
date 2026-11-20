@@ -48,7 +48,7 @@
       "description": "sehr ähnliche Beschreibung"
     },
     "template": {
-      "hint": "Mit einer Community-Vorlage starten (awesome-grok-bot, CC0): suchen, übernehmen und den Entwurf frei bearbeiten",
+      "hint": "Mit einer Community-Vorlage starten (awesome-grokbot, CC0): suchen, übernehmen und den Entwurf frei bearbeiten",
       "searchPlaceholder": "Vorlagen suchen (Chinesisch oder Englisch)",
       "categoryLabel": "Kategorie",
       "categoryAll": "Alle Kategorien",

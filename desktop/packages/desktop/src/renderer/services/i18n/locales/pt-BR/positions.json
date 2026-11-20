@@ -48,7 +48,7 @@
       "description": "descrição muito parecida"
     },
     "template": {
-      "hint": "Comece com um modelo da comunidade (awesome-grok-bot, CC0): busque, adote um e edite o rascunho",
+      "hint": "Comece com um modelo da comunidade (awesome-grokbot, CC0): busque, adote um e edite o rascunho",
       "searchPlaceholder": "Pesquisar modelos (chinês ou inglês)",
       "categoryLabel": "Categoria",
       "categoryAll": "Todas as categorias",

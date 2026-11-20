@@ -6,7 +6,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync, mkdtempSync, realpathSync, rmSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -14,6 +14,10 @@ import {
   searchTemplatesIn,
   templateCatalogDirOf,
 } from '@process/services/team/positions/templateCatalogService';
+import {
+  TEMPLATE_CATALOG_REF,
+  TEMPLATE_CATALOG_URL,
+} from '@/common/chat/team/positions/templateCatalogCore';
 
 /**
  * The template catalog's service half (process/services/team/positions/
@@ -76,9 +80,14 @@ describe('ensureTemplateCatalogIn', () => {
     const meta = JSON.parse(await readFile(join(dir, 'catalog.meta.json'), 'utf8')) as {
       fetched_at: string;
       count: number;
+      source: string;
+      source_ref: string;
     };
     expect(meta.count).toBe(2);
     expect(Date.parse(meta.fetched_at)).toBe(at);
+    // The stamp records which pinned ref served, so a moved pin can be told from the cache it left.
+    expect(meta.source).toBe(TEMPLATE_CATALOG_URL);
+    expect(meta.source_ref).toBe(TEMPLATE_CATALOG_REF);
   });
 
   it('answers from the cache without fetching, and refetches only on refresh', async () => {
@@ -115,6 +124,28 @@ describe('ensureTemplateCatalogIn', () => {
     expect(garbage.errorCode).toBe('unparseable');
     expect(await readFile(join(dir, 'catalog.json'), 'utf8')).toBe(CATALOG_TEXT);
     expect(existsSync(join(dir, 'catalog.json.tmp'))).toBe(false);
+  });
+
+  it('refetches a cache another source wrote — a moved pin or an older origin must not keep serving', async () => {
+    const dir = temp();
+    await ensureTemplateCatalogIn({ templatesDir: dir }, deps(CATALOG_TEXT, 1_000));
+    const metaFile = join(dir, 'catalog.meta.json');
+    const foreign = JSON.parse(await readFile(metaFile, 'utf8')) as { source: string };
+    foreign.source = 'https://raw.githubusercontent.com/someone/else/main/catalog.json';
+    await writeFile(metaFile, `${JSON.stringify(foreign, null, 2)}\n`, 'utf8');
+    let downloads = 0;
+    const counting = {
+      fetchText: async () => {
+        downloads += 1;
+        return CATALOG_TEXT;
+      },
+      now: () => 2_000,
+    };
+    const status = await ensureTemplateCatalogIn({ templatesDir: dir }, counting);
+    expect(downloads).toBe(1);
+    expect(status).toMatchObject({ available: true, fetchedAt: 2_000 });
+    const after = JSON.parse(await readFile(metaFile, 'utf8')) as { source: string };
+    expect(after.source).toBe(TEMPLATE_CATALOG_URL);
   });
 
   it('answers unavailable when nothing is cached and the download fails', async () => {

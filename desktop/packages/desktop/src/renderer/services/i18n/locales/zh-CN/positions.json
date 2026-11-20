@@ -48,7 +48,7 @@
       "description": "描述高度相似"
     },
     "template": {
-      "hint": "从社区模板起步（awesome-grok-bot，CC0）：搜索并采用一条，回填草稿后仍可编辑",
+      "hint": "从社区模板起步（awesome-grokbot，CC0）：搜索并采用一条，回填草稿后仍可编辑",
       "searchPlaceholder": "搜索模板（中英文均可）",
       "categoryLabel": "分类",
       "categoryAll": "全部分类",

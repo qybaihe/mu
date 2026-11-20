@@ -48,7 +48,7 @@
       "description": "açıklamalar çok benzer"
     },
     "template": {
-      "hint": "Topluluk şablonuyla başlayın (awesome-grok-bot, CC0): arayın, benimseyin ve taslağı düzenleyin",
+      "hint": "Topluluk şablonuyla başlayın (awesome-grokbot, CC0): arayın, benimseyin ve taslağı düzenleyin",
       "searchPlaceholder": "Şablon ara (Çince veya İngilizce)",
       "categoryLabel": "Kategori",
       "categoryAll": "Tüm kategoriler",

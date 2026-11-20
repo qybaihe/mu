@@ -48,7 +48,7 @@
       "description": "설명이 매우 유사"
     },
     "template": {
-      "hint": "커뮤니티 템플릿으로 시작(awesome-grok-bot, CC0): 검색 후 채택하고 초안은 자유롭게 편집",
+      "hint": "커뮤니티 템플릿으로 시작(awesome-grokbot, CC0): 검색 후 채택하고 초안은 자유롭게 편집",
       "searchPlaceholder": "템플릿 검색(중국어 또는 영어)",
       "categoryLabel": "분류",
       "categoryAll": "모든 분류",

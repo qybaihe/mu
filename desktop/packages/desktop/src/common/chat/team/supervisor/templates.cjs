@@ -5,7 +5,7 @@
  * (process/services/team/supervisor/supervisorService.ts); the supervisor
  * agent runs it from that workspace when the roster covers nothing
  * (supervisor rules, rule 6): it searches the community template catalog
- * (awesome-grok-bot, CC0-1.0) for a reference before drafting a new
+ * (awesome-grokbot, CC0-1.0) for a reference before drafting a new
  * position to propose.
  *
  * The catalog is a CACHE the desktop downloads (the wizard's template tab

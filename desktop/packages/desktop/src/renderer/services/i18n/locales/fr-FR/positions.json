@@ -48,7 +48,7 @@
       "description": "descriptions très proches"
     },
     "template": {
-      "hint": "Démarrez d'un modèle communautaire (awesome-grok-bot, CC0) : cherchez, adoptez, puis modifiez le brouillon",
+      "hint": "Démarrez d'un modèle communautaire (awesome-grokbot, CC0) : cherchez, adoptez, puis modifiez le brouillon",
       "searchPlaceholder": "Rechercher des modèles (chinois ou anglais)",
       "categoryLabel": "Catégorie",
       "categoryAll": "Toutes les catégories",

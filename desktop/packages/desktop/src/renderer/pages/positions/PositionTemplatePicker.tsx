@@ -5,7 +5,7 @@
  */
 
 /**
- * The wizard's template tab: the community catalog (awesome-grok-bot, CC0)
+ * The wizard's template tab: the community catalog (awesome-grokbot, CC0)
  * as a starting point instead of a project directory. The tab ensures the
  * catalog cache on open (downloading it once when missing), searches it —
  * free text plus a category filter — and adopting one entry hands the

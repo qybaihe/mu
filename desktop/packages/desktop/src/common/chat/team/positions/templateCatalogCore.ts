@@ -7,7 +7,7 @@
 /**
  * The position-template catalog, pure: validating the downloaded catalog
  * file, searching it, and deriving the wizard's draft from one entry. The
- * catalog is the community list at awesome-grok-bot (CC0-1.0) — thousands of
+ * catalog is the community list at awesome-grokbot (CC0-1.0) — thousands of
  * shared bot templates, each a name, a Chinese summary and a category —
  * cached whole on disk by the position service; this module never touches
  * the network or the disk. The search spec here is mirrored, on purpose, by
@@ -16,8 +16,16 @@
  * positionLibraryCore): both sides are tested against the same fixtures.
  */
 
-/** Where the catalog is downloaded from: the awesome-grok-bot repo's raw file (CC0-1.0). */
-export const TEMPLATE_CATALOG_URL = 'https://raw.githubusercontent.com/majiayu000/awesome-grok-bot/main/catalog.json';
+/**
+ * Where the catalog is downloaded from: the awesome-grokbot repo's raw
+ * file at an immutable ref — never a branch head, so a repo compromise or a
+ * silent history rewrite cannot turn the app's download into a moving
+ * target. The repo has cut no release tags yet, so the pin is the audited
+ * commit SHA below; once a release exists, the ref becomes its tag. Bumping
+ * the pin is a deliberate, review-worthy code change.
+ */
+export const TEMPLATE_CATALOG_REF = 'f64dc25af7f823bcc697ad7d5fa675b397934d82';
+export const TEMPLATE_CATALOG_URL = `https://raw.githubusercontent.com/kydlikebtc/awesome-grokbot/${TEMPLATE_CATALOG_REF}/catalog.json`;
 
 /** How old a cached catalog may be before the wizard offers a refresh: 30 days. */
 export const TEMPLATE_CATALOG_STALE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -239,7 +247,7 @@ export function draftFromTemplate(entry: TemplateEntry): {
     displayNameCandidates: [candidate, entry.name].filter((name, index, all) => all.indexOf(name) === index),
     description: oneLine(entry.summary_zh, 160),
     body: [
-      `你是「${candidate}」岗位的常设负责 Bot（岗位即项目，跨任务常设，持续积累本岗记忆）。本岗位由 awesome-grok-bot 模板「${entry.name}」起步，请在首次任务中结合实际工作核实并补全职责。`,
+      `你是「${candidate}」岗位的常设负责 Bot（岗位即项目，跨任务常设，持续积累本岗记忆）。本岗位由 awesome-grokbot 模板「${entry.name}」起步，请在首次任务中结合实际工作核实并补全职责。`,
       '',
       '## 岗位职责（草案，来自模板中文摘要，可改）',
       `- ${oneLine(entry.summary_zh, 200)}`,
