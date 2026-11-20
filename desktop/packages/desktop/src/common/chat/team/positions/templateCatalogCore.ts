@@ -22,8 +22,11 @@ export const TEMPLATE_CATALOG_URL = 'https://raw.githubusercontent.com/majiayu00
 /** How old a cached catalog may be before the wizard offers a refresh: 30 days. */
 export const TEMPLATE_CATALOG_STALE_MS = 30 * 24 * 60 * 60 * 1000;
 
-/** The largest download accepted: the catalog is single-digit MB; ten times that is not it. */
-export const TEMPLATE_CATALOG_MAX_BYTES = 64 * 1024 * 1024;
+/**
+ * The largest download accepted: the catalog is ~6MB today; 16MB is
+ * generous headroom for its growth, not a budget to fill.
+ */
+export const TEMPLATE_CATALOG_MAX_BYTES = 16 * 1024 * 1024;
 
 /** One template of the catalog, the fields both surfaces show. */
 export type TemplateEntry = {
