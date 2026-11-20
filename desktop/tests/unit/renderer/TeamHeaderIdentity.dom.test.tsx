@@ -27,14 +27,14 @@ vi.mock('react-i18next', () => ({
     },
   }),
 }));
-vi.mock('@/renderer/pages/workbench/team/teamStore', () => ({
+vi.mock('@/renderer/pages/team/core/teamStore', () => ({
   useTeamRosterSnapshot: () => ({ teams, loading: false, error: null }),
 }));
 // The manager is its own test's subject; here it is a stub the presence checks see.
-vi.mock('@/renderer/pages/workbench/team/TeamMembersManager', () => ({
+vi.mock('@/renderer/pages/team/components/TeamMembersManager', () => ({
   default: () => <div data-testid='team-members-manager-stub' />,
 }));
-import TeamHeaderIdentity from '@/renderer/pages/workbench/team/TeamHeaderIdentity';
+import TeamHeaderIdentity from '@/renderer/pages/team/components/TeamHeaderIdentity';
 
 const member = (slotId: string, name: string, role: 'leader' | 'teammate') => ({
   slot_id: slotId,

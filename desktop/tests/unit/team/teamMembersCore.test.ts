@@ -17,7 +17,7 @@ import {
   isLeaderSlot,
   positionsAfterChange,
   removableMembersOf,
-} from '@/renderer/pages/workbench/team/teamMembersCore';
+} from '@/renderer/pages/team/core/teamMembersCore';
 
 const position = (name: string, displayName: string): PositionInfo => ({
   name,

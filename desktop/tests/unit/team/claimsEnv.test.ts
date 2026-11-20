@@ -5,7 +5,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { missingPathsOf, resetClaimsEnvForTest, teamInfoOf } from '@/renderer/pages/workbench/team/claimsEnv';
+import { missingPathsOf, resetClaimsEnvForTest, teamInfoOf } from '@/renderer/pages/team/core/claimsEnv';
 
 const wire = vi.hoisted(() => ({
   fsMetadata: { invoke: vi.fn() },

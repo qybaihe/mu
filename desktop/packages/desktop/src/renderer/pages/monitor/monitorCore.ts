@@ -14,8 +14,8 @@
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import { findPositionConversationId } from '@/common/chat/team/positions/positionLibraryCore';
 import type { ITeamSlotWork, ITeamTaskItem } from '@/common/types/team/teamTypes';
-import { boardColumnOf } from '@renderer/pages/workbench/team/teamDataCore';
-import { slotMatchesPosition, type TeamRosterEntry } from '@renderer/pages/workbench/team/teamIdentity';
+import { boardColumnOf } from '@renderer/pages/team/core/teamDataCore';
+import { slotMatchesPosition, type TeamRosterEntry } from '@renderer/pages/team/core/teamIdentity';
 
 /** The team's slot-work map, as the wire store keeps it per team. */
 export type SlotWorkBySlot = ReadonlyMap<string, ITeamSlotWork>;

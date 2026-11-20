@@ -12,7 +12,7 @@ import { isElectronDesktop } from '@/renderer/utils/platform';
 import { getSnapshotConversationName } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
 import { completionSoundOn, playAttentionSound } from './attentionSound';
 import { createBrowserNotificationController, truncateConversationName } from './browserNotificationCore';
-import { teamInfoOf } from '@renderer/pages/workbench/team/claimsEnv';
+import { teamInfoOf } from '@renderer/pages/team/core/claimsEnv';
 
 /**
  * Fire a native system notification when an agent turn finishes.

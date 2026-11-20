@@ -22,7 +22,7 @@ import {
   filterSearchHitsToTeam,
   searchTermsOf,
   type TeamSearchRow,
-} from '@/renderer/pages/workbench/team/teamDataCore';
+} from '@/renderer/pages/team/core/teamDataCore';
 
 const timeLabel = (at: number, language: string): string => {
   try {

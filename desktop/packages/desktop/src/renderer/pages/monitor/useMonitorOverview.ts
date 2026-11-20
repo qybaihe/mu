@@ -21,8 +21,8 @@ import {
   useConversationActivitySets,
   useConversationListSync,
 } from '@renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
-import { useTeamRosterSnapshot, useTeamWorkbenchSnapshot } from '@renderer/pages/workbench/team/teamStore';
-import { teamRosterEntries } from '@renderer/pages/workbench/team/teamIdentity';
+import { useTeamRosterSnapshot, useTeamWorkbenchSnapshot } from '@renderer/pages/team/core/teamStore';
+import { teamRosterEntries } from '@renderer/pages/team/core/teamIdentity';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { monitorActiveCount, positionCardsOf, teamCardsOf, type PositionCard, type TeamWall } from './monitorCore';
 import { useSlotWorkIndex } from './slotWorkStore';

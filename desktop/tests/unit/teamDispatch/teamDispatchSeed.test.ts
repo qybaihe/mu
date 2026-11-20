@@ -12,7 +12,7 @@ vi.mock('@/common/chat/team/teamDispatch/dispatchSeedBridge', () => ({
   dispatchSeedBridge: { seed: seedBridge },
 }));
 
-import { ensureTeamDispatchSeeded } from '@/renderer/pages/workbench/team/teamDispatchSeed';
+import { ensureTeamDispatchSeeded } from '@/renderer/pages/team/core/teamDispatchSeed';
 
 const team = (id: string, workspace: string): TTeam => ({
   id,

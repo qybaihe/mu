@@ -12,7 +12,7 @@ import {
   fileRefsOf,
   inProgressClaimOf,
   resolveClaimPath,
-} from '@/renderer/pages/workbench/team/claimsCore';
+} from '@/renderer/pages/team/core/claimsCore';
 
 describe('fileRefsOf', () => {
   it('collects deliberate markdown file links in order, deduplicated', () => {

@@ -24,7 +24,7 @@ import { useConversationAssistants } from '@renderer/pages/conversation/hooks/us
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { getConversationCreateErrorMessage } from '@renderer/pages/conversation/utils/conversationCreateError';
 import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
-import { ensureTeamDispatchSeeded } from '@renderer/pages/workbench/team/teamDispatchSeed';
+import { ensureTeamDispatchSeeded } from '@renderer/pages/team/core/teamDispatchSeed';
 import {
   GROUP_NAME_MAX_LENGTH,
   autoGroupName,

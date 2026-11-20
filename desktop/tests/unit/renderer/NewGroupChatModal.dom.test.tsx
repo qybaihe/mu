@@ -42,7 +42,7 @@ vi.mock('@/renderer/pages/positions/usePositionRoster', () => ({
 vi.mock('@/renderer/pages/conversation/hooks/useConversationAssistants', () => ({
   useConversationAssistants: () => ({ presetAssistants: assistants, isLoading: false }),
 }));
-vi.mock('@/renderer/pages/workbench/team/teamDispatchSeed', () => ({
+vi.mock('@/renderer/pages/team/core/teamDispatchSeed', () => ({
   ensureTeamDispatchSeeded: vi.fn(async () => undefined),
 }));
 vi.mock('@/common', () => ({

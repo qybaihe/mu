@@ -14,7 +14,7 @@ import {
   rosterEntryHolds,
   stripGroupChatMarker,
   teamRosterEntries,
-} from '@/renderer/pages/workbench/team/teamIdentity';
+} from '@/renderer/pages/team/core/teamIdentity';
 
 const team = (id: string, overrides: Partial<TTeam> = {}): TTeam => ({
   id,

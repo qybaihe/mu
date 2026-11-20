@@ -14,8 +14,8 @@
  */
 import { useEffect, useState } from 'react';
 import type { ITeamMailboxMessage, ITeamTaskItem, TeamAssistant } from '@/common/types/team/teamTypes';
-import { teamInfoOf } from '@renderer/pages/workbench/team/claimsEnv';
-import { useTeamWorkbenchSnapshot } from '@renderer/pages/workbench/team/teamStore';
+import { teamInfoOf } from '@renderer/pages/team/core/claimsEnv';
+import { useTeamWorkbenchSnapshot } from '@renderer/pages/team/core/teamStore';
 
 export type TeamTaskEventsScope = {
   teamId: string;

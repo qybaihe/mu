@@ -20,13 +20,13 @@ import { Comments, Plus, Right } from '@icon-park/react';
 import classNames from 'classnames';
 import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import type { SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCore';
-import { useTeamRosterSnapshot } from '@renderer/pages/workbench/team/teamStore';
+import { useTeamRosterSnapshot } from '@renderer/pages/team/core/teamStore';
 import {
   rosterEntryHolds,
   stripGroupChatMarker,
   teamRosterEntries,
   type TeamRosterEntry,
-} from '@renderer/pages/workbench/team/teamIdentity';
+} from '@renderer/pages/team/core/teamIdentity';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { rowButtonProps } from '@renderer/utils/ui/rowButton';
 

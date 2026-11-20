@@ -68,7 +68,7 @@ import {
   memberMessagesFromMailbox,
   type TeamTaskRow,
 } from './teamTaskEvents';
-import { dependencyEdgesOf } from '@renderer/pages/workbench/team/teamDataCore';
+import { dependencyEdgesOf } from '@renderer/pages/team/core/teamDataCore';
 import { useTeamTaskEvents } from './useTeamTaskEvents';
 import type { WriteFileResult } from './types';
 import { useAutoScroll } from './useAutoScroll';

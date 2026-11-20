@@ -22,8 +22,8 @@ import {
   fileCheckCandidates,
   inProgressClaimOf,
   type ReplyClaims,
-} from '@renderer/pages/workbench/team/claimsCore';
-import { missingPathsOf, teamInfoOf } from '@renderer/pages/workbench/team/claimsEnv';
+} from '@renderer/pages/team/core/claimsCore';
+import { missingPathsOf, teamInfoOf } from '@renderer/pages/team/core/claimsEnv';
 
 type MarkerState = { enabled: boolean; workspace: string | undefined };
 

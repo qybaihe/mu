@@ -16,7 +16,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import type { TTeam } from '@/common/types/team/teamTypes';
-import type { TeamRosterEntry } from '@renderer/pages/workbench/team/teamIdentity';
+import type { TeamRosterEntry } from '@renderer/pages/team/core/teamIdentity';
 import type { PositionCard, TeamCard, TeamWall } from '@renderer/pages/monitor/monitorCore';
 import type { MonitorOverview } from '@renderer/pages/monitor/useMonitorOverview';
 import styles from '@renderer/pages/monitor/MonitorPage.module.css';

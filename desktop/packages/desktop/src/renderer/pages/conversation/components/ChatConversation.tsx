@@ -39,8 +39,8 @@ import { resolveConversationBackend } from '../utils/conversationAssistantIdenti
 import LegacyReadOnlyConversation from '../platforms/legacy/LegacyReadOnlyConversation';
 import SingleChatEmptyState from './SingleChatEmptyState';
 import TeamChatSearch from './TeamChatSearch';
-import TeamHeaderIdentity from '@renderer/pages/workbench/team/TeamHeaderIdentity';
-import { stripGroupChatMarker } from '@renderer/pages/workbench/team/teamIdentity';
+import TeamHeaderIdentity from '@renderer/pages/team/components/TeamHeaderIdentity';
+import { stripGroupChatMarker } from '@renderer/pages/team/core/teamIdentity';
 import { useActiveLease } from '../hooks/useActiveLease';
 import { BUILTIN_AGENT, type BuiltinAgent } from '@/common/platform/backendNames';
 // import SkillRuleGenerator from './components/SkillRuleGenerator'; // Temporarily hidden

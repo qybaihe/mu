@@ -51,10 +51,10 @@ vi.mock('@/common/chat/team/supervisor/supervisorBridge', () => ({
 vi.mock('@/renderer/pages/positions/usePositionRoster', () => ({
   usePositionRoster: () => ({ positions, isLoading: false }),
 }));
-vi.mock('@/renderer/pages/workbench/team/teamStore', () => ({
+vi.mock('@/renderer/pages/team/core/teamStore', () => ({
   refreshTeamsList: (...args: unknown[]) => refreshTeamsList(...args),
 }));
-import TeamMembersManager from '@/renderer/pages/workbench/team/TeamMembersManager';
+import TeamMembersManager from '@/renderer/pages/team/components/TeamMembersManager';
 
 const member = (slotId: string, name: string, role: 'leader' | 'teammate') => ({
   slot_id: slotId,

@@ -10,11 +10,11 @@ import {
   resetTeamWorkbenchStoreForTest,
   useTeamRosterSnapshot,
   useTeamWorkbenchSnapshot,
-} from '@/renderer/pages/workbench/team/teamStore';
+} from '@/renderer/pages/team/core/teamStore';
 import type { ITeamTaskItem, TTeam } from '@/common/types/team/teamTypes';
 
 const seed = vi.hoisted(() => ({ ensureTeamDispatchSeeded: vi.fn(async (): Promise<void> => {}) }));
-vi.mock('@renderer/pages/workbench/team/teamDispatchSeed', () => seed);
+vi.mock('@renderer/pages/team/core/teamDispatchSeed', () => seed);
 
 /** Captured wire handlers and API answers: the store's subscriptions land here. */
 const wire = vi.hoisted(() => {

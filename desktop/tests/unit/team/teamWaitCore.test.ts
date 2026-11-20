@@ -12,7 +12,7 @@ import {
   foldRunEvent,
   foldSlotWorkChanged,
   isWaitingStall,
-} from '@/renderer/pages/workbench/attention/teamWaitCore';
+} from '@/renderer/pages/team/core/teamWaitCore';
 
 const slot = (overrides: Partial<ITeamSlotWork> = {}): ITeamSlotWork => ({
   slot_id: 'slot-a',

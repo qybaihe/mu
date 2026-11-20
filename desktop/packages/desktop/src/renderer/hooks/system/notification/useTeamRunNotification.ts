@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
 import { configService } from '@/common/config/configService';
 import { isElectronDesktop } from '@/renderer/utils/platform';
-import { subscribeTeamWait } from '@renderer/pages/workbench/attention/teamWaitStore';
+import { subscribeTeamWait } from '@renderer/pages/team/core/teamWaitStore';
 import { createTeamRunNotificationController, type TeamRunNotification } from './teamRunNotificationCore';
 
 /** Resolve the team's name and the conversation a slot id lives in, for the notification

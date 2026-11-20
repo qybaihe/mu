@@ -16,8 +16,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@arco-design/web-react';
 import classNames from 'classnames';
-import { useTeamRosterSnapshot } from './teamStore';
-import { memberIdentityColor, memberInitial } from './teamIdentity';
+import { useTeamRosterSnapshot } from '../core/teamStore';
+import { memberIdentityColor, memberInitial } from '../core/teamIdentity';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import TeamMembersManager from './TeamMembersManager';
 

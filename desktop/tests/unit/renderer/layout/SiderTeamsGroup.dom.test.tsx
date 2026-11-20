@@ -34,7 +34,7 @@ vi.mock('react-i18next', () => ({
     },
   }),
 }));
-vi.mock('@/renderer/pages/workbench/team/teamStore', () => ({
+vi.mock('@/renderer/pages/team/core/teamStore', () => ({
   useTeamRosterSnapshot: () => ({ teams, loading: false, error: null }),
 }));
 vi.mock('@/renderer/pages/positions/usePositionRoster', () => ({

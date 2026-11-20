@@ -15,7 +15,7 @@ import {
   searchTermsOf,
   terminalKindOf,
   type SearchHitSource,
-} from '@/renderer/pages/workbench/team/teamDataCore';
+} from '@/renderer/pages/team/core/teamDataCore';
 
 const member = (slotId: string, name: string, role: 'leader' | 'teammate' = 'teammate') => ({
   slot_id: slotId,

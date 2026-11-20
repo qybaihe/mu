@@ -23,7 +23,7 @@ import {
   nameOfSlot,
   terminalKindOf,
   type TaskBoardColumn,
-} from '@renderer/pages/workbench/team/teamDataCore';
+} from '@renderer/pages/team/core/teamDataCore';
 import styles from './TeamTaskCard.module.css';
 
 /** Tasks the reader opened, by task id — an update re-renders the card, not the reader's choice. */

@@ -25,9 +25,9 @@ import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge
 import type { TTeam } from '@/common/types/team/teamTypes';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { leadConversationIdOf, teammateThreadName } from '@renderer/pages/team/createGroupChat/groupChatCore';
-import { memberIdentityColor, memberInitial } from './teamIdentity';
-import { refreshTeamsList } from './teamStore';
-import { addablePositions, isLeaderSlot, positionsAfterChange } from './teamMembersCore';
+import { memberIdentityColor, memberInitial } from '../core/teamIdentity';
+import { refreshTeamsList } from '../core/teamStore';
+import { addablePositions, isLeaderSlot, positionsAfterChange } from '../core/teamMembersCore';
 
 type TeamMembersManagerProps = {
   team: TTeam;
