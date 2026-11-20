@@ -24,7 +24,9 @@ import styles from '@renderer/pages/monitor/MonitorPage.module.css';
 let overview: MonitorOverview;
 const openPosition = vi.fn();
 const openSupervisor = vi.fn();
+const teamRemove = vi.fn();
 const setTeamLifecycle = vi.fn();
+const removeTeamRow = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -81,14 +83,57 @@ vi.mock('@arco-design/web-react', async (importOriginal) => {
       </span>
     );
   };
-  return { ...actual, Popover: FakePopover };
+  const FakePopconfirm = (props: {
+    title?: React.ReactNode;
+    content?: React.ReactNode;
+    okText?: React.ReactNode;
+    cancelText?: React.ReactNode;
+    onOk?: () => void;
+    children?: React.ReactNode;
+  }) => {
+    const [open, setOpen] = useState(false);
+    return (
+      <span
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen(true);
+        }}
+      >
+        {props.children}
+        {open ? (
+          <span role='tooltip'>
+            <span>{props.title}</span>
+            <span>{props.content}</span>
+            <button type='button' onClick={() => setOpen(false)}>
+              {props.cancelText}
+            </button>
+            <button
+              type='button'
+              onClick={() => {
+                setOpen(false);
+                props.onOk?.();
+              }}
+            >
+              {props.okText}
+            </button>
+          </span>
+        ) : null}
+      </span>
+    );
+  };
+  return { ...actual, Popover: FakePopover, Popconfirm: FakePopconfirm };
 });
+vi.mock('@/common', () => ({
+  ipcBridge: { team: { remove: { invoke: (...args: unknown[]) => teamRemove(...args) } } },
+}));
 vi.mock('@/common/chat/team/supervisor/supervisorBridge', () => ({
   supervisorBridge: {
     setTeamLifecycle: { invoke: (...args: unknown[]) => setTeamLifecycle(...args) },
+    removeTeam: { invoke: (...args: unknown[]) => removeTeamRow(...args) },
   },
 }));
 import MonitorPage from '@renderer/pages/monitor/MonitorPage';
+import { resetHiddenPositionsForTest, restoreHiddenPositions } from '@renderer/pages/monitor/hiddenPositions';
 
 const position = (name: string, displayName: string): PositionInfo => ({
   name,
@@ -173,8 +218,15 @@ describe('MonitorPage', () => {
   beforeEach(() => {
     openPosition.mockClear();
     openSupervisor.mockClear();
+    teamRemove.mockClear();
+    teamRemove.mockResolvedValue(undefined);
     setTeamLifecycle.mockClear();
     setTeamLifecycle.mockResolvedValue({ ok: true, data: { teams: [] } });
+    removeTeamRow.mockClear();
+    removeTeamRow.mockResolvedValue({ ok: true, data: { teams: [] } });
+    restoreHiddenPositions();
+    resetHiddenPositionsForTest();
+    localStorage.clear();
   });
   afterEach(cleanup);
 
@@ -331,5 +383,55 @@ describe('MonitorPage', () => {
     await waitFor(() => expect(refreshTeamsIndex).toHaveBeenCalled());
     // The chip's press never opened the group chat underneath.
     expect(screen.getByTestId('where').textContent).not.toBe('/conversation/lead-1');
+  });
+
+  it('the team card delete asks, then removes the backend team, clears the index row, and refreshes', async () => {
+    const refreshTeamsIndex = vi.fn();
+    const card = teamCard(rosterEntry(team('t1'), 'lead-1', false));
+    overview = {
+      positionCards: [],
+      teamWall: { active: [card], retired: [] } satisfies TeamWall,
+      activeCount: 0,
+      positionCount: 0,
+      activeTeamCount: 1,
+      loading: false,
+      refreshTeamsIndex,
+    };
+    renderPage();
+    fireEvent.click(screen.getByTestId('monitor-team-t1-delete'));
+    expect(await screen.findByText('monitor.teams.deleteTitle:name=队t1')).toBeTruthy();
+    fireEvent.click(await screen.findByText('common.delete'));
+    await waitFor(() => expect(teamRemove).toHaveBeenCalledWith({ id: 't1' }));
+    await waitFor(() => expect(removeTeamRow).toHaveBeenCalledWith({ teamId: 't1' }));
+    await waitFor(() => expect(refreshTeamsIndex).toHaveBeenCalled());
+    expect(screen.getByTestId('where').textContent).not.toBe('/conversation/lead-1');
+  });
+
+  it('the position card hide asks, then records the hide with a restore entry; restore empties the list', async () => {
+    const forwarder = position('forwarder', '货代');
+    const reviewer = position('reviewer', '评审');
+    overview = {
+      positionCards: [positionCard(forwarder), positionCard(reviewer)],
+      teamWall: { active: [], retired: [] },
+      activeCount: 0,
+      positionCount: 2,
+      activeTeamCount: 0,
+      loading: false,
+      refreshTeamsIndex: () => undefined,
+    };
+    renderPage();
+    expect(screen.getByTestId('monitor-position-forwarder')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('monitor-position-forwarder-hide'));
+    expect(await screen.findByText('monitor.positions.hideTitle:name=货代')).toBeTruthy();
+    expect(await screen.findByText('monitor.positions.hideDesc')).toBeTruthy();
+    fireEvent.click(await screen.findByText('monitor.positions.hideOk'));
+    // The hide is recorded, and the wall's header grows the one recovery entry.
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem('monitor-hidden-positions') ?? '[]')).toEqual(['forwarder'])
+    );
+    const restore = await screen.findByTestId('monitor-hidden-restore');
+    expect(restore.textContent).toContain('monitor.positions.hidden:count=1');
+    fireEvent.click(restore);
+    await waitFor(() => expect(localStorage.getItem('monitor-hidden-positions')).toBe('[]'));
   });
 });

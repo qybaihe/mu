@@ -17,8 +17,10 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Button, Message, Popover } from '@arco-design/web-react';
+import { Button, Message, Popconfirm, Popover } from '@arco-design/web-react';
+import { Delete } from '@icon-park/react';
 import classNames from 'classnames';
+import { ipcBridge } from '@/common';
 import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import { positionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
@@ -28,6 +30,7 @@ import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
 import { useOpenPosition } from '@renderer/pages/positions/openPosition';
 import { useOpenSupervisor } from '@renderer/pages/positions/openSupervisor';
 import { rowButtonProps } from '@renderer/utils/ui/rowButton';
+import { hidePosition, restoreHiddenPositions, useHiddenPositions } from './hiddenPositions';
 import TeamLifecycleEditor from './TeamLifecycleEditor';
 import { isNearExpiry, relativeTimeBucket, type PositionCard, type TeamCard, type MemberDotKind } from './monitorCore';
 import { useMonitorOverview } from './useMonitorOverview';
@@ -61,6 +64,25 @@ const stopBubble = {
   onKeyDown: (event: React.KeyboardEvent) => event.stopPropagation(),
 };
 
+/** The hover-revealed delete affordance both card kinds share. Spreads the
+ *  rest of its props onto the span: Arco's Popconfirm clones its child and
+ *  attaches the trigger handlers there, so they must reach the DOM. */
+const CardDeleteIcon: React.FC<
+  { testId: string; a11y: string; className?: string } & React.HTMLAttributes<HTMLSpanElement>
+> = ({ testId, a11y, className, ...rest }) => (
+  <span
+    data-testid={testId}
+    aria-label={a11y}
+    className={classNames(
+      'inline-flex items-center justify-center size-20px rd-6px text-t-quaternary hover:text-[rgb(var(--danger-6))] hover:bg-fill-3 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity shrink-0',
+      className
+    )}
+    {...rest}
+  >
+    <Delete theme='outline' size='12' fill='currentColor' className='block' style={{ lineHeight: 0 }} />
+  </span>
+);
+
 const RelativeTime: React.FC<{ ts: number | undefined; now: number }> = ({ ts, now }) => {
   const { t } = useTranslation();
   const bucket = relativeTimeBucket(ts, now);
@@ -85,11 +107,12 @@ const stateLabelKey = (
       ? 'monitor.positions.state.waiting'
       : 'monitor.positions.state.idle';
 
-const PositionWallCard: React.FC<{ card: PositionCard; now: number; onOpen: (position: PositionInfo) => void }> = ({
-  card,
-  now,
-  onOpen,
-}) => {
+const PositionWallCard: React.FC<{
+  card: PositionCard;
+  now: number;
+  onOpen: (position: PositionInfo) => void;
+  onHide: (position: PositionInfo) => void;
+}> = ({ card, now, onOpen, onHide }) => {
   const { t } = useTranslation();
   const { position, state } = card;
   const doing = card.currentTask
@@ -119,6 +142,23 @@ const PositionWallCard: React.FC<{ card: PositionCard; now: number; onOpen: (pos
           {position.displayName}
         </span>
         <span className='text-12px leading-[1.45] text-t-quaternary truncate'>{position.name}</span>
+        <span className='flex-1' />
+        {/* Hide, not delete: the row leaves the monitor and the roster, the
+         * library file stays, the monitor's restore entry brings it back. */}
+        <span {...stopBubble}>
+          <Popconfirm
+            title={t('monitor.positions.hideTitle', { name: position.displayName })}
+            content={t('monitor.positions.hideDesc')}
+            okText={t('monitor.positions.hideOk')}
+            cancelText={t('common.cancel')}
+            onOk={() => onHide(position)}
+          >
+            <CardDeleteIcon
+              testId={`monitor-position-${position.name}-hide`}
+              a11y={t('monitor.positions.hideA11y', { name: position.displayName })}
+            />
+          </Popconfirm>
+        </span>
       </div>
       <div
         data-testid={`monitor-position-${position.name}-state`}
@@ -149,7 +189,8 @@ const TeamWallCard: React.FC<{
   now: number;
   onOpen: (card: TeamCard) => void;
   onSetLifecycle: (card: TeamCard, ttlDays: number, permanent: boolean) => Promise<void>;
-}> = ({ card, now, onOpen, onSetLifecycle }) => {
+  onDelete: (card: TeamCard) => Promise<void>;
+}> = ({ card, now, onOpen, onSetLifecycle, onDelete }) => {
   const { t } = useTranslation();
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
   const { entry } = card;
@@ -216,6 +257,22 @@ const TeamWallCard: React.FC<{
             </Popover>
           </span>
         ) : null}
+        {/* Delete the group chat itself: backend team + index row; the
+         * conversations follow the backend's own DELETE semantics. */}
+        <span {...stopBubble}>
+          <Popconfirm
+            title={t('monitor.teams.deleteTitle', { name: entry.team.name })}
+            content={t('monitor.teams.deleteDesc')}
+            okText={t('common.delete')}
+            cancelText={t('common.cancel')}
+            onOk={() => onDelete(card)}
+          >
+            <CardDeleteIcon
+              testId={`monitor-team-${entry.team.id}-delete`}
+              a11y={t('monitor.teams.deleteA11y', { name: entry.team.name })}
+            />
+          </Popconfirm>
+        </span>
       </div>
       <div className='flex flex-wrap gap-8px'>
         {card.members.map((member, index) => (
@@ -263,6 +320,7 @@ const MonitorPage: React.FC = () => {
   const primaryAssistantId = selectableAssistants(assistants, assistantOrder)[0]?.id ?? null;
   const openPosition = useOpenPosition(conversations, primaryAssistantId);
   const openSupervisor = useOpenSupervisor(conversations, primaryAssistantId);
+  const hidden = useHiddenPositions();
   const [retiredOpen, setRetiredOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
@@ -295,6 +353,21 @@ const MonitorPage: React.FC = () => {
     }
   };
 
+  // The card's delete: the backend team first (its conversations follow the
+  // backend's own DELETE semantics), then the index row — the dead-row gap the
+  // audit left — then the wall re-reads the shared index.
+  const deleteTeam = async (card: TeamCard): Promise<void> => {
+    try {
+      await ipcBridge.team.remove.invoke({ id: card.entry.team.id });
+      const answer = await supervisorBridge.removeTeam.invoke({ teamId: card.entry.team.id });
+      if (!answer.ok) Message.warning(t('monitor.teams.deleteIndexFailed'));
+      overview.refreshTeamsIndex();
+    } catch (error) {
+      console.error('[MonitorPage] delete team failed', error);
+      Message.error(t('monitor.teams.deleteFailed'));
+    }
+  };
+
   if (nothingAtAll) {
     return (
       <div data-testid='monitor-page' className={classNames('size-full overflow-y-auto', styles.root)}>
@@ -306,6 +379,11 @@ const MonitorPage: React.FC = () => {
           <Button type='primary' onClick={() => openSupervisor()}>
             {t('monitor.empty.action')}
           </Button>
+          {hidden.size > 0 ? (
+            <Button type='text' size='mini' onClick={() => restoreHiddenPositions()}>
+              {t('monitor.positions.restoreAll', { count: hidden.size })}
+            </Button>
+          ) : null}
         </div>
       </div>
     );
@@ -328,10 +406,36 @@ const MonitorPage: React.FC = () => {
         </div>
 
         <section data-testid='monitor-positions-wall' className='flex flex-col gap-12px'>
-          <div className='text-13px font-500 text-t-secondary'>{t('monitor.positions.title')}</div>
+          <div className='flex items-center gap-10px'>
+            <span className='text-13px font-500 text-t-secondary'>{t('monitor.positions.title')}</span>
+            {hidden.size > 0 ? (
+              // The one recovery entry: hidden positions come back all at once.
+              <span
+                data-testid='monitor-hidden-restore'
+                role='button'
+                tabIndex={0}
+                className='text-12px text-t-quaternary cursor-pointer hover:text-t-secondary'
+                onClick={() => restoreHiddenPositions()}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return;
+                  event.preventDefault();
+                  restoreHiddenPositions();
+                }}
+              >
+                {t('monitor.positions.hidden', { count: hidden.size })} ·{' '}
+                {t('monitor.positions.restoreAll', { count: hidden.size })}
+              </span>
+            ) : null}
+          </div>
           <div className='grid gap-12px grid-cols-[repeat(auto-fill,minmax(230px,1fr))]'>
             {positionCards.map((card) => (
-              <PositionWallCard key={card.position.name} card={card} now={now} onOpen={openPosition} />
+              <PositionWallCard
+                key={card.position.name}
+                card={card}
+                now={now}
+                onOpen={openPosition}
+                onHide={(position) => hidePosition(position.name)}
+              />
             ))}
           </div>
         </section>
@@ -352,6 +456,7 @@ const MonitorPage: React.FC = () => {
                   now={now}
                   onOpen={openTeam}
                   onSetLifecycle={setLifecycle}
+                  onDelete={deleteTeam}
                 />
               ))}
             </div>
@@ -382,6 +487,7 @@ const MonitorPage: React.FC = () => {
                       now={now}
                       onOpen={openTeam}
                       onSetLifecycle={setLifecycle}
+                      onDelete={deleteTeam}
                     />
                   ))}
                 </div>

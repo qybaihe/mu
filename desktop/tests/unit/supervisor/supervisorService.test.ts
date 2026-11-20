@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import {
   ensureSupervisorWorkspaceIn,
   registerSupervisorTeamIn,
+  removeSupervisorTeamIn,
   setTeamLifecycleIn,
 } from '@process/services/team/supervisor';
 import { TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/team/teamDispatch/dispatchRules';
@@ -334,5 +335,32 @@ describe('setTeamLifecycleIn', () => {
     const before = readFileSync(teamsFile, 'utf8');
     await setTeamLifecycleIn({ dataDir }, { teamId: 'nope', ttlDays: 3 }, () => t0 + day);
     expect(readFileSync(teamsFile, 'utf8')).toBe(before);
+  });
+});
+
+describe('removeSupervisorTeamIn', () => {
+  it('drops exactly the deleted team row, leaving the others', async () => {
+    const { dataDir, teamsFile } = setup();
+    const t0 = 1_800_000_000_000;
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '留队', positions: ['forwarder'], teamId: 'keep', leadConversationId: 'c1' },
+      () => t0
+    );
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '删队', positions: ['video-lab'], teamId: 'gone', leadConversationId: 'c2' },
+      () => t0
+    );
+    const rows = await removeSupervisorTeamIn({ dataDir }, { teamId: 'gone' }, () => t0 + 1);
+    expect(rows.map((t) => t.teamId)).toEqual(['keep']);
+    const onDisk = parseTeamsFile(readFileSync(teamsFile, 'utf8'));
+    expect(onDisk.map((t) => t.teamId)).toEqual(['keep']);
+  });
+
+  it('is a no-op rewrite when the row is already gone', async () => {
+    const { dataDir } = setup();
+    const rows = await removeSupervisorTeamIn({ dataDir }, { teamId: 'ghost' });
+    expect(rows).toEqual([]);
   });
 });

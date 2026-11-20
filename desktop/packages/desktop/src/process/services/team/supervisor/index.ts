@@ -16,6 +16,7 @@ import {
   ensureSupervisorWorkspace,
   listSupervisorTeams,
   registerSupervisorTeam,
+  removeSupervisorTeam,
   setTeamLifecycle,
 } from './supervisorService';
 
@@ -25,6 +26,8 @@ export {
   listSupervisorTeams,
   registerSupervisorTeam,
   registerSupervisorTeamIn,
+  removeSupervisorTeam,
+  removeSupervisorTeamIn,
   setTeamLifecycle,
   setTeamLifecycleIn,
 } from './supervisorService';
@@ -46,6 +49,9 @@ export function initSupervisorBridge(): void {
   );
   supervisorBridge.setTeamLifecycle.provider((params) =>
     result(() => setTeamLifecycle(params).then((teams) => ({ teams })))
+  );
+  supervisorBridge.removeTeam.provider((params) =>
+    result(() => removeSupervisorTeam(params).then((teams) => ({ teams })))
   );
   void ensureSupervisorWorkspace().catch((error) => {
     console.warn('[supervisor] startup reconciliation failed', error);

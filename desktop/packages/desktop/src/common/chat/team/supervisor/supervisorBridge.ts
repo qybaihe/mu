@@ -34,6 +34,9 @@ export type SupervisorRegisterTeamParams = {
 /** Sets one team's lifecycle (day count and/or permanent flag): what the monitor card's popover saves. */
 export type SupervisorTeamLifecycleParams = { teamId: string; ttlDays?: number; permanent?: boolean };
 
+/** Drops one team's row from the shared index: what a group-chat deletion calls after the backend DELETE. */
+export type SupervisorRemoveTeamParams = { teamId: string };
+
 export const supervisorBridge = {
   /** Prepares (and refreshes) the supervisor workspace: rules, script, teams index. */
   ensure: bridge.buildProvider<KyrnResult<SupervisorWorkspaceResult>, void>('supervisor.ensure'),
@@ -46,5 +49,9 @@ export const supervisorBridge = {
   /** Sets one team's lifecycle (ttlDays / permanent) in the shared index. */
   setTeamLifecycle: bridge.buildProvider<KyrnResult<SupervisorTeamsResult>, SupervisorTeamLifecycleParams>(
     'supervisor.setTeamLifecycle'
+  ),
+  /** Drops one team's row from the shared index (a group-chat deletion). */
+  removeTeam: bridge.buildProvider<KyrnResult<SupervisorTeamsResult>, SupervisorRemoveTeamParams>(
+    'supervisor.removeTeam'
   ),
 };

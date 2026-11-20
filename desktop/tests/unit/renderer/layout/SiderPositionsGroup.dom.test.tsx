@@ -11,7 +11,7 @@
  * flow itself live in their own tests; this is the section between them.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,6 +37,11 @@ vi.mock('@renderer/pages/positions/openSupervisor', () => ({
   useOpenSupervisor: () => openSupervisor,
 }));
 import SiderPositionsGroup from '@renderer/components/layout/Sider/SiderNav/SiderPositionsGroup';
+import {
+  hidePosition,
+  restoreHiddenPositions,
+  resetHiddenPositionsForTest,
+} from '@renderer/pages/monitor/hiddenPositions';
 
 const row = (name: string) => screen.getByTestId(`sider-position-${name}`);
 
@@ -55,6 +60,8 @@ describe('SiderPositionsGroup', () => {
       { name: 'video-lab', displayName: 'video-lab', description: '视频岗', body: 'y' },
     ];
     localStorage.removeItem('sider-positions-folded');
+    restoreHiddenPositions();
+    resetHiddenPositionsForTest();
   });
   afterEach(() => cleanup());
 
@@ -107,5 +114,20 @@ describe('SiderPositionsGroup', () => {
     row('video-lab').focus();
     await user.keyboard('{Enter}');
     expect(openPosition).toHaveBeenCalledWith(expect.objectContaining({ name: 'video-lab' }));
+  });
+
+  it('leaves a hidden position out while keeping the supervisor row and the others', async () => {
+    const user = userEvent.setup();
+    render(<SiderPositionsGroup />);
+    hidePosition('forwarder');
+    // The hidden row leaves; the supervisor and the untouched position stay.
+    await waitFor(() => expect(screen.queryByTestId('sider-position-forwarder')).not.toBeInTheDocument());
+    expect(screen.getByTestId('sider-position-supervisor')).toBeInTheDocument();
+    expect(row('video-lab')).toBeInTheDocument();
+    // Restoring brings the row back in place.
+    restoreHiddenPositions();
+    await waitFor(() => expect(row('forwarder')).toBeInTheDocument());
+    await user.click(row('forwarder'));
+    expect(openPosition).toHaveBeenCalledWith(expect.objectContaining({ name: 'forwarder' }));
   });
 });

@@ -25,6 +25,7 @@ import { useTeamRosterSnapshot, useTeamWorkbenchSnapshot } from '@renderer/pages
 import { teamRosterEntries } from '@renderer/pages/team/core/teamIdentity';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { monitorActiveCount, positionCardsOf, teamCardsOf, type PositionCard, type TeamWall } from './monitorCore';
+import { useHiddenPositions } from './hiddenPositions';
 import { useSlotWorkIndex } from './slotWorkStore';
 
 export type MonitorOverview = {
@@ -43,6 +44,7 @@ export type MonitorOverview = {
 
 export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
   const { positions } = usePositionRoster();
+  const hidden = useHiddenPositions();
   const { conversations } = useConversationListSync();
   const { generatingConversationIds, waitingConfirmationConversationIds } = useConversationActivitySets();
   const roster = useTeamRosterSnapshot();
@@ -86,10 +88,13 @@ export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
 
   const teams = roster.teams;
   const rosterEntries = useMemo(() => teamRosterEntries(teams, index, now), [teams, index, now]);
+  // Hidden positions leave the wall (and the sidebar roster) without leaving
+  // the library — the monitor never even attributes slots to them.
+  const visiblePositions = useMemo(() => positions.filter((p) => !hidden.has(p.name)), [positions, hidden]);
   const positionCards = useMemo(
     () =>
       positionCardsOf({
-        positions,
+        positions: visiblePositions,
         conversations,
         generatingIds: generatingConversationIds,
         waitingConfirmationIds: waitingConfirmationConversationIds,
@@ -98,7 +103,7 @@ export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
         slotWork,
       }),
     [
-      positions,
+      visiblePositions,
       conversations,
       generatingConversationIds,
       waitingConfirmationConversationIds,

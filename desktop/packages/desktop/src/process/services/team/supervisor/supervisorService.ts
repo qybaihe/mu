@@ -252,6 +252,26 @@ export const setTeamLifecycle = (
 ): Promise<SupervisorTeam[]> => setTeamLifecycleIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
 
 /**
+ * Drops one team's row from the shared index: what a group-chat deletion
+ * calls after the backend accepted the DELETE, so the index keeps no dead
+ * row a `match` could still hand back. The clock is injectable for tests.
+ */
+export async function removeSupervisorTeamIn(
+  options: { dataDir: string },
+  params: { teamId: string },
+  now: () => number = Date.now
+): Promise<SupervisorTeam[]> {
+  const at = now();
+  const rows = (await readTeamsIn(options.dataDir)).filter((team) => team.teamId !== params.teamId);
+  await writeTeamsIn(options.dataDir, rows, at);
+  return rows;
+}
+
+/** Drops one team's row under the app data dir. */
+export const removeSupervisorTeam = (params: { teamId: string }): Promise<SupervisorTeam[]> =>
+  removeSupervisorTeamIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
+
+/**
  * The shared index as it stands on disk: every team the supervisor flow
  * recorded, active and retired, with its TTL. Read per call — the file is
  * small and teams.cjs rewrites it between calls, so no cache would stay
