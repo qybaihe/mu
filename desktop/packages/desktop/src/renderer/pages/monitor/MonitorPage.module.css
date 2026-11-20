@@ -5,6 +5,19 @@
  * --text-primary and Arco triplets like --success-6), so the app's global
  * theme and every other page stay untouched.
  *
+ * Colour policy: every literal the skin needs lives once in the `--m-*`
+ * palette at the top of `.root` below — the file's single design-system
+ * reference (the lamel spec, user HTML 2026-11-15). The values are the
+ * page's own, deliberately NOT uno/Arco tokens: the monitor is a full-page
+ * dark material with its own tuned ramp, and remapping it onto the app's
+ * light-first tokens would lose the calibration. Everything below the
+ * palette consumes `--m-*` or the remapped tokens; no raw hex or rgba
+ * appears outside it. The Arco triplets are re-scoped on this class rather
+ * than overridden via :global()/arco-override.css — those are for restyling
+ * Arco component classes app-wide or per-component; a variable re-scope on
+ * the page class is the mechanism that keeps the skin contained to this
+ * subtree (no `.arco-*` selector is styled here).
+ *
  * The walls read as layered material, Apple-style: the page base is the
  * darkest solid layer, the cards are translucent glass (blur + saturate)
  * with a 1px light edge on top — light falls from above — and chips and
@@ -18,18 +31,33 @@
  * opacity-only transitions.
  */
 
+/*
+ * ── Lamel palette (the design-system reference; spec: user HTML 2026-11-15) ──
+ * Surfaces, lines, text ramp, the one accent, the two semantic states, the
+ * glass pair and the page-base washes. RGB triplets (no rgba()) are for the
+ * places Arco's alpha-join convention needs them.
+ */
 .root {
-  /* Lamel palette (user HTML spec, 2026-11-15). */
+  /* Surfaces: the page base, its northern glow and the diagonal sheen of
+   * the fixed background stack. */
   --m-bg: #0c0d0f;
+  --m-glow: #23272c;
+  --m-sheen: rgba(255, 255, 255, 0.035);
   --m-side: #0e0f11; /* kept for spec completeness; the page has no side panel */
   --m-card: #1d2023;
   --m-card-hi: #232629;
+  /* Lines: the resting hairline and its hover lift, plus the two top edges
+   * (light from above: the resting edge, and the brighter one on hover). */
   --m-line: rgba(255, 255, 255, 0.07);
   --m-line-hi: rgba(255, 255, 255, 0.13);
+  --m-top-edge: rgba(255, 255, 255, 0.35);
+  --m-top-edge-hi: rgba(255, 255, 255, 0.45);
+  /* Text ramp, dark→light. */
   --m-t1: #f2f3f5;
   --m-t2: #9aa0a6;
   --m-t3: #7d838a;
   --m-t4: #6a7178;
+  /* The single accent: live progress, the lead chip, the empty-state CTA. */
   --m-acc: #e5484d;
   /* Semantic states toned down to the lamel base (RGB triplets for Arco). */
   --m-ok: 74, 178, 111; /* #4ab26f working */
@@ -40,7 +68,6 @@
    * brightness and alpha a step, the way a lit glass pane reads. */
   --m-glass: rgba(29, 32, 35, 0.55);
   --m-glass-hi: rgba(38, 41, 45, 0.62);
-  --m-top-edge: rgba(255, 255, 255, 0.35);
 
   /* Token remap: what the page's utilities resolve against inside the scope. */
   --text-primary: var(--m-t1);
@@ -65,8 +92,8 @@
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   color: var(--m-t2);
   background:
-    radial-gradient(1100px 560px at 80% -12%, #23272c, transparent),
-    linear-gradient(115deg, transparent 46%, rgba(255, 255, 255, 0.035) 50%, transparent 54%), var(--m-bg);
+    radial-gradient(1100px 560px at 80% -12%, var(--m-glow), transparent),
+    linear-gradient(115deg, transparent 46%, var(--m-sheen) 50%, transparent 54%), var(--m-bg);
   background-attachment: fixed, fixed;
 }
 
@@ -95,7 +122,7 @@
   background-color: var(--m-glass-hi);
   backdrop-filter: blur(20px) saturate(190%) brightness(1.06);
   border-color: var(--m-line-hi);
-  border-top-color: rgba(255, 255, 255, 0.45);
+  border-top-color: var(--m-top-edge-hi);
 }
 
 /* Press (pointer-down): immediate small scale-down, reached fast — the

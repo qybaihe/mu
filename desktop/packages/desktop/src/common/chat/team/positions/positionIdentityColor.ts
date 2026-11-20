@@ -50,7 +50,15 @@ const LIGHTNESS = 58; // of the 55-65 band
 /** Avatar-text lightness: dark enough for contrast on the fill above. */
 const TEXT_LIGHTNESS = 15;
 
-/** The identity colour of a position id; the built-in supervisor reads red. */
+/**
+ * The identity colour of a position, as CSS colour strings. Derived data,
+ * not design tokens: the hue comes from the id itself (hash → hsl), so no
+ * static palette can hold it, and the strings must stay computed values —
+ * they land in inline styles on surfaces with different scopes (sidebar,
+ * monitor), where a CSS variable could not resolve on all of them. The
+ * supervisor's fixed red is the same derived formula at hue 0 rather than a
+ * token, for the same reason; it reads as the monitor's accent red family.
+ */
 export const positionIdentityColor = (id: string): PositionIdentityColor => {
   const hue = id === SUPERVISOR_POSITION_NAME ? 0 : positionHue(id);
   return {
