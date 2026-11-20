@@ -9,6 +9,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IMessageText } from '@/common/chat/chatLib';
 import { ipcBridge } from '@/common';
+import { buildReceiptContent } from '@renderer/hooks/system/notification/teamReceiptCore';
 import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
 import { MessageListRunProvider } from '@/renderer/pages/conversation/Messages/hooks';
 import MessageText, {
@@ -161,11 +162,13 @@ vi.mock('@arco-design/web-react', () => ({
 vi.mock('@icon-park/react', () => ({
   Copy: () => <span data-testid='copy-icon' />,
   Undo: () => <span data-testid='undo-icon' />,
+  Stamp: () => <span data-testid='stamp-icon' />,
 }));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? key,
+    i18n: { language: 'en-US' },
   }),
 }));
 
@@ -908,5 +911,48 @@ describe('message time', () => {
     expect(formatMessageTime(earlier, 'en-US', now)).toBe('09/21, 09:05 AM');
     expect(formatMessageTime(earlier, 'zh-CN', now)).toBe('09/21 09:05');
     expect(formatMessageTime(lastYear, 'zh-CN', now)).toBe('2025/12/31 21:05');
+  });
+});
+
+describe('MessageText supervisor receipts', () => {
+  const receiptMessage = (content: string): IMessageText => ({
+    id: 'receipt-1',
+    msg_id: 'receipt-1',
+    conversation_id: 'conv-1',
+    type: 'text',
+    position: 'right',
+    createdAt: Date.now(),
+    content: { content },
+  });
+
+  it('renders a receipt through i18n with a badge, hiding the marker payload', () => {
+    const content = buildReceiptContent({
+      v: 1,
+      teams: [{ teamId: 't1', name: '查重队', completed: 2, failed: 0 }],
+      at: Date.now(),
+    });
+    render(<MessageText message={receiptMessage(content)} />);
+
+    expect(screen.getByText('team.receipt.badge')).toBeInTheDocument();
+    expect(screen.getByTestId('message-text-content')).toHaveTextContent('team.receipt.teamCompleted');
+    expect(screen.queryByText(content)).not.toBeInTheDocument();
+  });
+
+  it('renders the failed line for a receipt whose run failed', () => {
+    const content = buildReceiptContent({
+      v: 1,
+      teams: [{ teamId: 't1', name: '查重队', completed: 0, failed: 1 }],
+      at: Date.now(),
+    });
+    render(<MessageText message={receiptMessage(content)} />);
+
+    expect(screen.getByTestId('message-text-content')).toHaveTextContent('team.receipt.teamFailed');
+  });
+
+  it('a malformed receipt body stays ordinary user text with no badge', () => {
+    render(<MessageText message={receiptMessage('[[MU_TEAM_RECEIPT]]not json')} />);
+
+    expect(screen.queryByText('team.receipt.badge')).not.toBeInTheDocument();
+    expect(screen.getByTestId('message-text-content')).toHaveTextContent('[[MU_TEAM_RECEIPT]]not json');
   });
 });

@@ -20,6 +20,12 @@
     "contextResetSuccess": "Neuer Kontext für {{memberName}} wurde gestartet.",
     "contextResetRuntimeFailed": "Der Kontext für {{memberName}} wurde zurückgesetzt, aber der Agent konnte nicht neu gestartet werden."
   },
+  "receipt": {
+    "badge": "Team-Bericht",
+    "teamCompleted": "Team „{{name}}“ hat seinen Lauf abgeschlossen ({{count}})",
+    "teamFailed": "Lauf des Teams „{{name}}“ ist fehlgeschlagen ({{count}})",
+    "join": ", "
+  },
   "workbench": {
     "claims.inProgress": "Kündigt laufende Arbeit an, aber dieser Durchlauf nutzte kein Werkzeug",
     "claims.missingFiles": "Verlinkte Datei existiert nicht: {{files}}"

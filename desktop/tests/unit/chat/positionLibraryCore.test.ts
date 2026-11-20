@@ -128,11 +128,14 @@ describe('findPositionConversationId', () => {
     { id: 'old-session', modified_at: 1, extra: { [POSITION_EXTRA_KEY]: 'forwarder' } },
     { id: 'the-session', modified_at: 9, extra: { [POSITION_EXTRA_KEY]: 'forwarder' } },
     { id: 'unmarked', modified_at: 9, extra: { workspace: 'E:/x' } },
+    { id: 'supervisor-session', modified_at: 7, extra: { [POSITION_EXTRA_KEY]: 'supervisor' } },
   ];
 
   it('finds the position’s conversation by its extra marker, the newest on duplicates', () => {
     expect(findPositionConversationId(conversations, 'forwarder')).toBe('the-session');
     expect(findPositionConversationId(conversations, 'video-lab')).toBe('other');
+    // The receipt loop targets the supervisor’s session through the same seam.
+    expect(findPositionConversationId(conversations, 'supervisor')).toBe('supervisor-session');
   });
 
   it('stays undefined for a position without a conversation and for unmarked ones', () => {

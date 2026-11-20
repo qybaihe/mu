@@ -20,6 +20,12 @@
     "contextResetSuccess": "Для {{memberName}} начат новый контекст.",
     "contextResetRuntimeFailed": "Контекст {{memberName}} сброшен, но агент не запустился повторно."
   },
+  "receipt": {
+    "badge": "Отчёт команды",
+    "teamCompleted": "Команда «{{name}}» завершила выполнение ({{count}})",
+    "teamFailed": "Выполнение команды «{{name}}» завершилось ошибкой ({{count}})",
+    "join": ", "
+  },
   "workbench": {
     "claims.inProgress": "Объявляет работу в процессе, но в этом ходе не запущено ни одного инструмента",
     "claims.missingFiles": "Связанного файла не существует: {{files}}"

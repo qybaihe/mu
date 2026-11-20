@@ -348,6 +348,10 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('任务消息');
     expect(content).toContain('不构成同意');
     expect(content).toContain('同一回合里自己提议又自己继续执行 = 违规');
+    // Rule 8: a receipt is bookkeeping, not a task — one-line report, no dispatch.
+    expect(content).toContain('规则 8');
+    expect(content).toContain('[[MU_TEAM_RECEIPT]]');
+    expect(content).toContain('不建队、不派活、不跑 teams.cjs、不写任何文件');
   });
 
   it('teaches the requirement-coverage flow: list the task requirements first, map each to a duty, show the mapping in the proposal', () => {

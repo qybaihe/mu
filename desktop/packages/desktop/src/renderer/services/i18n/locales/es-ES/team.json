@@ -20,6 +20,12 @@
     "contextResetSuccess": "Se inició un contexto nuevo para {{memberName}}.",
     "contextResetRuntimeFailed": "Se restableció el contexto de {{memberName}}, pero el agente no pudo reiniciarse."
   },
+  "receipt": {
+    "badge": "Informe del equipo",
+    "teamCompleted": "El equipo «{{name}}» terminó su ejecución ({{count}})",
+    "teamFailed": "La ejecución del equipo «{{name}}» falló ({{count}})",
+    "join": ", "
+  },
   "workbench": {
     "claims.inProgress": "Anuncia trabajo en curso, pero este turno no usó ninguna herramienta",
     "claims.missingFiles": "El archivo enlazado no existe: {{files}}"

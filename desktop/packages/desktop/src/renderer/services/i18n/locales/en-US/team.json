@@ -20,6 +20,12 @@
     "contextResetSuccess": "Started a new context for {{memberName}}.",
     "contextResetRuntimeFailed": "The context was reset for {{memberName}}, but the agent couldn't restart."
   },
+  "receipt": {
+    "badge": "Team receipt",
+    "teamCompleted": "Team \"{{name}}\" finished its run ({{count}})",
+    "teamFailed": "Team \"{{name}}\" hit a failed run ({{count}})",
+    "join": ", "
+  },
   "workbench": {
     "claims.inProgress": "Announces work in progress, but this turn ran no tool",
     "claims.missingFiles": "Linked file does not exist: {{files}}"

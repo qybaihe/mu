@@ -20,6 +20,12 @@
     "contextResetSuccess": "برای {{memberName}} زمینه جدید آغاز شد.",
     "contextResetRuntimeFailed": "زمینه {{memberName}} بازنشانی شد، اما عامل دوباره راه‌اندازی نشد."
   },
+  "receipt": {
+    "badge": "رسید تیم",
+    "teamCompleted": "اجرای تیم «{{name}}» تکمیل شد ({{count}})",
+    "teamFailed": "اجرای تیم «{{name}}» ناموفق بود ({{count}})",
+    "join": "،"
+  },
   "workbench": {
     "claims.inProgress": "ادعای کار در حال انجام دارد، اما این نوبت هیچ ابزاری اجرا نکرد",
     "claims.missingFiles": "پرونده پیوندشده وجود ندارد: {{files}}"

@@ -20,6 +20,12 @@
     "contextResetSuccess": "{{memberName}} için yeni bağlam başlatıldı.",
     "contextResetRuntimeFailed": "{{memberName}} bağlamı sıfırlandı ancak aracı yeniden başlatılamadı."
   },
+  "receipt": {
+    "badge": "Ekip makbuzu",
+    "teamCompleted": "\"{{name}}\" ekibi çalışmasını tamamladı ({{count}})",
+    "teamFailed": "\"{{name}}\" ekibinin çalışması başarısız oldu ({{count}})",
+    "join": ", "
+  },
   "workbench": {
     "claims.inProgress": "İş devam ediyor diyor ama bu turda hiçbir araç çalıştırmadı",
     "claims.missingFiles": "Bağlantılı dosya mevcut değil: {{files}}"

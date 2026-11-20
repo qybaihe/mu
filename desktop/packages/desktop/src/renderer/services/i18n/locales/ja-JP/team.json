@@ -20,6 +20,12 @@
     "contextResetSuccess": "{{memberName}} の新しいコンテキストを開始しました。",
     "contextResetRuntimeFailed": "{{memberName}} のコンテキストはリセットされましたが、エージェントの再起動に失敗しました。"
   },
+  "receipt": {
+    "badge": "チーム回執",
+    "teamCompleted": "チーム「{{name}}」の実行が完了しました（{{count}} 回）",
+    "teamFailed": "チーム「{{name}}」の実行が失敗しました（{{count}} 回）",
+    "join": "、"
+  },
   "workbench": {
     "claims.inProgress": "作業中と述べていますが、このターンはツールを実行していません",
     "claims.missingFiles": "リンクされたファイルが存在しません：{{files}}"

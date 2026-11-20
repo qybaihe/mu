@@ -20,6 +20,12 @@
     "contextResetSuccess": "Для {{memberName}} розпочато новий контекст.",
     "contextResetRuntimeFailed": "Контекст {{memberName}} скинуто, але агент не перезапустився."
   },
+  "receipt": {
+    "badge": "Квитанція команди",
+    "teamCompleted": "Команда «{{name}}» завершила виконання ({{count}})",
+    "teamFailed": "Виконання команди «{{name}}» завершилося помилкою ({{count}})",
+    "join": ", "
+  },
   "workbench": {
     "claims.inProgress": "Оголошує роботу в процесі, але в цьому ході не запущено жодного інструмента",
     "claims.missingFiles": "Зв'язаного файла не існує: {{files}}"

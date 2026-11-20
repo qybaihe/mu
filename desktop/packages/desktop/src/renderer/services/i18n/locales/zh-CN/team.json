@@ -20,6 +20,12 @@
     "contextResetSuccess": "已为 {{memberName}} 开始新上下文。",
     "contextResetRuntimeFailed": "已为 {{memberName}} 重置上下文，但代理重新启动失败。"
   },
+  "receipt": {
+    "badge": "团队回执",
+    "teamCompleted": "队伍「{{name}}」运行完成（{{count}} 次）",
+    "teamFailed": "队伍「{{name}}」运行失败（{{count}} 次）",
+    "join": "；"
+  },
   "workbench": {
     "claims.inProgress": "宣称正在干活，但本回合没有调用任何工具",
     "claims.missingFiles": "链接的文件不存在：{{files}}"

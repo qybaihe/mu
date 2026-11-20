@@ -17,7 +17,7 @@ import { mediaPathsOf } from './messageTextMedia';
 import { formatDateTime, formatTime } from '@/renderer/services/i18n/format';
 import { iconColors } from '@/renderer/styles/colors';
 import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
-import { Copy, Download, Link, Undo } from '@icon-park/react';
+import { Copy, Download, Link, Stamp, Undo } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +36,7 @@ import { stripSkillSuggest, hasSkillSuggest } from '@renderer/utils/chat/skillSu
 import { isForkEnabled } from '@/common/chat/forkConversation';
 import { useForkConversation } from '@/renderer/hooks/chat/useForkConversation';
 import ForkBranchIcon from '@renderer/components/base/ForkBranchIcon';
+import { parseTeamReceiptNotice, type TeamReceiptPayload } from '@renderer/hooks/system/notification/teamReceiptCore';
 
 /**
  * Format a timestamp for message display, in the app language: the time today ("09:05", "09:05 AM"), the date and
@@ -68,6 +69,21 @@ type TeamContextResetNotice = {
   kind: 'context_reset';
   member_name: string;
   runtime_status: 'ready' | 'failed';
+};
+
+/** The receipt badge: the same shape as the cron badge — one pill naming what sent this row. */
+const MessageReceiptBadge: React.FC<{ payload: TeamReceiptPayload }> = ({ payload }) => {
+  const { t, i18n } = useTranslation();
+  return (
+    <div
+      className='inline-flex items-center gap-4px mb-4px px-12px py-2px rounded-full text-2 bg-fill-2'
+      style={{ color: 'var(--color-bg-6)' }}
+    >
+      <Stamp strokeWidth={4} theme='outline' size={13} fill={iconColors.secondary} className='flex items-center' />
+      <span>{t('team.receipt.badge')}</span>
+      <span>{formatTime(payload.at, i18n.language, { hour: '2-digit', minute: '2-digit' })}</span>
+    </div>
+  );
 };
 
 export const parseTeamContextResetNotice = (content: string): TeamContextResetNotice | null => {
@@ -164,6 +180,25 @@ const MessageText: React.FC<{
     () => (isTeammateMessage && senderName === 'team_system' ? parseTeamContextResetNotice(text) : null),
     [isTeammateMessage, senderName, text]
   );
+  // A supervisor receipt arrives as a user message whose body is the marker payload;
+  // parse it here so the raw JSON never renders and the text localizes per view.
+  const teamReceipt = useMemo(() => (isUserMessage ? parseTeamReceiptNotice(text) : null), [isUserMessage, text]);
+  const receiptText = useMemo(
+    () =>
+      teamReceipt
+        ? teamReceipt.teams
+            .map((team) =>
+              [
+                team.completed > 0 ? t('team.receipt.teamCompleted', { name: team.name, count: team.completed }) : '',
+                team.failed > 0 ? t('team.receipt.teamFailed', { name: team.name, count: team.failed }) : '',
+              ]
+                .filter(Boolean)
+                .join(t('team.receipt.join'))
+            )
+            .join('\n')
+        : null,
+    [teamReceipt, t]
+  );
   const renderedText = contextResetNotice
     ? t(
         contextResetNotice.runtime_status === 'ready'
@@ -171,12 +206,12 @@ const MessageText: React.FC<{
           : 'team.systemNotice.contextResetRuntimeFailed',
         { memberName: contextResetNotice.member_name }
       )
-    : visibleText;
+    : (receiptText ?? visibleText);
   const { data, json } = useFormatContent(renderedText);
   // Mid-stream an opened code fence has no close yet; without one the block would read as raw backticks until it
   // arrives, then jump. Only the Markdown path needs it — a user message and a JSON payload are shown as they are.
   const markdown = useMemo(() => (typeof data === 'string' ? closeOpenFence(data) : data), [data]);
-  const shouldRenderPlainText = isUserMessage || Boolean(contextResetNotice);
+  const shouldRenderPlainText = isUserMessage || Boolean(contextResetNotice) || Boolean(teamReceipt);
   const conversationContext = useConversationContextSafe();
   // A native conversation has no backend conversation around it: its project folder comes with its list.
   const run = useMessageListRun();
@@ -302,6 +337,7 @@ const MessageText: React.FC<{
     <>
       <div className={classNames('min-w-0 flex flex-col group', isUserMessage ? 'items-end' : 'items-start')}>
         {cronMeta && <MessageCronBadge meta={cronMeta} />}
+        {teamReceipt && <MessageReceiptBadge payload={teamReceipt} />}
         {isTeammateMessage && displaySenderName && (
           <div className='flex items-center gap-6px mb-4px'>
             <TeammateMessageAvatar

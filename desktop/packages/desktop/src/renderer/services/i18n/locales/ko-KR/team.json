@@ -20,6 +20,12 @@
     "contextResetSuccess": "{{memberName}}의 새 컨텍스트를 시작했습니다.",
     "contextResetRuntimeFailed": "{{memberName}}의 컨텍스트는 재설정되었지만 에이전트를 다시 시작하지 못했습니다."
   },
+  "receipt": {
+    "badge": "팀 영수증",
+    "teamCompleted": "팀 \"{{name}}\"의 실행이 완료되었습니다 ({{count}}회)",
+    "teamFailed": "팀 \"{{name}}\"의 실행이 실패했습니다 ({{count}}회)",
+    "join": ", "
+  },
   "workbench": {
     "claims.inProgress": "작업 진행 중이라고 했지만 이 턴에는 도구를 실행하지 않았습니다",
     "claims.missingFiles": "링크된 파일이 존재하지 않습니다: {{files}}"
