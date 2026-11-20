@@ -42,6 +42,30 @@ const rejectVerdict = {
   cached: false,
 } as const;
 
+const directVerdict = {
+  action: 'direct',
+  slotId: 's2',
+  memberName: '视频实验室',
+  reason: '点名',
+  confidence: 0.93,
+  model: 'cheap',
+  durationMs: 650,
+  cached: false,
+} as const;
+
+const hintVerdict = {
+  action: 'hint',
+  positions: [
+    { id: 'forwarder', label: '货代(forwarder)' },
+    { id: 'video-lab', label: '视频实验室(video-lab)' },
+  ],
+  reason: '跨岗',
+  confidence: 0.9,
+  model: 'cheap',
+  durationMs: 700,
+  cached: false,
+} as const;
+
 describe('appendQuickDecisionNote / quickDecisionNotesOf', () => {
   it('records a reuse with its basis and scopes it to the conversation', () => {
     appendQuickDecisionNote('conv-1', '查一下 CNS 客户', reuseVerdict);
@@ -85,6 +109,19 @@ describe('appendQuickDecisionNote / quickDecisionNotesOf', () => {
     appendQuickDecisionNote('conv-1', '任务B', rejectVerdict);
     reloadQuickDecisionNotesForTest(); // drops the in-memory caches, as a remount would
     expect(quickDecisionNotesOf('conv-1').map((note) => note.input)).toEqual(['任务A', '任务B']);
+  });
+  it('records a direct route with the member it reached', () => {
+    appendQuickDecisionNote('conv-team', '视频实验室，继续剪片头', directVerdict);
+    const note = quickDecisionNotesOf('conv-team')[0];
+    expect(note).toMatchObject({ kind: 'route', memberName: '视频实验室', input: '视频实验室，继续剪片头' });
+    expect(note.suggestLabel).toBeUndefined();
+    expect(note.hintLabels).toBeUndefined();
+  });
+  it('records a dispatch hint with the candidate labels', () => {
+    appendQuickDecisionNote('conv-sup', '查 CNS 客户并做宣传视频', hintVerdict);
+    const note = quickDecisionNotesOf('conv-sup')[0];
+    expect(note).toMatchObject({ kind: 'hint', hintLabels: ['货代(forwarder)', '视频实验室(video-lab)'] });
+    expect(note.memberName).toBeUndefined();
   });
 });
 

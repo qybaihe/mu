@@ -5,12 +5,13 @@
  */
 
 /**
- * One ⚡ receipt row: the light marker (复用〈队名〉 / 本岗外拒绝), the one-line
- * receipt under it, and — on click — the decision's basis (model, duration,
- * confidence, cache). Deliberately NOT a message bubble: nothing went through
- * the model, so the row reads as a system note the app itself wrote. The
- * trigger is a native span: Arco Trigger clones its events into the child,
- * which silently dies on a custom component that does not forward them.
+ * One ⚡ receipt row: the light marker (复用〈队名〉 / 本岗外拒绝 / 直达〈成员〉 /
+ * 分派提示已注入), the one-line receipt under it, and — on click — the
+ * decision's basis (model, duration, confidence, cache). Deliberately NOT a
+ * message bubble: nothing went through the model, so the row reads as a
+ * system note the app itself wrote. The trigger is a native span: Arco
+ * Trigger clones its events into the child, which silently dies on a custom
+ * component that does not forward them.
  */
 import { Popover } from '@arco-design/web-react';
 import { Thunderbolt } from '@icon-park/react';
@@ -44,11 +45,22 @@ const QuickDecisionNoteRow: React.FC<{ note: QuickDecisionNote }> = ({ note }) =
   const title =
     note.kind === 'reuse'
       ? t('quickDecision.reuse.title', { team: note.teamName ?? '' })
-      : t('quickDecision.reject.title');
+      : note.kind === 'reject'
+        ? t('quickDecision.reject.title')
+        : note.kind === 'route'
+          ? t('quickDecision.route.title', { member: note.memberName ?? '' })
+          : t('quickDecision.hint.title');
   const body =
     note.kind === 'reuse'
       ? t('quickDecision.reuse.body', { reason: note.reason ?? '' })
-      : t('quickDecision.reject.body', { suggest: note.suggestLabel ?? '', reason: note.reason ?? '' });
+      : note.kind === 'reject'
+        ? t('quickDecision.reject.body', { suggest: note.suggestLabel ?? '', reason: note.reason ?? '' })
+        : note.kind === 'route'
+          ? t('quickDecision.route.body', { member: note.memberName ?? '', reason: note.reason ?? '' })
+          : t('quickDecision.hint.body', {
+              positions: (note.hintLabels ?? []).join('、') || '—',
+              reason: note.reason ?? '',
+            });
   return (
     <div className='flex flex-col gap-4px py-6px' data-testid='quick-decision-row' data-note-kind={note.kind}>
       <div className='flex items-center gap-6px'>

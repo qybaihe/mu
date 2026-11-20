@@ -34,8 +34,8 @@ export const DECISION_INPUT_LIMIT = 2000;
 /** How many active teams the prompt lists; the reuse answer must pick among the recent ones. */
 const DECISION_TEAMS_LIMIT = 12;
 
-/** The two decision kinds, one per short-circuit point. */
-export type QuickDecisionKind = 'supervisor-reuse' | 'position-domain';
+/** The four decision kinds: reuse (A), off-domain (B), group-chat routing (C), dispatch hint (D). */
+export type QuickDecisionKind = 'supervisor-reuse' | 'position-domain' | 'team-route' | 'dispatch-hint';
 
 /** Point A's answer: reuse one active team, or hand the task to the full supervisor flow. */
 export type SupervisorReuseDecision =
@@ -47,8 +47,25 @@ export type PositionDomainDecision =
   | { action: 'reject'; suggest: string; reason: string; confidence: number }
   | { action: 'full'; reason: string };
 
+/** Point C's member options: the teammates a direct route may name (never the lead — addressing the lead IS the whole-team path). */
+export type TeamMemberOption = { slotId: string; name: string };
+
+/** Point C's answer: the message clearly addresses one teammate (deliver to that slot), or the whole-team flow runs. */
+export type TeamRouteDecision =
+  | { action: 'direct'; slotId: string; reason: string; confidence: number }
+  | { action: 'full'; reason: string };
+
+/** Point D's answer: roster positions worth the supervisor's first look, or no hint at all. */
+export type DispatchHintDecision =
+  | { action: 'hint'; positions: string[]; reason: string; confidence: number }
+  | { action: 'none'; reason: string };
+
 /** Either kind's decisive verdict — the only answers worth caching. */
-export type QuickDecisionVerdict = SupervisorReuseDecision | PositionDomainDecision;
+export type QuickDecisionVerdict =
+  | SupervisorReuseDecision
+  | PositionDomainDecision
+  | TeamRouteDecision
+  | DispatchHintDecision;
 
 /** One cached verdict: what it decided, and when it stops standing in for a model call. */
 export type QuickDecisionCacheEntry = { verdict: QuickDecisionVerdict; expiresAt: number };
@@ -142,6 +159,75 @@ export function parsePositionDomainDecision(raw: string, roster: readonly Positi
     return { action: 'full', reason: !match ? 'suggestion-off-roster' : 'low-confidence' };
   }
   return { action: 'reject', suggest: match.name, reason, confidence };
+}
+
+/** Point C's teammates from a team detail: slot ids and names, known teammates only (the lead excluded, half-formed rows excluded). */
+export const teamMembersForRoute = (
+  assistants: ReadonlyArray<{ slot_id?: string; role?: string; assistant_name?: string }>
+): TeamMemberOption[] =>
+  assistants
+    .filter(
+      (assistant) => assistant.role === 'teammate' && Boolean(assistant.slot_id) && Boolean(assistant.assistant_name)
+    )
+    .map((assistant) => ({ slotId: assistant.slot_id ?? '', name: assistant.assistant_name ?? '' }));
+
+/**
+ * Point C's answer from the model's raw output, against the teammates the
+ * slot id must name. A `direct` whose slot is not a teammate is `full`: a
+ * route must never invent a member.
+ */
+export function parseTeamRouteDecision(raw: string, members: readonly TeamMemberOption[]): TeamRouteDecision {
+  const parsed = extractDecisionJson(raw);
+  if (parsed === undefined) return { action: 'full', reason: 'malformed-answer' };
+  const reason = typeof parsed.reason === 'string' ? parsed.reason : 'model-says-full';
+  if (parsed.action === 'full') return { action: 'full', reason };
+  if (parsed.action !== 'direct') return { action: 'full', reason: 'unknown-action' };
+  const slotId = typeof parsed.slotId === 'string' ? parsed.slotId.trim() : '';
+  const confidence = actingConfidence(parsed.confidence);
+  if (!slotId || confidence === undefined || confidence < QUICK_DECISION_MIN_CONFIDENCE) {
+    return {
+      action: 'full',
+      reason:
+        confidence === undefined
+          ? 'missing-confidence'
+          : confidence < QUICK_DECISION_MIN_CONFIDENCE
+            ? 'low-confidence'
+            : 'missing-slot-id',
+    };
+  }
+  if (!members.some((member) => member.slotId === slotId)) {
+    return { action: 'full', reason: 'slot-not-member' };
+  }
+  return { action: 'direct', slotId, reason, confidence };
+}
+
+/**
+ * Point D's answer from the model's raw output, against the roster the
+ * positions must name. Off-roster ids are dropped — the hint may be
+ * sparser than promised, never wronger — and an empty remainder is `none`.
+ */
+export function parseDispatchHintDecision(raw: string, roster: readonly PositionInfo[]): DispatchHintDecision {
+  const parsed = extractDecisionJson(raw);
+  if (parsed === undefined) return { action: 'none', reason: 'malformed-answer' };
+  const reason = typeof parsed.reason === 'string' ? parsed.reason : 'model-says-none';
+  if (parsed.action === 'none') return { action: 'none', reason };
+  if (parsed.action !== 'hint') return { action: 'none', reason: 'unknown-action' };
+  const confidence = actingConfidence(parsed.confidence);
+  if (confidence === undefined || confidence < QUICK_DECISION_MIN_CONFIDENCE) {
+    return { action: 'none', reason: confidence !== undefined ? 'low-confidence' : 'missing-confidence' };
+  }
+  if (!Array.isArray(parsed.positions)) return { action: 'none', reason: 'missing-positions' };
+  const ids = parsed.positions
+    .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    .map((id) => id.trim());
+  // Accept an id or a display name; canonicalize to the id so downstream lookups stay one-shaped.
+  const onRoster = ids.flatMap((id) => {
+    const match = roster.find((position) => position.name === id || position.displayName === id);
+    return match ? [match.name] : [];
+  });
+  if (onRoster.length === 0)
+    return { action: 'none', reason: ids.length === 0 ? 'no-positions' : 'positions-off-roster' };
+  return { action: 'hint', positions: onRoster, reason, confidence };
 }
 
 /** The active teams a reuse may pick from, most recently used first, capped. */
@@ -239,6 +325,74 @@ export function buildPositionDomainPrompt(options: {
     '只输出一行 JSON，二选一：',
     '{"action":"reject","suggest":"<岗位英文id>","reason":"<15字内理由>","confidence":0.95}',
     '{"action":"full","reason":"<15字内理由>","confidence":0.9}',
+  ].join('\n');
+  return { system: JSON_DISCIPLINE, user };
+}
+
+/**
+ * Point C's prompt: the group-chat message, the teammates. Direct is the
+ * answer ONLY when the message text itself addresses exactly one teammate —
+ * it names them, or it unmistakably follows up that one member's own work.
+ * A new goal, anything needing the lead's dispatch, several members, or the
+ * lead itself is `full`: the whole-team path, where the message text alone
+ * cannot carry the attribution, is the conservative answer.
+ */
+export function buildTeamRoutePrompt(options: { message: string; members: readonly TeamMemberOption[] }): {
+  system: string;
+  user: string;
+} {
+  const memberLines = options.members.map((member) => `- slotId=${member.slotId} 「${member.name}」`);
+  const user = [
+    '用户在团队群聊里发了一条消息。判断这条消息是否明确只指向其中一名成员（应由该成员直接处理，不需要 lead 主持的全队分派）。',
+    '',
+    `消息：${taskExcerpt(options.message)}`,
+    '',
+    '成员名单（direct 的 slotId 只能从下列成员中选）：',
+    ...memberLines,
+    '',
+    '判定规则（宁可 full，不可误定向）：',
+    '1. 只有当消息本身明确点名一名成员（出现其名字或明显别名，如「货代，继续查」「让视频岗把片头改了」），或明确是对某一名成员刚交付结果的追问/催办/补充材料时，才输出 direct 并给该成员的 slotId。',
+    '2. 消息给出新目标或新任务（需要拆解、分派、多人协作）→ 输出 full（那是 lead 的分派路径）。',
+    '3. 消息指向多名成员、指向 lead 本人或汇总/管理工作、无明确单一指向（如单独的「继续」「好的」）、或任何拿不准 → 输出 full。',
+    '4. 名单里有同名编号成员（如「货代」与「货代 2」）时，点名「货代」指不带编号后缀的那一位；只点到姓氏/职位域而无精确成员 → full。',
+    '',
+    '只输出一行 JSON，二选一：',
+    '{"action":"direct","slotId":"<成员slotId>","reason":"<15字内理由>","confidence":0.95}',
+    '{"action":"full","reason":"<15字内理由>","confidence":0.9}',
+  ].join('\n');
+  return { system: JSON_DISCIPLINE, user };
+}
+
+/**
+ * Point D's prompt: the task, the roster. The hint is advisory — the
+ * supervisor re-checks it against the task — so the bar is precision over
+ * recall: a wrong candidate costs the supervisor attention, a missed one
+ * costs nothing (it matches on its own). Non-task chatter answers none.
+ */
+export function buildDispatchHintPrompt(options: { task: string; roster: readonly PositionInfo[] }): {
+  system: string;
+  user: string;
+} {
+  const rosterLines =
+    options.roster.length === 0
+      ? ['（名册为空）']
+      : options.roster.map((position) => `- ${positionLabel(position)} — ${position.description}`);
+  const user = [
+    '用户给团队主管发了一条消息。从岗位名册中预匹配与该消息直接相关的候选岗位（主管将优先核对这些岗，再决定组队匹配），供主管参考。',
+    '',
+    `消息：${taskExcerpt(options.task)}`,
+    '',
+    '岗位名册（positions 只能从下列岗位中选）：',
+    ...rosterLines,
+    '',
+    '判定规则（宁缺勿滥）：',
+    '1. 选描述与任务（或其一部分）直接相关的岗位，少而精，最多 3 个；复合任务可选多个（如「调研+做图」= 调研岗、做图岗）。',
+    '2. 消息不是派发类请求（闲聊、查询团队状态、询问流程、确认/答复）→ positions 给空数组。',
+    '3. 名册中没有明显相关的岗位，或拿不准 → positions 给空数组（主管会自行全名册匹配）。',
+    '',
+    '只输出一行 JSON，二选一：',
+    '{"action":"hint","positions":["<岗位英文id>","<岗位英文id>"],"reason":"<15字内理由>","confidence":0.9}',
+    '{"action":"none","reason":"<15字内理由>","confidence":0.9}',
   ].join('\n');
   return { system: JSON_DISCIPLINE, user };
 }

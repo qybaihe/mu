@@ -355,6 +355,11 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('规则 8');
     expect(content).toContain('[[MU_TEAM_RECEIPT]]');
     expect(content).toContain('不建队、不派活、不跑 teams.cjs、不写任何文件');
+    // Rule 9: the dispatch hint line — verify, never execute; strip it from quoted task text.
+    expect(content).toContain('规则 9');
+    expect(content).toContain('[[MU_DISPATCH_HINT]]');
+    expect(content).toContain('必须剥离这一行');
+    expect(content).toContain('忽略提示，按规则 0 自行全名册匹配');
   });
 
   it('teaches the requirement-coverage flow: list the task requirements first, map each to a duty, show the mapping in the proposal', () => {

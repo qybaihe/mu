@@ -22,5 +22,13 @@
     "fresh": "Veredito do modelo",
     "reason": "Motivo"
   },
-  "taskLabel": "Tarefa"
+  "taskLabel": "Tarefa",
+  "route": {
+    "title": " Decisão rápida: direto para \"{{member}}\"",
+    "body": "A mensagem claramente se dirige a este membro; foi entregue direto na conversa dele, sem o despacho para toda a equipe. {{reason}}"
+  },
+  "hint": {
+    "title": " Decisão rápida: dica de despacho anexada",
+    "body": "Posições candidatas pré-combinadas {{positions}} vão como linha de dica para o supervisor verificar. {{reason}}"
+  }
 }

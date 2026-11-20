@@ -13,20 +13,26 @@
  * rows); the send box appends one right after the main process answers.
  */
 import { useSyncExternalStore } from 'react';
-import type { QuickDecisionRouteResult } from '@/common/chat/team/quickDecision/quickDecisionBridge';
+import type {
+  QuickDecisionHintResult,
+  QuickDecisionRouteResult,
+  QuickDecisionRouteTeamResult,
+} from '@/common/chat/team/quickDecision/quickDecisionBridge';
 
 /** One short-circuit as the conversation shows it: what was decided, on what basis, about which task. */
 export type QuickDecisionNote = {
   id: string;
   conversationId: string;
   createdAt: number;
-  kind: 'reuse' | 'reject';
+  kind: 'reuse' | 'reject' | 'route' | 'hint';
   /** The task's text as typed, capped — the receipt quotes it. */
   input: string;
   teamName?: string;
   teamId?: string;
   leadConversationId?: string;
   suggestLabel?: string;
+  memberName?: string;
+  hintLabels?: string[];
   reason?: string;
   confidence?: number;
   model?: string;
@@ -99,38 +105,36 @@ let nextNoteId = 0;
 export const appendQuickDecisionNote = (
   conversationId: string,
   input: string,
-  verdict: Extract<QuickDecisionRouteResult, { action: 'reuse' | 'reject' }>
+  verdict: Extract<
+    QuickDecisionRouteResult | QuickDecisionRouteTeamResult | QuickDecisionHintResult,
+    { action: 'reuse' | 'reject' | 'direct' | 'hint' }
+  >
 ): QuickDecisionNote => {
+  const shared = {
+    id: `qdn-${Date.now()}-${nextNoteId++}`,
+    conversationId,
+    createdAt: Date.now(),
+    input: input.slice(0, NOTE_INPUT_LIMIT),
+    reason: verdict.reason,
+    confidence: verdict.confidence,
+    model: verdict.model,
+    durationMs: verdict.durationMs,
+    cached: verdict.cached,
+  };
   const note: QuickDecisionNote =
     verdict.action === 'reuse'
       ? {
-          id: `qdn-${Date.now()}-${nextNoteId++}`,
-          conversationId,
-          createdAt: Date.now(),
+          ...shared,
           kind: 'reuse',
-          input: input.slice(0, NOTE_INPUT_LIMIT),
           teamName: verdict.teamName,
           teamId: verdict.teamId,
           leadConversationId: verdict.leadConversationId,
-          reason: verdict.reason,
-          confidence: verdict.confidence,
-          model: verdict.model,
-          durationMs: verdict.durationMs,
-          cached: verdict.cached,
         }
-      : {
-          id: `qdn-${Date.now()}-${nextNoteId++}`,
-          conversationId,
-          createdAt: Date.now(),
-          kind: 'reject',
-          input: input.slice(0, NOTE_INPUT_LIMIT),
-          suggestLabel: verdict.suggestLabel,
-          reason: verdict.reason,
-          confidence: verdict.confidence,
-          model: verdict.model,
-          durationMs: verdict.durationMs,
-          cached: verdict.cached,
-        };
+      : verdict.action === 'reject'
+        ? { ...shared, kind: 'reject', suggestLabel: verdict.suggestLabel }
+        : verdict.action === 'direct'
+          ? { ...shared, kind: 'route', memberName: verdict.memberName }
+          : { ...shared, kind: 'hint', hintLabels: verdict.positions.map((position) => position.label) };
   persist([...loadAll(), note].slice(-NOTES_CAP));
   return note;
 };

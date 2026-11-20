@@ -22,5 +22,13 @@
     "fresh": "Modellurteil",
     "reason": "Grund"
   },
-  "taskLabel": "Aufgabe"
+  "taskLabel": "Aufgabe",
+  "route": {
+    "title": " Schnellentscheidung: direkt an „{{member}}“",
+    "body": "Die Nachricht richtet sich klar an dieses Mitglied; sie wurde direkt in dessen Verlauf zugestellt, ohne die Team-Verteilung. {{reason}}"
+  },
+  "hint": {
+    "title": " Schnellentscheidung: Zuweisungshinweis angehängt",
+    "body": "Vorgematchte Kandidatenpositionen {{positions}} reisen als Hinweiszeile mit, damit der Supervisor sie prüft. {{reason}}"
+  }
 }

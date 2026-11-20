@@ -10,14 +10,19 @@ import type { SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCor
 import {
   QUICK_DECISION_MIN_CONFIDENCE,
   activeTeamsForDecision,
+  buildDispatchHintPrompt,
   buildPositionDomainPrompt,
   buildSupervisorReusePrompt,
+  buildTeamRoutePrompt,
   decisionCacheKey,
   extractDecisionJson,
   isCacheEntryFresh,
   normalizeDecisionInput,
+  parseDispatchHintDecision,
   parsePositionDomainDecision,
   parseSupervisorReuseDecision,
+  parseTeamRouteDecision,
+  teamMembersForRoute,
 } from '@/common/chat/team/quickDecision/quickDecisionCore';
 
 /** The quick-decision core: strict parsing with a conservative error direction, cache math, and the two prompts. */
@@ -188,5 +193,152 @@ describe('prompt builders', () => {
   it('an empty team list says so instead of implying choices', () => {
     const prompt = buildSupervisorReusePrompt({ task: '任务', teams: [], roster });
     expect(prompt.user).toContain('无现役团队');
+  });
+});
+
+describe('teamMembersForRoute', () => {
+  it('keeps teammates with slot ids, excluding the lead and half-formed rows', () => {
+    const members = teamMembersForRoute([
+      { slot_id: 's-lead', role: 'leader', assistant_name: '货代' },
+      { slot_id: 's1', role: 'teammate', assistant_name: '货代' },
+      { slot_id: 's2', role: 'teammate', assistant_name: '视频实验室' },
+      { role: 'teammate' }, // no slot yet (pending attach)
+      { slot_id: 's3', assistant_name: '无角色' }, // roleless: the lead conversation's shape is excluded too
+    ]);
+    expect(members).toEqual([
+      { slotId: 's1', name: '货代' },
+      { slotId: 's2', name: '视频实验室' },
+    ]);
+  });
+});
+
+describe('parseTeamRouteDecision', () => {
+  const members = [
+    { slotId: 's1', name: '货代' },
+    { slotId: 's2', name: '视频实验室' },
+  ];
+  it('a confident direct naming a member answers direct', () => {
+    expect(
+      parseTeamRouteDecision('{"action":"direct","slotId":"s2","reason":"点名","confidence":0.95}', members)
+    ).toEqual({
+      action: 'direct',
+      slotId: 's2',
+      reason: '点名',
+      confidence: 0.95,
+    });
+  });
+  it('a slot outside the member list answers full', () => {
+    expect(
+      parseTeamRouteDecision('{"action":"direct","slotId":"s-lead","reason":"x","confidence":0.99}', members)
+    ).toEqual({
+      action: 'full',
+      reason: 'slot-not-member',
+    });
+  });
+  it('a low-confidence or missing-confidence direct answers full', () => {
+    expect(parseTeamRouteDecision('{"action":"direct","slotId":"s1","reason":"x","confidence":0.6}', members)).toEqual({
+      action: 'full',
+      reason: 'low-confidence',
+    });
+    expect(parseTeamRouteDecision('{"action":"direct","slotId":"s1","reason":"x"}', members)).toEqual({
+      action: 'full',
+      reason: 'missing-confidence',
+    });
+  });
+  it('malformed prose and unknown actions answer full', () => {
+    expect(parseTeamRouteDecision('我认为应该全队讨论', members)).toEqual({
+      action: 'full',
+      reason: 'malformed-answer',
+    });
+    expect(parseTeamRouteDecision('{"action":"broadcast"}', members)).toEqual({
+      action: 'full',
+      reason: 'unknown-action',
+    });
+  });
+});
+
+describe('parseDispatchHintDecision', () => {
+  it('a confident hint with roster ids answers hint', () => {
+    expect(
+      parseDispatchHintDecision('{"action":"hint","positions":["forwarder"],"reason":"x","confidence":0.9}', roster)
+    ).toEqual({
+      action: 'hint',
+      positions: ['forwarder'],
+      reason: 'x',
+      confidence: 0.9,
+    });
+  });
+  it('a display name canonicalizes to the position id', () => {
+    expect(
+      parseDispatchHintDecision(
+        '{"action":"hint","positions":["货代","video-lab"],"reason":"x","confidence":0.9}',
+        roster
+      )
+    ).toEqual({ action: 'hint', positions: ['forwarder', 'video-lab'], reason: 'x', confidence: 0.9 });
+  });
+  it('off-roster ids are dropped; an empty remainder is none', () => {
+    expect(
+      parseDispatchHintDecision(
+        '{"action":"hint","positions":["forwarder","ghost"],"reason":"x","confidence":0.9}',
+        roster
+      )
+    ).toEqual({ action: 'hint', positions: ['forwarder'], reason: 'x', confidence: 0.9 });
+    expect(
+      parseDispatchHintDecision('{"action":"hint","positions":["ghost"],"reason":"x","confidence":0.9}', roster)
+    ).toEqual({ action: 'none', reason: 'positions-off-roster' });
+  });
+  it('an empty positions list is none, not a hint', () => {
+    expect(parseDispatchHintDecision('{"action":"hint","positions":[],"reason":"x","confidence":0.9}', roster)).toEqual(
+      {
+        action: 'none',
+        reason: 'no-positions',
+      }
+    );
+  });
+  it('a low-confidence hint answers none; malformed answers none', () => {
+    expect(
+      parseDispatchHintDecision('{"action":"hint","positions":["forwarder"],"reason":"x","confidence":0.5}', roster)
+    ).toEqual({
+      action: 'none',
+      reason: 'low-confidence',
+    });
+    expect(parseDispatchHintDecision('没有相关岗位', roster)).toEqual({ action: 'none', reason: 'malformed-answer' });
+  });
+});
+
+describe('the two new prompts', () => {
+  it('the route prompt lists member slots and states the conservative direction', () => {
+    const prompt = buildTeamRoutePrompt({
+      message: '货代，继续查一下 ABC',
+      members: [
+        { slotId: 's1', name: '货代' },
+        { slotId: 's2', name: '视频实验室' },
+      ],
+    });
+    expect(prompt.user).toContain('slotId=s1');
+    expect(prompt.user).toContain('「视频实验室」');
+    expect(prompt.user).toContain('货代，继续查一下 ABC');
+    expect(prompt.user).toContain('宁可 full，不可误定向');
+    expect(prompt.user).toContain('{"action":"direct"');
+  });
+  it('the hint prompt lists the roster and caps the candidates', () => {
+    const prompt = buildDispatchHintPrompt({ task: '查一下 CNS 客户并做成表', roster });
+    expect(prompt.user).toContain('货代(forwarder)');
+    expect(prompt.user).toContain('查一下 CNS 客户并做成表');
+    expect(prompt.user).toContain('最多 3 个');
+    expect(prompt.user).toContain('{"action":"hint"');
+  });
+});
+
+describe('cache keys keep the kinds apart', () => {
+  it('the same text under different kinds never shares a key', () => {
+    const text = '查一下 CNS 客户 ABC';
+    expect(decisionCacheKey('supervisor-reuse', 'supervisor', text)).not.toBe(
+      decisionCacheKey('dispatch-hint', 'supervisor', text)
+    );
+    expect(decisionCacheKey('team-route', 'team:t1', text)).not.toBe(decisionCacheKey('team-route', 'team:t2', text));
+    expect(decisionCacheKey('team-route', 'team:t1', text)).not.toBe(
+      decisionCacheKey('position-domain', 'team:t1', text)
+    );
   });
 });

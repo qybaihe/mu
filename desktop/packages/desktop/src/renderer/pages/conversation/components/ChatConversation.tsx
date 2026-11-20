@@ -6,6 +6,8 @@
 
 import { ipcBridge } from '@/common';
 import type { ChatFileRef } from '@/common/types/chatFile';
+import { quickDecisionBridge } from '@/common/chat/team/quickDecision/quickDecisionBridge';
+import { appendQuickDecisionNote } from '@renderer/pages/team/core/quickDecisionNotes';
 import type { IConversationMcpStatus, IProvider, TChatConversation, TProviderWithModel } from '@/common/config/storage';
 import { uuid } from '@/common/utils';
 import addChatIcon from '@/renderer/assets/icons/add-chat.svg';
@@ -311,12 +313,31 @@ const ChatConversation: React.FC<{
     if (!teamId) return undefined;
     return async ({ input, files }: { input: string; files: ChatFileRef[] }) => {
       if (teamRole === 'lead' || !teamSlotId) {
+        // The group-chat routing short-circuit: a whole-team send with no
+        // attachments and no slash command may be one the message itself
+        // addresses to a single teammate (「货代，继续查」). The decision layer
+        // delivers such a message to that member's slot directly and answers
+        // `direct` — every doubt answers `full` and the whole-team send runs
+        // unchanged. The layer must never break a send.
+        if (files.length === 0 && input.trim().length > 0 && !input.trimStart().startsWith('/')) {
+          try {
+            const routed = await quickDecisionBridge.routeTeamMessage.invoke({ input, teamId });
+            const verdict = routed.ok ? routed.data : undefined;
+            if (verdict?.action === 'direct') {
+              appendQuickDecisionNote(conversation.id, input, verdict);
+              emitter.emit('chat.history.refresh');
+              return;
+            }
+          } catch {
+            // An unreachable decision layer is the ordinary whole-team send.
+          }
+        }
         await ipcBridge.team.sendMessage.invoke({ team_id: teamId, input, files });
         return;
       }
       await ipcBridge.team.sendMessageToAgent.invoke({ team_id: teamId, slot_id: teamSlotId, input, files });
     };
-  }, [teamId, teamRole, teamSlotId]);
+  }, [teamId, teamRole, teamSlotId, conversation?.id]);
   const layout = useLayoutContext();
   const isMobile = Boolean(layout?.isMobile);
 

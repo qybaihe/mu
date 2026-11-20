@@ -3,7 +3,12 @@ import type { IConversationMcpStatus } from '@/common/config/storage';
 import { isBackendHttpError } from '@/common/adapter/httpBridge';
 import { isSideQuestionSupported } from '@/common/chat/sideQuestion';
 import { quickDecisionBridge } from '@/common/chat/team/quickDecision/quickDecisionBridge';
-import type { QuickDecisionRouteResult } from '@/common/chat/team/quickDecision/quickDecisionBridge';
+import {
+  DISPATCH_HINT_MARKER,
+  dispatchHintLine,
+  type QuickDecisionRouteResult,
+} from '@/common/chat/team/quickDecision/quickDecisionBridge';
+import { SUPERVISOR_POSITION_NAME } from '@/common/chat/team/supervisor/supervisorCore';
 import type { KyrnResult } from '@/common/kyrn/errors';
 import { appendQuickDecisionNote, shouldAskQuickDecision } from '@renderer/pages/team/core/quickDecisionNotes';
 import { parseError, uuid } from '@/common/utils';
@@ -341,9 +346,34 @@ const AcpSendBox: React.FC<{
             return;
           }
         }
+        // The dispatch hint (point D): the supervisor's full round is about
+        // to run, so the cheap model pre-matches candidate positions and the
+        // hint rides as one wire line above the task — advisory, the
+        // supervisor re-checks it (its rule 9). `none` (every doubt) sends
+        // the task untouched. The hint layer must never break a send.
+        let effectiveInput = input;
+        if (
+          positionMarker === SUPERVISOR_POSITION_NAME &&
+          teamSendMessage === undefined &&
+          files.length === 0 &&
+          input.trim().length > 0 &&
+          !input.trimStart().startsWith('/') &&
+          !input.trimStart().startsWith(DISPATCH_HINT_MARKER)
+        ) {
+          try {
+            const hinted = await quickDecisionBridge.dispatchHint.invoke({ input });
+            const hint = hinted.ok ? hinted.data : undefined;
+            if (hint?.action === 'hint') {
+              effectiveInput = `${dispatchHintLine(hint.positions.map((position) => position.id))}\n${input}`;
+              appendQuickDecisionNote(conversation_id, input, hint);
+            }
+          } catch {
+            // An unreachable hint layer is the ordinary un-prefixed send.
+          }
+        }
         void checkAndUpdateTitle(conversation_id, input);
         if (teamSendMessage) {
-          await teamSendMessage({ input, files });
+          await teamSendMessage({ input: effectiveInput, files });
           emitter.emit('chat.history.refresh');
           if (files.length > 0) {
             emitter.emit('acp.workspace.refresh');
@@ -354,7 +384,7 @@ const AcpSendBox: React.FC<{
         markSendStarted();
         setAiProcessing(true);
         const result = await ipcBridge.acpConversation.sendMessage.invoke({
-          input,
+          input: effectiveInput,
           conversation_id,
           files,
           // `@@` references. Dropping this here is a silent failure: the agent

@@ -22,5 +22,13 @@
     "fresh": "模型判定",
     "reason": "理由"
   },
-  "taskLabel": "任务"
+  "taskLabel": "任务",
+  "route": {
+    "title": "快速决策：直达「{{member}}」",
+    "body": "这条消息明确指向该成员，已直接送达其会话，未走全队分派。{{reason}}"
+  },
+  "hint": {
+    "title": "快速决策：分派提示已注入",
+    "body": "已预匹配候选岗 {{positions}}，作为提示行随任务发给主管核对。{{reason}}"
+  }
 }

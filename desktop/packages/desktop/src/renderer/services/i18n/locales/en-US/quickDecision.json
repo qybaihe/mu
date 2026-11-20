@@ -22,5 +22,13 @@
     "fresh": "Model verdict",
     "reason": "Reason"
   },
-  "taskLabel": "Task"
+  "taskLabel": "Task",
+  "route": {
+    "title": " Quick decision: straight to \"{{member}}\"",
+    "body": "The message clearly addresses this member; it was delivered to their thread directly, skipping the whole-team dispatch. {{reason}}"
+  },
+  "hint": {
+    "title": " Quick decision: dispatch hint attached",
+    "body": "Pre-matched candidate positions {{positions}} ride along as a hint line for the supervisor to verify. {{reason}}"
+  }
 }

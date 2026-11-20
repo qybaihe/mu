@@ -22,5 +22,13 @@
     "fresh": "Model kararı",
     "reason": "Gerekçe"
   },
-  "taskLabel": "Görev"
+  "taskLabel": "Görev",
+  "route": {
+    "title": " Hızlı karar: doğrudan \"{{member}}\"a",
+    "body": "Mesaj açıkça bu üyeye yönelik; tüm ekip dağıtımını atlayarak doğrudan kendi konuşmasına iletildi. {{reason}}"
+  },
+  "hint": {
+    "title": " Hızlı karar: görev ipucu eklendi",
+    "body": "Ön eşleşen aday konumlar {{positions}}, yöneticinin doğrulaması için ipucu satırı olarak eklendi. {{reason}}"
+  }
 }

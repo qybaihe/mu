@@ -60,7 +60,49 @@ const rejectNote: QuickDecisionNote = {
   cached: true,
 };
 
+const routeNote: QuickDecisionNote = {
+  id: 'n3',
+  conversationId: 'c-team',
+  createdAt: 3,
+  kind: 'route',
+  input: '视频实验室，继续剪片头',
+  memberName: '视频实验室',
+  reason: '点名',
+  confidence: 0.93,
+  model: 'cheap-model',
+  durationMs: 650,
+  cached: false,
+};
+
+const hintNote: QuickDecisionNote = {
+  id: 'n4',
+  conversationId: 'c-sup',
+  createdAt: 4,
+  kind: 'hint',
+  input: '查 CNS 客户并做宣传视频',
+  hintLabels: ['货代(forwarder)', '视频实验室(video-lab)'],
+  reason: '跨岗',
+  confidence: 0.9,
+  model: 'cheap-model',
+  durationMs: 700,
+  cached: true,
+};
+
 describe('QuickDecisionNoteRow', () => {
+  it('a route row names the member it reached directly', () => {
+    render(<QuickDecisionNoteRow note={routeNote} />);
+    expect(screen.getByTestId('quick-decision-title').textContent).toContain('member=视频实验室');
+    expect(screen.getByTestId('quick-decision-body').textContent).toContain('reason=点名');
+    expect(screen.getByTestId('quick-decision-row').getAttribute('data-note-kind')).toBe('route');
+  });
+  it('a hint row lists the candidate positions it attached', () => {
+    render(<QuickDecisionNoteRow note={hintNote} />);
+    expect(screen.getByTestId('quick-decision-title').textContent).toContain('quickDecision.hint.title');
+    expect(screen.getByTestId('quick-decision-body').textContent).toContain(
+      'positions=货代(forwarder)、视频实验室(video-lab)'
+    );
+    expect(screen.getByTestId('quick-decision-row').getAttribute('data-note-kind')).toBe('hint');
+  });
   it('a reuse row names the team and quotes the task', () => {
     render(<QuickDecisionNoteRow note={reuseNote} />);
     expect(screen.getByTestId('quick-decision-title').textContent).toContain('team=货代小队');

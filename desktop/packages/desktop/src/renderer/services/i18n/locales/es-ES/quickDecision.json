@@ -22,5 +22,13 @@
     "fresh": "Veredicto del modelo",
     "reason": "Motivo"
   },
-  "taskLabel": "Tarea"
+  "taskLabel": "Tarea",
+  "route": {
+    "title": " Decisión rápida: directo a «{{member}}»",
+    "body": "El mensaje se dirige claramente a este miembro; se entregó directamente en su hilo, sin pasar por el reparto a todo el equipo. {{reason}}"
+  },
+  "hint": {
+    "title": " Decisión rápida: sugerencia de asignación adjuntada",
+    "body": "Posiciones candidatas pre-emparejadas {{positions}} viajan como línea de sugerencia para que el supervisor las verifique. {{reason}}"
+  }
 }

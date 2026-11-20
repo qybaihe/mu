@@ -21,23 +21,34 @@ import { httpRequest } from '@/common/adapter/httpBridge';
 import { ClientFactory, type RotatingClient } from '@/common/api/ClientFactory';
 import type { IProvider, TProviderWithModel } from '@/common/config/storage';
 import { positionLabel, type PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
-import { SUPERVISOR_POSITION_NAME, type SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCore';
+import {
+  SUPERVISOR_POSITION_NAME,
+  TEAM_ID_RE,
+  type SupervisorTeam,
+} from '@/common/chat/team/supervisor/supervisorCore';
 import {
   QUICK_DECISION_CACHE_TTL_MS,
   QUICK_DECISION_TIMEOUT_MS,
   activeTeamsForDecision,
+  buildDispatchHintPrompt,
   buildPositionDomainPrompt,
   buildSupervisorReusePrompt,
+  buildTeamRoutePrompt,
   decisionCacheKey,
   isCacheEntryFresh,
+  parseDispatchHintDecision,
   parsePositionDomainDecision,
   parseSupervisorReuseDecision,
+  parseTeamRouteDecision,
+  teamMembersForRoute,
   type QuickDecisionCacheEntry,
   type QuickDecisionKind,
 } from '@/common/chat/team/quickDecision/quickDecisionCore';
 import type {
+  QuickDecisionHintResult,
   QuickDecisionRouteParams,
   QuickDecisionRouteResult,
+  QuickDecisionRouteTeamResult,
 } from '@/common/chat/team/quickDecision/quickDecisionBridge';
 import { listSupervisorTeams, reuseSupervisorTeamIn } from '@process/services/team/supervisor';
 import { POSITION_LIBRARY_DIR, scanPositionLibrary } from '@process/services/team/positions/positionService';
@@ -65,6 +76,12 @@ export type QuickDecisionDeps = {
   deliverTeamTask: (teamId: string, input: string) => Promise<void>;
   /** The index half of a reuse: the lifecycle refresh; undefined = the team id no longer names a live row. */
   refreshTeamReuse: (teamId: string, at: number) => Promise<SupervisorTeam | undefined>;
+  /** The team detail a group-chat route reads; undefined = the team is gone. */
+  getTeamAssistants: (
+    teamId: string
+  ) => Promise<Array<{ slot_id?: string; role?: string; assistant_name?: string }> | undefined>;
+  /** Delivers the message to one teammate slot (the backend agent message of `sendMessageToAgent`). */
+  deliverMemberMessage: (teamId: string, slotId: string, input: string) => Promise<void>;
   log: (...args: unknown[]) => void;
 };
 
@@ -390,6 +407,15 @@ const prodDeps = (): QuickDecisionDeps => ({
   deliverTeamTask: async (teamId, input) => {
     await httpRequest('POST', `/api/teams/${teamId}/messages`, { content: input, files: [] });
   },
+  getTeamAssistants: async (teamId) => {
+    const team = await httpRequest<
+      { assistants?: Array<{ slot_id?: string; role?: string; assistant_name?: string }> } | undefined
+    >('GET', `/api/teams/${teamId}`);
+    return team?.assistants;
+  },
+  deliverMemberMessage: async (teamId, slotId, input) => {
+    await httpRequest('POST', `/api/teams/${teamId}/agents/${slotId}/messages`, { content: input, files: [] });
+  },
   refreshTeamReuse: (teamId, at) =>
     reuseSupervisorTeamIn({ dataDir: getPlatformServices().paths.getDataDir() }, { teamId, at }),
   log: (...args) => console.log(...args),
@@ -410,3 +436,229 @@ export const resetQuickDecisionStateForTest = (): void => {
 /** The bridge's entry: one send, one route call. */
 export const routeQuickDecision = (params: QuickDecisionRouteParams): Promise<QuickDecisionRouteResult> =>
   routeQuickDecisionIn(prodDeps(), state.cache, state.counters, params);
+
+/**
+ * Point C: one whole-team (group-chat) send. A `direct` verdict delivers the
+ * message to that teammate's slot before answering — the window never acts
+ * on a delivery that already failed — and a delivery failure evicts the
+ * cache entry, so a member removed since the verdict cannot fossilize.
+ */
+export async function routeTeamMessageIn(
+  deps: QuickDecisionDeps,
+  cache: Map<string, QuickDecisionCacheEntry>,
+  counters: QuickDecisionCounters,
+  params: { input: string; teamId: string }
+): Promise<QuickDecisionRouteTeamResult> {
+  const model = await resolveModel(deps);
+  if (!model) return { action: 'full', reason: 'no-model-configured' };
+  const input = params.input.trim();
+  if (!input) return { action: 'full', reason: 'empty-input' };
+  // The wire boundary: the team id flows into backend URL paths, so it must
+  // pass the same shape check every other path-carrying id passes.
+  if (!TEAM_ID_RE.test(params.teamId)) return { action: 'full', reason: 'bad-team-id' };
+  const key = decisionCacheKey('team-route', `team:${params.teamId}`, input);
+  const startedAt = deps.now();
+
+  const assistants = await deps.getTeamAssistants(params.teamId).catch((): undefined => undefined);
+  if (!assistants) return { action: 'full', reason: 'unknown-team' };
+  const members = teamMembersForRoute(assistants);
+  if (members.length === 0) return { action: 'full', reason: 'no-teammates' };
+
+  /** Delivers one direct route; the answer only follows a delivery that held. */
+  const deliverDirect = (slotId: string): Promise<void> => deps.deliverMemberMessage(params.teamId, slotId, input);
+  const directResult = (
+    verdict: { slotId: string; reason: string; confidence: number },
+    memberName: string,
+    cached: boolean
+  ): QuickDecisionRouteTeamResult => ({
+    action: 'direct',
+    slotId: verdict.slotId,
+    memberName,
+    reason: verdict.reason,
+    confidence: verdict.confidence,
+    model: model.use_model,
+    durationMs: deps.now() - startedAt,
+    cached,
+  });
+
+  // Cache hit: a `direct` verdict delivers again. A member removed since the
+  // verdict is evicted and answered `full` this once — the next identical
+  // message re-asks with the live roster.
+  const hit = cache.get(key);
+  if (isCacheEntryFresh(hit, deps.now()) && hit) {
+    const verdict = hit.verdict;
+    if (verdict.action === 'direct') {
+      const member = members.find((candidate) => candidate.slotId === verdict.slotId);
+      if (!member) {
+        cache.delete(key);
+        return { action: 'full', reason: 'member-gone' };
+      }
+      try {
+        await deliverDirect(verdict.slotId);
+        counters.shortCircuits += 1;
+        counters.savedTurns += 1;
+        logDecision(deps, counters, {
+          action: 'direct',
+          kind: 'team-route',
+          cached: true,
+          extra: `member=「${member.name}» slot=${verdict.slotId} model=${model.use_model} confidence=${verdict.confidence}`,
+        });
+        return directResult(verdict, member.name, true);
+      } catch (error) {
+        cache.delete(key);
+        counters.fallbacks += 1;
+        logDecision(deps, counters, {
+          action: 'full',
+          kind: 'team-route',
+          cached: true,
+          extra: `deliver-failed ${String(error)}`,
+        });
+        return { action: 'full', reason: 'deliver-failed' };
+      }
+    }
+  }
+
+  // Miss: one model call under the ceiling, parsed against the live members.
+  const ask = await askModel(
+    deps,
+    counters,
+    model,
+    'team-route',
+    buildTeamRoutePrompt({ message: input, members }),
+    startedAt
+  );
+  if (ask.ok === false) return { action: 'full', reason: ask.reason };
+  const verdict = parseTeamRouteDecision(ask.raw, members);
+  if (verdict.action === 'full') {
+    counters.fallbacks += 1;
+    logDecision(deps, counters, {
+      action: 'full',
+      kind: 'team-route',
+      cached: false,
+      extra: `reason=${verdict.reason} model=${model.use_model}`,
+    });
+    return { action: 'full', reason: verdict.reason };
+  }
+  const member = members.find((candidate) => candidate.slotId === verdict.slotId);
+  if (!member) return { action: 'full', reason: 'slot-not-member' };
+  try {
+    await deliverDirect(verdict.slotId);
+    counters.shortCircuits += 1;
+    counters.savedTurns += 1;
+    cache.set(key, { verdict, expiresAt: deps.now() + QUICK_DECISION_CACHE_TTL_MS });
+    logDecision(deps, counters, {
+      action: 'direct',
+      kind: 'team-route',
+      cached: false,
+      extra: `member=「${member.name}» slot=${verdict.slotId} model=${model.use_model} duration=${deps.now() - startedAt}ms confidence=${verdict.confidence}`,
+    });
+    return directResult(verdict, member.name, false);
+  } catch (error) {
+    counters.fallbacks += 1;
+    logDecision(deps, counters, {
+      action: 'full',
+      kind: 'team-route',
+      cached: false,
+      extra: `deliver-failed ${String(error)}`,
+    });
+    return { action: 'full', reason: 'deliver-failed' };
+  }
+}
+
+/**
+ * Point D: the dispatch hint for one supervisor-bound task. Pure advisory —
+ * nothing is delivered; the caller prefixes one wire line and the
+ * supervisor re-checks it — so the only failure shape is `none` (send the
+ * task untouched). A cached `hint` replays only the ids still on the
+ * roster; a roster change that empties it evicts and answers `none`.
+ */
+export async function dispatchHintIn(
+  deps: QuickDecisionDeps,
+  cache: Map<string, QuickDecisionCacheEntry>,
+  counters: QuickDecisionCounters,
+  params: { input: string }
+): Promise<QuickDecisionHintResult> {
+  const model = await resolveModel(deps);
+  if (!model) return { action: 'none', reason: 'no-model-configured' };
+  const input = params.input.trim();
+  if (!input) return { action: 'none', reason: 'empty-input' };
+  const key = decisionCacheKey('dispatch-hint', SUPERVISOR_POSITION_NAME, input);
+  const startedAt = deps.now();
+
+  const roster = await deps.readRoster();
+  if (roster.length === 0) return { action: 'none', reason: 'empty-roster' };
+
+  const hintResult = (
+    verdict: { positions: string[]; reason: string; confidence: number },
+    cached: boolean
+  ): QuickDecisionHintResult => ({
+    action: 'hint',
+    positions: verdict.positions.map((id) => {
+      const found = roster.find((position) => position.name === id);
+      return { id, label: found ? positionLabel(found) : id };
+    }),
+    reason: verdict.reason,
+    confidence: verdict.confidence,
+    model: model.use_model,
+    durationMs: deps.now() - startedAt,
+    cached,
+  });
+
+  // Cache hit: replay only the ids the roster still knows.
+  const hit = cache.get(key);
+  if (isCacheEntryFresh(hit, deps.now()) && hit) {
+    const verdict = hit.verdict;
+    if (verdict.action === 'hint') {
+      const live = verdict.positions.filter((id) => roster.some((position) => position.name === id));
+      if (live.length > 0) {
+        counters.shortCircuits += 1;
+        logDecision(deps, counters, {
+          action: 'hint',
+          kind: 'dispatch-hint',
+          cached: true,
+          extra: `positions=${live.join(',')} model=${model.use_model} confidence=${verdict.confidence}`,
+        });
+        return hintResult({ ...verdict, positions: live }, true);
+      }
+      cache.delete(key);
+      return { action: 'none', reason: 'roster-changed' };
+    }
+  }
+
+  const ask = await askModel(
+    deps,
+    counters,
+    model,
+    'dispatch-hint',
+    buildDispatchHintPrompt({ task: input, roster }),
+    startedAt
+  );
+  if (ask.ok === false) return { action: 'none', reason: ask.reason };
+  const verdict = parseDispatchHintDecision(ask.raw, roster);
+  if (verdict.action === 'none') {
+    counters.fallbacks += 1;
+    logDecision(deps, counters, {
+      action: 'none',
+      kind: 'dispatch-hint',
+      cached: false,
+      extra: `reason=${verdict.reason} model=${model.use_model}`,
+    });
+    return { action: 'none', reason: verdict.reason };
+  }
+  counters.shortCircuits += 1;
+  cache.set(key, { verdict, expiresAt: deps.now() + QUICK_DECISION_CACHE_TTL_MS });
+  logDecision(deps, counters, {
+    action: 'hint',
+    kind: 'dispatch-hint',
+    cached: false,
+    extra: `positions=${verdict.positions.join(',')} model=${model.use_model} duration=${deps.now() - startedAt}ms confidence=${verdict.confidence}`,
+  });
+  return hintResult(verdict, false);
+}
+
+/** The bridge entries for points C and D. */
+export const routeTeamMessage = (params: { input: string; teamId: string }): Promise<QuickDecisionRouteTeamResult> =>
+  routeTeamMessageIn(prodDeps(), state.cache, state.counters, params);
+
+export const dispatchHintFor = (params: { input: string }): Promise<QuickDecisionHintResult> =>
+  dispatchHintIn(prodDeps(), state.cache, state.counters, params);

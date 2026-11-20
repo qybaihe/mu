@@ -22,5 +22,13 @@
     "fresh": "Verdict du modèle",
     "reason": "Motif"
   },
-  "taskLabel": "Tâche"
+  "taskLabel": "Tâche",
+  "route": {
+    "title": " Décision rapide : direct vers « {{member}} »",
+    "body": "Le message s’adresse clairement à ce membre ; il a été livré directement dans son fil, sans la distribution à toute l’équipe. {{reason}}"
+  },
+  "hint": {
+    "title": " Décision rapide : indice de répartition joint",
+    "body": "Postes candidats pré-appariés {{positions}} accompagnent la tâche comme ligne d’indice que le superviseur vérifiera. {{reason}}"
+  }
 }

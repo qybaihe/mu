@@ -53,6 +53,46 @@ export type QuickDecisionFullResult = { action: 'full'; reason: string };
 
 export type QuickDecisionRouteResult = QuickDecisionReuseResult | QuickDecisionRejectResult | QuickDecisionFullResult;
 
+/** Point C: a whole-team send asking where the message belongs. */
+export type QuickDecisionRouteTeamParams = { input: string; teamId: string };
+
+/** Point C short-circuited: the message is with the teammate directly (delivered by the main process). */
+export type QuickDecisionDirectResult = {
+  action: 'direct';
+  slotId: string;
+  memberName: string;
+  reason: string;
+  confidence: number;
+  model: string;
+  durationMs: number;
+  cached: boolean;
+};
+
+export type QuickDecisionRouteTeamResult = QuickDecisionDirectResult | QuickDecisionFullResult;
+
+/** Point D: a supervisor send asking for pre-matched candidate positions. */
+export type QuickDecisionHintParams = { input: string };
+
+/** Point D's answer: the hint line to prefix the task with, or nothing. */
+export type QuickDecisionHintResult =
+  | {
+      action: 'hint';
+      positions: Array<{ id: string; label: string }>;
+      reason: string;
+      confidence: number;
+      model: string;
+      durationMs: number;
+      cached: boolean;
+    }
+  | { action: 'none'; reason: string };
+
+/** The one-line wire format prefixed to the task: `[[MU_DISPATCH_HINT]] positions=a,b`. */
+export const DISPATCH_HINT_MARKER = '[[MU_DISPATCH_HINT]]';
+
+/** The hint as the supervisor's message carries it: one marker line above the task text. */
+export const dispatchHintLine = (ids: readonly string[]): string =>
+  `${DISPATCH_HINT_MARKER} positions=${ids.join(',')}`;
+
 export const quickDecisionBridge = {
   /**
    * Routes one send through the quick-decision layer. `full` is the majority
@@ -61,4 +101,20 @@ export const quickDecisionBridge = {
    * — takes over.
    */
   route: bridge.buildProvider<KyrnResult<QuickDecisionRouteResult>, QuickDecisionRouteParams>('quickDecision.route'),
+  /**
+   * Routes one group-chat (whole-team) send: `direct` means the message was
+   * delivered to that teammate's slot and the whole-team path is skipped;
+   * `full` — every doubt — runs the ordinary whole-team send unchanged.
+   */
+  routeTeamMessage: bridge.buildProvider<KyrnResult<QuickDecisionRouteTeamResult>, QuickDecisionRouteTeamParams>(
+    'quickDecision.routeTeamMessage'
+  ),
+  /**
+   * Pre-matches candidate positions for one supervisor-bound task. `hint` is
+   * advisory — the caller prefixes one wire line onto the task and the
+   * supervisor re-checks it; `none` means send the task untouched.
+   */
+  dispatchHint: bridge.buildProvider<KyrnResult<QuickDecisionHintResult>, QuickDecisionHintParams>(
+    'quickDecision.dispatchHint'
+  ),
 };

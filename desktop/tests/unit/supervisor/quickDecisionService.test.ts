@@ -13,6 +13,8 @@ import { buildTeamsFile, type SupervisorTeam } from '@/common/chat/team/supervis
 import type { QuickDecisionCacheEntry } from '@/common/chat/team/quickDecision/quickDecisionCore';
 import {
   routeQuickDecisionIn,
+  routeTeamMessageIn,
+  dispatchHintIn,
   type QuickDecisionCounters,
   type QuickDecisionDeps,
 } from '@process/services/team/quickDecision';
@@ -66,10 +68,18 @@ const team = (over: Partial<SupervisorTeam> = {}): SupervisorTeam => ({
 type DepsOverrides = Partial<QuickDecisionDeps>;
 
 /** Fake deps plus the call log the tests assert on. */
-type FakeDeps = QuickDecisionDeps & { calls: { complete: number; deliver: string[]; refresh: string[] } };
+type FakeDeps = QuickDecisionDeps & {
+  calls: { complete: number; deliver: string[]; refresh: string[]; teamFetches: string[]; memberDeliveries: string[] };
+};
 
 const baseDeps = (over: DepsOverrides = {}): FakeDeps => {
-  const calls = { complete: 0 as number, deliver: [] as string[], refresh: [] as string[] };
+  const calls = {
+    complete: 0 as number,
+    deliver: [] as string[],
+    refresh: [] as string[],
+    teamFetches: [] as string[],
+    memberDeliveries: [] as string[],
+  };
   const deps: FakeDeps = {
     now: () => 1000,
     readSetting: async () => ({
@@ -91,6 +101,17 @@ const baseDeps = (over: DepsOverrides = {}): FakeDeps => {
     },
     deliverTeamTask: async (teamId) => {
       calls.deliver.push(teamId);
+    },
+    getTeamAssistants: async (teamId) => {
+      calls.teamFetches.push(teamId);
+      return [
+        { slot_id: 's-lead', role: 'leader', assistant_name: '货代' },
+        { slot_id: 's1', role: 'teammate', assistant_name: '货代' },
+        { slot_id: 's2', role: 'teammate', assistant_name: '视频实验室' },
+      ];
+    },
+    deliverMemberMessage: async (teamId, slotId) => {
+      calls.memberDeliveries.push(`${teamId}:${slotId}`);
     },
     refreshTeamReuse: async (teamId) => {
       calls.refresh.push(teamId);
@@ -312,5 +333,203 @@ describe('reuseSupervisorTeamIn — teams.cjs send semantics on the index', () =
     writeIndex(dir, [team({ expiresAt: 1, ttlDays: 7 })]); // retired at `now`=1000
     const refreshed = await reuseSupervisorTeamIn({ dataDir: dir }, { teamId: 't1', at: 1000 });
     expect(refreshed?.expiresAt).toBe(1000 + 7 * 24 * 60 * 60 * 1000);
+  });
+});
+
+describe('routeTeamMessageIn — the conservative direction', () => {
+  const runRoute = (deps: QuickDecisionDeps, params: { input: string; teamId?: string }) =>
+    routeTeamMessageIn(
+      deps,
+      new Map<string, QuickDecisionCacheEntry>(),
+      { shortCircuits: 0, fallbacks: 0, savedTurns: 0 },
+      { input: params.input, teamId: params.teamId ?? 't1' }
+    );
+
+  it('no model configured answers full without touching the team', async () => {
+    const deps = baseDeps({ readSetting: async () => undefined });
+    expect(await runRoute(deps, { input: '继续' })).toEqual({ action: 'full', reason: 'no-model-configured' });
+    expect(deps.calls.teamFetches).toEqual([]);
+  });
+  it('a malformed team id never reaches a URL path', async () => {
+    const deps = baseDeps();
+    expect(await runRoute(deps, { input: '继续', teamId: '../etc' })).toEqual({
+      action: 'full',
+      reason: 'bad-team-id',
+    });
+    expect(deps.calls.teamFetches).toEqual([]);
+  });
+  it('a vanished team and a lead-only team answer full without a model call', async () => {
+    const gone = baseDeps({ getTeamAssistants: async () => undefined });
+    expect(await runRoute(gone, { input: '继续' })).toEqual({ action: 'full', reason: 'unknown-team' });
+    const solo = baseDeps({
+      getTeamAssistants: async () => [{ slot_id: 's-lead', role: 'leader', assistant_name: '货代' }],
+    });
+    expect(await runRoute(solo, { input: '继续' })).toEqual({ action: 'full', reason: 'no-teammates' });
+    expect(gone.calls.complete + solo.calls.complete).toBe(0);
+  });
+  it('a low-confidence or off-member direct answers full', async () => {
+    const low = baseDeps({
+      complete: async () => '{"action":"direct","slotId":"s1","reason":"x","confidence":0.6}',
+    });
+    expect(await runRoute(low, { input: '继续' })).toEqual({ action: 'full', reason: 'low-confidence' });
+    const off = baseDeps({
+      complete: async () => '{"action":"direct","slotId":"s-lead","reason":"x","confidence":0.99}',
+    });
+    expect(await runRoute(off, { input: '继续' })).toEqual({ action: 'full', reason: 'slot-not-member' });
+    expect(off.calls.memberDeliveries).toEqual([]);
+  });
+});
+
+describe('routeTeamMessageIn — the short-circuit', () => {
+  const directAnswer = () => '{"action":"direct","slotId":"s2","reason":"点名视频岗","confidence":0.93}';
+
+  it('a confident direct delivers to the member slot, caches, and counts the saved lead round', async () => {
+    const deps = baseDeps({ complete: async () => directAnswer() });
+    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    const verdict = await routeTeamMessageIn(deps, cache, counters, { input: '视频实验室，继续剪片头', teamId: 't1' });
+    expect(verdict).toMatchObject({ action: 'direct', slotId: 's2', memberName: '视频实验室', cached: false });
+    expect(deps.calls.memberDeliveries).toEqual(['t1:s2']);
+    expect(counters).toEqual({ shortCircuits: 1, fallbacks: 0, savedTurns: 1 });
+    expect(cache.size).toBe(1);
+  });
+  it('the same message again hits the cache: zero model calls, delivery happens again', async () => {
+    let completions = 0;
+    const deps = baseDeps({
+      complete: async () => {
+        completions += 1;
+        return directAnswer();
+      },
+    });
+    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    await routeTeamMessageIn(deps, cache, counters, { input: '视频实验室，继续剪片头', teamId: 't1' });
+    const second = await routeTeamMessageIn(deps, cache, counters, { input: '视频实验室，继续剪片头', teamId: 't1' });
+    expect(second).toMatchObject({ action: 'direct', cached: true });
+    expect(completions).toBe(1);
+    expect(deps.calls.memberDeliveries).toEqual(['t1:s2', 't1:s2']);
+    expect(counters.savedTurns).toBe(2);
+  });
+  it('a cached direct whose member was removed is evicted and answers full', async () => {
+    let assistants = [
+      { slot_id: 's-lead', role: 'leader', assistant_name: '货代' },
+      { slot_id: 's2', role: 'teammate', assistant_name: '视频实验室' },
+    ];
+    const deps = baseDeps({
+      getTeamAssistants: async () => assistants,
+      complete: async () => directAnswer(),
+    });
+    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    await routeTeamMessageIn(deps, cache, counters, { input: '视频实验室，继续剪片头', teamId: 't1' });
+    assistants = [
+      { slot_id: 's-lead', role: 'leader', assistant_name: '货代' },
+      { slot_id: 's1', role: 'teammate', assistant_name: '货代' }, // the team shrunk to another member; s2 is gone
+    ];
+    const second = await routeTeamMessageIn(deps, cache, counters, { input: '视频实验室，继续剪片头', teamId: 't1' });
+    expect(second).toEqual({ action: 'full', reason: 'member-gone' });
+    expect(cache.size).toBe(0);
+    expect(deps.calls.memberDeliveries).toEqual(['t1:s2']);
+  });
+  it('a delivery failure on a fresh verdict answers full and caches nothing', async () => {
+    const deps = baseDeps({
+      complete: async () => directAnswer(),
+      deliverMemberMessage: async () => {
+        throw new Error('409 busy');
+      },
+    });
+    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    const verdict = await routeTeamMessageIn(deps, cache, counters, { input: '视频实验室，继续剪片头', teamId: 't1' });
+    expect(verdict).toEqual({ action: 'full', reason: 'deliver-failed' });
+    expect(cache.size).toBe(0);
+    expect(counters.shortCircuits).toBe(0);
+  });
+  it('the team-route cache never collides with the supervisor-reuse cache of the same text', async () => {
+    const deps = baseDeps({ complete: async () => directAnswer() });
+    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    await routeTeamMessageIn(deps, cache, counters, { input: '查一下 CNS 客户', teamId: 't1' });
+    expect(cache.size).toBe(1);
+    expect([...cache.keys()][0].startsWith('team-route:')).toBe(true);
+  });
+});
+
+describe('dispatchHintIn', () => {
+  const runHint = (deps: QuickDecisionDeps, input: string) =>
+    dispatchHintIn(
+      deps,
+      new Map<string, QuickDecisionCacheEntry>(),
+      { shortCircuits: 0, fallbacks: 0, savedTurns: 0 },
+      {
+        input,
+      }
+    );
+
+  it('a confident hint maps ids to labels and caches without delivering anything', async () => {
+    const deps = baseDeps({
+      complete: async () => '{"action":"hint","positions":["forwarder","video-lab"],"reason":"跨岗","confidence":0.9}',
+    });
+    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    const verdict = await dispatchHintIn(deps, cache, counters, { input: '查 CNS 客户并做宣传视频' });
+    expect(verdict).toMatchObject({
+      action: 'hint',
+      positions: [
+        { id: 'forwarder', label: '货代(forwarder)' },
+        { id: 'video-lab', label: '视频实验室(video-lab)' },
+      ],
+    });
+    expect(deps.calls.memberDeliveries).toEqual([]);
+    expect(deps.calls.deliver).toEqual([]); // advisory: nothing is delivered
+    expect(counters).toEqual({ shortCircuits: 1, fallbacks: 0, savedTurns: 0 });
+    expect(cache.size).toBe(1);
+  });
+  it('a none verdict (chatter, no match, low confidence) sends nothing and caches nothing', async () => {
+    const deps = baseDeps({
+      complete: async () => '{"action":"hint","positions":[],"reason":"闲聊","confidence":0.9}',
+    });
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    const verdict = await dispatchHintIn(
+      deps,
+      cache,
+      { shortCircuits: 0, fallbacks: 0, savedTurns: 0 },
+      { input: '现在有哪些队' }
+    );
+    expect(verdict).toMatchObject({ action: 'none', reason: 'no-positions' });
+    expect(cache.size).toBe(0);
+  });
+  it('an empty roster answers none without a model call', async () => {
+    const deps = baseDeps({ readRoster: async () => [] });
+    expect(await runHint(deps, '任务')).toEqual({ action: 'none', reason: 'empty-roster' });
+    expect(deps.calls.complete).toBe(0);
+  });
+  it('a cached hint replays only the ids the roster still knows', async () => {
+    let rosterNow = roster;
+    const deps = baseDeps({
+      readRoster: async () => rosterNow,
+      complete: async () => '{"action":"hint","positions":["forwarder","video-lab"],"reason":"x","confidence":0.9}',
+    });
+    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    await dispatchHintIn(deps, cache, counters, { input: '查客户并做视频' });
+    rosterNow = [roster[1]]; // video-lab removed from the library since (roster[1] = forwarder)
+    const second = await dispatchHintIn(deps, cache, counters, { input: '查客户并做视频' });
+    expect(second).toMatchObject({ action: 'hint', positions: [{ id: 'forwarder' }] });
+    expect(second.action === 'hint' && second.cached).toBe(true);
+  });
+  it('a cached hint emptied by a roster change evicts and answers none', async () => {
+    let rosterNow = roster;
+    const deps = baseDeps({
+      readRoster: async () => rosterNow,
+      complete: async () => '{"action":"hint","positions":["video-lab"],"reason":"x","confidence":0.9}',
+    });
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
+    await dispatchHintIn(deps, cache, counters, { input: '做宣传视频' });
+    rosterNow = [roster[1]]; // only forwarder remains
+    const second = await dispatchHintIn(deps, cache, counters, { input: '做宣传视频' });
+    expect(second).toEqual({ action: 'none', reason: 'roster-changed' });
+    expect(cache.size).toBe(0);
   });
 });
