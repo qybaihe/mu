@@ -50,7 +50,7 @@ const indexEntry = (
   teamId: string,
   expiresAt: number,
   lastUsedAt = 5,
-  lifecycle: Partial<Pick<SupervisorTeam, 'ttlDays' | 'permanent'>> = {}
+  lifecycle: Partial<Pick<SupervisorTeam, 'ttlDays' | 'permanent' | 'deletedAt'>> = {}
 ): SupervisorTeam => ({
   name: `index-${teamId}`,
   positions: [],
@@ -59,6 +59,7 @@ const indexEntry = (
   expiresAt,
   ttlDays: lifecycle.ttlDays ?? 7,
   permanent: lifecycle.permanent ?? false,
+  deletedAt: lifecycle.deletedAt,
   teamId,
   leadConversationId: `${teamId}-lead`,
 });
@@ -127,6 +128,25 @@ describe('teamRosterEntries', () => {
     const fresh = team('fresh', { updated_at: 5 });
     const entries = teamRosterEntries([stale, fresh], [indexEntry('fresh', NOW + 1, 99)], NOW);
     expect(entries.map((entry) => entry.team.id)).toEqual(['fresh', 'stale']);
+  });
+
+  it('marks a soft-deleted team deleted (never retired), carrying the stamp, and lists it last', () => {
+    const entries = teamRosterEntries(
+      [team('gone'), team('old'), team('live')],
+      [
+        indexEntry('gone', NOW + 1, 99, { deletedAt: NOW - 2 }),
+        indexEntry('old', NOW - 1),
+        indexEntry('live', NOW + 1),
+      ],
+      NOW
+    );
+    expect(entries.map((entry) => entry.team.id)).toEqual(['live', 'old', 'gone']);
+    const gone = entries.find((entry) => entry.team.id === 'gone');
+    expect(gone?.deleted).toBe(true);
+    expect(gone?.deletedAt).toBe(NOW - 2);
+    // A deleted team is deleted, not retired — even past its TTL.
+    expect(gone?.retired).toBe(false);
+    expect(entries.find((entry) => entry.team.id === 'old')?.deleted).toBe(false);
   });
 
   it('keeps a permanent team active past its recorded expiry, carrying its lifecycle', () => {

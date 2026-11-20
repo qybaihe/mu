@@ -134,6 +134,7 @@ const runAt = async (scriptPath: string, args: string[], env: Record<string, str
 };
 
 const teamsNow = () => parseTeamsFile(readFileSync(teamsFile, 'utf8'));
+const isoOf = (ms: number): string => new Date(ms).toISOString();
 const writeTeamsRaw = (content: string) => {
   mkdirSync(join(dataDir, 'positions', '_shared'), { recursive: true });
   writeFileSync(teamsFile, content, 'utf8');
@@ -270,6 +271,38 @@ describe('teams.cjs against a stub backend', () => {
     expect((await run(['match', '--positions', 'forwarder'])).out).toBe('NONE');
     const listing = await run(['list']);
     expect(listing.out).toContain('RETIRED');
+  });
+
+  it('a soft-deleted team is invisible to match and list, and send refuses it — but its row survives rewrites', async () => {
+    const now = Date.now();
+    writeTeamsRaw(
+      [
+        '<!-- mu-supervisor-teams v1 -->',
+        '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 | 删除时间 |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        `| 已删队 | forwarder | ${isoOf(now - 86_400_000)} | ${isoOf(now - 86_400_000)} | ${isoOf(
+          now + TEAM_TTL_MS
+        )} | t-del | c-del | 7 |  | ${isoOf(now - 86_400_000)} |`,
+        `| 现役队 | forwarder | ${isoOf(now)} | ${isoOf(now)} | ${isoOf(now + TEAM_TTL_MS)} | t-live | c-live | 7 |  |  |`,
+      ].join('\n')
+    );
+    // match picks the live team, never the deleted one — even though the
+    // deleted team alone would be the smaller superset candidate were it alive.
+    expect((await run(['match', '--positions', 'forwarder'])).out).toBe('MATCH 现役队');
+    const listing = await run(['list']);
+    expect(listing.out).toContain('TEAM 现役队');
+    expect(listing.out).not.toContain('已删队');
+    expect(listing.out).toContain('RETIRED 0');
+    const send = await run(['send', '--team', '已删队', '--message', '任务']);
+    expect(send.status).toBe(1);
+    expect(send.err).toContain('no team named "已删队"');
+    // A later successful send rewrites the index canonically — the deleted
+    // row survives that rewrite, filed under the deleted heading.
+    expect((await run(['send', '--team', '现役队', '--message', '任务'])).status).toBe(0);
+    const rows = teamsNow();
+    expect(rows.map((t) => t.name)).toContain('已删队');
+    expect(rows.find((t) => t.name === '已删队')?.deletedAt).toBe(now - 86_400_000);
+    expect(readFileSync(teamsFile, 'utf8')).toContain('已删除');
   });
 
   it('lists active teams with their positions and expiry', async () => {

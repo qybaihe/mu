@@ -10,9 +10,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   ensureSupervisorWorkspaceIn,
+  purgeDueDeletedTeamsIn,
   registerSupervisorTeamIn,
-  removeSupervisorTeamIn,
+  restoreSupervisorTeamIn,
   setTeamLifecycleIn,
+  softDeleteSupervisorTeamIn,
 } from '@process/services/team/supervisor';
 import { TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/team/teamDispatch/dispatchRules';
 import {
@@ -338,29 +340,155 @@ describe('setTeamLifecycleIn', () => {
   });
 });
 
-describe('removeSupervisorTeamIn', () => {
-  it('drops exactly the deleted team row, leaving the others', async () => {
+describe('softDeleteSupervisorTeamIn / restoreSupervisorTeamIn', () => {
+  const day = 86_400_000;
+  const t0 = 1_800_000_000_000;
+
+  it('stamps the delete and nothing else: the row stays, the index files it under the deleted heading', async () => {
     const { dataDir, teamsFile } = setup();
-    const t0 = 1_800_000_000_000;
     await registerSupervisorTeamIn(
       { dataDir },
-      { name: '留队', positions: ['forwarder'], teamId: 'keep', leadConversationId: 'c1' },
+      { name: '删队', positions: ['forwarder'], teamId: 't1', leadConversationId: 'c1' },
       () => t0
     );
-    await registerSupervisorTeamIn(
-      { dataDir },
-      { name: '删队', positions: ['video-lab'], teamId: 'gone', leadConversationId: 'c2' },
-      () => t0
-    );
-    const rows = await removeSupervisorTeamIn({ dataDir }, { teamId: 'gone' }, () => t0 + 1);
-    expect(rows.map((t) => t.teamId)).toEqual(['keep']);
-    const onDisk = parseTeamsFile(readFileSync(teamsFile, 'utf8'));
-    expect(onDisk.map((t) => t.teamId)).toEqual(['keep']);
+    const rows = await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 't1' }, () => t0 + 1);
+    expect(rows[0]).toMatchObject({ teamId: 't1', deletedAt: t0 + 1, expiresAt: t0 + 7 * day });
+    const file = readFileSync(teamsFile, 'utf8');
+    expect(file).toContain('已删除');
+    expect(parseTeamsFile(file)[0]?.deletedAt).toBe(t0 + 1);
   });
 
-  it('is a no-op rewrite when the row is already gone', async () => {
-    const { dataDir } = setup();
-    const rows = await removeSupervisorTeamIn({ dataDir }, { teamId: 'ghost' });
-    expect(rows).toEqual([]);
+  it('stamping a deleted team changes nothing, and an unknown id changes nothing', async () => {
+    const { dataDir, teamsFile } = setup();
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '队', positions: ['forwarder'], teamId: 't1', leadConversationId: 'c1' },
+      () => t0
+    );
+    await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 't1' }, () => t0 + 1);
+    const once = readFileSync(teamsFile, 'utf8');
+    await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 't1' }, () => t0 + 2);
+    await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 'ghost' }, () => t0 + 2);
+    expect(parseTeamsFile(readFileSync(teamsFile, 'utf8'))[0]?.deletedAt).toBe(t0 + 1);
+    expect(once).toContain(`${new Date(t0 + 1).toISOString()}`);
+  });
+
+  it('restores with a fresh lease: the stamp leaves, the expiry restarts, a permanent row stays permanent', async () => {
+    const { dataDir, teamsFile } = setup();
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '甲', positions: ['forwarder'], teamId: 't1', leadConversationId: 'c1' },
+      () => t0
+    );
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '乙', positions: ['video-lab'], teamId: 't2', leadConversationId: 'c2', permanent: true },
+      () => t0
+    );
+    await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 't1' }, () => t0 + 1);
+    await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 't2' }, () => t0 + 1);
+    // Far past every recorded expiry: a restore must not land in the retired fold.
+    const later = t0 + 30 * day;
+    const rows = await restoreSupervisorTeamIn({ dataDir }, { teamId: 't1' }, () => later);
+    await restoreSupervisorTeamIn({ dataDir }, { teamId: 't2' }, () => later);
+    const restored = parseTeamsFile(readFileSync(teamsFile, 'utf8'));
+    expect(rows.find((t) => t.teamId === 't1')).toMatchObject({ deletedAt: undefined, expiresAt: later + 7 * day });
+    expect(restored.find((t) => t.teamId === 't1')).toMatchObject({ deletedAt: undefined, expiresAt: later + 7 * day });
+    expect(restored.find((t) => t.teamId === 't2')?.permanent).toBe(true);
+    expect(readFileSync(teamsFile, 'utf8')).not.toContain('已删除');
+  });
+});
+
+describe('purgeDueDeletedTeamsIn', () => {
+  const day = 86_400_000;
+  const t0 = 1_800_000_000_000;
+
+  it('deletes for real past the grace — backend DELETE first, then the row — and keeps the restorable ones', async () => {
+    const { dataDir, teamsFile } = setup();
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '旧删', positions: ['forwarder'], teamId: 'due', leadConversationId: 'c1' },
+      () => t0
+    );
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '新删', positions: ['video-lab'], teamId: 'fresh', leadConversationId: 'c2' },
+      () => t0
+    );
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '现役', positions: ['forwarder'], teamId: 'live', leadConversationId: 'c3' },
+      () => t0
+    );
+    await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 'due' }, () => t0);
+    await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 'fresh' }, () => t0 + 6 * day);
+    const deleted: string[] = [];
+    const answer = await purgeDueDeletedTeamsIn(
+      { dataDir },
+      {
+        deleteTeam: async (teamId) => {
+          deleted.push(teamId);
+        },
+      },
+      () => t0 + 8 * day
+    );
+    expect(deleted).toEqual(['due']);
+    expect(answer.purged.map((t) => t.teamId)).toEqual(['due']);
+    const onDisk = parseTeamsFile(readFileSync(teamsFile, 'utf8'));
+    expect(onDisk.map((t) => t.teamId).toSorted()).toEqual(['fresh', 'live']);
+    expect(onDisk.find((t) => t.teamId === 'fresh')?.deletedAt).toBe(t0 + 6 * day);
+  });
+
+  it('keeps a row whose backend DELETE failed or was already gone (404), so the pass retries', async () => {
+    const { dataDir, teamsFile } = setup();
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '拒删', positions: ['forwarder'], teamId: 'refused', leadConversationId: 'c1' },
+      () => t0
+    );
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '已无', positions: ['video-lab'], teamId: 'gone', leadConversationId: 'c2' },
+      () => t0
+    );
+    await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 'refused' }, () => t0);
+    await softDeleteSupervisorTeamIn({ dataDir }, { teamId: 'gone' }, () => t0);
+    const answer = await purgeDueDeletedTeamsIn(
+      { dataDir },
+      {
+        deleteTeam: async (teamId) => {
+          if (teamId === 'refused') throw new Error('backend down');
+        },
+      },
+      () => t0 + 8 * day
+    );
+    expect(answer.purged.map((t) => t.teamId)).toEqual(['gone']);
+    expect(answer.kept.map((t) => t.teamId)).toEqual(['refused']);
+    const onDisk = parseTeamsFile(readFileSync(teamsFile, 'utf8'));
+    expect(onDisk.map((t) => t.teamId)).toEqual(['refused']);
+    expect(onDisk[0]?.deletedAt).toBe(t0);
+  });
+
+  it('is a fast no-op when nothing is due: no delete call, no rewrite', async () => {
+    const { dataDir, teamsFile } = setup();
+    await registerSupervisorTeamIn(
+      { dataDir },
+      { name: '队', positions: ['forwarder'], teamId: 't1', leadConversationId: 'c1' },
+      () => t0
+    );
+    const before = readFileSync(teamsFile, 'utf8');
+    let called = 0;
+    const answer = await purgeDueDeletedTeamsIn(
+      { dataDir },
+      {
+        deleteTeam: async () => {
+          called += 1;
+        },
+      },
+      () => t0
+    );
+    expect(called).toBe(0);
+    expect(answer.purged).toEqual([]);
+    expect(readFileSync(teamsFile, 'utf8')).toBe(before);
   });
 });

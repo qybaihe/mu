@@ -27,7 +27,6 @@ import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
 import { useOpenPosition } from '@renderer/pages/positions/openPosition';
 import { useOpenSupervisor } from '@renderer/pages/positions/openSupervisor';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
-import { useHiddenPositions } from '@renderer/pages/monitor/hiddenPositions';
 import { rowButtonProps } from '@renderer/utils/ui/rowButton';
 
 const FOLDED_KEY = 'sider-positions-folded';
@@ -124,10 +123,6 @@ const SupervisorRow: React.FC<{ conversationId: string | undefined; onOpen: () =
 const SiderPositionsGroup: React.FC<{ onSessionClick?: () => void }> = ({ onSessionClick }) => {
   const { t } = useTranslation();
   const { positions } = usePositionRoster();
-  // The monitor's hide action also removes the row here: hidden positions
-  // leave the roster without leaving the library.
-  const hidden = useHiddenPositions();
-  const visible = positions.filter((position) => !hidden.has(position.name));
   const { conversations } = useConversationHistoryContext();
   const { assistants, assistantOrder } = useAssistantList();
   // The primary selectable assistant — mu when it is enabled — not the raw list's first
@@ -189,7 +184,7 @@ const SiderPositionsGroup: React.FC<{ onSessionClick?: () => void }> = ({ onSess
             conversationId={findPositionConversationId(conversations, SUPERVISOR_POSITION_NAME)}
             onOpen={handleOpenSupervisor}
           />
-          {visible.map((position) => (
+          {positions.map((position) => (
             <PositionRow
               key={position.name}
               position={position}

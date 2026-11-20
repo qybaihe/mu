@@ -20,17 +20,21 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Message, Popconfirm, Popover } from '@arco-design/web-react';
 import { Delete } from '@icon-park/react';
 import classNames from 'classnames';
-import { ipcBridge } from '@/common';
-import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
+import { positionBridge } from '@/common/chat/team/positions/positionBridge';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import { positionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
+import type { TrashedPosition } from '@/common/chat/team/positions/positionTrashCore';
+import { trashDaysLeftOf } from '@/common/chat/team/positions/positionTrashCore';
+import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
+import { deletedDaysLeftOf } from '@/common/chat/team/supervisor/supervisorCore';
 import { useConversationHistoryContext } from '@renderer/hooks/context/ConversationHistoryContext';
 import { useAssistantList } from '@renderer/hooks/assistant/useAssistantList';
 import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
 import { useOpenPosition } from '@renderer/pages/positions/openPosition';
 import { useOpenSupervisor } from '@renderer/pages/positions/openSupervisor';
+import { refreshPositions } from '@renderer/pages/positions/usePositionRoster';
+import { refreshTeamsList } from '@renderer/pages/team/core/teamStore';
 import { rowButtonProps } from '@renderer/utils/ui/rowButton';
-import { hidePosition, restoreHiddenPositions, useHiddenPositions } from './hiddenPositions';
 import TeamLifecycleEditor from './TeamLifecycleEditor';
 import { isNearExpiry, relativeTimeBucket, type PositionCard, type TeamCard, type MemberDotKind } from './monitorCore';
 import { useMonitorOverview } from './useMonitorOverview';
@@ -107,12 +111,58 @@ const stateLabelKey = (
       ? 'monitor.positions.state.waiting'
       : 'monitor.positions.state.idle';
 
+/** One row of a restore queue: what the deleted (soft-deleted) things render
+ *  as — their name, the grace days they have left, and the one button that
+ *  brings them back. Never a card: a deleted thing is a row to restore, not
+ *  a wall entry to click into. */
+const RestoreRow: React.FC<{ testId: string; name: string; daysLeft: number; onRestore: () => void }> = ({
+  testId,
+  name,
+  daysLeft,
+  onRestore,
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div data-testid={testId} className='flex items-center gap-10px min-w-0 px-2px'>
+      <span className='text-13px text-t-secondary truncate'>{name}</span>
+      <span className='text-12px text-t-quaternary shrink-0'>{t('monitor.daysLeft', { count: daysLeft })}</span>
+      <Button type='text' size='mini' onClick={onRestore}>
+        {t('monitor.restore')}
+      </Button>
+    </div>
+  );
+};
+
+/** The fold header both restore queues share: the count, the soonest expiry. */
+const RestoreFoldHeader: React.FC<{
+  testId: string;
+  open: boolean;
+  onToggle: () => void;
+  label: string;
+}> = ({ testId, open, onToggle, label }) => (
+  <span
+    data-testid={testId}
+    role='button'
+    tabIndex={0}
+    aria-expanded={open}
+    className='text-12px text-t-quaternary cursor-pointer hover:text-t-secondary'
+    onClick={onToggle}
+    onKeyDown={(event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      onToggle();
+    }}
+  >
+    {label}
+  </span>
+);
+
 const PositionWallCard: React.FC<{
   card: PositionCard;
   now: number;
   onOpen: (position: PositionInfo) => void;
-  onHide: (position: PositionInfo) => void;
-}> = ({ card, now, onOpen, onHide }) => {
+  onDelete: (position: PositionInfo) => void;
+}> = ({ card, now, onOpen, onDelete }) => {
   const { t } = useTranslation();
   const { position, state } = card;
   const doing = card.currentTask
@@ -143,19 +193,19 @@ const PositionWallCard: React.FC<{
         </span>
         <span className='text-12px leading-[1.45] text-t-quaternary truncate'>{position.name}</span>
         <span className='flex-1' />
-        {/* Hide, not delete: the row leaves the monitor and the roster, the
-         * library file stays, the monitor's restore entry brings it back. */}
+        {/* Delete, the quarantine semantics: the file moves to the library's
+         * .trash, the roster and walls drop it at once, 7 days to restore. */}
         <span {...stopBubble}>
           <Popconfirm
-            title={t('monitor.positions.hideTitle', { name: position.displayName })}
-            content={t('monitor.positions.hideDesc')}
-            okText={t('monitor.positions.hideOk')}
+            title={t('monitor.positions.deleteTitle', { name: position.displayName })}
+            content={t('monitor.positions.deleteDesc')}
+            okText={t('common.delete')}
             cancelText={t('common.cancel')}
-            onOk={() => onHide(position)}
+            onOk={() => onDelete(position)}
           >
             <CardDeleteIcon
-              testId={`monitor-position-${position.name}-hide`}
-              a11y={t('monitor.positions.hideA11y', { name: position.displayName })}
+              testId={`monitor-position-${position.name}-delete`}
+              a11y={t('monitor.positions.deleteA11y', { name: position.displayName })}
             />
           </Popconfirm>
         </span>
@@ -257,8 +307,9 @@ const TeamWallCard: React.FC<{
             </Popover>
           </span>
         ) : null}
-        {/* Delete the group chat itself: backend team + index row; the
-         * conversations follow the backend's own DELETE semantics. */}
+        {/* Delete the group chat, the soft-delete semantics: the team and its
+         * conversations leave every surface now, the backend keeps them for
+         * the 7-day restore grace, then the reconcile deletes them for real. */}
         <span {...stopBubble}>
           <Popconfirm
             title={t('monitor.teams.deleteTitle', { name: entry.team.name })}
@@ -320,9 +371,31 @@ const MonitorPage: React.FC = () => {
   const primaryAssistantId = selectableAssistants(assistants, assistantOrder)[0]?.id ?? null;
   const openPosition = useOpenPosition(conversations, primaryAssistantId);
   const openSupervisor = useOpenSupervisor(conversations, primaryAssistantId);
-  const hidden = useHiddenPositions();
   const [retiredOpen, setRetiredOpen] = useState(false);
+  const [deletedTeamsOpen, setDeletedTeamsOpen] = useState(false);
+  const [deletedPositionsOpen, setDeletedPositionsOpen] = useState(false);
+  const [trashed, setTrashed] = useState<readonly TrashedPosition[]>([]);
   const [now, setNow] = useState(() => Date.now());
+
+  const refreshTrashed = () => {
+    positionBridge.trashedList
+      .invoke()
+      .then(setTrashed)
+      .catch(() => {
+        // No trash: the queues simply read empty.
+      });
+  };
+
+  useEffect(() => {
+    refreshTrashed();
+    // The hide semantics this page replaced left its list behind in older
+    // profiles; nothing reads it now, so it goes on the first mount.
+    try {
+      localStorage.removeItem('monitor-hidden-positions');
+    } catch {
+      // Storage unavailable: nothing was hidden anyway.
+    }
+  }, []);
 
   // The cards keep their own clock (the overview's tick drives its memo); a
   // slow tick here keeps the team cards' relative times honest too.
@@ -332,7 +405,12 @@ const MonitorPage: React.FC = () => {
   }, []);
 
   const { positionCards, teamWall } = overview;
-  const nothingAtAll = positionCards.length === 0 && teamWall.active.length === 0 && teamWall.retired.length === 0;
+  const nothingAtAll =
+    positionCards.length === 0 &&
+    teamWall.active.length === 0 &&
+    teamWall.retired.length === 0 &&
+    teamWall.deleted.length === 0 &&
+    trashed.length === 0;
   const noWorkHappening =
     teamWall.active.length === 0 && positionCards.every((card) => card.state === 'idle' || !card.conversationId);
 
@@ -353,18 +431,52 @@ const MonitorPage: React.FC = () => {
     }
   };
 
-  // The card's delete: the backend team first (its conversations follow the
-  // backend's own DELETE semantics), then the index row — the dead-row gap the
-  // audit left — then the wall re-reads the shared index.
+  // The card's delete: one index stamp — the team and its conversations leave
+  // every surface at once (the sidebar re-reads the index with the list
+  // refresh), the backend keeps them for the 7-day restore grace.
   const deleteTeam = async (card: TeamCard): Promise<void> => {
-    try {
-      await ipcBridge.team.remove.invoke({ id: card.entry.team.id });
-      const answer = await supervisorBridge.removeTeam.invoke({ teamId: card.entry.team.id });
-      if (!answer.ok) Message.warning(t('monitor.teams.deleteIndexFailed'));
+    const answer = await supervisorBridge.softDeleteTeam.invoke({ teamId: card.entry.team.id });
+    if (answer.ok) {
+      refreshTeamsList();
       overview.refreshTeamsIndex();
-    } catch (error) {
-      console.error('[MonitorPage] delete team failed', error);
+    } else {
       Message.error(t('monitor.teams.deleteFailed'));
+    }
+  };
+
+  // The restore queue's row: the stamp leaves, the team is back on every
+  // surface with a fresh lifecycle lease.
+  const restoreTeam = async (card: TeamCard): Promise<void> => {
+    const answer = await supervisorBridge.restoreTeam.invoke({ teamId: card.entry.team.id });
+    if (answer.ok) {
+      refreshTeamsList();
+      overview.refreshTeamsIndex();
+    } else {
+      Message.error(t('monitor.teams.restoreFailed'));
+    }
+  };
+
+  // The position card's delete: the library file moves into the quarantine,
+  // the roster and both walls drop it at once, 7 days to restore.
+  const deletePosition = async (position: PositionInfo): Promise<void> => {
+    const answer = await positionBridge.deletePosition.invoke({ name: position.name });
+    if (answer.ok) {
+      await refreshPositions();
+      refreshTrashed();
+    } else {
+      Message.error(t('monitor.positions.deleteFailed'));
+    }
+  };
+
+  // The quarantine row's restore: the file moves back to its origin name and
+  // the roster picks it up on the refetch.
+  const restorePosition = async (entry: TrashedPosition): Promise<void> => {
+    const answer = await positionBridge.restorePosition.invoke({ file: entry.file });
+    if (answer.ok) {
+      setTrashed(answer.data);
+      await refreshPositions();
+    } else {
+      Message.error(t('monitor.positions.restoreFailed'));
     }
   };
 
@@ -379,11 +491,6 @@ const MonitorPage: React.FC = () => {
           <Button type='primary' onClick={() => openSupervisor()}>
             {t('monitor.empty.action')}
           </Button>
-          {hidden.size > 0 ? (
-            <Button type='text' size='mini' onClick={() => restoreHiddenPositions()}>
-              {t('monitor.positions.restoreAll', { count: hidden.size })}
-            </Button>
-          ) : null}
         </div>
       </div>
     );
@@ -408,23 +515,15 @@ const MonitorPage: React.FC = () => {
         <section data-testid='monitor-positions-wall' className='flex flex-col gap-12px'>
           <div className='flex items-center gap-10px'>
             <span className='text-13px font-500 text-t-secondary'>{t('monitor.positions.title')}</span>
-            {hidden.size > 0 ? (
-              // The one recovery entry: hidden positions come back all at once.
-              <span
-                data-testid='monitor-hidden-restore'
-                role='button'
-                tabIndex={0}
-                className='text-12px text-t-quaternary cursor-pointer hover:text-t-secondary'
-                onClick={() => restoreHiddenPositions()}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') return;
-                  event.preventDefault();
-                  restoreHiddenPositions();
-                }}
-              >
-                {t('monitor.positions.hidden', { count: hidden.size })} ·{' '}
-                {t('monitor.positions.restoreAll', { count: hidden.size })}
-              </span>
+            {trashed.length > 0 ? (
+              <RestoreFoldHeader
+                testId='monitor-positions-deleted-toggle'
+                open={deletedPositionsOpen}
+                onToggle={() => setDeletedPositionsOpen((prev) => !prev)}
+                label={`${t('monitor.positions.deletedFold', { count: trashed.length })} · ${t('monitor.daysLeft', {
+                  count: Math.min(...trashed.map((entry) => trashDaysLeftOf(entry.deletedAt, now))),
+                })}`}
+              />
             ) : null}
           </div>
           <div className='grid gap-12px grid-cols-[repeat(auto-fill,minmax(230px,1fr))]'>
@@ -434,10 +533,23 @@ const MonitorPage: React.FC = () => {
                 card={card}
                 now={now}
                 onOpen={openPosition}
-                onHide={(position) => hidePosition(position.name)}
+                onDelete={deletePosition}
               />
             ))}
           </div>
+          {deletedPositionsOpen && trashed.length > 0 ? (
+            <div className='flex flex-col gap-4px'>
+              {trashed.map((entry) => (
+                <RestoreRow
+                  key={entry.file}
+                  testId={`monitor-deleted-position-${entry.name}`}
+                  name={entry.displayName}
+                  daysLeft={trashDaysLeftOf(entry.deletedAt, now)}
+                  onRestore={() => void restorePosition(entry)}
+                />
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <section data-testid='monitor-teams-wall' className='flex flex-col gap-12px'>
@@ -488,6 +600,36 @@ const MonitorPage: React.FC = () => {
                       onOpen={openTeam}
                       onSetLifecycle={setLifecycle}
                       onDelete={deleteTeam}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {teamWall.deleted.length > 0 ? (
+            <div className='flex flex-col gap-8px'>
+              <RestoreFoldHeader
+                testId='monitor-teams-deleted-toggle'
+                open={deletedTeamsOpen}
+                onToggle={() => setDeletedTeamsOpen((prev) => !prev)}
+                label={`${t('monitor.teams.deletedFold', { count: teamWall.deleted.length })} · ${t(
+                  'monitor.daysLeft',
+                  {
+                    count: Math.min(
+                      ...teamWall.deleted.map((card) => deletedDaysLeftOf(card.entry.deletedAt ?? now, now))
+                    ),
+                  }
+                )}`}
+              />
+              {deletedTeamsOpen ? (
+                <div className='flex flex-col gap-4px'>
+                  {teamWall.deleted.map((card) => (
+                    <RestoreRow
+                      key={card.entry.team.id}
+                      testId={`monitor-deleted-team-${card.entry.team.id}`}
+                      name={card.entry.team.name}
+                      daysLeft={deletedDaysLeftOf(card.entry.deletedAt ?? now, now)}
+                      onRestore={() => void restoreTeam(card)}
                     />
                   ))}
                 </div>

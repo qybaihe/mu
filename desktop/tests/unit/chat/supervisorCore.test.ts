@@ -6,14 +6,18 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  TEAM_DELETE_GRACE_MS,
   TEAM_TTL_DEFAULT_DAYS,
   TEAM_TTL_MAX_DAYS,
   TEAM_TTL_MS,
   buildSupervisorOverrideContent,
   buildTeamsFile,
   clampTeamTtlDays,
+  deletedDaysLeftOf,
   expiryAfterTtl,
   isTeamActive,
+  isTeamDeleted,
+  isTeamPurgeDue,
   parseTeamsFile,
   type SupervisorTeam,
 } from '@/common/chat/team/supervisor/supervisorCore';
@@ -35,10 +39,16 @@ const team = (overrides: Partial<SupervisorTeam> = {}): SupervisorTeam => ({
   expiresAt: 3_000,
   ttlDays: 7,
   permanent: false,
+  deletedAt: undefined,
   teamId: 'team-1',
   leadConversationId: 'conv-lead',
   ...overrides,
 });
+
+/** An index file holding one ten-cell row: the header and rule the parser
+ *  must skip, then the row itself. */
+const tenCellRow = (cells: string): string =>
+  `<!-- mu-supervisor-teams v1 -->\n# 临时团队索引\n\n| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 | 删除时间 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${cells}`;
 
 describe('parseTeamsFile / buildTeamsFile', () => {
   it('round-trips teams through the canonical file', () => {
@@ -184,6 +194,67 @@ describe('parseTeamsFile / buildTeamsFile', () => {
     expect(file.indexOf('| 永久队 ')).toBeGreaterThan(-1);
     expect(file.indexOf('| 永久队 ')).toBeLessThan(retiredAt);
     expect(file.indexOf('| 过期队 ')).toBeGreaterThan(retiredAt);
+  });
+
+  it('round-trips the soft delete: the stamp in and out, the row under the deleted heading', () => {
+    const now = 10_000_000;
+    const live = team({ name: '现役队', expiresAt: now + 1 });
+    const deleted = team({ name: '已删队', expiresAt: now + 1, deletedAt: 9_000_000 });
+    const file = buildTeamsFile([deleted, live], now);
+    expect(file).toContain('已删除');
+    const deletedAt = file.indexOf('已删除');
+    expect(file.indexOf('| 现役队 ')).toBeGreaterThan(-1);
+    expect(file.indexOf('| 现役队 ')).toBeLessThan(deletedAt);
+    expect(file.indexOf('| 已删队 ')).toBeGreaterThan(deletedAt);
+    const parsed = parseTeamsFile(file);
+    expect(parsed.find((t) => t.name === '现役队')?.deletedAt).toBeUndefined();
+    expect(parsed.find((t) => t.name === '已删队')?.deletedAt).toBe(9_000_000);
+  });
+
+  it('reads a ten-cell row with an empty delete cell as the live team it is, and a nine-cell row the same', () => {
+    const stamped = Date.parse('2026-11-20T00:00:00Z');
+    const parsedTen = parseTeamsFile(
+      tenCellRow(
+        `| 队 | a | 2026-11-01T00:00:00Z | 2026-11-02T00:00:00Z | 2026-12-01T00:00:00Z | t1 | c1 | 7 |  | ${new Date(
+          stamped
+        ).toISOString()} |`
+      )
+    );
+    expect(parsedTen[0]?.deletedAt).toBe(stamped);
+    const parsedEmpty = parseTeamsFile(
+      tenCellRow('| 队 | a | 2026-11-01T00:00:00Z | 2026-11-02T00:00:00Z | 2026-12-01T00:00:00Z | t1 | c1 | 7 |  |  |')
+    );
+    expect(parsedEmpty[0]?.deletedAt).toBeUndefined();
+    const parsedNine = parseTeamsFile(
+      '<!-- mu-supervisor-teams v1 -->\n| 队 | a | 2026-11-01T00:00:00Z | 2026-11-02T00:00:00Z | 2026-12-01T00:00:00Z | t1 | c1 | 7 |  |'
+    );
+    expect(parsedNine[0]?.deletedAt).toBeUndefined();
+  });
+});
+
+describe('the delete grace', () => {
+  it('a deleted team is never active, not even a permanent one', () => {
+    expect(isTeamActive(team({ deletedAt: 1, expiresAt: 100 }), 50)).toBe(false);
+    expect(isTeamActive(team({ deletedAt: 1, permanent: true, expiresAt: 1 }), 100)).toBe(false);
+    expect(isTeamDeleted(team({ deletedAt: 1 }))).toBe(true);
+    expect(isTeamDeleted(team())).toBe(false);
+  });
+
+  it('the purge is due strictly past the grace', () => {
+    expect(isTeamPurgeDue(team({ deletedAt: 1 }), 1 + TEAM_DELETE_GRACE_MS)).toBe(true);
+    expect(isTeamPurgeDue(team({ deletedAt: 1 }), 1 + TEAM_DELETE_GRACE_MS - 1)).toBe(false);
+    expect(isTeamPurgeDue(team(), 1_000_000_000)).toBe(false);
+  });
+
+  it('the days left count down to zero, never negative, never past the grace length', () => {
+    const deletedAt = 0;
+    const day = 24 * 60 * 60 * 1000;
+    expect(deletedDaysLeftOf(deletedAt, 0)).toBe(7);
+    // A clock from before the stamp (a slow render tick) must not read 8.
+    expect(deletedDaysLeftOf(deletedAt, -10_000)).toBe(7);
+    expect(deletedDaysLeftOf(deletedAt, 6 * day)).toBe(1);
+    expect(deletedDaysLeftOf(deletedAt, 7 * day)).toBe(0);
+    expect(deletedDaysLeftOf(deletedAt, 8 * day)).toBe(0);
   });
 });
 

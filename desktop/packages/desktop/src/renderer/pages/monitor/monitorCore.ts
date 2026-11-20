@@ -181,11 +181,13 @@ export type TeamWallInputs = {
   now: number;
 };
 
-export type TeamWall = { active: TeamCard[]; retired: TeamCard[] };
+export type TeamWall = { active: TeamCard[]; retired: TeamCard[]; deleted: TeamCard[] };
 
 /**
  * The team wall split by lifecycle: active teams first (a running team before
- * a resting one, else by recency), retired teams after — the collapsed tail.
+ * a resting one, else by recency), retired teams after — the collapsed tail —
+ * and the soft-deleted ones last: the monitor's restore queue, not the wall
+ * itself (they render as restore rows, never as cards).
  */
 export const teamCardsOf = (inputs: TeamWallInputs): TeamWall => {
   const cards = inputs.roster.map<TeamCard>((entry) => {
@@ -204,12 +206,13 @@ export const teamCardsOf = (inputs: TeamWallInputs): TeamWall => {
       permanent: entry.permanent,
     };
   });
-  const active = cards.filter((card) => !card.entry.retired);
-  const retired = cards.filter((card) => card.entry.retired);
+  const active = cards.filter((card) => !card.entry.retired && !card.entry.deleted);
+  const retired = cards.filter((card) => card.entry.retired && !card.entry.deleted);
+  const deleted = cards.filter((card) => card.entry.deleted);
   active.sort((a, b) =>
     a.running === b.running ? b.entry.team.updated_at - a.entry.team.updated_at : a.running ? -1 : 1
   );
-  return { active, retired };
+  return { active, retired, deleted };
 };
 
 // --- the entry badge ---

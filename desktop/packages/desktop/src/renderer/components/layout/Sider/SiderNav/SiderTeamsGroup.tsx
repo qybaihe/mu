@@ -136,10 +136,13 @@ const SiderTeamsGroup: React.FC<{ onSessionClick?: () => void; onNewGroupChat: (
     };
   }, [teams]);
 
-  const entries = teamRosterEntries(teams, index, Date.now());
+  const allEntries = teamRosterEntries(teams, index, Date.now());
+  // A soft-deleted team left the sidebar with everything else; it lives only
+  // in the monitor's restore queue until its grace passes.
+  const entries = allEntries.filter((entry) => !entry.deleted);
   // No positions to build a group from: the whole section (its + button
   // included) has nothing to offer and stays out of the sidebar.
-  if (positions.length === 0 && entries.length === 0) return null;
+  if (positions.length === 0 && allEntries.length === 0) return null;
 
   const activeCount = entries.filter((entry) => !entry.retired).length;
   const activeConversationId = pathname.startsWith('/conversation/') ? pathname.split('/')[2] : undefined;

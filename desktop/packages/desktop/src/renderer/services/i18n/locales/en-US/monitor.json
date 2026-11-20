@@ -14,12 +14,12 @@
     "noSession": "No session yet",
     "inProgress": "{{count}} in progress",
     "openA11y": "Open the session of {{name}}",
-    "hideTitle": "Hide the position {{name}}?",
-    "hideDesc": "Hides it from the monitor and the roster; the library file stays, restore from the monitor anytime.",
-    "hideOk": "Hide",
-    "hideA11y": "Hide {{name}}",
-    "hidden": "{{count}} hidden",
-    "restoreAll": "Restore all"
+    "deleteTitle": "Delete the position {{name}}?",
+    "deleteDesc": "Restorable from the monitor for 7 days; after that the position file is deleted for good.",
+    "deleteA11y": "Delete {{name}}",
+    "deleteFailed": "Failed to delete the position.",
+    "deletedFold": "{{count}} deleted",
+    "restoreFailed": "Failed to restore the position."
   },
   "teams": {
     "title": "Group chats",
@@ -38,10 +38,11 @@
       "saveFailed": "Failed to save the lifecycle."
     },
     "deleteTitle": "Delete the group chat \"{{name}}\"?",
-    "deleteDesc": "Deletes the backend team and clears its shared-index row; conversations follow the backend's delete semantics.",
+    "deleteDesc": "Gone from the sidebar and the monitor at once; restorable from the monitor for 7 days, then deleted for good with its conversations.",
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
-    "deleteIndexFailed": "Group chat deleted, but clearing its index row failed."
+    "deletedFold": "{{count}} deleted teams",
+    "restoreFailed": "Failed to restore the group chat."
   },
   "empty": {
     "hint": "Ask the supervisor for a job: one message and it assembles or reuses a team and follows it through.",
@@ -52,5 +53,7 @@
     "minutes": "{{count}} min ago",
     "hours": "{{count}} h ago",
     "days": "{{count}} d ago"
-  }
+  },
+  "daysLeft": "{{count}}d left",
+  "restore": "Restore"
 }

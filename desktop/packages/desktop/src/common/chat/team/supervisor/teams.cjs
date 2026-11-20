@@ -9,8 +9,10 @@
  *
  * Subcommands:
  *   list                                    active teams, then the retired count
+ *                                           (soft-deleted teams are invisible)
  *   match --positions a,b                   `MATCH <name>` when an active team's
  *                                           positions cover the needed set, else `NONE`
+ *                                           (a soft-deleted team never matches)
  *   add  --name X --positions a,b           create the team (backend POST /api/teams,
  *                                           members = the positions as mu slots), seed
  *                                           the workspace's AGENTS.md dispatch rules,
@@ -55,8 +57,9 @@ const TEAMS_FILE = path.resolve(__dirname, '..', '_shared', 'TEAMS.md');
 const TEAMS_MARKER = '<!-- mu-supervisor-teams v1 -->';
 /** The dispatch rules block for a fresh team workspace; the app injects the canonical text in place of this whole `null` expression when it ships the script. */
 const DISPATCH_RULES_BLOCK = /* mu-dispatch-rules-block */ null;
-const TABLE_HEADER = '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 |';
-const TABLE_RULE = '| --- | --- | --- | --- | --- | --- | --- | --- | --- |';
+const TABLE_HEADER =
+  '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 | 删除时间 |';
+const TABLE_RULE = '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
 /** The permanent flag's cell text; anything else reads as false. */
 const PERMANENT_CELL = '是';
 
@@ -66,8 +69,11 @@ const clampTtlDays = (days) => {
   return Number.isFinite(clamped) ? clamped : DEFAULT_TTL_DAYS;
 };
 
-/** Whether a team is still matchable: a permanent team never retires. */
-const isActive = (team, now) => team.permanent || team.expiresAt > now;
+/** Whether a team is soft-deleted: it left every surface and waits out its grace. */
+const isDeleted = (team) => team.deletedAt !== undefined;
+
+/** Whether a team is still matchable: a permanent team never retires; a deleted team never matches. */
+const isActive = (team, now) => team.deletedAt === undefined && (team.permanent || team.expiresAt > now);
 
 const iso = (ms) => new Date(ms).toISOString();
 
@@ -182,12 +188,15 @@ function parseTeams(content) {
     const cells = splitCells(trimmed.slice(1, -1));
     // Seven cells is the pre-lifecycle format: it reads as the default 7-day,
     // non-permanent team it was.
-    if (cells.length !== 7 && cells.length !== 9) continue;
+    if (cells.length !== 7 && cells.length !== 9 && cells.length !== 10) continue;
     const createdAt = Date.parse(cells[2]);
     const lastUsedAt = Date.parse(cells[3]);
     const expiresAt = Date.parse(cells[4]);
     if (!Number.isFinite(createdAt) || !Number.isFinite(lastUsedAt) || !Number.isFinite(expiresAt)) continue;
     if (!cells[0] || !cells[5] || !cells[6]) continue;
+    // A ten-cell row's empty last cell reads as not deleted, as do the older
+    // seven- and nine-cell formats.
+    const deletedAt = cells.length === 10 ? Date.parse(cells[9]) : Number.NaN;
     teams.push({
       name: cells[0],
       positions: cells[1]
@@ -197,8 +206,9 @@ function parseTeams(content) {
       createdAt,
       lastUsedAt,
       expiresAt,
-      ttlDays: cells.length === 9 ? clampTtlDays(parseInt(cells[7], 10)) : DEFAULT_TTL_DAYS,
-      permanent: cells.length === 9 && cells[8] === PERMANENT_CELL,
+      ttlDays: cells.length >= 9 ? clampTtlDays(parseInt(cells[7], 10)) : DEFAULT_TTL_DAYS,
+      permanent: cells.length >= 9 && cells[8] === PERMANENT_CELL,
+      deletedAt: Number.isFinite(deletedAt) ? deletedAt : undefined,
       teamId: cells[5],
       leadConversationId: cells[6],
     });
@@ -208,11 +218,15 @@ function parseTeams(content) {
 
 function buildTeams(teams, now) {
   const active = teams.filter((t) => isActive(t, now)).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
-  const retired = teams.filter((t) => !isActive(t, now)).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
+  const retired = teams
+    .filter((t) => !isActive(t, now) && !isDeleted(t))
+    .toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
+  const deleted = teams.filter((t) => isDeleted(t)).toSorted((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
   const table = (rows) => (rows.length === 0 ? [] : [TABLE_HEADER, TABLE_RULE, ...rows.map(teamRow)]);
   const lines = [TEAMS_MARKER, '# 临时团队索引（由 teams.cjs 维护，勿手改）', '', ...table(active)];
   if (active.length > 0) lines.push('');
-  if (retired.length > 0) lines.push('已退役（到期未复用，不再匹配）：', '', ...table(retired));
+  if (retired.length > 0) lines.push('已退役（到期未复用，不再匹配）：', '', ...table(retired), '');
+  if (deleted.length > 0) lines.push('已删除（7 天内可恢复，到期连同后端团队彻底删除）：', '', ...table(deleted));
   return `${lines.join('\n')}\n`;
 }
 
@@ -221,7 +235,7 @@ const teamRow = (t) =>
     t.expiresAt
   )} | ${escapeCell(t.teamId)} | ${escapeCell(t.leadConversationId)} | ${t.ttlDays} | ${
     t.permanent ? PERMANENT_CELL : ''
-  } |`;
+  } | ${t.deletedAt !== undefined ? iso(t.deletedAt) : ''} |`;
 
 function readTeams() {
   try {
@@ -290,8 +304,10 @@ const findTeam = (teams, name) => teams.find((t) => t.name === name);
 async function cmdList() {
   const teams = readTeams();
   const now = Date.now();
+  // Soft-deleted teams are invisible here too: they left, they are the
+  // desktop's restore queue, not the supervisor's roster.
   const active = teams.filter((t) => isActive(t, now));
-  const retired = teams.length - active.length;
+  const retired = teams.filter((t) => !isActive(t, now) && !isDeleted(t)).length;
   for (const t of active) {
     console.log(
       `TEAM ${t.name} | positions=${t.positions.join(',')} | expires=${
@@ -389,6 +405,7 @@ async function cmdAdd(args) {
     expiresAt: now + DEFAULT_TTL_DAYS * DAY_MS,
     ttlDays: DEFAULT_TTL_DAYS,
     permanent: false,
+    deletedAt: undefined,
     teamId: team.id,
     leadConversationId: lead.conversation_id,
   };
@@ -417,7 +434,13 @@ async function cmdSend(args) {
   if (!content) fail('the task text is empty');
 
   const teams = readTeams();
-  const team = findTeam(teams, name) || fail(`no team named "${name}" in ${TEAMS_FILE} (run: node teams.cjs list)`);
+  // A deleted team with the name is not the team: it left the roster, so a
+  // send aimed at it fails instead of reviving it.
+  const team =
+    findTeam(
+      teams.filter((t) => !isDeleted(t)),
+      name
+    ) || fail(`no team named "${name}" in ${TEAMS_FILE} (run: node teams.cjs list)`);
   await api('POST', `/api/teams/${team.teamId}/messages`, { content, files: [] });
 
   const now = Date.now();

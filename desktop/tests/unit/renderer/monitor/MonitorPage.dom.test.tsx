@@ -11,7 +11,7 @@
  * session, the group chat itself.
  */
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
@@ -24,9 +24,14 @@ import styles from '@renderer/pages/monitor/MonitorPage.module.css';
 let overview: MonitorOverview;
 const openPosition = vi.fn();
 const openSupervisor = vi.fn();
-const teamRemove = vi.fn();
 const setTeamLifecycle = vi.fn();
-const removeTeamRow = vi.fn();
+const softDeleteTeam = vi.fn();
+const restoreTeamRow = vi.fn();
+const deletePositionCall = vi.fn();
+const restorePositionCall = vi.fn();
+const trashedList = vi.fn();
+const refreshPositions = vi.fn();
+const refreshTeamsList = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -123,17 +128,27 @@ vi.mock('@arco-design/web-react', async (importOriginal) => {
   };
   return { ...actual, Popover: FakePopover, Popconfirm: FakePopconfirm };
 });
-vi.mock('@/common', () => ({
-  ipcBridge: { team: { remove: { invoke: (...args: unknown[]) => teamRemove(...args) } } },
-}));
 vi.mock('@/common/chat/team/supervisor/supervisorBridge', () => ({
   supervisorBridge: {
     setTeamLifecycle: { invoke: (...args: unknown[]) => setTeamLifecycle(...args) },
-    removeTeam: { invoke: (...args: unknown[]) => removeTeamRow(...args) },
+    softDeleteTeam: { invoke: (...args: unknown[]) => softDeleteTeam(...args) },
+    restoreTeam: { invoke: (...args: unknown[]) => restoreTeamRow(...args) },
   },
 }));
+vi.mock('@/common/chat/team/positions/positionBridge', () => ({
+  positionBridge: {
+    deletePosition: { invoke: (...args: unknown[]) => deletePositionCall(...args) },
+    restorePosition: { invoke: (...args: unknown[]) => restorePositionCall(...args) },
+    trashedList: { invoke: (...args: unknown[]) => trashedList(...args) },
+  },
+}));
+vi.mock('@renderer/pages/positions/usePositionRoster', () => ({
+  refreshPositions: (...args: unknown[]) => refreshPositions(...args),
+}));
+vi.mock('@renderer/pages/team/core/teamStore', () => ({
+  refreshTeamsList: () => refreshTeamsList(),
+}));
 import MonitorPage from '@renderer/pages/monitor/MonitorPage';
-import { resetHiddenPositionsForTest, restoreHiddenPositions } from '@renderer/pages/monitor/hiddenPositions';
 
 const position = (name: string, displayName: string): PositionInfo => ({
   name,
@@ -170,13 +185,16 @@ const rosterEntry = (
   retired: boolean,
   expiresAt?: number,
   ttlDays?: number,
-  permanent?: boolean
+  permanent?: boolean,
+  deletedAt?: number
 ): TeamRosterEntry => ({
   team: source,
   memberCount: 1,
   leadConversationId,
   conversationIds: [leadConversationId],
   retired,
+  deleted: deletedAt !== undefined,
+  deletedAt,
   expiresAt,
   ttlDays,
   permanent: permanent ?? false,
@@ -218,14 +236,21 @@ describe('MonitorPage', () => {
   beforeEach(() => {
     openPosition.mockClear();
     openSupervisor.mockClear();
-    teamRemove.mockClear();
-    teamRemove.mockResolvedValue(undefined);
     setTeamLifecycle.mockClear();
     setTeamLifecycle.mockResolvedValue({ ok: true, data: { teams: [] } });
-    removeTeamRow.mockClear();
-    removeTeamRow.mockResolvedValue({ ok: true, data: { teams: [] } });
-    restoreHiddenPositions();
-    resetHiddenPositionsForTest();
+    softDeleteTeam.mockClear();
+    softDeleteTeam.mockResolvedValue({ ok: true, data: { teams: [] } });
+    restoreTeamRow.mockClear();
+    restoreTeamRow.mockResolvedValue({ ok: true, data: { teams: [] } });
+    deletePositionCall.mockClear();
+    deletePositionCall.mockResolvedValue({ ok: true, data: undefined });
+    restorePositionCall.mockClear();
+    restorePositionCall.mockResolvedValue({ ok: true, data: [] });
+    trashedList.mockClear();
+    trashedList.mockResolvedValue([]);
+    refreshPositions.mockClear();
+    refreshPositions.mockResolvedValue(undefined);
+    refreshTeamsList.mockClear();
     localStorage.clear();
   });
   afterEach(cleanup);
@@ -243,7 +268,7 @@ describe('MonitorPage', () => {
         positionCard(position('reviewer', '评审')),
         positionCard(position('checker', '复核'), { state: 'waiting' }),
       ],
-      teamWall: { active: [], retired: [] } satisfies TeamWall,
+      teamWall: { active: [], retired: [], deleted: [] } satisfies TeamWall,
       activeCount: 1,
       positionCount: 3,
       activeTeamCount: 0,
@@ -280,7 +305,7 @@ describe('MonitorPage', () => {
     });
     overview = {
       positionCards: [],
-      teamWall: { active: [active, nearTtlIdle], retired: [retired] },
+      teamWall: { active: [active, nearTtlIdle], retired: [retired], deleted: [] },
       activeCount: 1,
       positionCount: 0,
       activeTeamCount: 1,
@@ -308,7 +333,7 @@ describe('MonitorPage', () => {
     const active = teamCard(rosterEntry(team('t1'), 'lead-9', false));
     overview = {
       positionCards: [positionCard(forwarder)],
-      teamWall: { active: [active], retired: [] },
+      teamWall: { active: [active], retired: [], deleted: [] },
       activeCount: 0,
       positionCount: 1,
       activeTeamCount: 1,
@@ -325,7 +350,7 @@ describe('MonitorPage', () => {
   it('a fresh install reads the supervisor guidance, its button opens the supervisor', () => {
     overview = {
       positionCards: [],
-      teamWall: { active: [], retired: [] },
+      teamWall: { active: [], retired: [], deleted: [] },
       activeCount: 0,
       positionCount: 0,
       activeTeamCount: 0,
@@ -346,7 +371,7 @@ describe('MonitorPage', () => {
     });
     overview = {
       positionCards: [],
-      teamWall: { active: [days, forever], retired: [] } satisfies TeamWall,
+      teamWall: { active: [days, forever], retired: [], deleted: [] } satisfies TeamWall,
       activeCount: 0,
       positionCount: 0,
       activeTeamCount: 2,
@@ -365,7 +390,7 @@ describe('MonitorPage', () => {
     const card = teamCard(rosterEntry(team('t1'), 'lead-1', false, Date.now() + 86_400_000, 3), { ttlDays: 1 });
     overview = {
       positionCards: [],
-      teamWall: { active: [card], retired: [] } satisfies TeamWall,
+      teamWall: { active: [card], retired: [], deleted: [] } satisfies TeamWall,
       activeCount: 0,
       positionCount: 0,
       activeTeamCount: 1,
@@ -385,12 +410,12 @@ describe('MonitorPage', () => {
     expect(screen.getByTestId('where').textContent).not.toBe('/conversation/lead-1');
   });
 
-  it('the team card delete asks, then removes the backend team, clears the index row, and refreshes', async () => {
+  it('the team card delete asks, then soft-deletes: one index stamp, no backend call, both surfaces refresh', async () => {
     const refreshTeamsIndex = vi.fn();
     const card = teamCard(rosterEntry(team('t1'), 'lead-1', false));
     overview = {
       positionCards: [],
-      teamWall: { active: [card], retired: [] } satisfies TeamWall,
+      teamWall: { active: [card], retired: [], deleted: [] } satisfies TeamWall,
       activeCount: 0,
       positionCount: 0,
       activeTeamCount: 1,
@@ -400,38 +425,87 @@ describe('MonitorPage', () => {
     renderPage();
     fireEvent.click(screen.getByTestId('monitor-team-t1-delete'));
     expect(await screen.findByText('monitor.teams.deleteTitle:name=队t1')).toBeTruthy();
+    expect(await screen.findByText('monitor.teams.deleteDesc')).toBeTruthy();
     fireEvent.click(await screen.findByText('common.delete'));
-    await waitFor(() => expect(teamRemove).toHaveBeenCalledWith({ id: 't1' }));
-    await waitFor(() => expect(removeTeamRow).toHaveBeenCalledWith({ teamId: 't1' }));
+    await waitFor(() => expect(softDeleteTeam).toHaveBeenCalledWith({ teamId: 't1' }));
     await waitFor(() => expect(refreshTeamsIndex).toHaveBeenCalled());
+    await waitFor(() => expect(refreshTeamsList).toHaveBeenCalled());
     expect(screen.getByTestId('where').textContent).not.toBe('/conversation/lead-1');
   });
 
-  it('the position card hide asks, then records the hide with a restore entry; restore empties the list', async () => {
-    const forwarder = position('forwarder', '货代');
-    const reviewer = position('reviewer', '评审');
+  it('the deleted-teams queue folds open and a row restores the team', async () => {
+    const refreshTeamsIndex = vi.fn();
+    const deleted = teamCard(rosterEntry(team('t1'), 'lead-1', false, Date.now() + 86_400_000, 7, false, 42));
     overview = {
-      positionCards: [positionCard(forwarder), positionCard(reviewer)],
-      teamWall: { active: [], retired: [] },
+      positionCards: [],
+      teamWall: { active: [], retired: [], deleted: [deleted] } satisfies TeamWall,
       activeCount: 0,
-      positionCount: 2,
+      positionCount: 0,
+      activeTeamCount: 0,
+      loading: false,
+      refreshTeamsIndex,
+    };
+    renderPage();
+    // Off the wall itself, on the queue's header with its soonest expiry.
+    expect(screen.queryByTestId('monitor-team-t1')).toBeNull();
+    const toggle = screen.getByTestId('monitor-teams-deleted-toggle');
+    expect(toggle.textContent).toContain('monitor.teams.deletedFold:count=1');
+    fireEvent.click(toggle);
+    const row = screen.getByTestId('monitor-deleted-team-t1');
+    expect(row.textContent).toContain('队t1');
+    expect(row.textContent).toContain('monitor.restore');
+    fireEvent.click(within(row).getByText('monitor.restore'));
+    await waitFor(() => expect(restoreTeamRow).toHaveBeenCalledWith({ teamId: 't1' }));
+    await waitFor(() => expect(refreshTeamsIndex).toHaveBeenCalled());
+  });
+
+  it('the position card delete asks, then quarantines: the bridge call, the roster refetch, the queue grows', async () => {
+    const forwarder = position('forwarder', '货代');
+    overview = {
+      positionCards: [positionCard(forwarder)],
+      teamWall: { active: [], retired: [], deleted: [] } satisfies TeamWall,
+      activeCount: 0,
+      positionCount: 1,
       activeTeamCount: 0,
       loading: false,
       refreshTeamsIndex: () => undefined,
     };
+    trashedList.mockResolvedValue([]);
     renderPage();
-    expect(screen.getByTestId('monitor-position-forwarder')).toBeTruthy();
-    fireEvent.click(screen.getByTestId('monitor-position-forwarder-hide'));
-    expect(await screen.findByText('monitor.positions.hideTitle:name=货代')).toBeTruthy();
-    expect(await screen.findByText('monitor.positions.hideDesc')).toBeTruthy();
-    fireEvent.click(await screen.findByText('monitor.positions.hideOk'));
-    // The hide is recorded, and the wall's header grows the one recovery entry.
-    await waitFor(() =>
-      expect(JSON.parse(localStorage.getItem('monitor-hidden-positions') ?? '[]')).toEqual(['forwarder'])
-    );
-    const restore = await screen.findByTestId('monitor-hidden-restore');
-    expect(restore.textContent).toContain('monitor.positions.hidden:count=1');
-    fireEvent.click(restore);
-    await waitFor(() => expect(localStorage.getItem('monitor-hidden-positions')).toBe('[]'));
+    fireEvent.click(screen.getByTestId('monitor-position-forwarder-delete'));
+    expect(await screen.findByText('monitor.positions.deleteTitle:name=货代')).toBeTruthy();
+    expect(await screen.findByText('monitor.positions.deleteDesc')).toBeTruthy();
+    fireEvent.click(await screen.findByText('common.delete'));
+    await waitFor(() => expect(deletePositionCall).toHaveBeenCalledWith({ name: 'forwarder' }));
+    await waitFor(() => expect(refreshPositions).toHaveBeenCalled());
+  });
+
+  it('the deleted-positions queue folds open and a row restores the position', async () => {
+    const forwarder = position('forwarder', '货代');
+    overview = {
+      positionCards: [positionCard(forwarder)],
+      teamWall: { active: [], retired: [], deleted: [] } satisfies TeamWall,
+      activeCount: 0,
+      positionCount: 1,
+      activeTeamCount: 0,
+      loading: false,
+      refreshTeamsIndex: () => undefined,
+    };
+    // The quarantine answers one deleted position: 5 days of grace left.
+    const deletedAt = Date.now() - 2 * 86_400_000;
+    trashedList.mockResolvedValue([
+      { name: 'reviewer', displayName: '评审', file: 'reviewer.md', trashFile: 'reviewer.md', deletedAt },
+    ]);
+    const { container } = renderPage();
+    const toggle = await screen.findByTestId('monitor-positions-deleted-toggle');
+    expect(toggle.textContent).toContain('monitor.positions.deletedFold:count=1');
+    fireEvent.click(toggle);
+    const row = screen.getByTestId('monitor-deleted-position-reviewer');
+    expect(row.textContent).toContain('评审');
+    expect(row.textContent).toContain('monitor.daysLeft:count=5');
+    fireEvent.click(within(row).getByText('monitor.restore'));
+    await waitFor(() => expect(restorePositionCall).toHaveBeenCalledWith({ file: 'reviewer.md' }));
+    await waitFor(() => expect(refreshPositions).toHaveBeenCalled());
+    expect(container.textContent).toContain('monitor.positions.title');
   });
 });

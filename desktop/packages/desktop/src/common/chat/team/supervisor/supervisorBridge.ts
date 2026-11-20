@@ -34,8 +34,11 @@ export type SupervisorRegisterTeamParams = {
 /** Sets one team's lifecycle (day count and/or permanent flag): what the monitor card's popover saves. */
 export type SupervisorTeamLifecycleParams = { teamId: string; ttlDays?: number; permanent?: boolean };
 
-/** Drops one team's row from the shared index: what a group-chat deletion calls after the backend DELETE. */
-export type SupervisorRemoveTeamParams = { teamId: string };
+/** Soft-deletes one team (the grace clock starts): what a group-chat card's delete confirms to. */
+export type SupervisorSoftDeleteTeamParams = { teamId: string };
+
+/** Restores one soft-deleted team (back on every surface, fresh lifecycle lease). */
+export type SupervisorRestoreTeamParams = { teamId: string };
 
 export const supervisorBridge = {
   /** Prepares (and refreshes) the supervisor workspace: rules, script, teams index. */
@@ -50,8 +53,16 @@ export const supervisorBridge = {
   setTeamLifecycle: bridge.buildProvider<KyrnResult<SupervisorTeamsResult>, SupervisorTeamLifecycleParams>(
     'supervisor.setTeamLifecycle'
   ),
-  /** Drops one team's row from the shared index (a group-chat deletion). */
-  removeTeam: bridge.buildProvider<KyrnResult<SupervisorTeamsResult>, SupervisorRemoveTeamParams>(
-    'supervisor.removeTeam'
+  /**
+   * Soft-deletes one team in the shared index: the row is stamped `deletedAt`
+   * and leaves every surface, the backend team and its conversations stay —
+   * restorable for the delete grace, then purged for real by the reconcile.
+   */
+  softDeleteTeam: bridge.buildProvider<KyrnResult<SupervisorTeamsResult>, SupervisorSoftDeleteTeamParams>(
+    'supervisor.softDeleteTeam'
+  ),
+  /** Restores one soft-deleted team: the delete stamp leaves, fresh lifecycle lease. */
+  restoreTeam: bridge.buildProvider<KyrnResult<SupervisorTeamsResult>, SupervisorRestoreTeamParams>(
+    'supervisor.restoreTeam'
   ),
 };

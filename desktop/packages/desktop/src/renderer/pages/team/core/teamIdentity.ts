@@ -60,6 +60,14 @@ export type TeamRosterEntry = {
   conversationIds: readonly string[];
   /** A retired team (past its TTL in the shared index) reads as history. */
   retired: boolean;
+  /**
+   * A soft-deleted team (its card's delete) is gone from every surface —
+   * sidebar, monitor, supervisor match — while the backend team waits out
+   * its restore grace.
+   */
+  deleted: boolean;
+  /** Epoch ms of the soft delete, when the index recorded one. */
+  deletedAt: number | undefined;
   /** Epoch ms when the index retires the team; undefined outside the index. */
   expiresAt: number | undefined;
   /** The team's own lifecycle length from the index, in days. */
@@ -71,7 +79,9 @@ export type TeamRosterEntry = {
 /**
  * The teams as the sidebar lists them: every backend team, its lifecycle from
  * the shared index (a team the index does not know — built elsewhere — stays
- * active), active teams first by recency, retired ones after them.
+ * active), active teams first by recency, retired ones after them, deleted
+ * ones last. A deleted team stays in the list only so the monitor's restore
+ * queue can show it; the surfaces that list teams filter it out.
  */
 export const teamRosterEntries = (
   teams: readonly TTeam[],
@@ -81,12 +91,15 @@ export const teamRosterEntries = (
   const indexed = new Map(index.map((entry) => [entry.teamId, entry]));
   const entries = teams.map((team) => {
     const record = indexed.get(team.id);
+    const deleted = record !== undefined && record.deletedAt !== undefined;
     return {
       team,
       memberCount: team.assistants.length,
       leadConversationId: team.assistants.find((assistant) => assistant.role === 'leader')?.conversation_id,
       conversationIds: team.assistants.map((assistant) => assistant.conversation_id),
-      retired: record !== undefined && record.expiresAt <= now && !record.permanent,
+      retired: !deleted && record !== undefined && record.expiresAt <= now && !record.permanent,
+      deleted,
+      deletedAt: record?.deletedAt,
       expiresAt: record?.expiresAt,
       ttlDays: record?.ttlDays,
       permanent: record?.permanent ?? false,
@@ -95,6 +108,7 @@ export const teamRosterEntries = (
   const recencyOf = (entry: TeamRosterEntry): number =>
     Math.max(entry.team.updated_at, indexed.get(entry.team.id)?.lastUsedAt ?? 0);
   return entries.toSorted((a, b) => {
+    if (a.deleted !== b.deleted) return a.deleted ? 1 : -1;
     if (a.retired !== b.retired) return a.retired ? 1 : -1;
     return recencyOf(b) - recencyOf(a);
   });

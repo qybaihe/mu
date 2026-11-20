@@ -19,6 +19,7 @@
 import { mkdir, rm, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getPlatformServices } from '@/common/platform';
+import { httpRequest } from '@/common/adapter/httpBridge';
 import positionsScriptSource from '@/common/chat/team/supervisor/positions.cjs?raw';
 import { shippedTeamsScript } from './teamScripts';
 import {
@@ -33,6 +34,8 @@ import {
   clampTeamTtlDays,
   expiryAfterTtl,
   isTeamActive,
+  isTeamDeleted,
+  isTeamPurgeDue,
   parseTeamsFile,
   type SupervisorTeam,
 } from '@/common/chat/team/supervisor/supervisorCore';
@@ -197,6 +200,7 @@ export async function registerSupervisorTeamIn(
       expiresAt: expiryAfterTtl(ttlDays, at),
       ttlDays,
       permanent,
+      deletedAt: undefined,
       teamId: params.teamId,
       leadConversationId: params.leadConversationId,
     };
@@ -252,24 +256,124 @@ export const setTeamLifecycle = (
 ): Promise<SupervisorTeam[]> => setTeamLifecycleIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
 
 /**
- * Drops one team's row from the shared index: what a group-chat deletion
- * calls after the backend accepted the DELETE, so the index keeps no dead
- * row a `match` could still hand back. The clock is injectable for tests.
+ * Soft-deletes one team: stamps `deletedAt` on its row and nothing else. The
+ * backend team and its conversations stay exactly as they are (the restore's
+ * capital); the row moves to the index's deleted section, and every surface
+ * that reads the index — sidebar, monitor, `teams.cjs match` — drops it at
+ * once. An unknown team id changes nothing. The clock is injectable for tests.
  */
-export async function removeSupervisorTeamIn(
+export async function softDeleteSupervisorTeamIn(
   options: { dataDir: string },
   params: { teamId: string },
   now: () => number = Date.now
 ): Promise<SupervisorTeam[]> {
   const at = now();
-  const rows = (await readTeamsIn(options.dataDir)).filter((team) => team.teamId !== params.teamId);
+  const teams = await readTeamsIn(options.dataDir);
+  const rows: SupervisorTeam[] = [];
+  for (const team of teams) {
+    rows.push(team.teamId === params.teamId && !isTeamDeleted(team) ? { ...team, deletedAt: at } : team);
+  }
   await writeTeamsIn(options.dataDir, rows, at);
   return rows;
 }
 
-/** Drops one team's row under the app data dir. */
-export const removeSupervisorTeam = (params: { teamId: string }): Promise<SupervisorTeam[]> =>
-  removeSupervisorTeamIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
+/** Soft-deletes one team under the app data dir. */
+export const softDeleteSupervisorTeam = (params: { teamId: string }): Promise<SupervisorTeam[]> =>
+  softDeleteSupervisorTeamIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
+
+/**
+ * Restores one soft-deleted team: the delete stamp leaves and the team is
+ * back at once — back on every surface, and back with a fresh lifecycle lease
+ * (`now + ttlDays`; a permanent team stays permanent). A restored team must
+ * not land in the retired fold: its old lease was almost certainly consumed
+ * by the grace period, and the user just chose to have this team back. An
+ * unknown id changes nothing. The clock is injectable for tests.
+ */
+export async function restoreSupervisorTeamIn(
+  options: { dataDir: string },
+  params: { teamId: string },
+  now: () => number = Date.now
+): Promise<SupervisorTeam[]> {
+  const at = now();
+  const teams = await readTeamsIn(options.dataDir);
+  const rows: SupervisorTeam[] = [];
+  for (const team of teams) {
+    if (team.teamId !== params.teamId || !isTeamDeleted(team)) {
+      rows.push(team);
+      continue;
+    }
+    rows.push({
+      ...team,
+      deletedAt: undefined,
+      expiresAt: team.permanent ? team.expiresAt : expiryAfterTtl(team.ttlDays, at),
+      lastUsedAt: at,
+    });
+  }
+  await writeTeamsIn(options.dataDir, rows, at);
+  return rows;
+}
+
+/** Restores one soft-deleted team under the app data dir. */
+export const restoreSupervisorTeam = (params: { teamId: string }): Promise<SupervisorTeam[]> =>
+  restoreSupervisorTeamIn({ dataDir: getPlatformServices().paths.getDataDir() }, params);
+
+/** How the purge deletes a backend team; injectable so tests need no backend. */
+export type DeleteTeamForPurge = (teamId: string) => Promise<void>;
+
+/** The app's own purge delete: the backend DELETE whose semantics also drop
+ *  the team's conversations; a 404 already is the goal, so it passes. */
+const deleteTeamOverHttp: DeleteTeamForPurge = async (teamId) => {
+  try {
+    await httpRequest('DELETE', `/api/teams/${teamId}`);
+  } catch (error) {
+    if (!(error instanceof Error && 'status' in error && (error as { status: number }).status === 404)) throw error;
+  }
+};
+
+/** The outcome of one purge pass: what left the index, and what stayed. */
+export type PurgeResult = { purged: SupervisorTeam[]; kept: SupervisorTeam[] };
+
+/**
+ * The delete reconcile: every soft-deleted team past its grace is deleted for
+ * real — backend DELETE first (the conversations follow the backend's own
+ * semantics), then the index row — and only then. A backend that refuses or
+ * is unreachable keeps the row (a zombie index row is recoverable; a backend
+ * team no row points at is not), so the pass retries on the next reconcile.
+ * The clock and the delete are injectable for tests. Runs at startup and
+ * behind the `supervisor.teams` read.
+ */
+export async function purgeDueDeletedTeamsIn(
+  options: { dataDir: string },
+  deps: { deleteTeam: DeleteTeamForPurge },
+  now: () => number = Date.now
+): Promise<PurgeResult> {
+  const at = now();
+  const teams = await readTeamsIn(options.dataDir);
+  if (!teams.some((team) => isTeamPurgeDue(team, at))) return { purged: [], kept: teams };
+  // One team, one try: a DELETE that fails keeps its row (a zombie index row
+  // is recoverable; a backend team no row points at is not), and the pass
+  // retries on the next reconcile.
+  const answers = await Promise.all(
+    teams.map(async (team): Promise<{ team: SupervisorTeam; purged: boolean }> => {
+      if (!isTeamPurgeDue(team, at)) return { team, purged: false };
+      try {
+        await deps.deleteTeam(team.teamId);
+        return { team, purged: true };
+      } catch (error) {
+        console.warn('[supervisor] purge kept a team the backend refused to delete', team.teamId, error);
+        return { team, purged: false };
+      }
+    })
+  );
+  const purged = answers.filter((answer) => answer.purged).map((answer) => answer.team);
+  const kept = answers.filter((answer) => !answer.purged).map((answer) => answer.team);
+  await writeTeamsIn(options.dataDir, kept, at);
+  return { purged, kept };
+}
+
+/** The delete reconcile under the app data dir. */
+export const purgeDueDeletedTeams = (): Promise<PurgeResult> =>
+  purgeDueDeletedTeamsIn({ dataDir: getPlatformServices().paths.getDataDir() }, { deleteTeam: deleteTeamOverHttp });
 
 /**
  * The shared index as it stands on disk: every team the supervisor flow

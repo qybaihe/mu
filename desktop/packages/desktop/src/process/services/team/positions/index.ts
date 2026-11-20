@@ -5,23 +5,39 @@
  */
 
 /**
- * Answers `positions.list` and `positions.ensure-workspace`
- * (common/chat/positions/positionBridge.ts).
+ * Answers `positions.list`, `positions.ensure-workspace` and the delete
+ * quarantine's three providers (common/chat/positions/positionBridge.ts).
+ * The startup pass reconciles the quarantine: grace-expired entries are
+ * deleted for real before anything lists them.
  */
 import { positionBridge } from '@/common/chat/team/positions/positionBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
-import { ensurePositionWorkspace, listPositions } from './positionService';
+import {
+  ensurePositionWorkspace,
+  listPositions,
+  listTrashedPositions,
+  purgeDueTrashedPositions,
+  restoreTrashedPosition,
+  trashPosition,
+} from './positionService';
 
 export {
   ensurePositionWorkspace,
   ensurePositionWorkspaceIn,
   listPositions,
+  listTrashedPositions,
+  purgeDueTrashedPositions,
+  purgeDueTrashedPositionsIn,
+  restoreTrashedPosition,
+  restoreTrashedPositionIn,
   safeFolderName,
   scanPositionLibrary,
+  trashPosition,
+  trashPositionIn,
 } from './positionService';
 
-// Always answer, failures included: the generic bridge only logs a provider's exception, and the window would wait.
-async function result<T>(work: () => Promise<T>): Promise<KyrnResult<T>> {
+// Always answer IPC, including failure: the generic bridge otherwise only logs exceptions.
+async function result<T>(work: () => T | Promise<T>): Promise<KyrnResult<T>> {
   try {
     return { ok: true, data: await work() };
   } catch (error) {
@@ -32,4 +48,15 @@ async function result<T>(work: () => Promise<T>): Promise<KyrnResult<T>> {
 export function initPositionsBridge(): void {
   positionBridge.list.provider(() => listPositions());
   positionBridge.ensureWorkspace.provider(({ name }) => result(() => ensurePositionWorkspace(name)));
+  // The manifest read is also the lazy reconcile: an expired quarantine entry
+  // is deleted the moment anything lists the trash.
+  positionBridge.trashedList.provider(() => purgeDueTrashedPositions().then(() => listTrashedPositions()));
+  positionBridge.deletePosition.provider(({ name }) =>
+    result(() => trashPosition({ name }).then((): Promise<void> => undefined))
+  );
+  positionBridge.restorePosition.provider(({ file }) => result(() => restoreTrashedPosition({ file })));
+  // The startup pass, so a quarantine ages out even if nothing ever lists it.
+  void purgeDueTrashedPositions().catch((error) => {
+    console.warn('[positions] startup trash reconciliation failed', error);
+  });
 }

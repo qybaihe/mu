@@ -10,13 +10,17 @@
  * change at any time; a short poll keeps the roster honest without watching
  * the file system).
  */
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { positionBridge } from '@/common/chat/team/positions/positionBridge';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 
 export const POSITIONS_SWR_KEY = 'positions.roster';
 
 export const fetchPositions = (): Promise<PositionInfo[]> => positionBridge.list.invoke();
+
+/** Refetches the roster everywhere it shows: what a delete or a restore calls,
+ *  so the sidebar's rows move without waiting for the next poll. */
+export const refreshPositions = (): Promise<unknown> => mutate(POSITIONS_SWR_KEY);
 
 /** The roster, empty while it loads or when there is no position library. */
 export const usePositionRoster = (): { positions: PositionInfo[]; isLoading: boolean } => {

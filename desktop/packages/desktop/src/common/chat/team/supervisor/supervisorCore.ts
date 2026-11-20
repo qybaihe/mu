@@ -28,6 +28,13 @@ export const SUPERVISOR_FOLDER = '_supervisor';
 /** How long a team lives by default: created for this span, every reuse extends it to `now + TTL`. */
 export const TEAM_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * How long a deleted team stays restorable: after the grace passes, the
+ * reconcile deletes the backend team for real (its conversations follow the
+ * backend's own DELETE semantics) and drops the index row.
+ */
+export const TEAM_DELETE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
+
 /** The lifecycle a team may carry, in whole days: at least one, at most a year. */
 export const TEAM_TTL_MIN_DAYS = 1;
 export const TEAM_TTL_MAX_DAYS = 365;
@@ -79,6 +86,12 @@ export type SupervisorTeam = {
   ttlDays: number;
   /** A permanent team never retires, whatever `expiresAt` says. */
   permanent: boolean;
+  /**
+   * Epoch ms of the soft delete, when the user deleted the group chat: the
+   * team left every surface, stays restorable for the grace, and is then
+   * deleted for real. Undefined on a live team.
+   */
+  deletedAt: number | undefined;
   /** The backend team id, for `send`. */
   teamId: string;
   /** The lead slot's conversation, where a task is delivered. */
@@ -108,8 +121,9 @@ const unescapeCell = (text: string): string =>
 const splitCells = (row: string): string[] => row.split(/(?<!\\)\|/).map((cell) => unescapeCell(cell.trim()));
 
 /** The header row both tables share; the parser recognizes data rows by shape, not by this text. */
-const TABLE_HEADER = '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 |';
-const TABLE_RULE = '| --- | --- | --- | --- | --- | --- | --- | --- | --- |';
+const TABLE_HEADER =
+  '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 | TTL天数 | 永久 | 删除时间 |';
+const TABLE_RULE = '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |';
 
 /** The permanent flag's cell text; anything else reads as false. */
 const PERMANENT_CELL = '是';
@@ -119,31 +133,40 @@ const teamRow = (team: SupervisorTeam): string =>
     team.lastUsedAt
   )} | ${iso(team.expiresAt)} | ${escapeCell(team.teamId)} | ${escapeCell(team.leadConversationId)} | ${
     team.ttlDays
-  } | ${team.permanent ? PERMANENT_CELL : ''} |`;
+  } | ${team.permanent ? PERMANENT_CELL : ''} | ${team.deletedAt !== undefined ? iso(team.deletedAt) : ''} |`;
 
 const table = (teams: readonly SupervisorTeam[]): string[] =>
   teams.length === 0 ? [] : [TABLE_HEADER, TABLE_RULE, ...teams.map(teamRow)];
 
 /**
  * The canonical index file: marker, the active teams (newest reuse first),
- * then the retired ones under their own heading. Retired teams keep their
- * history but are never matched again.
+ * then the retired ones under their own heading, then the deleted ones under
+ * theirs — a deleted team keeps its row (the restore's capital) until its
+ * grace passes and the reconcile drops it.
  */
 export function buildTeamsFile(teams: readonly SupervisorTeam[], now: number): string {
   const active = teams.filter((team) => isTeamActive(team, now)).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
-  const retired = teams.filter((team) => !isTeamActive(team, now)).toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
+  const retired = teams
+    .filter((team) => !isTeamActive(team, now) && !isTeamDeleted(team))
+    .toSorted((a, b) => b.lastUsedAt - a.lastUsedAt);
+  const deleted = teams
+    .filter((team) => isTeamDeleted(team))
+    .toSorted((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0));
   const lines = [TEAMS_FILE_MARKER, '# 临时团队索引（由 teams.cjs 维护，勿手改）', '', ...table(active)];
   if (active.length > 0) lines.push('');
-  if (retired.length > 0) lines.push('已退役（到期未复用，不再匹配）：', '', ...table(retired));
+  if (retired.length > 0) lines.push('已退役（到期未复用，不再匹配）：', '', ...table(retired), '');
+  if (deleted.length > 0) lines.push('已删除（7 天内可恢复，到期连同后端团队彻底删除）：', '', ...table(deleted));
   return lines.join('\n');
 }
 
 /**
  * The teams an index file records. Tolerant of the file a model or an older
- * script version wrote: rows are recognized by shape (seven or nine cells,
- * parseable dates), and anything else — prose, headings, malformed rows — is
- * skipped. A seven-cell row is the format before per-team lifecycles: it
- * reads as the default 7-day, non-permanent team it was.
+ * script version wrote: rows are recognized by shape (seven, nine or ten
+ * cells, parseable dates), and anything else — prose, headings, malformed
+ * rows — is skipped. A seven-cell row is the format before per-team
+ * lifecycles; a nine-cell row the format before soft deletes: both read as
+ * the live (non-deleted) team they were, as does a ten-cell row's empty
+ * last cell.
  */
 export function parseTeamsFile(content: string): SupervisorTeam[] {
   if (!content.includes(TEAMS_FILE_MARKER)) return [];
@@ -152,7 +175,7 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
     const trimmed = line.trim();
     if (!trimmed.startsWith('|')) continue;
     const cells = splitCells(trimmed.slice(1, -1));
-    if (cells.length !== 7 && cells.length !== 9) continue;
+    if (cells.length !== 7 && cells.length !== 9 && cells.length !== 10) continue;
     const createdAt = Date.parse(cells[2]);
     const lastUsedAt = Date.parse(cells[3]);
     const expiresAt = Date.parse(cells[4]);
@@ -161,7 +184,8 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
     const teamId = cells[5];
     const leadConversationId = cells[6];
     if (!name || !teamId || !leadConversationId) continue;
-    const ttlDays = cells.length === 9 ? clampTeamTtlDays(Number.parseInt(cells[7], 10)) : TEAM_TTL_DEFAULT_DAYS;
+    const ttlDays = cells.length >= 9 ? clampTeamTtlDays(Number.parseInt(cells[7], 10)) : TEAM_TTL_DEFAULT_DAYS;
+    const deletedStamp = cells.length === 10 ? Date.parse(cells[9]) : Number.NaN;
     teams.push({
       name,
       positions: cells[1]
@@ -172,7 +196,8 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
       lastUsedAt,
       expiresAt,
       ttlDays,
-      permanent: cells.length === 9 && cells[8] === PERMANENT_CELL,
+      permanent: cells.length >= 9 && cells[8] === PERMANENT_CELL,
+      deletedAt: Number.isFinite(deletedStamp) ? deletedStamp : undefined,
       teamId,
       leadConversationId,
     });
@@ -180,8 +205,22 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
   return teams;
 }
 
-/** Whether a team is still matchable at `now`: a permanent team never retires. */
-export const isTeamActive = (team: SupervisorTeam, now: number): boolean => team.permanent || team.expiresAt > now;
+/** Whether a team is soft-deleted: it left every surface and waits out its grace. */
+export const isTeamDeleted = (team: SupervisorTeam): boolean => team.deletedAt !== undefined;
+
+/** Whole days of restorable grace left: 0 on the last day, capped at the
+ *  grace length — a clock reading from before the stamp (a slow render tick)
+ *  must not round a fresh delete up to "8 days". */
+export const deletedDaysLeftOf = (deletedAt: number, now: number): number =>
+  Math.min(TEAM_DELETE_GRACE_MS / DAY_MS, Math.max(0, Math.ceil((deletedAt + TEAM_DELETE_GRACE_MS - now) / DAY_MS)));
+
+/** Whether the reconcile must delete the team for real: past its delete grace. */
+export const isTeamPurgeDue = (team: SupervisorTeam, now: number): boolean =>
+  team.deletedAt !== undefined && now >= team.deletedAt + TEAM_DELETE_GRACE_MS;
+
+/** Whether a team is still matchable at `now`: a permanent team never retires; a deleted team never matches. */
+export const isTeamActive = (team: SupervisorTeam, now: number): boolean =>
+  team.deletedAt === undefined && (team.permanent || team.expiresAt > now);
 
 /** The rules text injected into the supervisor's workspace. */
 export function buildSupervisorOverrideContent(roster: readonly PositionInfo[]): string {

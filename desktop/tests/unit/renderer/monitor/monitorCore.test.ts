@@ -58,13 +58,16 @@ const rosterEntry = (
   retired: boolean,
   expiresAt?: number,
   ttlDays?: number,
-  permanent?: boolean
+  permanent?: boolean,
+  deletedAt?: number
 ): TeamRosterEntry => ({
   team: source,
   memberCount: source.assistants.length,
   leadConversationId: source.assistants.find((member) => member.role === 'leader')?.conversation_id,
   conversationIds: source.assistants.map((member) => member.conversation_id),
   retired,
+  deleted: deletedAt !== undefined,
+  deletedAt,
   expiresAt,
   ttlDays,
   permanent: permanent ?? false,
@@ -254,6 +257,23 @@ describe('teamCardsOf', () => {
     });
     expect(wall.active.map((card) => card.entry.team.id)).toEqual(['t2', 't1']);
     expect(wall.retired.map((card) => card.entry.team.id)).toEqual(['t3']);
+  });
+
+  it('the wall files soft-deleted teams into the restore queue, off every visible wall', () => {
+    const live = rosterEntry(team('t1', [assistant('s-1', '货代', 'leader')]), false, Date.now() + DAY);
+    const deleted = rosterEntry(
+      team('t2', [assistant('s-2', '评审', 'leader')]),
+      false,
+      Date.now() + DAY,
+      7,
+      false,
+      42
+    );
+    const wall = teamCardsOf({ roster: [live, deleted], tasksByTeam: new Map(), slotWork: new Map(), now: 0 });
+    expect(wall.active.map((card) => card.entry.team.id)).toEqual(['t1']);
+    expect(wall.retired).toEqual([]);
+    expect(wall.deleted.map((card) => card.entry.team.id)).toEqual(['t2']);
+    expect(wall.deleted[0].entry.deletedAt).toBe(42);
   });
 
   it('carries the lifecycle: a permanent team keeps its card active with its configured ttlDays on the entry', () => {

@@ -14,12 +14,12 @@
     "noSession": "还没有会话",
     "inProgress": "{{count}} 项进行中",
     "openA11y": "打开{{name}}的会话",
-    "hideTitle": "隐藏岗位 {{name}}？",
-    "hideDesc": "从监控与名册隐藏，不删除岗位库文件，可在监控页一键恢复。",
-    "hideOk": "隐藏",
-    "hideA11y": "隐藏{{name}}",
-    "hidden": "已隐藏 {{count}} 个岗位",
-    "restoreAll": "恢复全部"
+    "deleteTitle": "删除岗位 {{name}}？",
+    "deleteDesc": "7 天内可在监控页恢复；到期后岗位文件将被彻底删除。",
+    "deleteA11y": "删除{{name}}",
+    "deleteFailed": "删除岗位失败。",
+    "deletedFold": "已删除 {{count}} 个岗位",
+    "restoreFailed": "恢复岗位失败。"
   },
   "teams": {
     "title": "群聊",
@@ -38,10 +38,11 @@
       "saveFailed": "生命周期保存失败。"
     },
     "deleteTitle": "删除群聊「{{name}}」？",
-    "deleteDesc": "将删除后端团队并从共享索引清除该队；会话按后端删除语义处理。",
+    "deleteDesc": "立即从侧栏与监控消失；7 天内可在监控页恢复，到期后连同会话彻底删除。",
     "deleteA11y": "删除{{name}}",
     "deleteFailed": "删除群聊失败。",
-    "deleteIndexFailed": "群聊已删除，但索引行清除失败。"
+    "deletedFold": "已删除 {{count}} 队",
+    "restoreFailed": "恢复群聊失败。"
   },
   "empty": {
     "hint": "找主管派个活试试：跟主管说一句话，它会自动组建或复用团队并跟到底。",
@@ -52,5 +53,7 @@
     "minutes": "{{count}} 分钟前",
     "hours": "{{count}} 小时前",
     "days": "{{count}} 天前"
-  }
+  },
+  "daysLeft": "剩余 {{count}} 天",
+  "restore": "恢复"
 }

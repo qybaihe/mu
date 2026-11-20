@@ -14,12 +14,12 @@
     "noSession": "還沒有會話",
     "inProgress": "{{count}} 項進行中",
     "openA11y": "開啟{{name}}的會話",
-    "hideTitle": "隱藏崗位 {{name}}？",
-    "hideDesc": "從監控與名冊隱藏，不刪除崗位庫檔案，可在監控頁一鍵恢復。",
-    "hideOk": "隱藏",
-    "hideA11y": "隱藏{{name}}",
-    "hidden": "已隱藏 {{count}} 個崗位",
-    "restoreAll": "恢復全部"
+    "deleteTitle": "刪除崗位 {{name}}？",
+    "deleteDesc": "7 天內可在監控頁恢復；到期後崗位檔案將被徹底刪除。",
+    "deleteA11y": "刪除{{name}}",
+    "deleteFailed": "刪除崗位失敗。",
+    "deletedFold": "已刪除 {{count}} 個崗位",
+    "restoreFailed": "恢復崗位失敗。"
   },
   "teams": {
     "title": "群聊",
@@ -38,10 +38,11 @@
       "saveFailed": "生命週期儲存失敗。"
     },
     "deleteTitle": "刪除群聊「{{name}}」？",
-    "deleteDesc": "將刪除後端團隊並從共享索引清除該隊；會話按後端刪除語義處理。",
+    "deleteDesc": "立即從側欄與監控消失；7 天內可在監控頁恢復，到期後連同會話徹底刪除。",
     "deleteA11y": "刪除{{name}}",
     "deleteFailed": "刪除群聊失敗。",
-    "deleteIndexFailed": "群聊已刪除，但索引行清除失敗。"
+    "deletedFold": "已刪除 {{count}} 隊",
+    "restoreFailed": "恢復群聊失敗。"
   },
   "empty": {
     "hint": "找主管派個活試試：跟主管說一句話，它會自動組建或複用團隊並跟到底。",
@@ -52,5 +53,7 @@
     "minutes": "{{count}} 分鐘前",
     "hours": "{{count}} 小時前",
     "days": "{{count}} 天前"
-  }
+  },
+  "daysLeft": "剩餘 {{count}} 天",
+  "restore": "恢復"
 }
