@@ -231,6 +231,16 @@ describe('teams.cjs against a stub backend', () => {
     ]);
   });
 
+  it('writes a hostile name as one row and reads it back: `|` escaped, newline folded', async () => {
+    const answer = await run(['add', '--name', '毒|队', '--positions', 'forwarder,worker']);
+    expect(answer.status).toBe(0);
+    const raw = readFileSync(teamsFile, 'utf8');
+    expect(raw).toContain('| 毒\\|队 |');
+    expect(raw).not.toContain('| 毒|队 |');
+    // the index a fresh run reads back carries the original name
+    expect((await run(['list'])).out).toContain('TEAM 毒|队');
+  });
+
   it('refuses a duplicate active name, keeping the index unchanged', async () => {
     const before = readFileSync(teamsFile, 'utf8');
     const answer = await run(['add', '--name', 'CNS 查重队', '--positions', 'forwarder']);

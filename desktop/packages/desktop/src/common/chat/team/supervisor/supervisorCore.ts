@@ -67,14 +67,34 @@ export type SupervisorTeam = {
 
 const iso = (ms: number): string => new Date(ms).toISOString();
 
+/**
+ * A pipe-table cell's text, safe to write: a `|` would split the cell and a
+ * newline the row, so backslashes double first, `|` escapes as `\|` and
+ * line breaks fold to spaces. A hostile name (typed by a user or invented by
+ * a model) must not corrupt the index row that carries it.
+ */
+const escapeCell = (text: string): string => text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+
+/**
+ * A cell's text back: `\\` and `\|` unescape, any other `\x` stays as it
+ * is — so an index an older, escape-free version wrote still reads unchanged
+ * (its lone backslashes are not escapes), and a `|`-bearing row it may have
+ * written was already skipped as malformed (more cells than the row's seven).
+ */
+const unescapeCell = (text: string): string =>
+  text.replace(/\\(.)/g, (match, next: string) => (next === '\\' || next === '|' ? next : match));
+
+/** A row's cells, split on the pipes that are not the `\\|` escape. */
+const splitCells = (row: string): string[] => row.split(/(?<!\\)\|/).map((cell) => unescapeCell(cell.trim()));
+
 /** The header row both tables share; the parser recognizes data rows by shape, not by this text. */
 const TABLE_HEADER = '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 |';
 const TABLE_RULE = '| --- | --- | --- | --- | --- | --- | --- |';
 
 const teamRow = (team: SupervisorTeam): string =>
-  `| ${team.name} | ${team.positions.join(', ')} | ${iso(team.createdAt)} | ${iso(team.lastUsedAt)} | ${iso(
-    team.expiresAt
-  )} | ${team.teamId} | ${team.leadConversationId} |`;
+  `| ${escapeCell(team.name)} | ${escapeCell(team.positions.join(', '))} | ${iso(team.createdAt)} | ${iso(
+    team.lastUsedAt
+  )} | ${iso(team.expiresAt)} | ${escapeCell(team.teamId)} | ${escapeCell(team.leadConversationId)} |`;
 
 const table = (teams: readonly SupervisorTeam[]): string[] =>
   teams.length === 0 ? [] : [TABLE_HEADER, TABLE_RULE, ...teams.map(teamRow)];
@@ -104,10 +124,7 @@ export function parseTeamsFile(content: string): SupervisorTeam[] {
   for (const line of content.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed.startsWith('|')) continue;
-    const cells = trimmed
-      .slice(1, -1)
-      .split('|')
-      .map((cell) => cell.trim());
+    const cells = splitCells(trimmed.slice(1, -1));
     if (cells.length !== 7) continue;
     const createdAt = Date.parse(cells[2]);
     const lastUsedAt = Date.parse(cells[3]);

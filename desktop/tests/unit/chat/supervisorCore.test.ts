@@ -52,6 +52,36 @@ describe('parseTeamsFile / buildTeamsFile', () => {
     });
   });
 
+  it('round-trips a hostile name and member list: `|` escaped, line breaks folded, nothing corrupted', () => {
+    const hostile = team({
+      name: '毒|队\n名\\续',
+      positions: ['for|ward', 'worker'],
+      expiresAt: Date.now() + TEAM_TTL_MS,
+    });
+    const file = buildTeamsFile([hostile], Date.now());
+    // the written row stays one row: the pipe is the escape, not a split
+    expect(file).toContain('| 毒\\|队 名\\\\续 |');
+    expect(file).not.toContain('毒|队');
+    const parsed = parseTeamsFile(file);
+    expect(parsed).toHaveLength(1);
+    // the line break folded to a space on write — that loss is the point
+    expect(parsed[0].name).toBe('毒|队 名\\续');
+    expect(parsed[0].positions).toEqual(['for|ward', 'worker']);
+  });
+
+  it('reads an index an older, escape-free version wrote: a lone backslash stays, a raw `|` row stays skipped', () => {
+    const content = [
+      '<!-- mu-supervisor-teams v1 -->',
+      '| 队名 | 岗位成员 | 创建时间 | 最后复用 | 到期时间 | team_id | lead会话 |',
+      '| --- | --- | --- | --- | --- | --- | --- |',
+      '| 货代\\a队 | forwarder | 2026-01-01T00:00:00.000Z | 2026-01-02T00:00:00.000Z | 2026-01-08T00:00:00.000Z | t-1 | c-1 |',
+      '| 毒|队 | forwarder | 2026-01-01T00:00:00.000Z | 2026-01-02T00:00:00.000Z | 2026-01-08T00:00:00.000Z | t-2 | c-2 |',
+    ].join('\n');
+    const parsed = parseTeamsFile(content);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].name).toBe('货代\\a队');
+  });
+
   it('rejects a file without the app-managed marker', () => {
     expect(parseTeamsFile('| CNS 队 | forwarder | 2026-01-01T00:00:00.000Z | x | y | t | c |')).toEqual([]);
   });

@@ -147,16 +147,22 @@ function parsePositions(value) {
   return positions;
 }
 
+/** A pipe-table cell's text, safe to write: backslashes double first, `|` escapes as `\|`, line breaks fold to spaces — a hostile name must not corrupt its row. */
+const escapeCell = (text) => text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+
+/** A cell's text back: `\\` and `\|` unescape; any other `\x` stays, so an index an older version wrote still reads unchanged. */
+const unescapeCell = (text) => text.replace(/\\(.)/g, (match, next) => (next === '\\' || next === '|' ? next : match));
+
+/** A row's cells, split on the pipes that are not the `\|` escape. */
+const splitCells = (row) => row.split(/(?<!\\)\|/).map((cell) => unescapeCell(cell.trim()));
+
 function parseTeams(content) {
   if (!content.includes(TEAMS_MARKER)) return [];
   const teams = [];
   for (const line of content.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed.startsWith('|')) continue;
-    const cells = trimmed
-      .slice(1, -1)
-      .split('|')
-      .map((cell) => cell.trim());
+    const cells = splitCells(trimmed.slice(1, -1));
     if (cells.length !== 7) continue;
     const createdAt = Date.parse(cells[2]);
     const lastUsedAt = Date.parse(cells[3]);
@@ -190,7 +196,7 @@ function buildTeams(teams, now) {
 }
 
 const teamRow = (t) =>
-  `| ${t.name} | ${t.positions.join(', ')} | ${iso(t.createdAt)} | ${iso(t.lastUsedAt)} | ${iso(t.expiresAt)} | ${t.teamId} | ${t.leadConversationId} |`;
+  `| ${escapeCell(t.name)} | ${escapeCell(t.positions.join(', '))} | ${iso(t.createdAt)} | ${iso(t.lastUsedAt)} | ${iso(t.expiresAt)} | ${escapeCell(t.teamId)} | ${escapeCell(t.leadConversationId)} |`;
 
 function readTeams() {
   try {
