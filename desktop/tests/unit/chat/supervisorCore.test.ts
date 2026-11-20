@@ -293,14 +293,43 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('禁止自己接手执行任务');
   });
 
-  it('teaches the new-project dedup gate: positions.cjs first, merge or stop, never create positions', () => {
+  it('teaches the new-project dedup gate: positions.cjs first, merge or hand to rule 6, never create positions unasked', () => {
     const content = buildSupervisorOverrideContent(roster);
     expect(content).toContain('node positions.cjs list');
     expect(content).toContain('规则 5');
     expect(content).toContain('与既有岗职责重合 → 不新建');
     expect(content).toContain('说明归并理由');
-    expect(content).toContain('主管不得创建或改写岗位库文件');
-    expect(content).toContain('只给判定与建议');
+    expect(content).toContain('除规则 6 经用户明确同意的安全写外，主管不得创建、改写或删除岗位库文件');
+    expect(content).toContain('判定先行，建不建由用户决定');
+  });
+
+  it('teaches the template-backed new-position flow: search, draft, propose, safe write only after consent', () => {
+    const content = buildSupervisorOverrideContent(roster);
+    expect(content).toContain('规则 6');
+    expect(content).toContain('node templates.cjs search');
+    expect(content).toContain('node templates.cjs get');
+    expect(content).toContain('UNAVAILABLE');
+    expect(content).toContain('未参考模板库');
+    // The proposal waits for consent before any file is touched.
+    expect(content).toContain('同意创建吗');
+    expect(content).toContain('同意前不写任何文件');
+    // The safe write: refuse an id that exists, never overwrite.
+    expect(content).toContain('~/.mu/agent/agents/');
+    expect(content).toContain('id 已被岗位');
+    // The written file must parse as a library position.
+    expect(content).toContain('display_name:');
+    expect(content).toContain('项目根：');
+    // The new project dir follows the wrap-up rules: AGENTS three sections, a first HANDOFF entry.
+    expect(content).toContain('AGENTS.md');
+    expect(content).toContain('HANDOFF.md');
+    // Rule 0's no-candidate branch lands here too.
+    expect(content).toContain('名册中没有描述与任务相关的岗位时，不运行 match，直接按规则 6 起草新岗位提议');
+    // Rule 7: the write gate — a task message never counts as consent, and a turn may not both
+    // propose and proceed.
+    expect(content).toContain('规则 7');
+    expect(content).toContain('任务消息');
+    expect(content).toContain('不构成同意');
+    expect(content).toContain('同一回合里自己提议又自己继续执行 = 违规');
   });
 
   it('declares the supervisor identity and its no-hands rule', () => {

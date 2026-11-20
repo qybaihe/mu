@@ -23,6 +23,7 @@ import {
   trashPosition,
 } from './positionService';
 import { runDeepAnalysis } from './positionDeepAnalysis';
+import { ensureTemplateCatalog, searchTemplates } from './templateCatalogService';
 
 export {
   analyzeProjectDirectory,
@@ -89,6 +90,11 @@ export function initPositionsBridge(): void {
     })
   );
   positionBridge.createPosition.provider((params) => result(() => createPosition(params)));
+  // The wizard's template tab: ensure (the one download when the cache is
+  // missing) and search (cache-only, status included so the tab can offer the
+  // refresh or retry itself).
+  positionBridge.templatesEnsure.provider(({ refresh }) => result(() => ensureTemplateCatalog({ refresh })));
+  positionBridge.templatesSearch.provider((params) => result(() => searchTemplates(params)));
   // The startup pass, so a quarantine ages out even if nothing ever lists it.
   void purgeDueTrashedPositions().catch((error) => {
     console.warn('[positions] startup trash reconciliation failed', error);

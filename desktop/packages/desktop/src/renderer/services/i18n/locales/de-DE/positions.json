@@ -6,8 +6,11 @@
   "openFailed": "Positionsgespräch konnte nicht geöffnet werden",
   "wizard": {
     "entry": "Neue Position",
+    "tabDirectory": "Aus Projektordner",
+    "tabTemplate": "Aus dem Vorlagenkatalog",
     "title": "Neue Position",
     "stepPick": "Schritt 1 · Projektordner wählen",
+    "stepTemplate": "Schritt 1 · Vorlage wählen",
     "stepReview": "Schritt 2 · Vorschlag prüfen",
     "pick": "Ordner wählen…",
     "repick": "Ordner wechseln",
@@ -43,6 +46,31 @@
       "name": "gleicher Name",
       "project-root": "gleiche Projektwurzel",
       "description": "sehr ähnliche Beschreibung"
+    },
+    "template": {
+      "hint": "Mit einer Community-Vorlage starten (awesome-grok-bot, CC0): suchen, übernehmen und den Entwurf frei bearbeiten",
+      "searchPlaceholder": "Vorlagen suchen (Chinesisch oder Englisch)",
+      "categoryLabel": "Kategorie",
+      "categoryAll": "Alle Kategorien",
+      "statusReady": "Katalog: {{count}} Vorlagen · abgerufen {{date}}",
+      "statusStale": "Älter als 30 Tage — Aktualisierung empfohlen",
+      "refresh": "Aktualisieren",
+      "unavailable": "Vorlagenkatalog nicht verfügbar (nicht geladen oder Download fehlgeschlagen)",
+      "retry": "Erneut versuchen",
+      "downloading": "Vorlagenkatalog wird geladen…",
+      "adopt": "Übernehmen",
+      "empty": "Keine passenden Vorlagen — anderes Stichwort versuchen",
+      "nameHint": "Aus einer Vorlage: Name und Beschreibung sind vorausgefüllt — ein passender Name lohnt sich",
+      "category": {
+        "personal-admin": "Persönliches",
+        "content-publishing": "Inhalte",
+        "coding-shipping": "Code & Auslieferung",
+        "research-briefings": "Recherche & Briefings",
+        "teams-handoffs": "Teams & Übergaben",
+        "finance-ops": "Finanzen & Betrieb",
+        "customer-sales": "Kunden & Vertrieb",
+        "inbox-calendar": "Posteingang & Kalender"
+      }
     }
   }
 }

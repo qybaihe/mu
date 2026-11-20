@@ -6,8 +6,11 @@
   "openFailed": "岗位会话开启失败",
   "wizard": {
     "entry": "新建岗位",
+    "tabDirectory": "从项目目录",
+    "tabTemplate": "从模板库起步",
     "title": "新建岗位",
     "stepPick": "第 1 步 · 选择项目目录",
+    "stepTemplate": "第 1 步 · 从模板库挑选",
     "stepReview": "第 2 步 · 确认岗位选项",
     "pick": "选择目录…",
     "repick": "重选目录",
@@ -43,6 +46,31 @@
       "name": "同名称",
       "project-root": "同项目根",
       "description": "描述高度相似"
+    },
+    "template": {
+      "hint": "从社区模板起步（awesome-grok-bot，CC0）：搜索并采用一条，回填草稿后仍可编辑",
+      "searchPlaceholder": "搜索模板（中英文均可）",
+      "categoryLabel": "分类",
+      "categoryAll": "全部分类",
+      "statusReady": "模板库 {{count}} 条 · 抓取于 {{date}}",
+      "statusStale": "缓存已超 30 天，建议刷新",
+      "refresh": "刷新",
+      "unavailable": "模板库不可用（尚未下载或下载失败）",
+      "retry": "重试",
+      "downloading": "正在获取模板库…",
+      "adopt": "采用",
+      "empty": "没有匹配的模板，换个关键词试试",
+      "nameHint": "模板起步：显示名与职责已按模板回填，建议改为贴合任务的中文名",
+      "category": {
+        "personal-admin": "个人事务",
+        "content-publishing": "内容发布",
+        "coding-shipping": "编码交付",
+        "research-briefings": "调研简报",
+        "teams-handoffs": "团队协作",
+        "finance-ops": "财务运营",
+        "customer-sales": "客户销售",
+        "inbox-calendar": "邮件日历"
+      }
     }
   }
 }

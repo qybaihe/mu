@@ -24,6 +24,8 @@ let pickFolder: ReturnType<typeof vi.fn>;
 let analyze: ReturnType<typeof vi.fn>;
 let create: ReturnType<typeof vi.fn>;
 let refresh: ReturnType<typeof vi.fn>;
+let templatesEnsure: ReturnType<typeof vi.fn>;
+let templatesSearch: ReturnType<typeof vi.fn>;
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -55,6 +57,8 @@ vi.mock('@/common/chat/team/positions/positionBridge', () => ({
   positionBridge: {
     analyzeProject: { invoke: (...args: unknown[]) => analyze(...args) },
     createPosition: { invoke: (...args: unknown[]) => create(...args) },
+    templatesEnsure: { invoke: (...args: unknown[]) => templatesEnsure(...args) },
+    templatesSearch: { invoke: (...args: unknown[]) => templatesSearch(...args) },
   },
 }));
 vi.mock('@renderer/pages/positions/usePositionRoster', () => ({
@@ -110,6 +114,31 @@ describe('PositionCreationModal', () => {
       data: rosterPosition({ name: 'freight-lab', displayName: '货代实验室', description: 'd' }),
     }));
     refresh = vi.fn(async () => undefined);
+    templatesEnsure = vi.fn(async () => ({
+      ok: true,
+      data: { available: true, count: 2, fetchedAt: 1_800_000_000_000, stale: false, error: undefined },
+    }));
+    templatesSearch = vi.fn(async () => ({
+      ok: true,
+      data: {
+        status: { available: true, count: 2, fetchedAt: 1_800_000_000_000, stale: false, error: undefined },
+        results: [
+          {
+            slug: 'podcast-notes',
+            name: 'Podcast Notes',
+            summary_zh: '把每期播客切成章节笔记并写好摘要',
+            category: 'content-publishing',
+            tags: ['podcast'],
+            summary: 'Chops each podcast episode into chapter notes',
+            import: 'https://x.ai/bot/abc',
+          },
+        ],
+        categories: [
+          { category: 'content-publishing', count: 1 },
+          { category: 'finance-ops', count: 1 },
+        ],
+      },
+    }));
   });
   afterEach(() => cleanup());
 
@@ -217,5 +246,66 @@ describe('PositionCreationModal', () => {
     await waitFor(() => {
       expect(screen.getByTestId('position-creation-error').textContent).toContain('already exists');
     });
+  });
+
+  it('starts from a template: the tab adopts one entry into the review form, then creates', async () => {
+    render(<PositionCreationModal open onClose={() => undefined} />);
+    // Directory stays the default flavour; the picker only mounts on the template tab.
+    expect(screen.queryByTestId('position-template-picker')).toBeNull();
+    fireEvent.click(screen.getAllByRole('radio')[1]);
+    await waitFor(() => {
+      expect(screen.getByTestId('position-template-row-0')).toBeDefined();
+    });
+    expect(templatesEnsure).toHaveBeenCalledWith({});
+    expect(screen.getByTestId('position-template-status').textContent).toContain(
+      'positions.wizard.template.statusReady'
+    );
+
+    fireEvent.click(screen.getByTestId('position-template-adopt-0'));
+    expect(screen.getByTestId('position-creation-id')).toHaveValue('podcast-notes');
+    // The category's Chinese label is the first display-name candidate, the template's name the second.
+    expect(screen.getByTestId('position-creation-name')).toHaveValue('内容发布');
+    expect(screen.getByTestId('position-creation-candidate-1')).toHaveTextContent('Podcast Notes');
+    expect(screen.getByTestId('position-creation-desc')).toHaveValue('把每期播客切成章节笔记并写好摘要');
+    expect(screen.getByTestId('position-creation-body').textContent).toContain('Podcast Notes');
+    // Back returns to the template tab, not the directory picker.
+    fireEvent.click(screen.getByTestId('position-creation-back'));
+    expect(screen.getByTestId('position-template-picker')).toBeDefined();
+    expect(screen.queryByTestId('position-creation-pick')).toBeNull();
+
+    // The picker remounts on back; wait for its search round before adopting again.
+    await waitFor(() => {
+      expect(screen.getByTestId('position-template-row-0')).toBeDefined();
+    });
+    fireEvent.click(screen.getByTestId('position-template-adopt-0'));
+    fireEvent.click(screen.getByTestId('position-creation-create'));
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledWith({
+        id: 'podcast-notes',
+        displayName: '内容发布',
+        description: '把每期播客切成章节笔记并写好摘要',
+        body: expect.stringContaining('slug：podcast-notes'),
+      });
+    });
+  });
+
+  it('shows the unavailable catalog as a state with a retry, search disabled', async () => {
+    templatesSearch = vi.fn(async () => ({
+      ok: true,
+      data: {
+        status: { available: false, count: 0, fetchedAt: undefined, stale: false, error: undefined },
+        results: [],
+        categories: [],
+      },
+    }));
+    render(<PositionCreationModal open onClose={() => undefined} />);
+    fireEvent.click(screen.getAllByRole('radio')[1]);
+    await waitFor(() => {
+      expect(screen.getByTestId('position-template-retry')).toBeDefined();
+    });
+    expect(screen.getByTestId('position-template-status').textContent).toContain(
+      'positions.wizard.template.unavailable'
+    );
+    expect(screen.getByTestId('position-template-search')).toBeDisabled();
   });
 });

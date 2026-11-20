@@ -6,8 +6,11 @@
   "openFailed": "Falha ao abrir a conversa da posição",
   "wizard": {
     "entry": "Nova posição",
+    "tabDirectory": "Da pasta do projeto",
+    "tabTemplate": "Do catálogo de modelos",
     "title": "Nova posição",
     "stepPick": "Etapa 1 · Escolher a pasta do projeto",
+    "stepTemplate": "Passo 1 · Escolher um modelo",
     "stepReview": "Etapa 2 · Revisar a proposta",
     "pick": "Escolher pasta…",
     "repick": "Trocar pasta",
@@ -43,6 +46,31 @@
       "name": "mesmo nome",
       "project-root": "mesma raiz de projeto",
       "description": "descrição muito parecida"
+    },
+    "template": {
+      "hint": "Comece com um modelo da comunidade (awesome-grok-bot, CC0): busque, adote um e edite o rascunho",
+      "searchPlaceholder": "Pesquisar modelos (chinês ou inglês)",
+      "categoryLabel": "Categoria",
+      "categoryAll": "Todas as categorias",
+      "statusReady": "Catálogo: {{count}} modelos · obtido em {{date}}",
+      "statusStale": "Mais de 30 dias — recomenda-se atualizar",
+      "refresh": "Atualizar",
+      "unavailable": "Catálogo de modelos indisponível (não baixado ou falha no download)",
+      "retry": "Tentar de novo",
+      "downloading": "Baixando o catálogo de modelos…",
+      "adopt": "Usar",
+      "empty": "Nenhum modelo correspondente — tente outra palavra-chave",
+      "nameHint": "De um modelo: nome e descrição pré-preenchidos — vale digitar um nome próprio",
+      "category": {
+        "personal-admin": "Admin pessoal",
+        "content-publishing": "Publicação de conteúdo",
+        "coding-shipping": "Código e entrega",
+        "research-briefings": "Pesquisa e resumos",
+        "teams-handoffs": "Equipes e entregas",
+        "finance-ops": "Finanças e operações",
+        "customer-sales": "Clientes e vendas",
+        "inbox-calendar": "Caixa e calendário"
+      }
     }
   }
 }

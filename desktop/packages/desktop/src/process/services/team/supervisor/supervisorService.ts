@@ -21,7 +21,9 @@ import { join } from 'node:path';
 import { getPlatformServices } from '@/common/platform';
 import { httpRequest } from '@/common/adapter/httpBridge';
 import positionsScriptSource from '@/common/chat/team/supervisor/positions.cjs?raw';
+import templatesScriptSource from '@/common/chat/team/supervisor/templates.cjs?raw';
 import { shippedTeamsScript } from './teamScripts';
+import { ensureTemplateCatalog } from '@process/services/team/positions/templateCatalogService';
 import {
   POSITIONS_SCRIPT_NAME,
   SHARED_TEAMS_FOLDER,
@@ -29,6 +31,7 @@ import {
   TEAMS_FILE_NAME,
   TEAMS_SCRIPT_NAME,
   TEAM_TTL_DEFAULT_DAYS,
+  TEMPLATES_SCRIPT_NAME,
   buildSupervisorOverrideContent,
   buildTeamsFile,
   clampTeamTtlDays,
@@ -79,6 +82,7 @@ export async function ensureSupervisorWorkspaceIn(
   changed = (await writeIfChanged(join(workspace, RULES_FILE_NAME), content)) || changed;
   changed = (await writeIfChanged(join(workspace, TEAMS_SCRIPT_NAME), shippedTeamsScript)) || changed;
   changed = (await writeIfChanged(join(workspace, POSITIONS_SCRIPT_NAME), positionsScriptSource)) || changed;
+  changed = (await writeIfChanged(join(workspace, TEMPLATES_SCRIPT_NAME), templatesScriptSource)) || changed;
 
   // The index lives in the shared folder, where every position's teams.cjs
   // also finds it. A pre-shared index in the supervisor workspace moves there
@@ -116,6 +120,20 @@ export const ensureSupervisorWorkspace = (): Promise<{ workspace: string; change
     libraryDir: POSITION_LIBRARY_DIR,
     dataDir: getPlatformServices().paths.getDataDir(),
   });
+
+/** The app-level ensure, plus the one-time template-catalog fetch: the
+ *  workspace's `templates.cjs` (rule 6's draft reference) reads the cache
+ *  the position service downloads, so the first app start after the feature
+ *  ships warms it in the background — best-effort, never blocking: a failed
+ *  fetch leaves the supervisor's UNAVAILABLE degrade, and the wizard's
+ *  template tab retries on demand. */
+export const ensureSupervisorWorkspaceWithCatalog = async (): Promise<{ workspace: string; changed: boolean }> => {
+  const ensured = await ensureSupervisorWorkspace();
+  void ensureTemplateCatalog().catch((error) => {
+    console.warn('[supervisor] background template-catalog fetch failed', error);
+  });
+  return ensured;
+};
 
 /** The index file's path under a data dir. */
 const teamsFileOf = (dataDir: string): string => join(dataDir, 'positions', SHARED_TEAMS_FOLDER, TEAMS_FILE_NAME);

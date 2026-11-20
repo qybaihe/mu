@@ -6,8 +6,11 @@
   "openFailed": "ポジション会話を開けませんでした",
   "wizard": {
     "entry": "ポジションを作成",
+    "tabDirectory": "プロジェクトフォルダーから",
+    "tabTemplate": "テンプレートから",
     "title": "ポジションを作成",
     "stepPick": "ステップ 1 · プロジェクトフォルダーを選択",
+    "stepTemplate": "ステップ 1 · テンプレートを選ぶ",
     "stepReview": "ステップ 2 · 提案を確認",
     "pick": "フォルダーを選択…",
     "repick": "フォルダーを変更",
@@ -43,6 +46,31 @@
       "name": "同じ名前",
       "project-root": "同じプロジェクトルート",
       "description": "記述が酷似"
+    },
+    "template": {
+      "hint": "コミュニティテンプレートから始める（awesome-grok-bot、CC0）：検索して採用し、草案は自由に編集できます",
+      "searchPlaceholder": "テンプレートを検索（中国語・英語可）",
+      "categoryLabel": "カテゴリ",
+      "categoryAll": "すべてのカテゴリ",
+      "statusReady": "カタログ：{{count}} 件 · 取得日 {{date}}",
+      "statusStale": "30 日以上経過 — 更新をおすすめ",
+      "refresh": "更新",
+      "unavailable": "テンプレートカタログを利用できません（未ダウンロードまたは失敗）",
+      "retry": "再試行",
+      "downloading": "テンプレートカタログを取得中…",
+      "adopt": "採用",
+      "empty": "一致するテンプレートがありません — 別のキーワードで",
+      "nameHint": "テンプレートから：名前と职责は自動入力 — タスクに合う名前に書き直すのがおすすめ",
+      "category": {
+        "personal-admin": "個人管理",
+        "content-publishing": "コンテンツ配信",
+        "coding-shipping": "コーディング・出荷",
+        "research-briefings": "調査・ブリーフィング",
+        "teams-handoffs": "チーム・引き継ぎ",
+        "finance-ops": "財務・運用",
+        "customer-sales": "顧客・営業",
+        "inbox-calendar": "メール・カレンダー"
+      }
     }
   }
 }

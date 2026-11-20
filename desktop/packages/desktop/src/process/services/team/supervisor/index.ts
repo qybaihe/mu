@@ -14,6 +14,7 @@ import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
 import {
   ensureSupervisorWorkspace,
+  ensureSupervisorWorkspaceWithCatalog,
   listSupervisorTeams,
   purgeDueDeletedTeams,
   registerSupervisorTeam,
@@ -25,6 +26,7 @@ import {
 export {
   ensureSupervisorWorkspace,
   ensureSupervisorWorkspaceIn,
+  ensureSupervisorWorkspaceWithCatalog,
   listSupervisorTeams,
   purgeDueDeletedTeams,
   purgeDueDeletedTeamsIn,
@@ -70,7 +72,7 @@ export function initSupervisorBridge(): void {
   );
   // The startup pass: the canonical rewrite (retiring expired teams), then
   // the delete reconcile (backend DELETE for grace-expired soft deletes).
-  void ensureSupervisorWorkspace()
+  void ensureSupervisorWorkspaceWithCatalog()
     .then(() => purgeDueDeletedTeams())
     .catch((error) => {
       console.warn('[supervisor] startup reconciliation failed', error);

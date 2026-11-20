@@ -15,6 +15,7 @@ import { bridge } from '../../../platform/bridge';
 import type { KyrnResult } from '../../../kyrn/errors';
 import type { PositionInfo } from './positionLibraryCore';
 import type { PositionDraft, ProjectProfile } from './positionProjectProfile';
+import type { TemplateCatalogStatus, TemplateEntry } from './templateCatalogCore';
 import type { TrashedPosition } from './positionTrashCore';
 
 /** The position's workspace folder, and whether its injected rules file changed. */
@@ -48,6 +49,20 @@ export const positionBridge = {
   ),
   /** The wizard's write: one new library file, added and nothing else. */
   createPosition: bridge.buildProvider<KyrnResult<PositionInfo>, CreatePositionParams>('positions.create'),
+  /** Ensures the template catalog cache is on disk (downloading when missing,
+   *  or when `refresh` asks); the wizard's template tab opens with this. */
+  templatesEnsure: bridge.buildProvider<KyrnResult<TemplateCatalogStatus>, { refresh?: boolean }>(
+    'positions.templates-ensure'
+  ),
+  /** Searches the cached catalog for the wizard's template tab. */
+  templatesSearch: bridge.buildProvider<
+    KyrnResult<{
+      status: TemplateCatalogStatus;
+      results: TemplateEntry[];
+      categories: { category: string; count: number }[];
+    }>,
+    { query: string; category?: string; limit?: number }
+  >('positions.templates-search'),
   /**
    * The delete quarantine's manifest (also its lazy reconcile: grace-expired
    * entries are purged before the list answers), as the monitor lists it.

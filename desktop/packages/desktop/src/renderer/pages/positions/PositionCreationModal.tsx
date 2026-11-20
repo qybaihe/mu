@@ -5,20 +5,22 @@
  */
 
 /**
- * The position creation wizard: pick a project directory (the Electron
- * folder dialog), see its heuristic profile at once (no model calls — the
- * first screens of AGENTS.md/HANDOFF.md/README/package.json, with a one-shot
- * mu run offered when they say nothing), then review the proposal — id,
- * display-name candidates, description, body, the identity colour the id
- * will wear — and create. Creating checks the draft against the roster
- * first: an overlap (same id, name, project root or near-identical
- * description) is a red warning that demands a deliberate confirmation, per
- * the user's dedup rule; the write itself only ever adds a new library
+ * The position creation wizard, in two starting flavours: pick a project
+ * directory (the Electron folder dialog) and see its heuristic profile at
+ * once (no model calls — the first screens of AGENTS.md/HANDOFF.md/README/
+ * package.json, with a one-shot mu run offered when they say nothing), or
+ * start from the community template catalog (the template tab: search,
+ * filter, adopt). Both hand the same review step — id, display-name
+ * candidates, description, body, the identity colour the id will wear —
+ * where everything is editable. Creating checks the draft against the
+ * roster first: an overlap (same id, name, project root or near-identical
+ * description) is a red warning that demands a deliberate confirmation,
+ * per the user's dedup rule; the write itself only ever adds a new library
  * file, refusing an id that exists.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Checkbox, Input, Message } from '@arco-design/web-react';
+import { Button, Checkbox, Input, Message, Radio } from '@arco-design/web-react';
 import classNames from 'classnames';
 import { ipcBridge } from '@/common';
 import { positionBridge } from '@/common/chat/team/positions/positionBridge';
@@ -30,6 +32,7 @@ import {
 } from '@/common/chat/team/positions/positionProjectProfile';
 import { positionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
 import MuModal from '@renderer/components/base/MuModal';
+import PositionTemplatePicker, { type TemplateDraftResult } from '@renderer/pages/positions/PositionTemplatePicker';
 import { refreshPositions, usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { rowButtonProps } from '@renderer/utils/ui/rowButton';
 
@@ -38,7 +41,10 @@ type PositionCreationModalProps = {
   onClose: () => void;
 };
 
-/** What the review step edits; initialized from the analysis draft, freely editable. */
+/** How the wizard starts: a project directory's files, or a catalog template. */
+type WizardMode = 'directory' | 'template';
+
+/** What the review step edits; initialized from either flavour's draft, freely editable. */
 type WizardForm = { id: string; displayName: string; description: string; body: string };
 
 const formOf = (analysis: ProjectAnalysis): WizardForm => ({
@@ -60,6 +66,8 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
   const [analyzeError, setAnalyzeError] = useState<string | undefined>();
   const [reviewing, setReviewing] = useState(false);
   const [form, setForm] = useState<WizardForm | undefined>();
+  const [nameCandidates, setNameCandidates] = useState<string[]>([]);
+  const [mode, setMode] = useState<WizardMode>('directory');
   const [forceOverlap, setForceOverlap] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -75,6 +83,8 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
     setAnalyzeError(undefined);
     setReviewing(false);
     setForm(undefined);
+    setNameCandidates([]);
+    setMode('directory');
     setForceOverlap(false);
     setCreating(false);
     setError(undefined);
@@ -90,6 +100,7 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
       if (answer.ok === true) {
         setAnalysis(answer.data);
         setForm(formOf(answer.data));
+        setNameCandidates(answer.data.draft.displayNameCandidates);
         return;
       }
       // A failure is shown, never silent: the heuristic answer the wizard
@@ -112,10 +123,24 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
     setDirectory(picked);
     setAnalysis(undefined);
     setForm(undefined);
+    setNameCandidates([]);
     setAiError(undefined);
     setAnalyzeError(undefined);
     await analyze(picked, false);
   }, [analyze]);
+
+  /** A template adoption: the draft fills the review form — no directory, no profile — and the review opens. */
+  const adoptTemplate = useCallback((draft: TemplateDraftResult) => {
+    setAnalysis(undefined);
+    setForm({
+      id: draft.id,
+      displayName: draft.displayNameCandidates[0] ?? '',
+      description: draft.description,
+      body: draft.body,
+    });
+    setNameCandidates(draft.displayNameCandidates);
+    setReviewing(true);
+  }, []);
 
   const overlaps = useMemo(
     () =>
@@ -170,7 +195,11 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
       variant='standard'
       header={{
         title: t('positions.wizard.title'),
-        subtitle: reviewing ? t('positions.wizard.stepReview') : t('positions.wizard.stepPick'),
+        subtitle: reviewing
+          ? t('positions.wizard.stepReview')
+          : mode === 'template'
+            ? t('positions.wizard.stepTemplate')
+            : t('positions.wizard.stepPick'),
         showClose: true,
       }}
       visible={open}
@@ -189,7 +218,7 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
                 {t('positions.wizard.back')}
               </Button>
             ) : null}
-            {!reviewing ? (
+            {!reviewing && mode === 'directory' ? (
               <Button
                 data-testid='position-creation-next'
                 type='primary'
@@ -199,7 +228,8 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
               >
                 {t('positions.wizard.next')}
               </Button>
-            ) : (
+            ) : null}
+            {reviewing ? (
               <Button
                 data-testid='position-creation-create'
                 type='primary'
@@ -210,82 +240,105 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
               >
                 {t('positions.wizard.create')}
               </Button>
-            )}
+            ) : null}
           </div>
         ),
       }}
       unmountOnExit
     >
       <div data-testid='position-creation-modal' className='flex flex-col gap-14px'>
-        {/* Step one: the directory and what the files say about it. */}
-        <div className='flex items-center gap-10px'>
-          <Button data-testid='position-creation-pick' size='small' onClick={() => void pickDirectory()}>
-            {directory ? t('positions.wizard.repick') : t('positions.wizard.pick')}
-          </Button>
-          <span data-testid='position-creation-dir' className='text-13px text-t-secondary truncate flex-1'>
-            {directory || t('positions.wizard.pickHint')}
-          </span>
-        </div>
-
-        {analyzing ? <div className='text-13px text-t-tertiary'>{t('positions.wizard.analyzing')}</div> : null}
-
-        {analysis ? (
-          <div data-testid='position-creation-profile' className='flex flex-col gap-6px text-13px'>
-            {analysis.aiUsed ? <div className='text-12px text-warning'>{t('positions.wizard.aiUsed')}</div> : null}
-            <div className='text-t-primary font-500'>{analysis.profile.projectName}</div>
-            {analysis.profile.goal ? (
-              <div className='text-t-secondary'>
-                <span className='text-t-tertiary'>{t('positions.wizard.profile.goal')}：</span>
-                {analysis.profile.goal}
-              </div>
-            ) : null}
-            {analysis.profile.techStack.length > 0 ? (
-              <div className='text-t-secondary'>
-                <span className='text-t-tertiary'>{t('positions.wizard.profile.stack')}：</span>
-                {analysis.profile.techStack.join('、')}
-              </div>
-            ) : null}
-            {analysis.profile.constraints.map((line) => (
-              <div key={line} className='text-t-secondary truncate'>
-                <span className='text-t-tertiary'>{t('positions.wizard.profile.constraint')}：</span>
-                {line}
-              </div>
-            ))}
-            {analysis.profile.empty ? (
-              <div className='text-t-tertiary'>{t('positions.wizard.emptyProfile')}</div>
-            ) : null}
-          </div>
+        {/* Step one comes in two flavours: the project directory's files, or the catalog's templates. */}
+        {!reviewing ? (
+          <Radio.Group
+            data-testid='position-creation-mode'
+            type='button'
+            size='small'
+            value={mode}
+            onChange={(value) => setMode(value as WizardMode)}
+          >
+            <Radio value='directory'>{t('positions.wizard.tabDirectory')}</Radio>
+            <Radio value='template'>{t('positions.wizard.tabTemplate')}</Radio>
+          </Radio.Group>
         ) : null}
 
-        {analyzeError ? (
-          <div data-testid='position-creation-analyze-error' className='text-12px text-danger'>
-            {t('positions.wizard.analyzeFailed', { error: analyzeError })}
-          </div>
-        ) : null}
+        {mode === 'template' && !reviewing ? <PositionTemplatePicker onAdopt={adoptTemplate} /> : null}
 
-        {aiError ? (
-          <div data-testid='position-creation-ai-error' className='text-12px text-danger'>
-            {t('positions.wizard.aiFailed', { error: aiError })}
-          </div>
-        ) : null}
+        {/* Step one, directory flavour: the directory and what the files say about it. */}
+        {mode === 'directory' || reviewing ? (
+          <div className='flex flex-col gap-14px'>
+            <div className='flex items-center gap-10px'>
+              <Button data-testid='position-creation-pick' size='small' onClick={() => void pickDirectory()}>
+                {directory ? t('positions.wizard.repick') : t('positions.wizard.pick')}
+              </Button>
+              <span data-testid='position-creation-dir' className='text-13px text-t-secondary truncate flex-1'>
+                {directory || t('positions.wizard.pickHint')}
+              </span>
+            </div>
 
-        {analysis?.profile.empty && !analysis.aiUsed ? (
-          <div>
-            <Button
-              data-testid='position-creation-ai'
-              size='small'
-              type='outline'
-              loading={aiRunning}
-              onClick={() => void analyze(directory, true)}
-            >
-              {t('positions.wizard.aiAnalyze')}
-            </Button>
+            {analyzing ? <div className='text-13px text-t-tertiary'>{t('positions.wizard.analyzing')}</div> : null}
+
+            {analysis ? (
+              <div data-testid='position-creation-profile' className='flex flex-col gap-6px text-13px'>
+                {analysis.aiUsed ? <div className='text-12px text-warning'>{t('positions.wizard.aiUsed')}</div> : null}
+                <div className='text-t-primary font-500'>{analysis.profile.projectName}</div>
+                {analysis.profile.goal ? (
+                  <div className='text-t-secondary'>
+                    <span className='text-t-tertiary'>{t('positions.wizard.profile.goal')}：</span>
+                    {analysis.profile.goal}
+                  </div>
+                ) : null}
+                {analysis.profile.techStack.length > 0 ? (
+                  <div className='text-t-secondary'>
+                    <span className='text-t-tertiary'>{t('positions.wizard.profile.stack')}：</span>
+                    {analysis.profile.techStack.join('、')}
+                  </div>
+                ) : null}
+                {analysis.profile.constraints.map((line) => (
+                  <div key={line} className='text-t-secondary truncate'>
+                    <span className='text-t-tertiary'>{t('positions.wizard.profile.constraint')}：</span>
+                    {line}
+                  </div>
+                ))}
+                {analysis.profile.empty ? (
+                  <div className='text-t-tertiary'>{t('positions.wizard.emptyProfile')}</div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {analyzeError ? (
+              <div data-testid='position-creation-analyze-error' className='text-12px text-danger'>
+                {t('positions.wizard.analyzeFailed', { error: analyzeError })}
+              </div>
+            ) : null}
+
+            {aiError ? (
+              <div data-testid='position-creation-ai-error' className='text-12px text-danger'>
+                {t('positions.wizard.aiFailed', { error: aiError })}
+              </div>
+            ) : null}
+
+            {analysis?.profile.empty && !analysis.aiUsed ? (
+              <div>
+                <Button
+                  data-testid='position-creation-ai'
+                  size='small'
+                  type='outline'
+                  loading={aiRunning}
+                  onClick={() => void analyze(directory, true)}
+                >
+                  {t('positions.wizard.aiAnalyze')}
+                </Button>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
         {/* Step two: the proposal, every field editable, overlaps red-flagged. */}
         {reviewing && form ? (
           <div className='flex flex-col gap-12px'>
+            {mode === 'template' ? (
+              <div className='text-12px text-t-tertiary'>{t('positions.wizard.template.nameHint')}</div>
+            ) : null}
             <div className='flex items-center gap-10px'>
               {/* The identity colour preview: the hue this id will wear on every surface. */}
               <span
@@ -314,10 +367,10 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
                 value={form.displayName}
                 onChange={(value) => setForm({ ...form, displayName: value })}
               />
-              {analysis && analysis.draft.displayNameCandidates.length > 1 ? (
+              {nameCandidates.length > 1 ? (
                 <div className='mt-6px flex items-center gap-6px flex-wrap'>
                   <span className='text-12px text-t-tertiary'>{t('positions.wizard.nameCandidates')}</span>
-                  {analysis.draft.displayNameCandidates.map((candidate, index) => (
+                  {nameCandidates.map((candidate, index) => (
                     <span
                       key={candidate}
                       {...rowButtonProps(() => setForm({ ...form, displayName: candidate }))}

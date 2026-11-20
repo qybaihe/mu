@@ -6,8 +6,11 @@
   "openFailed": "Failed to open the position conversation",
   "wizard": {
     "entry": "New position",
+    "tabDirectory": "From a project folder",
+    "tabTemplate": "From the template catalog",
     "title": "New position",
     "stepPick": "Step 1 · Pick the project folder",
+    "stepTemplate": "Step 1 · Pick a template",
     "stepReview": "Step 2 · Review the proposal",
     "pick": "Choose folder…",
     "repick": "Change folder",
@@ -43,6 +46,31 @@
       "name": "same name",
       "project-root": "same project root",
       "description": "very similar description"
+    },
+    "template": {
+      "hint": "Start from a community template (awesome-grok-bot, CC0): search, adopt one, then edit the draft as you like",
+      "searchPlaceholder": "Search templates (Chinese or English)",
+      "categoryLabel": "Category",
+      "categoryAll": "All categories",
+      "statusReady": "Catalog: {{count}} templates · fetched {{date}}",
+      "statusStale": "Older than 30 days — refresh suggested",
+      "refresh": "Refresh",
+      "unavailable": "Template catalog unavailable (not downloaded or the download failed)",
+      "retry": "Retry",
+      "downloading": "Fetching the template catalog…",
+      "adopt": "Use",
+      "empty": "No matching templates — try another keyword",
+      "nameHint": "From a template: the name and description are pre-filled — a name fitting your task is worth typing",
+      "category": {
+        "personal-admin": "Personal admin",
+        "content-publishing": "Content publishing",
+        "coding-shipping": "Coding & shipping",
+        "research-briefings": "Research & briefings",
+        "teams-handoffs": "Teams & handoffs",
+        "finance-ops": "Finance & ops",
+        "customer-sales": "Customer & sales",
+        "inbox-calendar": "Inbox & calendar"
+      }
     }
   }
 }

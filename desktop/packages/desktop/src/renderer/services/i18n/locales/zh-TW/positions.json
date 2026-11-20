@@ -6,8 +6,11 @@
   "openFailed": "崗位會話開啟失敗",
   "wizard": {
     "entry": "新建崗位",
+    "tabDirectory": "從專案目錄",
+    "tabTemplate": "從模板庫起步",
     "title": "新建崗位",
     "stepPick": "第 1 步 · 選擇專案目錄",
+    "stepTemplate": "第 1 步 · 從模板庫挑選",
     "stepReview": "第 2 步 · 確認崗位選項",
     "pick": "選擇目錄…",
     "repick": "重選目錄",
@@ -43,6 +46,31 @@
       "name": "同名稱",
       "project-root": "同專案根",
       "description": "描述高度相似"
+    },
+    "template": {
+      "hint": "從社群模板起步（awesome-grok-bot，CC0）：搜尋並採用一條，回填草稿後仍可編輯",
+      "searchPlaceholder": "搜尋模板（中英文皆可）",
+      "categoryLabel": "分類",
+      "categoryAll": "全部分類",
+      "statusReady": "模板庫 {{count}} 條 · 擷取於 {{date}}",
+      "statusStale": "快取已超 30 天，建議重新整理",
+      "refresh": "重新整理",
+      "unavailable": "模板庫不可用（尚未下載或下載失敗）",
+      "retry": "重試",
+      "downloading": "正在取得模板庫…",
+      "adopt": "採用",
+      "empty": "沒有符合的模板，換個關鍵詞試試",
+      "nameHint": "模板起步：顯示名與職責已按模板回填，建議改為貼合任務的中文名",
+      "category": {
+        "personal-admin": "個人事務",
+        "content-publishing": "內容發佈",
+        "coding-shipping": "編碼交付",
+        "research-briefings": "調研簡報",
+        "teams-handoffs": "團隊協作",
+        "finance-ops": "財務營運",
+        "customer-sales": "客戶銷售",
+        "inbox-calendar": "郵件日曆"
+      }
     }
   }
 }

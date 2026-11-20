@@ -6,8 +6,11 @@
   "openFailed": "Error al abrir la conversación del puesto",
   "wizard": {
     "entry": "Nueva posición",
+    "tabDirectory": "Desde una carpeta de proyecto",
+    "tabTemplate": "Desde el catálogo de plantillas",
     "title": "Nueva posición",
     "stepPick": "Paso 1 · Elegir la carpeta del proyecto",
+    "stepTemplate": "Paso 1 · Elegir una plantilla",
     "stepReview": "Paso 2 · Revisar la propuesta",
     "pick": "Elegir carpeta…",
     "repick": "Cambiar carpeta",
@@ -43,6 +46,31 @@
       "name": "mismo nombre",
       "project-root": "misma raíz de proyecto",
       "description": "descripción muy parecida"
+    },
+    "template": {
+      "hint": "Empieza con una plantilla de la comunidad (awesome-grok-bot, CC0): busca, adopta una y edita el borrador",
+      "searchPlaceholder": "Buscar plantillas (chino o inglés)",
+      "categoryLabel": "Categoría",
+      "categoryAll": "Todas las categorías",
+      "statusReady": "Catálogo: {{count}} plantillas · obtenido {{date}}",
+      "statusStale": "Más de 30 días — conviene actualizar",
+      "refresh": "Actualizar",
+      "unavailable": "Catálogo de plantillas no disponible (sin descargar o descarga fallida)",
+      "retry": "Reintentar",
+      "downloading": "Descargando el catálogo de plantillas…",
+      "adopt": "Adoptar",
+      "empty": "Sin plantillas coincidentes — prueba otras palabras",
+      "nameHint": "Desde una plantilla: nombre y descripción precargados — conviene escribir un nombre propio",
+      "category": {
+        "personal-admin": "Administración personal",
+        "content-publishing": "Publicación de contenido",
+        "coding-shipping": "Programación y entregas",
+        "research-briefings": "Investigación y resúmenes",
+        "teams-handoffs": "Equipos y traspasos",
+        "finance-ops": "Finanzas y operaciones",
+        "customer-sales": "Clientes y ventas",
+        "inbox-calendar": "Bandeja y calendario"
+      }
     }
   }
 }
