@@ -27,6 +27,8 @@
     "nameLabel": "表示名（名簿に表示される名前）",
     "nameCandidates": "候補：",
     "descLabel": "職責（一行、割り当て判断の参照）",
+    "antiJobLabel": "禁止事項（任意・1 行 1 件。該当で即停止）",
+    "antiJobPlaceholder": "例：ユーザーの確認なしに外部へ公開しない",
     "bodyLabel": "指示本文（プロジェクトルート行を含む、編集可）",
     "colorPreview": "識別色プレビュー（ID から生成）",
     "invalidId": "ID は小文字・数字・ハイフンのみで、字母または数字で始めてください",

@@ -429,11 +429,22 @@ export function findPositionOverlaps(
   return overlaps;
 }
 
+/**
+ * The taboos as frontmatter lines: one item inline, several as a `- item`
+ * list — both shapes the library parser reads back.
+ */
+const antiJobFrontmatterLines = (antiJob: readonly string[]): string[] => {
+  if (antiJob.length === 0) return [];
+  if (antiJob.length === 1) return [`anti_job: ${oneLine(antiJob[0], 200)}`];
+  return ['anti_job:', ...antiJob.map((item) => `  - ${oneLine(item, 200)}`)];
+};
+
 /** The position document the wizard writes: frontmatter plus body, the library parser's own shape. */
 export function buildPositionDocument(draft: {
   id: string;
   displayName: string;
   description: string;
+  antiJob?: readonly string[];
   body: string;
 }): string {
   return [
@@ -441,6 +452,7 @@ export function buildPositionDocument(draft: {
     `name: ${oneLine(draft.id, 40)}`,
     `display_name: ${oneLine(draft.displayName, 40)}`,
     `description: ${oneLine(draft.description, 200)}`,
+    ...antiJobFrontmatterLines(draft.antiJob ?? []),
     '---',
     '',
     draft.body.trimEnd(),

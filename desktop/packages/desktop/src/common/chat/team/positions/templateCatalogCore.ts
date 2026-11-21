@@ -215,6 +215,31 @@ const TEMPLATE_CATEGORY_LABELS_ZH: Record<string, string> = {
   'inbox-calendar': '邮件日历',
 };
 
+/**
+ * The common taboos a template category suggests for the new position's
+ * `anti_job` — a draft the user edits, never a verdict. Categories with no
+ * obvious taboo (personal-admin, teams-handoffs) suggest nothing: an
+ * invented taboo is worse than none.
+ */
+export const TEMPLATE_CATEGORY_ANTI_JOBS: Record<string, readonly string[]> = {
+  'content-publishing': ['严禁未经用户确认对外发布任何内容（发帖/评论/点赞/关注）'],
+  'coding-shipping': ['严禁未经用户确认 push 代码或创建 issue/PR'],
+  'research-briefings': ['严禁编造来源、数据与结论；未核实的一律显式标注'],
+  'finance-ops': ['严禁未经用户确认执行任何资金或支付操作'],
+  'customer-sales': ['严禁未经用户确认联系客户或对外发送消息'],
+  'inbox-calendar': ['严禁未经用户确认发送邮件或改写日历事件'],
+};
+
+/**
+ * The category map as the rule-6 drafting text shows it: one line per
+ * category with taboos, id and Chinese label together, so the supervisor's
+ * draft and the wizard's prefill quote one source.
+ */
+export const templateAntiJobHintLines = (): string[] =>
+  Object.entries(TEMPLATE_CATEGORY_ANTI_JOBS).map(
+    ([category, items]) => `- ${category}（${TEMPLATE_CATEGORY_LABELS_ZH[category] ?? category}）→ ${items.join('；')}`
+  );
+
 /** One text as one line, capped: the library frontmatter requirement. */
 const oneLine = (text: string, cap: number): string => {
   const flat = text.replace(/\s+/g, ' ').trim();
@@ -227,13 +252,15 @@ const TEMPLATE_ID_RE = /^[a-z0-9][a-z0-9-]*$/;
 /**
  * The wizard draft one template fills: the id from the slug (already a slug;
  * anything else collapses to dashes and, if that fails, the category), the
- * description from the Chinese summary, and a body that names the template
- * as the draft's source. No project root — the template path has none.
+ * description from the Chinese summary, suggested taboos from the category,
+ * and a body that names the template as the draft's source. No project root
+ * — the template path has none.
  */
 export function draftFromTemplate(entry: TemplateEntry): {
   id: string;
   displayNameCandidates: string[];
   description: string;
+  antiJob: string[];
   body: string;
 } {
   const slugId = entry.slug
@@ -246,6 +273,7 @@ export function draftFromTemplate(entry: TemplateEntry): {
     id,
     displayNameCandidates: [candidate, entry.name].filter((name, index, all) => all.indexOf(name) === index),
     description: oneLine(entry.summary_zh, 160),
+    antiJob: [...(TEMPLATE_CATEGORY_ANTI_JOBS[entry.category] ?? [])],
     body: [
       `你是「${candidate}」岗位的常设负责 Bot（岗位即项目，跨任务常设，持续积累本岗记忆）。本岗位由 awesome-grokbot 模板「${entry.name}」起步，请在首次任务中结合实际工作核实并补全职责。`,
       '',

@@ -380,6 +380,22 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('岗位随使用变准');
   });
 
+  it('teaches drafting suggested anti_job taboos from the template category, shown in the proposal and written as frontmatter', () => {
+    const content = buildSupervisorOverrideContent(roster);
+    // Drafting covers the fourth piece: suggested taboos, capped, never invented.
+    expect(content).toContain('建议禁忌 anti_job');
+    expect(content).toContain('不硬造');
+    // The category mapping the draft quotes, one source with the wizard's prefill.
+    expect(content).toContain('content-publishing（内容发布）→ 严禁未经用户确认对外发布任何内容');
+    expect(content).toContain('research-briefings（调研简报）→ 严禁编造来源、数据与结论');
+    // The proposal shows the taboos for the user to verify or drop.
+    expect(content).toContain('建议禁忌：〈一条一条列出，无则写「无」〉');
+    // The written file carries them as frontmatter anti_job, list form.
+    expect(content).toContain('建议禁忌非空时加 anti_job 键');
+    expect(content).toContain('anti_job:');
+    expect(content).toContain('- <建议禁忌第 1 条>');
+  });
+
   it('declares the supervisor identity and its no-hands rule', () => {
     const content = buildSupervisorOverrideContent([]);
     expect(content).toContain('主管（Supervisor）');

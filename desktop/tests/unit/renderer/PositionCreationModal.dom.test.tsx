@@ -233,8 +233,22 @@ describe('PositionCreationModal', () => {
       expect(create).toHaveBeenCalledTimes(1);
     });
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ id: 'freight-lab', displayName: '报价表自动解析' }));
+    // No taboos typed: the wire carries no anti_job key at all.
+    expect(create.mock.calls[0][0]).not.toHaveProperty('antiJob');
     await waitFor(() => {
       expect(refresh).toHaveBeenCalled();
+    });
+  });
+
+  it('sends the typed taboos as the anti_job list, one line each, blanks dropped', async () => {
+    await openAndPick();
+    fireEvent.click(screen.getByTestId('position-creation-next'));
+    fireEvent.change(screen.getByTestId('position-creation-antijob'), {
+      target: { value: '  严禁私自发帖  \n\n严禁删改用户文件\n' },
+    });
+    fireEvent.click(screen.getByTestId('position-creation-create'));
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledWith(expect.objectContaining({ antiJob: ['严禁私自发帖', '严禁删改用户文件'] }));
     });
   });
 
@@ -267,6 +281,8 @@ describe('PositionCreationModal', () => {
     expect(screen.getByTestId('position-creation-name')).toHaveValue('内容发布');
     expect(screen.getByTestId('position-creation-candidate-1')).toHaveTextContent('Podcast Notes');
     expect(screen.getByTestId('position-creation-desc')).toHaveValue('把每期播客切成章节笔记并写好摘要');
+    // The category suggests the taboos; the review form carries them as editable text.
+    expect(screen.getByTestId('position-creation-antijob').textContent).toContain('严禁未经用户确认对外发布任何内容');
     expect(screen.getByTestId('position-creation-body').textContent).toContain('Podcast Notes');
     // Back returns to the template tab, not the directory picker.
     fireEvent.click(screen.getByTestId('position-creation-back'));
@@ -284,6 +300,7 @@ describe('PositionCreationModal', () => {
         id: 'podcast-notes',
         displayName: '内容发布',
         description: '把每期播客切成章节笔记并写好摘要',
+        antiJob: ['严禁未经用户确认对外发布任何内容（发帖/评论/点赞/关注）'],
         body: expect.stringContaining('slug：podcast-notes'),
       });
     });

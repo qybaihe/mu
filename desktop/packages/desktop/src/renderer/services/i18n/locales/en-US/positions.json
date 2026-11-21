@@ -27,6 +27,8 @@
     "nameLabel": "Display name (what the roster shows)",
     "nameCandidates": "Candidates:",
     "descLabel": "Responsibility (one line, the ownership reference)",
+    "antiJobLabel": "Taboos (optional, one per line; a hit stops the task)",
+    "antiJobPlaceholder": "e.g. never publish externally without the user's confirmation",
     "bodyLabel": "Instructions body (holds the project root line; editable)",
     "colorPreview": "Identity colour preview (derived from the id)",
     "invalidId": "The id is lowercase letters, digits and dashes only, starting with a letter or digit",

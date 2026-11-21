@@ -27,6 +27,8 @@
     "nameLabel": "표시 이름 (명부에 보이는 이름)",
     "nameCandidates": "후보:",
     "descLabel": "책임 (한 줄, 소속 판정 참조)",
+    "antiJobLabel": "금지 사항 (선택, 한 줄에 하나. 해당하면 즉시 중단)",
+    "antiJobPlaceholder": "예: 사용자 확인 없이 외부에 게시하지 않기",
     "bodyLabel": "지침 본문 (프로젝트 루트 줄 포함, 편집 가능)",
     "colorPreview": "정체성 색 미리보기 (ID에서 도출)",
     "invalidId": "ID는 소문자·숫자·하이픈만 사용하고 문자나 숫자로 시작해야 합니다",

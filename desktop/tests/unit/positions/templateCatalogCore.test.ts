@@ -144,9 +144,23 @@ describe('draftFromTemplate', () => {
   });
 
   it('sanitizes an odd slug and folds a multiline summary to one line', () => {
-    const draft = draftFromTemplate(entry({ slug: 'Weird Slug!!', summary_zh: `第一行\n第二行 ${'长'.repeat(170)}` }));
+    const draft = draftFromTemplate(
+      entry({
+        slug: 'Weird Slug!!',
+        summary_zh: `第一行
+第二行 ${'长'.repeat(170)}`,
+      })
+    );
     expect(draft.id).toBe('weird-slug');
     expect(draft.description).not.toMatch(/\n/);
     expect(draft.description.endsWith('…')).toBe(true);
+  });
+
+  it('suggests the category taboos, and suggests none when the category has no obvious taboo', () => {
+    const publishing = draftFromTemplate(entry());
+    expect(publishing.antiJob).toEqual(['严禁未经用户确认对外发布任何内容（发帖/评论/点赞/关注）']);
+
+    const plain = draftFromTemplate(entry({ slug: 'life-admin', category: 'personal-admin' }));
+    expect(plain.antiJob).toEqual([]);
   });
 });

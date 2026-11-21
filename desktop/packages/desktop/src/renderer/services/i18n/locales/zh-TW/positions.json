@@ -27,6 +27,8 @@
     "nameLabel": "中文名（名冊顯示名）",
     "nameCandidates": "候選：",
     "descLabel": "職責描述（一句話，歸屬判據參考）",
+    "antiJobLabel": "嚴禁事項（可選，一條一行；觸發即停）",
+    "antiJobPlaceholder": "如：嚴禁未經使用者確認對外發布任何內容",
     "bodyLabel": "說明書正文（含專案根行，可編輯）",
     "colorPreview": "身份色預覽（由 ID 衍生）",
     "invalidId": "ID 只能是小寫字母、數字與連字號，且以字母或數字開頭",

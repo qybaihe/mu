@@ -27,6 +27,8 @@
     "nameLabel": "Nome exibido (o que o registro mostra)",
     "nameCandidates": "Candidatos:",
     "descLabel": "Responsabilidade (uma linha, a referência de atribuição)",
+    "antiJobLabel": "Proibições (opcional, uma por linha; um acerto interrompe a tarefa)",
+    "antiJobPlaceholder": "ex.: nunca publicar externamente sem confirmação do usuário",
     "bodyLabel": "Corpo das instruções (contém a raiz do projeto; editável)",
     "colorPreview": "Prévia da cor de identidade (derivada do id)",
     "invalidId": "O id usa apenas minúsculas, dígitos e hífens, começando por letra ou dígito",

@@ -27,6 +27,8 @@
     "nameLabel": "Anzeigename (was das Namensverzeichnis zeigt)",
     "nameCandidates": "Vorschläge:",
     "descLabel": "Verantwortung (eine Zeile, die Referenz für die Zuordnung)",
+    "antiJobLabel": "Tabus (optional, eines pro Zeile; ein Treffer stoppt die Aufgabe)",
+    "antiJobPlaceholder": "z. B. niemals ohne Bestätigung des Benutzers extern veröffentlichen",
     "bodyLabel": "Anweisungstext (enthält die Projektwurzel; editierbar)",
     "colorPreview": "Identitätsfarbe-Vorschau (aus der ID abgeleitet)",
     "invalidId": "Die ID besteht nur aus Kleinbuchstaben, Ziffern und Bindestrichen und beginnt mit einem Buchstaben oder einer Ziffer",

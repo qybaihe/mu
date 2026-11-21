@@ -3362,6 +3362,8 @@ export type I18nKey =
   | 'positions.wizard.aiUsed'
   | 'positions.wizard.analyzeFailed'
   | 'positions.wizard.analyzing'
+  | 'positions.wizard.antiJobLabel'
+  | 'positions.wizard.antiJobPlaceholder'
   | 'positions.wizard.back'
   | 'positions.wizard.bodyLabel'
   | 'positions.wizard.colorPreview'

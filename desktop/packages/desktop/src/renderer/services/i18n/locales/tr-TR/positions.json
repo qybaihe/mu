@@ -27,6 +27,8 @@
     "nameLabel": "Görünen ad (listede gösterilen)",
     "nameCandidates": "Adaylar:",
     "descLabel": "Sorumluluk (tek satır, atıf referansı)",
+    "antiJobLabel": "Yasaklar (isteğe bağlı, satır başına bir tane; eşleşme görevi durdurur)",
+    "antiJobPlaceholder": "örn. kullanıcı onayı olmadan dışarıya asla yayınlamayın",
     "bodyLabel": "Yönerge metni (proje kök satırını içerir; düzenlenebilir)",
     "colorPreview": "Kimlik rengi önizlemesi (kimlikten türetilir)",
     "invalidId": "Kimlik yalnızca küçük harf, rakam ve tire içerir; harf veya rakamla başlar",

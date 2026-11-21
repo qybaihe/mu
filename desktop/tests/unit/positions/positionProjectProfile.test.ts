@@ -146,6 +146,22 @@ describe('buildPositionDraft and the document round-trip', () => {
     expect(draft.displayNameCandidates).toEqual(['pure-api']);
     expect(draft.id).toBe('pure-api');
   });
+
+  it('writes anti_job inline for one taboo and as a - item list for several, both parsing back', () => {
+    const draft = buildPositionDraft(analyzeProjectProfile({ directory: 'E:/x/y', files: {} }));
+
+    const single = buildPositionDocument({ ...draft, displayName: '单', antiJob: ['严禁私自发帖'] });
+    expect(single).toContain('\nanti_job: 严禁私自发帖\n');
+    expect(parsePositionDocument('a.md', single)?.antiJob).toEqual(['严禁私自发帖']);
+
+    const list = buildPositionDocument({ ...draft, displayName: '双', antiJob: ['严禁私自发帖', '严禁删改用户文件'] });
+    expect(list).toContain('\nanti_job:\n  - 严禁私自发帖\n  - 严禁删改用户文件\n');
+    expect(parsePositionDocument('b.md', list)?.antiJob).toEqual(['严禁私自发帖', '严禁删改用户文件']);
+
+    const none = buildPositionDocument({ ...draft, displayName: '无' });
+    expect(none).not.toContain('anti_job');
+    expect(parsePositionDocument('c.md', none)?.antiJob).toEqual([]);
+  });
 });
 
 describe('findPositionOverlaps', () => {

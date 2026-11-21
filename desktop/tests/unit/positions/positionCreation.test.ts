@@ -148,6 +148,23 @@ describe('createPositionIn (the safe write)', () => {
     expect(await scanPositionLibrary(library)).toEqual([]);
   });
 
+  it('writes the optional anti_job taboos in a shape the scan parses back, and refuses a multi-line taboo', async () => {
+    const library = temp();
+    const created = await createPositionIn(
+      { libraryDir: library },
+      { ...params, antiJob: ['严禁未经用户确认对外发布任何内容', '严禁删改用户文件'] }
+    );
+    expect(created.antiJob).toEqual(['严禁未经用户确认对外发布任何内容', '严禁删改用户文件']);
+    // The file carries the list form; the next scan reads the same taboos.
+    const roster = await scanPositionLibrary(library);
+    expect(roster[0]?.antiJob).toEqual(created.antiJob);
+
+    await expect(
+      createPositionIn({ libraryDir: library }, { ...params, id: 'tabooed', antiJob: ['两\n行'] })
+    ).rejects.toMatchObject({ code: 'invalid' });
+    expect(existsSync(join(library, 'tabooed.md'))).toBe(false);
+  });
+
   it('creates the library directory when the user has none yet', async () => {
     const library = join(temp(), 'agents');
     await createPositionIn({ libraryDir: library }, params);

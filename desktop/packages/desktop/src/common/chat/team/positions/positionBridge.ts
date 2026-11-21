@@ -30,7 +30,13 @@ export type ProjectAnalysis = {
 };
 
 /** What the wizard's create step writes; the body carries the project-root line. */
-export type CreatePositionParams = { id: string; displayName: string; description: string; body: string };
+export type CreatePositionParams = {
+  id: string;
+  displayName: string;
+  description: string;
+  antiJob?: string[];
+  body: string;
+};
 
 export const positionBridge = {
   /** The roster, in library order; empty when the user has no position library. */

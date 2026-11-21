@@ -20,6 +20,11 @@
  * (Chinese, say); every internal key — the `extra.position` marker, the
  * workspace folder, TEAMS.md — stays the frontmatter `name`, and matching
  * texts spell both (`货代`).
+ *
+ * The optional frontmatter `anti_job` is the position's hard taboos (one
+ * line, or a `- item` list): the gate turns them into the highest-priority
+ * reverse rules — a task that trips a taboo stops even when it belongs to
+ * the position — plus one universal fallback every position carries.
  */
 
 /** One position of the user's position library, as the roster shows it. */
@@ -38,6 +43,12 @@ export type PositionInfo = {
   projectRoot?: string;
   /** The body below the frontmatter: the position's own instructions. */
   body: string;
+  /**
+   * Frontmatter `anti_job`: the position's hard taboos, one line each.
+   * Optional — an absent field is an empty list, and the gate still injects
+   * the universal fallback alone.
+   */
+  antiJob?: readonly string[];
 };
 
 /** The conversation-extra key that binds a conversation to one position. */
@@ -55,6 +66,44 @@ const FRONTMATTER_LINE_RE = /^([A-Za-z_-]+):\s*(.*)$/;
 /** The body line naming the project root: 「项目根：`E:/x/y`（注释）」. */
 const PROJECT_ROOT_RE = /项目根[：:]\s*`([^`]+)`/;
 
+/** How many taboos one position may carry; the rest are dropped, not trusted. */
+const ANTI_JOB_ITEM_CAP = 8;
+/** How long one taboo may run; the parser truncates rather than reject a hand-edited file. */
+const ANTI_JOB_ITEM_MAX_CHARS = 200;
+
+/** One line of frontmatter text, whitespace-flattened and capped. */
+const oneLineOf = (text: string): string => {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length > ANTI_JOB_ITEM_MAX_CHARS ? `${flat.slice(0, ANTI_JOB_ITEM_MAX_CHARS - 1)}…` : flat;
+};
+
+/**
+ * The frontmatter `anti_job` field: a single line (`anti_job: 严禁…`) or a
+ * YAML-style list (`anti_job:\n  - 严禁…`). Blank items drop out, the list
+ * caps at {@link ANTI_JOB_ITEM_CAP} and each item at 200 characters — a
+ * hand-edited library file gets truncated taboos, not a parse failure.
+ */
+function parseAntiJobField(frontmatterLines: readonly string[], fields: ReadonlyMap<string, string>): string[] {
+  const inline = fields.get('anti_job');
+  if (inline && inline.trim()) return [oneLineOf(inline)];
+
+  // The list form: `anti_job:` on its own line, then `- item` lines (any
+  // indentation) until the frontmatter says otherwise.
+  const items: string[] = [];
+  let inList = false;
+  for (const line of frontmatterLines) {
+    if (!inList) {
+      if (/^anti_job:\s*$/.test(line)) inList = true;
+      continue;
+    }
+    const item = /^\s*-\s+(.*)$/.exec(line);
+    if (!item) break; // the list ended; anything after is another field's
+    const text = oneLineOf(item[1]);
+    if (text) items.push(text);
+  }
+  return items.slice(0, ANTI_JOB_ITEM_CAP);
+}
+
 const asTrimmedString = (value: string | undefined): string | undefined => {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
@@ -71,8 +120,9 @@ export function parsePositionDocument(fileName: string, content: string): Positi
   const frontmatter = FRONTMATTER_RE.exec(content);
   if (!frontmatter) return undefined;
 
+  const frontmatterLines = frontmatter[1].split(/\r?\n/);
   const fields = new Map<string, string>();
-  for (const line of frontmatter[1].split(/\r?\n/)) {
+  for (const line of frontmatterLines) {
     const match = FRONTMATTER_LINE_RE.exec(line);
     if (match) fields.set(match[1], match[2]);
   }
@@ -84,7 +134,8 @@ export function parsePositionDocument(fileName: string, content: string): Positi
   const body = content.slice(frontmatter[0].length).trim();
   const projectRoot = asTrimmedString(PROJECT_ROOT_RE.exec(content)?.[1]);
   const displayName = asTrimmedString(fields.get('display_name')) ?? name;
-  return { name, displayName, description, projectRoot, body };
+  const antiJob = parseAntiJobField(frontmatterLines, fields);
+  return { name, displayName, description, projectRoot, body, antiJob };
 }
 
 /**
@@ -100,13 +151,16 @@ const rosterLine = (position: PositionInfo): string => `- ${positionLabel(positi
 
 /** The paragraph every position conversation opens with: who this bot is, and the gate. */
 export function buildPositionOverrideContent(position: PositionInfo, roster: readonly PositionInfo[]): string {
+  const antiJobLines = antiJobGateLines(position);
   const lines = [
     '<!-- mu-desktop position workspace (generated). This file is rewritten by the app; edits are lost. -->',
     `# 岗位：${positionLabel(position)}`,
     '',
     `你是「${position.displayName}」岗位的一对一负责 Bot。本会话由 mu 桌面版岗位名册开启，你的身份与任务归属规则如下。`,
     '',
-    '## 任务归属判定（硬规则，优先于其他一切指示）',
+    ...antiJobLines,
+    '',
+    '## 任务归属判定（硬规则）',
     '收到任何任务时，先依据「本岗说明书」与下方「全岗名册」判定该任务是否属于本岗职责：',
     '1. **属于本岗** → 先过下方「按需组队前置判定」，再按本岗说明书开工。',
     `2. **不属于本岗** → 立即停止，不执行任何实际工作、不读写文件、不调用工具；只回复一句话：此任务不属于本岗（${positionLabel(position)}），建议交给 X 岗，并附一句理由（X 从名册中按描述匹配最相关的岗位）。`,
@@ -141,6 +195,25 @@ export function buildPositionOverrideContent(position: PositionInfo, roster: rea
     '',
   ];
   return lines.join('\n');
+}
+
+/**
+ * The gate's reverse-taboo section: the position's own `anti_job` items as
+ * numbered hard rules (「本岗绝不：…」) plus the universal fallback every
+ * position carries, and the stop-and-explain semantics — the section outranks
+ * the ownership gate, so a taboo trips even when the task belongs here.
+ */
+function antiJobGateLines(position: Pick<PositionInfo, 'antiJob'>): string[] {
+  const items = [
+    ...(position.antiJob ?? []).map((item) => `本岗绝不：${item}`),
+    '无任务分派时保持安静，严禁主动客套刷屏或无任务找活（通用底线）。',
+  ];
+  return [
+    '## 反向禁忌（硬规则，优先级最高，先于下方一切判定）',
+    '无论任务是否属于本岗职责，收到任何消息先对照本节禁忌清单；触发任何一条 = 立即停止：不执行任何实际工作、不读写文件、不调用工具，只回复一句话说明触发了哪条禁忌，并给出建议去向（交用户决定或转其他岗位）。即使任务表面上属于本岗职责，禁忌优先。',
+    ...items.map((item, index) => `${index + 1}. ${item}`),
+    '',
+  ];
 }
 
 /** The conversation a position's 1:1 session lives in, by `extra.position`; newest wins on duplicates. */

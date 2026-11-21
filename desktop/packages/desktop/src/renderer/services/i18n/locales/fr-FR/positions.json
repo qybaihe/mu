@@ -27,6 +27,8 @@
     "nameLabel": "Nom affiché (ce que montre le répertoire)",
     "nameCandidates": "Propositions :",
     "descLabel": "Responsabilité (une ligne, la référence d’attribution)",
+    "antiJobLabel": "Interdits (facultatif, un par ligne ; une correspondance arrête la tâche)",
+    "antiJobPlaceholder": "ex. ne jamais publier en externe sans la confirmation de l'utilisateur",
     "bodyLabel": "Corps des instructions (contient la racine du projet ; modifiable)",
     "colorPreview": "Aperçu de la couleur d’identité (dérivée de l’identifiant)",
     "invalidId": "L’identifiant ne contient que des minuscules, chiffres et tirets, et commence par une lettre ou un chiffre",

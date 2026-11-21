@@ -61,6 +61,64 @@ describe('parsePositionDocument', () => {
     expect(parsePositionDocument('half.md', '---\nname: half\n---\n\nNo description.')).toBeUndefined();
     expect(parsePositionDocument('note.md', '# A plain note\n\nwithout frontmatter')).toBeUndefined();
   });
+
+  it('parses anti_job as one inline line or a - item list; absent stays empty', () => {
+    const inline = parsePositionDocument('a.md', '---\nname: a\ndescription: d\nanti_job: 严禁私自发帖\n---\n\n正文');
+    expect(inline?.antiJob).toEqual(['严禁私自发帖']);
+
+    const list = parsePositionDocument(
+      'b.md',
+      [
+        '---',
+        'name: b',
+        'description: d',
+        'anti_job:',
+        '  - 严禁私自发帖',
+        '  - 严禁删改用户文件',
+        '---',
+        '',
+        '正文',
+      ].join('\n')
+    );
+    expect(list?.antiJob).toEqual(['严禁私自发帖', '严禁删改用户文件']);
+
+    const none = parsePositionDocument('c.md', '---\nname: c\ndescription: d\n---\n\n正文');
+    expect(none?.antiJob).toEqual([]);
+  });
+
+  it('caps the anti_job list at 8 items, truncates long items, drops blanks, and stops at the next field', () => {
+    const ten = Array.from({ length: 10 }, (_, i) => `  - 禁忌 ${i + 1}`);
+    const many = parsePositionDocument(
+      'a.md',
+      ['---', 'name: a', 'description: d', 'anti_job:', ...ten, '---', '', '正文'].join('\n')
+    );
+    expect(many?.antiJob).toHaveLength(8);
+    expect(many?.antiJob?.[0]).toBe('禁忌 1');
+    expect(many?.antiJob?.[7]).toBe('禁忌 8');
+
+    const interrupted = parsePositionDocument(
+      'b.md',
+      [
+        '---',
+        'name: b',
+        'description: d',
+        'anti_job:',
+        '  - 第一条',
+        '  -   ',
+        'other: x',
+        '  - 不该收录',
+        '---',
+        '',
+        '正文',
+      ].join('\n')
+    );
+    expect(interrupted?.antiJob).toEqual(['第一条']);
+
+    const long = '长'.repeat(250);
+    const truncated = parsePositionDocument('c.md', `---\nname: c\ndescription: d\nanti_job: ${long}\n---\n\n正文`);
+    expect(truncated?.antiJob?.[0]).toHaveLength(200);
+    expect(truncated?.antiJob?.[0]?.endsWith('…')).toBe(true);
+  });
 });
 
 describe('buildPositionOverrideContent', () => {
@@ -119,6 +177,27 @@ describe('buildPositionOverrideContent', () => {
   it('answers an empty instructions body instead of an empty section', () => {
     const content = buildPositionOverrideContent({ name: 'x', displayName: 'x', description: 'd', body: '' }, roster);
     expect(content).toContain('（本岗未提供说明书正文）');
+  });
+
+  it('injects the reverse taboos as the highest-priority section: position items plus the universal fallback, before the ownership gate', () => {
+    const content = buildPositionOverrideContent(
+      { ...roster[0], antiJob: ['严禁私自发帖', '严禁删改用户文件'] },
+      roster
+    );
+    expect(content).toContain('## 反向禁忌（硬规则，优先级最高，先于下方一切判定）');
+    expect(content).toContain('本岗绝不：严禁私自发帖');
+    expect(content).toContain('本岗绝不：严禁删改用户文件');
+    expect(content).toContain('无任务分派时保持安静，严禁主动客套刷屏或无任务找活（通用底线）');
+    expect(content).toContain('即使任务表面上属于本岗职责，禁忌优先');
+    // The taboo section outranks the ownership gate: it reads first.
+    expect(content.indexOf('## 反向禁忌')).toBeLessThan(content.indexOf('## 任务归属判定'));
+  });
+
+  it('carries the universal fallback even for a position with no anti_job of its own', () => {
+    const content = buildPositionOverrideContent(roster[0], roster);
+    expect(content).toContain('## 反向禁忌');
+    expect(content).toContain('无任务分派时保持安静，严禁主动客套刷屏或无任务找活（通用底线）');
+    expect(content).not.toContain('本岗绝不：');
   });
 });
 

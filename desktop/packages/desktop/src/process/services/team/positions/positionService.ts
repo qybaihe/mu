@@ -202,6 +202,8 @@ export type CreatePositionParams = {
   id: string;
   displayName: string;
   description: string;
+  /** Optional taboos, one line each; written as the frontmatter `anti_job`. */
+  antiJob?: string[];
   body: string;
 };
 
@@ -239,6 +241,9 @@ export async function createPositionIn(
     throw new KyrnError('invalid', 'A display name is one non-empty line', { displayName });
   if (!description || /[\r\n]/.test(description))
     throw new KyrnError('invalid', 'A description is one non-empty line', { description });
+  const antiJob = (params.antiJob ?? []).map((item) => item.trim()).filter((item) => item.length > 0);
+  if (antiJob.some((item) => /[\r\n]/.test(item)))
+    throw new KyrnError('invalid', 'A taboo is one non-empty line', { antiJob });
 
   await mkdir(options.libraryDir, { recursive: true });
   const file = join(options.libraryDir, `${id}.md`);
@@ -247,7 +252,7 @@ export async function createPositionIn(
   if ((await scanPositionLibrary(options.libraryDir)).some((position) => position.name === id))
     throw new KyrnError('invalid', 'A position of that id already exists — pick another id', { id });
 
-  const content = buildPositionDocument(params);
+  const content = buildPositionDocument({ ...params, antiJob });
   const parsed = parsePositionDocument(`${id}.md`, content);
   if (!parsed) throw new KyrnError('invalid', 'The generated document does not parse as a position', { id });
   await writeFile(file, content, 'utf8');

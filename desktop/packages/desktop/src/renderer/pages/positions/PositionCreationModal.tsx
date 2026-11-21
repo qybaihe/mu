@@ -45,12 +45,13 @@ type PositionCreationModalProps = {
 type WizardMode = 'directory' | 'template';
 
 /** What the review step edits; initialized from either flavour's draft, freely editable. */
-type WizardForm = { id: string; displayName: string; description: string; body: string };
+type WizardForm = { id: string; displayName: string; description: string; antiJob: string; body: string };
 
 const formOf = (analysis: ProjectAnalysis): WizardForm => ({
   id: analysis.draft.id,
   displayName: analysis.draft.displayNameCandidates[0] ?? analysis.profile.projectName ?? '',
   description: analysis.draft.description,
+  antiJob: '',
   body: analysis.draft.body,
 });
 
@@ -136,6 +137,7 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
       id: draft.id,
       displayName: draft.displayNameCandidates[0] ?? '',
       description: draft.description,
+      antiJob: draft.antiJob.join('\n'),
       body: draft.body,
     });
     setNameCandidates(draft.displayNameCandidates);
@@ -168,10 +170,15 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
     setCreating(true);
     setError(undefined);
     try {
+      const antiJob = form.antiJob
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
       const answer = await positionBridge.createPosition.invoke({
         id: form.id.trim(),
         displayName: form.displayName.trim(),
         description: form.description.trim(),
+        ...(antiJob.length > 0 ? { antiJob } : {}),
         body: form.body,
       });
       if (answer.ok === false) {
@@ -394,6 +401,17 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
                 value={form.description}
                 autoSize={{ minRows: 2, maxRows: 4 }}
                 onChange={(value) => setForm({ ...form, description: value })}
+              />
+            </div>
+            <div>
+              <div className='mb-6px text-13px font-500 text-t-primary'>{t('positions.wizard.antiJobLabel')}</div>
+              <Input.TextArea
+                data-testid='position-creation-antijob'
+                aria-label={t('positions.wizard.antiJobLabel')}
+                value={form.antiJob}
+                autoSize={{ minRows: 2, maxRows: 4 }}
+                placeholder={t('positions.wizard.antiJobPlaceholder')}
+                onChange={(value) => setForm({ ...form, antiJob: value })}
               />
             </div>
             <div>
