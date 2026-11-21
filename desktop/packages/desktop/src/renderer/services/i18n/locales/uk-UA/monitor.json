@@ -25,6 +25,7 @@
     "title": "Групові чати",
     "none": "Групових чатів ще немає.",
     "todo": "Завдань {{count}}",
+    "unclaimed": "Невзятих {{count}}",
     "inProgress": "У роботі {{count}}",
     "done": "Готово {{count}}",
     "ttl": "Lifecycle: {{days}}d left",

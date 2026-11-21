@@ -71,6 +71,19 @@
   color: var(--color-text-3);
 }
 
+/* A claimable 「待领」 task: still nobody's work, open for a member to take. */
+.pillClaimable {
+  background: transparent;
+  color: rgb(var(--primary-6));
+  border: 1px dashed rgb(var(--primary-6));
+}
+
+/* An ownerless task held back by an open dependency: visible but not
+   claimable, so the card reads dimmed until the blocker clears. */
+.cardClaimBlocked {
+  opacity: 0.72;
+}
+
 .pillProgress {
   background: rgb(var(--warning-1));
   color: rgb(var(--warning-6));

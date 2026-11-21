@@ -25,6 +25,7 @@
     "title": "گفتگوهای گروهی",
     "none": "هنوز گفتگوی گروهی وجود ندارد.",
     "todo": "در انتظار {{count}}",
+    "unclaimed": "بدون مسئول {{count}}",
     "inProgress": "در حال انجام {{count}}",
     "done": "انجام‌شده {{count}}",
     "ttl": "Lifecycle: {{days}}d left",

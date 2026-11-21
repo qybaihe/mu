@@ -88,13 +88,13 @@ const work = (slotId: string, state: ITeamSlotWork['state'], queued = 0): ITeamS
   team_run_id: null,
 });
 
-const task = (id: string, owner: string, status: string, updatedAt: number): ITeamTaskItem => ({
+const task = (id: string, owner: string | undefined, status: string, updatedAt: number, blockedBy: string[] = []): ITeamTaskItem => ({
   id,
   team_id: 't1',
   subject: `任务-${id}`,
   status,
   owner,
-  blocked_by: [],
+  blocked_by: blockedBy,
   blocks: [],
   created_at: 1,
   updated_at: updatedAt,
@@ -242,7 +242,31 @@ describe('teamCardsOf', () => {
       slotWork: new Map(),
       now: 0,
     });
-    expect(wall.active[0].counts).toEqual({ todo: 2, inProgress: 1, done: 1 });
+    expect(wall.active[0].counts).toEqual({ todo: 2, inProgress: 1, done: 1, unclaimed: 0 });
+  });
+
+  it('unclaimed counts ownerless open unblocked tasks; a blocked ownerless one does not advertise', () => {
+    const teamA = team('t1', [assistant('s-1', '货代', 'leader')]);
+    const blocker = task('blk', 's-1', 'in_progress', 9);
+    const wall = teamCardsOf({
+      roster: [rosterEntry(teamA, false)],
+      tasksByTeam: new Map([
+        [
+          't1',
+          [
+            task('free', undefined, 'pending', 1), // ownerless + open + unblocked → 待领
+            task('held', undefined, 'pending', 2, ['blk']), // ownerless but blocked → backlog, not claimable
+            task('took', undefined, 'in_progress', 3), // ownerless but already moving
+            task('gone', undefined, 'done', 4), // ownerless terminal
+            task('mine', 's-1', 'pending', 5), // owned
+            blocker,
+          ],
+        ],
+      ]),
+      slotWork: new Map(),
+      now: 0,
+    });
+    expect(wall.active[0].counts).toEqual({ todo: 3, inProgress: 2, done: 1, unclaimed: 1 });
   });
 
   it('the wall splits retired from active, a running team first', () => {

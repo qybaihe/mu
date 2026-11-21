@@ -20,6 +20,7 @@ import ThemedLogo from '@/renderer/components/agent/ThemedLogo';
 import type { ITeamTaskItem, TeamAssistant } from '@/common/types/team/teamTypes';
 import {
   effectiveTaskColumn,
+  isClaimableTask,
   nameOfSlot,
   terminalKindOf,
   type TaskBoardColumn,
@@ -37,10 +38,14 @@ const PILL_CLASS: Record<TaskBoardColumn, string> = {
   done: styles.pillDone,
 };
 
-const pillLabelKey = (column: TaskBoardColumn, terminal: 'done' | 'cancelled' | 'failed' | undefined): string => {
+const pillLabelKey = (
+  column: TaskBoardColumn,
+  terminal: 'done' | 'cancelled' | 'failed' | undefined,
+  claimable: boolean
+): string => {
   if (terminal === 'cancelled') return 'team.taskCard.cancelled';
   if (terminal === 'failed') return 'team.taskCard.failed';
-  if (column === 'todo') return 'team.taskCard.status.todo';
+  if (column === 'todo') return claimable ? 'team.taskCard.status.claimable' : 'team.taskCard.status.todo';
   if (column === 'in_progress') return 'team.taskCard.status.inProgress';
   if (column === 'review') return 'team.taskCard.status.review';
   if (column === 'blocked') return 'team.taskCard.status.blocked';
@@ -79,6 +84,8 @@ const TeamTaskCard: React.FC<{
   const [open, setOpen] = useState(() => openTaskIds.has(task.id));
   const column = effectiveTaskColumn(task, tasks);
   const terminal = terminalKindOf(task);
+  const claimable = isClaimableTask(task, tasks);
+  const claimBlocked = !task.owner && column === 'blocked';
   const ownerName = task.owner ? nameOfSlot(task.owner, members) || task.owner : undefined;
   const member = task.owner ? members.find((candidate) => candidate.slot_id === task.owner) : undefined;
   const language = i18n?.language ?? 'en';
@@ -103,9 +110,10 @@ const TeamTaskCard: React.FC<{
 
   return (
     <div
-      className={styles.card}
+      className={`${styles.card} ${claimBlocked ? styles.cardClaimBlocked : ''}`}
       data-testid='team-task-card'
       data-task-status={terminal ?? column}
+      data-claimable={claimable ? 'true' : undefined}
       data-task-id={task.id}
     >
       <Button
@@ -120,8 +128,12 @@ const TeamTaskCard: React.FC<{
         <span className={styles.subject} dir='auto'>
           {task.subject}
         </span>
-        <span className={`${styles.pill} ${PILL_CLASS[column]} ${column === 'in_progress' ? styles.pillLive : ''}`}>
-          {t(pillLabelKey(column, terminal))}
+        <span
+          className={`${styles.pill} ${claimable ? styles.pillClaimable : PILL_CLASS[column]} ${
+            column === 'in_progress' ? styles.pillLive : ''
+          }`}
+        >
+          {t(pillLabelKey(column, terminal, claimable))}
         </span>
         {hasDetails ? (
           <Right theme='outline' size='12' className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`} />
@@ -138,6 +150,10 @@ const TeamTaskCard: React.FC<{
             {ownerName ? (
               <span className={styles.metaRow}>
                 {t('team.taskCard.owner')}: {ownerName}
+              </span>
+            ) : claimBlocked ? (
+              <span className={styles.metaRow} data-testid='task-claim-blocked'>
+                {t('team.taskCard.unassigned')} · {t('team.taskCard.blockedClaim')}
               </span>
             ) : (
               <span className={styles.metaRow}>{t('team.taskCard.unassigned')}</span>

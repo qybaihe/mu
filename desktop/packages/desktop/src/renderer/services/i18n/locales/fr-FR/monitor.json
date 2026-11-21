@@ -25,6 +25,7 @@
     "title": "Discussions de groupe",
     "none": "Pas encore de discussion de groupe.",
     "todo": "À faire {{count}}",
+    "unclaimed": "Sans porteur {{count}}",
     "inProgress": "En cours {{count}}",
     "done": "Terminé {{count}}",
     "ttl": "Lifecycle: {{days}}d left",

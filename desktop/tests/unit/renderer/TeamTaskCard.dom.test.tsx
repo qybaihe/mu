@@ -137,4 +137,31 @@ describe('TeamTaskCard', () => {
     await userEvent.click(screen.getByTestId('team-task-card-header'));
     expect(screen.getByTestId('team-task-card-body')).toHaveTextContent('team.taskCard.unassigned');
   });
+
+  it('labels an ownerless open task as claimable 待领', () => {
+    renderCard({ id: 't-free', owner: undefined });
+    const card = screen.getByTestId('team-task-card');
+    expect(card).toHaveTextContent('team.taskCard.status.claimable');
+    expect(card.getAttribute('data-claimable')).toBe('true');
+    expect(card).not.toHaveTextContent('team.taskCard.blockedClaim');
+  });
+
+  it('dims an ownerless blocked task and says it is not claimable yet', async () => {
+    const blocker = task({ id: 't-blk', subject: 'blocker source', status: 'pending' });
+    const held = task({ id: 't-held', owner: undefined, blocked_by: ['t-blk'] });
+    render(
+      <TeamTaskCard
+        task={held}
+        tasks={[blocker, held]}
+        members={[member('slot-a', 'Captain')]}
+        cyclicBlockerIds={new Set()}
+      />
+    );
+    const card = screen.getByTestId('team-task-card');
+    expect(card.getAttribute('data-task-status')).toBe('blocked');
+    expect(card.getAttribute('data-claimable')).toBe(null);
+    expect(card).toHaveTextContent('team.taskCard.status.blocked');
+    await userEvent.click(screen.getByTestId('team-task-card-header'));
+    expect(screen.getByTestId('task-claim-blocked')).toHaveTextContent('team.taskCard.blockedClaim');
+  });
 });

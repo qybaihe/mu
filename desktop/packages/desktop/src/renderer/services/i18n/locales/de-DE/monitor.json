@@ -25,6 +25,7 @@
     "title": "Gruppenchats",
     "none": "Noch keine Gruppenchats.",
     "todo": "Offen {{count}}",
+    "unclaimed": "Unbeansprucht {{count}}",
     "inProgress": "In Arbeit {{count}}",
     "done": "Fertig {{count}}",
     "ttl": "Lifecycle: {{days}}d left",

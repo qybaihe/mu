@@ -352,6 +352,11 @@ const TeamWallCard: React.FC<{
         </div>
         <div className='flex items-center gap-8px text-12px text-t-tertiary'>
           <span>{t('monitor.teams.todo', { count: card.counts.todo })}</span>
+          {card.counts.unclaimed > 0 ? (
+            <span className='text-primary' data-testid={`monitor-team-${entry.team.id}-unclaimed`}>
+              {t('monitor.teams.unclaimed', { count: card.counts.unclaimed })}
+            </span>
+          ) : null}
           <span>{t('monitor.teams.inProgress', { count: card.counts.inProgress })}</span>
           <span>{t('monitor.teams.done', { count: card.counts.done })}</span>
           <span className='flex-1' />

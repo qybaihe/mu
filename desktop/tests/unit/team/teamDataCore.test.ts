@@ -11,6 +11,7 @@ import {
   dependencyEdgesOf,
   effectiveTaskColumn,
   filterSearchHitsToTeam,
+  isClaimableTask,
   nameOfSlot,
   searchTermsOf,
   terminalKindOf,
@@ -129,6 +130,43 @@ describe('effectiveTaskColumn', () => {
   it('ignores blocked_by ids naming tasks outside the set', () => {
     const lonely = task({ id: 'l', status: 'in_progress', blocked_by: ['not-there'] });
     expect(effectiveTaskColumn(lonely, [lonely])).toBe('in_progress');
+  });
+});
+
+describe('isClaimableTask', () => {
+  it('an ownerless open task with no open dependency is claimable 待领', () => {
+    const t = task({ owner: undefined, status: 'pending' });
+    expect(isClaimableTask(t, [t])).toBe(true);
+  });
+
+  it('an owned task is never claimable, whatever its column', () => {
+    const t = task({ owner: 'slot-a', status: 'pending' });
+    expect(isClaimableTask(t, [t])).toBe(false);
+  });
+
+  it('an ownerless task held back by an open blocker is not claimable', () => {
+    const blocker = task({ id: 'blk', status: 'in_progress' });
+    const t = task({ owner: undefined, blocked_by: ['blk'] });
+    expect(isClaimableTask(t, [blocker, t])).toBe(false);
+  });
+
+  it('an ownerless task whose blockers all ended returns to claimable', () => {
+    const blocker = task({ id: 'blk', status: 'completed' });
+    const t = task({ owner: undefined, blocked_by: ['blk'] });
+    expect(isClaimableTask(t, [blocker, t])).toBe(true);
+  });
+
+  it('an ownerless task already moving or finished is not a fresh claim', () => {
+    const moving = task({ owner: undefined, status: 'in_progress' });
+    const finished = task({ owner: undefined, status: 'done' });
+    expect(isClaimableTask(moving, [moving])).toBe(false);
+    expect(isClaimableTask(finished, [finished])).toBe(false);
+  });
+
+  it('an ownerless task on a dependency cycle is not claimable', () => {
+    const a = task({ id: 'ca', owner: undefined, blocked_by: ['cb'] });
+    const b = task({ id: 'cb', owner: undefined, blocked_by: ['ca'] });
+    expect(isClaimableTask(a, [a, b])).toBe(false);
   });
 });
 

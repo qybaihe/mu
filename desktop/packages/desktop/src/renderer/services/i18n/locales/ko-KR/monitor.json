@@ -25,6 +25,7 @@
     "title": "그룹 채팅",
     "none": "그룹 채팅이 아직 없습니다.",
     "todo": "할 일 {{count}}",
+    "unclaimed": "미배정 {{count}}",
     "inProgress": "진행 중 {{count}}",
     "done": "완료 {{count}}",
     "ttl": "Lifecycle: {{days}}d left",

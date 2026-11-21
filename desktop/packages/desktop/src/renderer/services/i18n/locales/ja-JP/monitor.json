@@ -25,6 +25,7 @@
     "title": "グループチャット",
     "none": "グループチャットはまだありません。",
     "todo": "未着手 {{count}}",
+    "unclaimed": "未割当 {{count}}",
     "inProgress": "進行中 {{count}}",
     "done": "完了 {{count}}",
     "ttl": "Lifecycle: {{days}}d left",

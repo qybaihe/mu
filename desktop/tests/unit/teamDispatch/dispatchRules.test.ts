@@ -68,15 +68,41 @@ describe('planDispatchSeed', () => {
   });
 });
 
-describe('the v2 sections: wrap-up ledger and dedup gate', () => {
+describe('the v2/v3 sections: gating, claiming, wrap-up ledger and dedup gate', () => {
   it('binds every member, not just the lead, and no longer tells teammates to ignore the file', () => {
-    expect(TEAM_DISPATCH_RULES_VERSION).toBe(2);
+    expect(TEAM_DISPATCH_RULES_VERSION).toBe(3);
     expect(TEAM_DISPATCH_RULES_BODY).not.toContain('Teammate 读到时忽略本文件');
-    expect(TEAM_DISPATCH_RULES_BODY).toContain('「收尾落账」与「新项目/新岗位去重」两节约束全体成员');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain(
+      '「依赖门控与受阻任务」「待领任务与空闲主动认领」「完成自回查与收尾落账」「新项目/新岗位去重」各节约束全体成员'
+    );
+  });
+
+  it('v3 gates dependencies: the lead never assigns a blocked task, members never touch one', () => {
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('依赖门控与受阻任务（全体成员，硬规则）');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('**lead 不派受阻任务**');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('**成员不碰受阻任务**');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('受阻任务绝不认领、绝不 `team_task_update` 它的 owner/status');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('后端不拦依赖');
+  });
+
+  it('v3 allows ownerless 待领 tasks and teaches idle members to claim by duty', () => {
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('待领任务与空闲主动认领（全体成员，硬规则）');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('可不带 owner 建为待领任务');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('没有 in_progress 任务');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('播报一句「我领了 <任务名>」');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('职责不匹配 → 不碰不抢');
+  });
+
+  it('v3 requires a completion self-check before any completed mark', () => {
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('完成自回查与收尾落账（全体成员，硬规则）');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('任一不通过不许标完成');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('**产出存在**');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('任何一个不存在 → 不标 completed');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('**下游解除**');
   });
 
   it('teaches the member ledger: project-root HANDOFF.md, team-workspace fallback, new-project archive', () => {
-    expect(TEAM_DISPATCH_RULES_BODY).toContain('收尾落账（全体成员，硬规则）');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('完成自回查与收尾落账（全体成员，硬规则）');
     expect(TEAM_DISPATCH_RULES_BODY).toContain('~/.mu/agent/agents/<槽位名>.md');
     expect(TEAM_DISPATCH_RULES_BODY).toContain('追加**写入该项目根的 `HANDOFF.md`');
     expect(TEAM_DISPATCH_RULES_BODY).toContain('LESSON: ');
@@ -99,7 +125,7 @@ describe('the v2 sections: wrap-up ledger and dedup gate', () => {
     const plan = planDispatchSeed(existing);
     expect(plan.changed).toBe(true);
     expect(plan.next).toContain(`<!-- mu-team-dispatch v${TEAM_DISPATCH_RULES_VERSION} -->`);
-    expect(plan.next).toContain('收尾落账（全体成员，硬规则）');
+    expect(plan.next).toContain('完成自回查与收尾落账（全体成员，硬规则）');
     expect(plan.next).toContain('# 用户前言');
     expect(plan.next).toContain('用户后记');
   });

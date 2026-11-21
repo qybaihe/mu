@@ -25,6 +25,7 @@
     "title": "Групповые чаты",
     "none": "Групповых чатов пока нет.",
     "todo": "Задачи {{count}}",
+    "unclaimed": "Незанятых {{count}}",
     "inProgress": "В работе {{count}}",
     "done": "Готово {{count}}",
     "ttl": "Lifecycle: {{days}}d left",

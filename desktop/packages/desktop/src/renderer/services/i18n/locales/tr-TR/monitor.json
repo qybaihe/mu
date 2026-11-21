@@ -25,6 +25,7 @@
     "title": "Grup sohbetleri",
     "none": "Henüz grup sohbeti yok.",
     "todo": "Bekleyen {{count}}",
+    "unclaimed": "Sahipsiz {{count}}",
     "inProgress": "Süren {{count}}",
     "done": "Biten {{count}}",
     "ttl": "Lifecycle: {{days}}d left",

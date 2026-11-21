@@ -25,6 +25,7 @@
     "title": "Chats de grupo",
     "none": "Aún no hay chats de grupo.",
     "todo": "Pendientes {{count}}",
+    "unclaimed": "Sin asignar {{count}}",
     "inProgress": "En curso {{count}}",
     "done": "Hechos {{count}}",
     "ttl": "Lifecycle: {{days}}d left",

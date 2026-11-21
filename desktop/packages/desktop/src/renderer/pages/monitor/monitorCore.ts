@@ -14,7 +14,7 @@
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import { findPositionConversationId } from '@/common/chat/team/positions/positionLibraryCore';
 import type { ITeamSlotWork, ITeamTaskItem } from '@/common/types/team/teamTypes';
-import { boardColumnOf } from '@renderer/pages/team/core/teamDataCore';
+import { boardColumnOf, effectiveTaskColumn } from '@renderer/pages/team/core/teamDataCore';
 import { slotMatchesPosition, type TeamRosterEntry } from '@renderer/pages/team/core/teamIdentity';
 
 /** The team's slot-work map, as the wire store keeps it per team. */
@@ -131,7 +131,7 @@ export type TeamMemberDot = {
   isLead: boolean;
 };
 
-export type TeamProgressCounts = { todo: number; inProgress: number; done: number };
+export type TeamProgressCounts = { todo: number; inProgress: number; done: number; unclaimed: number };
 
 export type TeamCard = {
   entry: TeamRosterEntry;
@@ -155,14 +155,19 @@ export const memberDotOf = (work: ITeamSlotWork | undefined): MemberDotKind => {
 };
 
 /** The task columns the progress bar shows: `review` and `blocked` work is
- *  still waiting to move, so it counts with the backlog (`todo`). */
+ *  still waiting to move, so it counts with the backlog (`todo`). The
+ *  `unclaimed` count is the claimable 「待领」 slice of the backlog — ownerless,
+ *  open and not held back by an open dependency (a blocked ownerless task is
+ *  nobody's to take yet, so it does not advertise as waiting for a claimer). */
 const progressCountsOf = (tasks: readonly ITeamTaskItem[] | undefined): TeamProgressCounts => {
-  const counts = { todo: 0, inProgress: 0, done: 0 };
-  for (const task of tasks ?? []) {
-    const column = boardColumnOf(task);
+  const counts = { todo: 0, inProgress: 0, done: 0, unclaimed: 0 };
+  const list = tasks ?? [];
+  for (const task of list) {
+    const column = effectiveTaskColumn(task, list);
     if (column === 'in_progress') counts.inProgress += 1;
     else if (column === 'done') counts.done += 1;
     else counts.todo += 1;
+    if (!task.owner && column === 'todo') counts.unclaimed += 1;
   }
   return counts;
 };

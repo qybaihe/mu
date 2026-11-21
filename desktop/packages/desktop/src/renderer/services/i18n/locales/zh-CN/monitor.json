@@ -25,6 +25,7 @@
     "title": "群聊",
     "none": "还没有群聊。",
     "todo": "待办 {{count}}",
+    "unclaimed": "待领 {{count}}",
     "inProgress": "进行中 {{count}}",
     "done": "完成 {{count}}",
     "ttl": "生命周期：剩余 {{days}} 天",

@@ -151,6 +151,17 @@ export const effectiveTaskColumn = (task: ITeamTaskItem, tasks: readonly ITeamTa
   return blockedByOpen ? 'blocked' : column;
 };
 
+/**
+ * Whether a task is a claimable 「待领」 one: no owner, still open on `todo`,
+ * and not held back by an open (or cyclic) dependency — the gating rule of
+ * the dispatch rules' claim section, as one derivation the task card, the
+ * monitor counts and the E2E all agree on. An ownerless task sitting in
+ * `review`/`in_progress`/`blocked` is not a fresh claim; a terminal one is
+ * nobody's work anymore.
+ */
+export const isClaimableTask = (task: ITeamTaskItem, tasks: readonly ITeamTaskItem[]): boolean =>
+  !task.owner && effectiveTaskColumn(task, tasks) === 'todo';
+
 /** Display name for a slot id ('user' stays 'user'); unknown ids fall back to the id itself. */
 export const nameOfSlot = (slotId: string | undefined, members: ReadonlyArray<TeamAssistant>): string => {
   if (!slotId) return '';
