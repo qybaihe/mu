@@ -14,10 +14,7 @@ import {
   searchTemplatesIn,
   templateCatalogDirOf,
 } from '@process/services/team/positions/templateCatalogService';
-import {
-  TEMPLATE_CATALOG_REF,
-  TEMPLATE_CATALOG_URL,
-} from '@/common/chat/team/positions/templateCatalogCore';
+import { TEMPLATE_CATALOG_REF, TEMPLATE_CATALOG_URL } from '@/common/chat/team/positions/templateCatalogCore';
 
 /**
  * The template catalog's service half (process/services/team/positions/

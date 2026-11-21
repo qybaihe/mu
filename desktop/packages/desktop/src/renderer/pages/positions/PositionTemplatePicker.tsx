@@ -16,7 +16,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Input, Select } from '@arco-design/web-react';
 import { positionBridge } from '@/common/chat/team/positions/positionBridge';
-import type { TemplateCatalogErrorCode, TemplateCatalogStatus, TemplateEntry } from '@/common/chat/team/positions/templateCatalogCore';
+import type {
+  TemplateCatalogErrorCode,
+  TemplateCatalogStatus,
+  TemplateEntry,
+} from '@/common/chat/team/positions/templateCatalogCore';
 import { draftFromTemplate } from '@/common/chat/team/positions/templateCatalogCore';
 
 /** What adopting one entry hands the wizard: the draft's four fields. */
@@ -150,7 +154,9 @@ const PositionTemplatePicker: React.FC<PositionTemplatePickerProps> = ({ onAdopt
         ) : (
           <>
             <span className='text-warning'>
-              {status?.errorCode !== undefined ? errorText(status.errorCode) : t('positions.wizard.template.unavailable')}
+              {status?.errorCode !== undefined
+                ? errorText(status.errorCode)
+                : t('positions.wizard.template.unavailable')}
             </span>
             <Button
               data-testid='position-template-retry'

@@ -95,7 +95,9 @@ describe('parseTrashManifest / buildTrashManifest', () => {
     expect(parseTrashManifest(JSON.stringify(rows({ trashFile: '..' })))).toEqual([]);
     expect(parseTrashManifest(JSON.stringify(rows({ file: '.' })))).toEqual([]);
     // The well-shaped row beside them survives.
-    expect(parseTrashManifest(`[${good.slice(1, -1)},${JSON.stringify(rows({ trashFile: '../evil.md' })[0])}]`)).toHaveLength(1);
+    expect(
+      parseTrashManifest(`[${good.slice(1, -1)},${JSON.stringify(rows({ trashFile: '../evil.md' })[0])}]`)
+    ).toHaveLength(1);
   });
 
   it('a missing displayName falls back to the name; the grace helpers count down to the purge', () => {

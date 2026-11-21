@@ -111,7 +111,12 @@ async function writeCachedCatalog(
 ): Promise<void> {
   await mkdir(templatesDir, { recursive: true });
   const meta = `${JSON.stringify(
-    { fetched_at: new Date(at).toISOString(), source: TEMPLATE_CATALOG_URL, source_ref: TEMPLATE_CATALOG_REF, count: entries.length },
+    {
+      fetched_at: new Date(at).toISOString(),
+      source: TEMPLATE_CATALOG_URL,
+      source_ref: TEMPLATE_CATALOG_REF,
+      count: entries.length,
+    },
     null,
     2
   )}\n`;

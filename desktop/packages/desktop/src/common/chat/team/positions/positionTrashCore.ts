@@ -33,7 +33,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * manifest is local and hand-editable, and this is the same sanitize-then-refuse
  * gate the teams index and the workspace folders already apply.
  */
-const isSafeBasename = (value: string): boolean => value !== '.' && value !== '..' && !value.includes('/') && !value.includes('\\');
+const isSafeBasename = (value: string): boolean =>
+  value !== '.' && value !== '..' && !value.includes('/') && !value.includes('\\');
 
 /** One quarantined position: the file's place of origin and its delete stamp. */
 export type TrashedPosition = {
