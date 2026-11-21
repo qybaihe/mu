@@ -128,6 +128,14 @@ export const STEWARD_COMPACT_MESSAGE = '[[MU_STEWARD_COMPACT]]';
 
 const PART_SUFFIX = /\s*\(part (\d+)\)\s*$/;
 
+/** What a title's `(part N)` suffix says, when it has one: the chain's base name and the part the title claims. */
+export function parsePartSuffix(title: string): { base: string; part: number } | undefined {
+  const found = PART_SUFFIX.exec(title.trim());
+  if (!found) return undefined;
+  const base = title.trim().slice(0, found.index).trim();
+  return base ? { base, part: Number.parseInt(found[1], 10) } : undefined;
+}
+
 /** Names both sides of the Nth switch: a name already ending `(part 3)` switches to `(part 4)`, a bare name to `(part 1)`. */
 export function partNamingFor(name: string): PartNaming {
   const found = PART_SUFFIX.exec(name.trim());
@@ -135,4 +143,24 @@ export function partNamingFor(name: string): PartNaming {
   const part = found ? Number.parseInt(found[1], 10) + 1 : 1;
   const safeBase = base || 'mu';
   return { oldTitle: `${safeBase} (part ${part})`, newTitle: safeBase, part };
+}
+
+/**
+ * `partNamingFor`, minus collisions: the old part's `(part N)` keeps bumping
+ * while another conversation already holds that exact title. A second switch
+ * off a clean-named part would otherwise rename it `(part 1)` — the same title
+ * the first switch left behind — and the chain's name-parsed dropdown would
+ * show two `part 1` rows. `takenTitles` is every conversation title the backend
+ * lists (the collision is confusing whatever the family); a list that lags or
+ * truncates only degrades back to the plain numbering.
+ */
+export function partNamingAvoiding(name: string, takenTitles: ReadonlyArray<string>): PartNaming {
+  const naming = partNamingFor(name);
+  const taken = new Set(takenTitles.map((title) => title.trim()));
+  let { oldTitle, part } = naming;
+  while (taken.has(oldTitle)) {
+    part += 1;
+    oldTitle = `${naming.newTitle} (part ${part})`;
+  }
+  return { ...naming, oldTitle, part };
 }

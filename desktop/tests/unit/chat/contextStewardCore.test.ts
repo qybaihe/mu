@@ -6,6 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  parsePartSuffix,
+  partNamingAvoiding,
   STEWARD_ABS_CAP_TOKENS,
   checkLineTokens,
   conservativeDecision,
@@ -109,5 +111,37 @@ describe('partNamingFor', () => {
 
   it('keeps a name from collapsing when the base is only a suffix', () => {
     expect(partNamingFor('(part 3)').oldTitle).toBe('mu (part 4)');
+  });
+});
+
+describe('parsePartSuffix', () => {
+  it('reads the suffix a title claims', () => {
+    expect(parsePartSuffix('货代 (part 1)')).toEqual({ base: '货代', part: 1 });
+    expect(parsePartSuffix(' 货代 (part 12) ')).toEqual({ base: '货代', part: 12 });
+  });
+
+  it('returns undefined for a clean name, a mid-name parenthetical, or a bare suffix', () => {
+    expect(parsePartSuffix('货代')).toBeUndefined();
+    expect(parsePartSuffix('报告（终版）')).toBeUndefined();
+    expect(parsePartSuffix('(part 3)')).toBeUndefined();
+  });
+});
+
+describe('partNamingAvoiding', () => {
+  it('keeps the plain numbering when no title collides', () => {
+    expect(partNamingAvoiding('货代', [])).toEqual(partNamingFor('货代'));
+  });
+
+  it('bumps past a taken (part N) and reports the bumped number', () => {
+    expect(partNamingAvoiding('货代', ['货代', '货代 (part 1)'])).toEqual({
+      oldTitle: '货代 (part 2)',
+      newTitle: '货代',
+      part: 2,
+    });
+    expect(partNamingAvoiding('货代', ['货代 (part 1)', '货代 (part 2)']).oldTitle).toBe('货代 (part 3)');
+  });
+
+  it('matches taken titles after trimming — the backend may hand padded names', () => {
+    expect(partNamingAvoiding('货代', [' 货代 (part 1) ']).oldTitle).toBe('货代 (part 2)');
   });
 });

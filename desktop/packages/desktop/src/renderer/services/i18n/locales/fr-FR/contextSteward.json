@@ -1,27 +1,31 @@
 {
-  "contextSteward": {
-    "settings": {
-      "label": "Intendant de contexte",
-      "hint": "Surveille les longues sessions de postes/superviseur/équipes ; au-delà de la ligne de contrôle, compactage sur place ou bascule vers une nouvelle partie",
-      "updateFailed": "Échec de la mise à jour du réglage de l'intendant de contexte"
-    },
-    "compact": {
-      "title": "Intendant de contexte : compacté",
-      "body": "Session compactée sur place. Motif : {reason}"
-    },
-    "switch": {
-      "title": "Intendant de contexte : basculé vers la partie {part}",
-      "body": "La session a été confiée à la nouvelle partie « {target} ». Motif : {reason}"
-    },
-    "continuation": {
-      "title": "Intendant de contexte : la partie {part} continue ici",
-      "body": "Cette partie continue depuis « {source} » ; la précédente reste archivée et consultable."
-    },
-    "details": {
-      "trigger": "Base",
-      "tokens": "Contexte",
-      "part": "Partie {part}",
-      "reason": "Motif"
-    }
+  "settings": {
+    "label": "Intendant de contexte",
+    "hint": "Surveille les longues sessions de postes/superviseur/équipes ; au-delà de la ligne de contrôle, compactage sur place ou bascule vers une nouvelle partie",
+    "updateFailed": "Échec de la mise à jour du réglage de l'intendant de contexte"
+  },
+  "compact": {
+    "title": "Intendant de contexte : compacté",
+    "body": "Session compactée sur place. Motif : {{reason}}"
+  },
+  "switch": {
+    "title": "Intendant de contexte : basculé vers la partie {{part}}",
+    "body": "La session a été confiée à la nouvelle partie « {{target}} ». Motif : {{reason}}",
+    "jump": "Aller à la nouvelle partie"
+  },
+  "continuation": {
+    "title": "Intendant de contexte : la partie {{part}} continue ici",
+    "body": "Cette partie continue depuis « {{source}} » ; la précédente reste archivée et consultable.",
+    "jump": "Revenir à la partie précédente"
+  },
+  "details": {
+    "trigger": "Base",
+    "tokens": "Contexte",
+    "part": "Partie {{part}}",
+    "reason": "Motif"
+  },
+  "partBadge": {
+    "part": "partie {{part}}",
+    "current": "actuelle"
   }
 }

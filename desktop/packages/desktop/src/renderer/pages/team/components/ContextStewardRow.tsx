@@ -16,10 +16,20 @@ import { Popover } from '@arco-design/web-react';
 import { Layers } from '@icon-park/react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { useConversationHistoryContext } from '@renderer/hooks/context/ConversationHistoryContext';
 import type { ContextStewardNote } from '@renderer/pages/team/core/notes/contextStewardNotes';
 
 const ContextStewardRow: React.FC<{ note: ContextStewardNote }> = ({ note }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { conversations } = useConversationHistoryContext();
+  // The counterpart link follows only a conversation the list can still vouch
+  // for: a deleted (or not-yet-synced) part keeps the row as plain text.
+  const jumpable =
+    (note.kind === 'switch' || note.kind === 'continuation') &&
+    note.counterpartId !== undefined &&
+    conversations.some((conversation) => conversation.id === note.counterpartId);
   const percentText =
     note.percent !== undefined && note.percent !== null && Number.isFinite(note.percent)
       ? `${Math.round(note.percent * 100)}%`
@@ -66,7 +76,7 @@ const ContextStewardRow: React.FC<{ note: ContextStewardNote }> = ({ note }) => 
       <div className='text-12px leading-18px text-t-tertiary' data-testid='context-steward-body'>
         {body}
       </div>
-      <div className='flex'>
+      <div className='flex gap-12px'>
         <Popover content={basis} trigger='click' position='top'>
           <span
             className='text-12px leading-18px text-t-quaternary cursor-pointer hover:text-t-secondary'
@@ -75,6 +85,15 @@ const ContextStewardRow: React.FC<{ note: ContextStewardNote }> = ({ note }) => 
             {t('contextSteward.details.trigger')}
           </span>
         </Popover>
+        {jumpable && (
+          <span
+            className='text-12px leading-18px text-t-quaternary cursor-pointer hover:text-t-secondary'
+            data-testid='context-steward-jump'
+            onClick={() => navigate(`/conversation/${note.counterpartId}`)}
+          >
+            {note.kind === 'switch' ? t('contextSteward.switch.jump') : t('contextSteward.continuation.jump')}
+          </span>
+        )}
       </div>
     </div>
   );

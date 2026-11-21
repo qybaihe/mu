@@ -1,27 +1,31 @@
 {
-  "contextSteward": {
-    "settings": {
-      "label": "컨텍스트 관리자",
-      "hint": "포지션/슈퍼바이저/팀의 긴 세션을 지켜보다 체크라인을 넘으면 제자리 압축 또는 새 파트로 전환",
-      "updateFailed": "컨텍스트 관리자 설정 업데이트 실패"
-    },
-    "compact": {
-      "title": "컨텍스트 관리자: 제자리 압축함",
-      "body": "세션을 제자리에서 압축했습니다. 사유: {reason}"
-    },
-    "switch": {
-      "title": "컨텍스트 관리자: 파트 {part}로 전환",
-      "body": "세션을 새 파트 '{target}'(으)로 넘겼습니다. 사유: {reason}"
-    },
-    "continuation": {
-      "title": "컨텍스트 관리자: 파트 {part}가 여기서 이어짐",
-      "body": "이 파트는 '{source}'에서 이어집니다. 이전 파트는 보관되어 언제든 볼 수 있습니다."
-    },
-    "details": {
-      "trigger": "근거",
-      "tokens": "컨텍스트",
-      "part": "파트 {part}",
-      "reason": "사유"
-    }
+  "settings": {
+    "label": "컨텍스트 관리자",
+    "hint": "포지션/슈퍼바이저/팀의 긴 세션을 지켜보다 체크라인을 넘으면 제자리 압축 또는 새 파트로 전환",
+    "updateFailed": "컨텍스트 관리자 설정 업데이트 실패"
+  },
+  "compact": {
+    "title": "컨텍스트 관리자: 제자리 압축함",
+    "body": "세션을 제자리에서 압축했습니다. 사유: {{reason}}"
+  },
+  "switch": {
+    "title": "컨텍스트 관리자: 파트 {{part}}로 전환",
+    "body": "세션을 새 파트 '{{target}}'(으)로 넘겼습니다. 사유: {{reason}}",
+    "jump": "새 part로 이동"
+  },
+  "continuation": {
+    "title": "컨텍스트 관리자: 파트 {{part}}가 여기서 이어짐",
+    "body": "이 파트는 '{{source}}'에서 이어집니다. 이전 파트는 보관되어 언제든 볼 수 있습니다.",
+    "jump": "이전 part로 돌아가기"
+  },
+  "details": {
+    "trigger": "근거",
+    "tokens": "컨텍스트",
+    "part": "파트 {{part}}",
+    "reason": "사유"
+  },
+  "partBadge": {
+    "part": "part {{part}}",
+    "current": "현재"
   }
 }

@@ -26,9 +26,20 @@ vi.mock('react-i18next', () => ({
     },
   }),
 }));
+const navigate = vi.fn();
+vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
+// The history list the jump link checks against; tests swap it per case.
+let knownConversations: Array<{ id: string }> = [];
+vi.mock('@renderer/hooks/context/ConversationHistoryContext', () => ({
+  useConversationHistoryContext: () => ({ conversations: knownConversations }),
+}));
 import ContextStewardRow from '@renderer/pages/team/components/ContextStewardRow';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  navigate.mockClear();
+  knownConversations = [];
+});
 
 const compactNote: ContextStewardNote = {
   id: 'n1',
@@ -85,5 +96,28 @@ describe('ContextStewardRow', () => {
     expect(screen.getByTestId('context-steward-body').textContent).toBe(
       'contextSteward.continuation.body:source=货代 (part 1)'
     );
+  });
+});
+
+describe('ContextStewardRow jump', () => {
+  it('jumps to the counterpart when the list vouches for it', async () => {
+    knownConversations = [{ id: 'c2' }, { id: 'c1' }];
+    render(<ContextStewardRow note={switchNote} />);
+    await userEvent.click(screen.getByTestId('context-steward-jump'));
+    expect(navigate).toHaveBeenCalledWith('/conversation/c2');
+
+    render(<ContextStewardRow note={continuationNote} />);
+    await userEvent.click(screen.getAllByTestId('context-steward-jump')[1]);
+    expect(navigate).toHaveBeenLastCalledWith('/conversation/c1');
+  });
+
+  it('keeps the row plain text when the counterpart is gone or unknown to the list', () => {
+    knownConversations = [{ id: 'c1' }]; // c2 deleted / not synced: the switch row loses its link.
+    const { container } = render(<ContextStewardRow note={switchNote} />);
+    expect(screen.queryByTestId('context-steward-jump')).toBeNull();
+    expect(container.textContent).toContain('contextSteward.switch.body');
+
+    render(<ContextStewardRow note={compactNote} />); // A compact row never carries a link.
+    expect(screen.queryAllByTestId('context-steward-jump')).toHaveLength(0);
   });
 });

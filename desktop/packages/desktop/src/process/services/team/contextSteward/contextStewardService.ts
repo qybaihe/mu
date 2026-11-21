@@ -33,7 +33,7 @@ import {
   checkLineTokens,
   conservativeDecision,
   freshStewardMemory,
-  partNamingFor,
+  partNamingAvoiding,
   standsAtLine,
   type StewardMemory,
   type StewardUsage,
@@ -80,6 +80,8 @@ export type ContextStewardDeps = {
   sendCompact: (conversationId: string) => Promise<void>;
   /** Creates the next part: a fresh conversation carrying the same assistant, workspace and marker. */
   createPart: (conversationId: string, title: string) => Promise<{ id: string }>;
+  /** Every conversation title the backend lists — the collision guard for the old part's `(part N)`. */
+  listConversationTitles: () => Promise<string[]>;
   /** Marks the old part by name (`(part N)`), an explicit user-grade rename. */
   renameConversation: (conversationId: string, name: string) => Promise<void>;
   log: (...args: unknown[]) => void;
@@ -208,7 +210,15 @@ async function runOnce(
 
   // switch: the fresh part first (its creation is the point), the rename after
   // — a part that exists unnamed is recoverable, a name without a part is not.
-  const naming = partNamingFor(conversation.name);
+  // The old part's number skips any title another conversation already holds:
+  // a second switch off a clean-named part would otherwise re-issue `(part 1)`.
+  let titles: string[] = [];
+  try {
+    titles = await deps.listConversationTitles();
+  } catch (error) {
+    deps.log(`[contextSteward] title listing failed (${String(error)}); naming without the collision guard`);
+  }
+  const naming = partNamingAvoiding(conversation.name, titles);
   let part: { id: string };
   try {
     part = await deps.createPart(conversationId, naming.newTitle);
@@ -352,6 +362,11 @@ const prodDeps = (): ContextStewardDeps => ({
   },
   renameConversation: async (conversationId, name) => {
     await httpRequest('PATCH', `/api/conversations/${conversationId}`, { name, name_source: 'user' });
+  },
+  listConversationTitles: async () => {
+    const data = await httpRequest<Record<string, unknown>>('GET', '/api/conversations?limit=200');
+    const items = (data?.items ?? []) as Array<{ name?: unknown }>;
+    return items.map((item) => (typeof item.name === 'string' ? item.name : '')).filter(Boolean);
   },
   log: (...args) => console.log(...args),
 });

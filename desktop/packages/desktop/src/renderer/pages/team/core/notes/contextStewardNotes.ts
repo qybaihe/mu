@@ -14,6 +14,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import type { ContextStewardRunResult } from '@/common/chat/team/contextSteward/contextStewardBridge';
+import type { PartChainLink } from '@/common/chat/team/contextSteward/partChainCore';
 
 /** One steward action as the conversation shows it. `continuation` is the row the NEW part opens with. */
 export type ContextStewardNote = {
@@ -140,6 +141,27 @@ export const appendContextStewardNote = (
 export const resetContextStewardNotesForTest = (): void => {
   nextNoteId = 0;
   persist([]);
+};
+
+/**
+ * Every exact part edge the notes record, for the chain builder
+ * (partChainCore): a switch note in the old part and its continuation twin in
+ * the new one both say the same thing — `from` was renamed `(part N)`, `to` is
+ * the fresh part. localStorage-capped receipts, not a database: eviction
+ * degrades the dropdown, never a wrong jump.
+ */
+export const contextStewardChainLinks = (): PartChainLink[] => {
+  const links: PartChainLink[] = [];
+  for (const note of loadAll()) {
+    if ((note.kind !== 'switch' && note.kind !== 'continuation') || !note.counterpartId) continue;
+    if (typeof note.part !== 'number') continue;
+    links.push(
+      note.kind === 'switch'
+        ? { fromConversationId: note.conversationId, toConversationId: note.counterpartId, part: note.part }
+        : { fromConversationId: note.counterpartId, toConversationId: note.conversationId, part: note.part }
+    );
+  }
+  return links;
 };
 
 /** Test-only: drops the in-memory caches only — what a page reload would re-read from storage. */

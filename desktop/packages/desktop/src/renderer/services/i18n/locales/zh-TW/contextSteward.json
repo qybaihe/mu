@@ -1,27 +1,31 @@
 {
-  "contextSteward": {
-    "settings": {
-      "label": "上下文管家",
-      "hint": "盯守職位/主管/團隊長會話；過檢查線後原地壓縮或換新 part（無損）",
-      "updateFailed": "上下文管家設定更新失敗"
-    },
-    "compact": {
-      "title": "上下文管家：已原地壓縮",
-      "body": "會話已原地壓縮。原因：{reason}"
-    },
-    "switch": {
-      "title": "上下文管家：已換 part {part}",
-      "body": "會話已交接至新 part「{target}」。原因：{reason}"
-    },
-    "continuation": {
-      "title": "上下文管家：part {part} 在此接續",
-      "body": "本 part 自「{source}」接續；早前 part 已歸檔，可隨時回看。"
-    },
-    "details": {
-      "trigger": "依據",
-      "tokens": "上下文",
-      "part": "part {part}",
-      "reason": "原因"
-    }
+  "settings": {
+    "label": "上下文管家",
+    "hint": "盯守職位/主管/團隊長會話；過檢查線後原地壓縮或換新 part（無損）",
+    "updateFailed": "上下文管家設定更新失敗"
+  },
+  "compact": {
+    "title": "上下文管家：已原地壓縮",
+    "body": "會話已原地壓縮。原因：{{reason}}"
+  },
+  "switch": {
+    "title": "上下文管家：已換 part {{part}}",
+    "body": "會話已交接至新 part「{{target}}」。原因：{{reason}}",
+    "jump": "前往新 part"
+  },
+  "continuation": {
+    "title": "上下文管家：part {{part}} 在此接續",
+    "body": "本 part 自「{{source}}」接續；早前 part 已歸檔，可隨時回看。",
+    "jump": "回到先前 part"
+  },
+  "details": {
+    "trigger": "依據",
+    "tokens": "上下文",
+    "part": "part {{part}}",
+    "reason": "原因"
+  },
+  "partBadge": {
+    "part": "part {{part}}",
+    "current": "目前"
   }
 }

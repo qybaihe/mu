@@ -42,6 +42,7 @@ import LegacyReadOnlyConversation from '../platforms/legacy/LegacyReadOnlyConver
 import SingleChatEmptyState from './SingleChatEmptyState';
 import TeamChatSearch from './TeamChatSearch';
 import TeamHeaderIdentity from '@renderer/pages/team/components/TeamHeaderIdentity';
+import PartChainBadge from '@renderer/pages/team/components/PartChainBadge';
 import { stripGroupChatMarker } from '@renderer/pages/team/core/teamIdentity';
 import { useActiveLease } from '../hooks/useActiveLease';
 import { BUILTIN_AGENT, type BuiltinAgent } from '@/common/platform/backendNames';
@@ -221,6 +222,9 @@ const BuiltinAgentConversationPanel: React.FC<{
     sider: <ChatSlider conversation={conversation} />,
     headerExtra: (
       <div className='flex items-center gap-8px'>
+        {(conversation.extra as { position?: string } | undefined)?.position && (
+          <PartChainBadge conversationId={conversation.id} />
+        )}
         <CronJobManager conversation_id={conversation.id} cron_job_id={cronJobId} />
         {!isMobile && (
           <BuiltinAgentModelSelector
@@ -460,6 +464,9 @@ const ChatConversation: React.FC<{
 
   const headerExtraNode = (
     <div className='flex items-center gap-8px'>
+      {conversation && (conversation.extra as { position?: string } | undefined)?.position && (
+        <PartChainBadge conversationId={conversation.id} />
+      )}
       {groupTeamId ? <TeamChatSearch teamId={groupTeamId} /> : null}
       {conversation && (
         <div className='shrink-0'>

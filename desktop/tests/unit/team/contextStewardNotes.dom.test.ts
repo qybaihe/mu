@@ -7,6 +7,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   appendContextStewardNote,
+  contextStewardChainLinks,
   contextStewardNotesOf,
   reloadContextStewardNotesForTest,
   resetContextStewardNotesForTest,
@@ -77,5 +78,25 @@ describe('appendContextStewardNote', () => {
     appendContextStewardNote('c1', compactOutcome);
     reloadContextStewardNotesForTest();
     expect(contextStewardNotesOf('c1')).toHaveLength(1);
+  });
+});
+
+describe('contextStewardChainLinks', () => {
+  it('turns every switch and its continuation twin into the same exact edge', () => {
+    appendContextStewardNote('c1', switchOutcome);
+    appendContextStewardNote('c3', { ...switchOutcome, oldConversationId: 'c3', newConversationId: 'c4', part: 2 });
+    const links = contextStewardChainLinks();
+    // The switch note in c1 and the continuation note in c2 collapse to one edge.
+    expect(links).toEqual([
+      { fromConversationId: 'c1', toConversationId: 'c2', part: 1 },
+      { fromConversationId: 'c1', toConversationId: 'c2', part: 1 },
+      { fromConversationId: 'c3', toConversationId: 'c4', part: 2 },
+      { fromConversationId: 'c3', toConversationId: 'c4', part: 2 },
+    ]);
+  });
+
+  it('yields nothing for compact notes or notes without a counterpart', () => {
+    appendContextStewardNote('c1', compactOutcome);
+    expect(contextStewardChainLinks()).toEqual([]);
   });
 });

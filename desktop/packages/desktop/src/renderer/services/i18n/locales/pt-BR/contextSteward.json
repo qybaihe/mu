@@ -1,27 +1,31 @@
 {
-  "contextSteward": {
-    "settings": {
-      "label": "Zelador de contexto",
-      "hint": "Observa sessões longas de posições/supervisor/equipes; na linha de checagem, compacta no local ou troca para uma nova parte",
-      "updateFailed": "Falha ao atualizar a configuração do zelador de contexto"
-    },
-    "compact": {
-      "title": "Zelador de contexto: compactado",
-      "body": "Sessão compactada no local. Motivo: {reason}"
-    },
-    "switch": {
-      "title": "Zelador de contexto: mudou para a parte {part}",
-      "body": "A sessão foi entregue à nova parte \"{target}\". Motivo: {reason}"
-    },
-    "continuation": {
-      "title": "Zelador de contexto: a parte {part} continua aqui",
-      "body": "Esta parte continua de \"{source}\"; a parte anterior segue arquivada e legível."
-    },
-    "details": {
-      "trigger": "Base",
-      "tokens": "Contexto",
-      "part": "Parte {part}",
-      "reason": "Motivo"
-    }
+  "settings": {
+    "label": "Zelador de contexto",
+    "hint": "Observa sessões longas de posições/supervisor/equipes; na linha de checagem, compacta no local ou troca para uma nova parte",
+    "updateFailed": "Falha ao atualizar a configuração do zelador de contexto"
+  },
+  "compact": {
+    "title": "Zelador de contexto: compactado",
+    "body": "Sessão compactada no local. Motivo: {{reason}}"
+  },
+  "switch": {
+    "title": "Zelador de contexto: mudou para a parte {{part}}",
+    "body": "A sessão foi entregue à nova parte \"{{target}}\". Motivo: {{reason}}",
+    "jump": "Ir para a nova parte"
+  },
+  "continuation": {
+    "title": "Zelador de contexto: a parte {{part}} continua aqui",
+    "body": "Esta parte continua de \"{{source}}\"; a parte anterior segue arquivada e legível.",
+    "jump": "Voltar à parte anterior"
+  },
+  "details": {
+    "trigger": "Base",
+    "tokens": "Contexto",
+    "part": "Parte {{part}}",
+    "reason": "Motivo"
+  },
+  "partBadge": {
+    "part": "parte {{part}}",
+    "current": "atual"
   }
 }

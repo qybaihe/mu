@@ -50,6 +50,7 @@ const baseDeps = (over: Partial<ContextStewardDeps> = {}): ContextStewardDeps & 
       calls.push('createPart');
       return { id: 'new-part' };
     },
+    listConversationTitles: async () => [],
     renameConversation: async (_id, name) => {
       calls.push(`rename:${name}`);
     },
@@ -113,6 +114,26 @@ describe('the decision and its lossless direction', () => {
     expect(deps.calls).toEqual(['createPart', 'rename:货代 (part 1)']);
     expect(states.get('conv-1')?.watermark).toBe(160_000);
     expect(states.has('new-part')).toBe(false); // The fresh part starts with fresh memory.
+  });
+
+  it('bumps the old part number past a title another conversation already holds', async () => {
+    const states = new Map<string, StewardMemory>();
+    const deps = baseDeps({ listConversationTitles: async () => ['货代', '货代 (part 1)'] });
+    const answer = await run(deps, states, 'conv-1');
+    expect(answer).toMatchObject({ action: 'switch', oldTitle: '货代 (part 2)', part: 2 });
+    expect(deps.calls).toEqual(['createPart', 'rename:货代 (part 2)']);
+  });
+
+  it('still switches with plain numbering when the title listing fails', async () => {
+    const states = new Map<string, StewardMemory>();
+    const deps = baseDeps({
+      listConversationTitles: async () => {
+        throw new Error('list down');
+      },
+    });
+    const answer = await run(deps, states);
+    expect(answer).toMatchObject({ action: 'switch', oldTitle: '货代 (part 1)', part: 1 });
+    expect(deps.calls).toEqual(['createPart', 'rename:货代 (part 1)']);
   });
 
   it('switches when the engine cannot answer at all — the lossless fallback', async () => {
