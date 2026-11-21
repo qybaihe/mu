@@ -87,6 +87,15 @@
         "customer-sales": "客户销售",
         "inbox-calendar": "邮件日历"
       }
+    },
+    "thinkingLabel": "默认思考档（可选）",
+    "thinkingPlaceholder": "不选=不声明（会话保持自己的档位）",
+    "thinkingBadge": "默认思考档：{{level}}",
+    "thinking": {
+      "off": "关",
+      "low": "低",
+      "medium": "中",
+      "high": "高"
     }
   }
 }

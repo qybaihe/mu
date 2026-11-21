@@ -123,6 +123,22 @@ describe('appendQuickDecisionNote / quickDecisionNotesOf', () => {
     expect(note).toMatchObject({ kind: 'hint', hintLabels: ['货代(forwarder)', '视频实验室(video-lab)'] });
     expect(note.memberName).toBeUndefined();
   });
+  it('records a thinking-level set with the level the conversation now runs on', () => {
+    const verdict = {
+      action: 'set',
+      level: 'low',
+      reason: '机械',
+      confidence: 0.93,
+      model: 'cheap',
+      durationMs: 610,
+      cached: false,
+    } as const;
+    appendQuickDecisionNote('conv-pos', '把这张表转成 markdown', verdict);
+    const note = quickDecisionNotesOf('conv-pos')[0];
+    expect(note).toMatchObject({ kind: 'thinking', thinkingLevel: 'low', input: '把这张表转成 markdown' });
+    expect(note.memberName).toBeUndefined();
+    expect(note.hintLabels).toBeUndefined();
+  });
 });
 
 describe('shouldAskQuickDecision — the conservative ask boundary', () => {

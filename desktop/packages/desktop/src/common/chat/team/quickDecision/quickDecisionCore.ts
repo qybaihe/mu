@@ -18,6 +18,7 @@
  */
 import { positionLabel, type PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import { isTeamActive, type SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCore';
+import type { ThinkingLevelDecision } from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 
 /** The hard ceiling a decision may take; past it the caller falls back to the full flow. */
 export const QUICK_DECISION_TIMEOUT_MS = 2000;
@@ -34,13 +35,14 @@ export const DECISION_INPUT_LIMIT = 2000;
 /** How many active teams the prompt lists; the reuse answer must pick among the recent ones. */
 const DECISION_TEAMS_LIMIT = 12;
 
-/** The five decision kinds: reuse (A), off-domain (B), group-chat routing (C), dispatch hint (D), context steward (E). */
+/** The six decision kinds: reuse (A), off-domain (B), group-chat routing (C), dispatch hint (D), context steward (E), thinking level (F). */
 export type QuickDecisionKind =
   | 'supervisor-reuse'
   | 'position-domain'
   | 'team-route'
   | 'dispatch-hint'
-  | 'context-steward';
+  | 'context-steward'
+  | 'thinking-level';
 
 /** Point A's answer: reuse one active team, or hand the task to the full supervisor flow. */
 export type SupervisorReuseDecision =
@@ -73,7 +75,8 @@ export type QuickDecisionVerdict =
   | SupervisorReuseDecision
   | PositionDomainDecision
   | TeamRouteDecision
-  | DispatchHintDecision;
+  | DispatchHintDecision
+  | Extract<ThinkingLevelDecision, { action: 'set' }>;
 
 /** One cached verdict: what it decided, and when it stops standing in for a model call. */
 export type QuickDecisionCacheEntry = { verdict: QuickDecisionVerdict; expiresAt: number };

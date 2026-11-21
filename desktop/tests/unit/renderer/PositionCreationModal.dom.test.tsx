@@ -252,6 +252,19 @@ describe('PositionCreationModal', () => {
     });
   });
 
+  it('carries a picked default thinking level onto the create call, and none when left empty', async () => {
+    await openAndPick();
+    fireEvent.click(screen.getByTestId('position-creation-next'));
+    fireEvent.click(screen.getByTestId('position-creation-thinking-select'));
+    // The options are the four levels, localized; the option node carries the raw value.
+    const option = await screen.findByRole('option', { name: /low/i });
+    fireEvent.click(option);
+    fireEvent.click(screen.getByTestId('position-creation-create'));
+    await waitFor(() => {
+      expect(create).toHaveBeenCalledWith(expect.objectContaining({ thinkingLevel: 'low' }));
+    });
+  });
+
   it('shows the failure and stays open when the write is refused', async () => {
     create = vi.fn(async () => ({ ok: false, error: 'A library file of that id already exists — pick another id' }));
     await openAndPick();

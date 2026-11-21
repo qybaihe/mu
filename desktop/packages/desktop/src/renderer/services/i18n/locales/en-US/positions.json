@@ -87,6 +87,15 @@
         "customer-sales": "Customer & sales",
         "inbox-calendar": "Inbox & calendar"
       }
+    },
+    "thinkingLabel": "Default thinking level (optional)",
+    "thinkingPlaceholder": "None = no declaration (sessions keep their own)",
+    "thinkingBadge": "Default thinking: {{level}}",
+    "thinking": {
+      "off": "off",
+      "low": "low",
+      "medium": "medium",
+      "high": "high"
     }
   }
 }

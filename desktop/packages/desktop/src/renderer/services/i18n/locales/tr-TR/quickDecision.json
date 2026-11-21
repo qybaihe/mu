@@ -30,5 +30,15 @@
   "hint": {
     "title": " Hızlı karar: görev ipucu eklendi",
     "body": "Ön eşleşen aday konumlar {{positions}}, yöneticinin doğrulaması için ipucu satırı olarak eklendi. {{reason}}"
+  },
+  "thinking": {
+    "title": "Hızlı karar: düşünme «{{level}}» seviyesine ayarlandı",
+    "body": "Bu görev, konuşmada bu düşünme seviyesiyle çalışıyor. {{reason}}",
+    "level": {
+      "off": "kapalı",
+      "low": "düşük",
+      "medium": "orta",
+      "high": "yüksek"
+    }
   }
 }

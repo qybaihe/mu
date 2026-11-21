@@ -87,6 +87,15 @@
         "customer-sales": "顧客・営業",
         "inbox-calendar": "メール・カレンダー"
       }
+    },
+    "thinkingLabel": "既定の思考レベル（任意）",
+    "thinkingPlaceholder": "未選択＝宣言なし（会話の設定を維持）",
+    "thinkingBadge": "既定思考レベル：{{level}}",
+    "thinking": {
+      "off": "オフ",
+      "low": "低",
+      "medium": "中",
+      "high": "高"
     }
   }
 }

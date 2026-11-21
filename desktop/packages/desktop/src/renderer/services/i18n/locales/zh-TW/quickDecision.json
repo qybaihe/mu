@@ -30,5 +30,15 @@
   "hint": {
     "title": "快速決策：分派提示已注入",
     "body": "已預匹配候選崗 {{positions}}，作為提示行隨任務發給主管核對。{{reason}}"
+  },
+  "thinking": {
+    "title": "快速決策：思考檔已調至「{{level}}」",
+    "body": "按任務複雜度把本會話思考檔調到該檔位後開工。{{reason}}",
+    "level": {
+      "off": "關",
+      "low": "低",
+      "medium": "中",
+      "high": "高"
+    }
   }
 }

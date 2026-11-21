@@ -15,9 +15,10 @@ import type {
   QuickDecisionHintParams,
   QuickDecisionRouteParams,
   QuickDecisionRouteTeamParams,
+  QuickDecisionThinkingParams,
 } from '@/common/chat/team/quickDecision/quickDecisionBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
-import { routeQuickDecision, routeTeamMessage, dispatchHintFor } from './quickDecisionService';
+import { routeQuickDecision, routeTeamMessage, dispatchHintFor, thinkingLevelFor } from './quickDecisionService';
 
 export {
   routeQuickDecision,
@@ -26,6 +27,8 @@ export {
   routeTeamMessageIn,
   dispatchHintFor,
   dispatchHintIn,
+  thinkingLevelFor,
+  thinkingLevelIn,
   contextStewardDecision,
   contextStewardDecisionIn,
   resetQuickDecisionStateForTest,
@@ -52,4 +55,7 @@ export function initQuickDecisionBridge(): void {
     result(() => routeTeamMessage(params))
   );
   quickDecisionBridge.dispatchHint.provider((params: QuickDecisionHintParams) => result(() => dispatchHintFor(params)));
+  quickDecisionBridge.thinkingLevel.provider((params: QuickDecisionThinkingParams) =>
+    result(() => thinkingLevelFor(params))
+  );
 }

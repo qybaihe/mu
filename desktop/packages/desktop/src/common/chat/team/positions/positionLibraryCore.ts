@@ -27,6 +27,10 @@
  * the position — plus one universal fallback every position carries.
  */
 import { userPortraitSectionLines } from '@/common/chat/team/positions/userPortraitCore';
+import {
+  parsePositionThinkingField,
+  type PositionThinkingLevel,
+} from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 
 /** One position of the user's position library, as the roster shows it. */
 export type PositionInfo = {
@@ -50,6 +54,14 @@ export type PositionInfo = {
    * the universal fallback alone.
    */
   antiJob?: readonly string[];
+  /**
+   * Frontmatter `thinking`: the thinking level the position's sessions and
+   * team slots start on (`off`/`low`/`medium`/`high`, see
+   * thinkingLevelCore). Optional — an absent or unknown value means no
+   * declaration: nothing is applied and the conversation keeps whatever it
+   * runs on.
+   */
+  thinkingLevel?: PositionThinkingLevel;
 };
 
 /** The conversation-extra key that binds a conversation to one position. */
@@ -136,7 +148,8 @@ export function parsePositionDocument(fileName: string, content: string): Positi
   const projectRoot = asTrimmedString(PROJECT_ROOT_RE.exec(content)?.[1]);
   const displayName = asTrimmedString(fields.get('display_name')) ?? name;
   const antiJob = parseAntiJobField(frontmatterLines, fields);
-  return { name, displayName, description, projectRoot, body, antiJob };
+  const thinkingLevel = parsePositionThinkingField(fields.get('thinking'));
+  return { name, displayName, description, projectRoot, body, antiJob, thinkingLevel };
 }
 
 /**

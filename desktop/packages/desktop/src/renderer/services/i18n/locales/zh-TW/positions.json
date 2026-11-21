@@ -87,6 +87,15 @@
         "customer-sales": "客戶銷售",
         "inbox-calendar": "郵件日曆"
       }
+    },
+    "thinkingLabel": "預設思考檔（可選）",
+    "thinkingPlaceholder": "不選=不宣告（會話保持自己的檔位）",
+    "thinkingBadge": "預設思考檔：{{level}}",
+    "thinking": {
+      "off": "關",
+      "low": "低",
+      "medium": "中",
+      "high": "高"
     }
   }
 }

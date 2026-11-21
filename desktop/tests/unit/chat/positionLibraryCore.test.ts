@@ -35,6 +35,21 @@ describe('parsePositionDocument', () => {
     expect(position?.body).not.toContain('---');
   });
 
+  it('parses the frontmatter thinking level; anything absent or unknown declares nothing', () => {
+    const declared = parsePositionDocument(
+      'forwarder.md',
+      libraryFile('forwarder', '货代业务', 'Body.').replace('---\n', '---\nthinking: high\n')
+    );
+    expect(declared?.thinkingLevel).toBe('high');
+    const offByAnyOther = parsePositionDocument(
+      'forwarder.md',
+      libraryFile('forwarder', '货代业务', 'Body.').replace('---\n', '---\nthinking: TURBO\n')
+    );
+    expect(offByAnyOther?.thinkingLevel).toBeUndefined();
+    const plain = parsePositionDocument('forwarder.md', libraryFile('forwarder', '货代业务', 'Body.'));
+    expect(plain?.thinkingLevel).toBeUndefined();
+  });
+
   it('keeps a position without a 项目根 line: the root is optional', () => {
     const position = parsePositionDocument(
       'worker.md',

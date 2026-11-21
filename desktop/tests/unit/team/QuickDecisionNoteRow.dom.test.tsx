@@ -88,6 +88,20 @@ const hintNote: QuickDecisionNote = {
   cached: true,
 };
 
+const thinkingNote: QuickDecisionNote = {
+  id: 'n5',
+  conversationId: 'c-pos',
+  createdAt: 5,
+  kind: 'thinking',
+  input: '把这张表转成 markdown',
+  thinkingLevel: 'low',
+  reason: '机械',
+  confidence: 0.93,
+  model: 'cheap-model',
+  durationMs: 610,
+  cached: false,
+};
+
 describe('QuickDecisionNoteRow', () => {
   it('a route row names the member it reached directly', () => {
     render(<QuickDecisionNoteRow note={routeNote} />);
@@ -102,6 +116,14 @@ describe('QuickDecisionNoteRow', () => {
       'positions=货代(forwarder)、视频实验室(video-lab)'
     );
     expect(screen.getByTestId('quick-decision-row').getAttribute('data-note-kind')).toBe('hint');
+  });
+  it('a thinking row names the level the conversation now runs on', () => {
+    render(<QuickDecisionNoteRow note={thinkingNote} />);
+    // The mocked t() returns the key, so the title carries both the group key and the level-key param.
+    expect(screen.getByTestId('quick-decision-title').textContent).toContain('quickDecision.thinking.title');
+    expect(screen.getByTestId('quick-decision-title').textContent).toContain('level=quickDecision.thinking.level.low');
+    expect(screen.getByTestId('quick-decision-row').getAttribute('data-note-kind')).toBe('thinking');
+    expect(screen.getByTestId('quick-decision-task').textContent).toContain('把这张表转成 markdown');
   });
   it('a reuse row names the team and quotes the task', () => {
     render(<QuickDecisionNoteRow note={reuseNote} />);

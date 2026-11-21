@@ -27,7 +27,7 @@
  */
 
 /** The seeded block's version. Raise it to replace older blocks on open. */
-export const TEAM_DISPATCH_RULES_VERSION = 4;
+export const TEAM_DISPATCH_RULES_VERSION = 5;
 
 /** Closes the app-managed block. */
 export const TEAM_DISPATCH_RULES_END_MARKER = '<!-- /mu-team-dispatch -->';
@@ -73,6 +73,16 @@ export const TEAM_DISPATCH_RULES_BODY = `# 团队 Lead 自动分派守则（Team
 ## 团队扩编（team_spawn_agent）不是分派的替代品
 
 现有成员能力可覆盖的目标，绝不走 staffing 提案回应；只有当任务需要现有成员都不具备的技能时才提案扩编，且仍要先完成当前可分派任务的分派。
+
+## 思考档分派（lead 的权与责，硬规则）
+
+按任务难度给成员设思考档是 lead 的分派职责之一，与选 owner 同级：档位不匹配要么浪费 token 要么误派质量。工具：\`node teams.cjs think --team <队名> --agent <成员名|lead> --level <off|low|medium|high>\`（夹在当前模型支持的档位内自动就近；失败只输出 THINK_FAILED，不阻塞分派）。
+
+- **派任务前设档**：每个 \`team_task_create\`（或把任务交给成员的任何方式）之前，按该任务的难度给承接成员设档：纯机械操作（查一个数/格式转换/转告）＝ off；简单单步（一次查询后作答）＝ low；常规多步（多源查证整理）＝ medium；规划/架构/评审/跨域整合＝ high。岗位说明书（\`~/.mu/agent/agents/<岗位>.md\` frontmatter）声明了 \`thinking: 档位\` 时，以它为默认档，仅当任务难度明显不同才偏离。
+- **内部杂务固定 off**：回执播报、巡检摘要播报、纯转告、纯确认这类不出产出的消息，发送前一律 think --level off。
+- **只调档不换模型**：think 只改思考档位，绝不用于换模型；档位评估拿不准时不动现状（不调）。
+- **新成员首次任务**：从未接过任务的成员 runtime 未醒，think 会答 THINK_FAILED（not ready）——照常分派不阻塞，首次任务用默认档，成员醒后（第二次任务前）再 think 补设。
+- **点名你本人的任务**：你自己开工前同样按难度给自己（lead）设档。
 
 ## 完成自回查与收尾落账（全体成员，硬规则）
 

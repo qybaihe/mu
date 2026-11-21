@@ -87,6 +87,15 @@
         "customer-sales": "مشتریان و فروش",
         "inbox-calendar": "صندوق ورودی و تقویم"
       }
+    },
+    "thinkingLabel": "سطح تفکر پیش‌فرض (اختیاری)",
+    "thinkingPlaceholder": "بدون انتخاب = بیانیه‌ای نیست (گفتگو سطح خود را نگه می‌دارد)",
+    "thinkingBadge": "تفکر پیش‌فرض: {{level}}",
+    "thinking": {
+      "off": "خاموش",
+      "low": "کم",
+      "medium": "متوسط",
+      "high": "زیاد"
     }
   }
 }

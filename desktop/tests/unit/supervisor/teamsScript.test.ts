@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { execFile } from 'node:child_process';
 import {
   copyFileSync,
@@ -44,6 +44,14 @@ const captured: Captured[] = [];
 
 /** The teams the stub has created; each add returns the next one. */
 let createdTeams = 0;
+
+/** What GET /api/conversations/<id>/config-options answers, and the status PUT answers; tests shape these. */
+let configOptionsAnswer: unknown = undefined;
+let configOptionsGetStatus = 200;
+let configPutStatus = 200;
+const configPuts: Array<{ path: string; body: unknown }> = [];
+/** While true, the team config-options GET answers the backend's not-ready 409; the session warmup POST clears it. */
+let memberNotReady = false;
 
 const dataDir = realpathSync(mkdtempSync(join(tmpdir(), 'mu-teams-script-')));
 const script = join(dataDir, 'positions', '_supervisor', 'teams.cjs');
@@ -91,6 +99,42 @@ beforeAll(async () => {
             },
           })
         );
+        return;
+      }
+      if (/^\/api\/teams\/team-\d+$/.test(request.url ?? '') && request.method === 'GET') {
+        const id = (request.url ?? '').split('/').pop();
+        response.end(
+          JSON.stringify({
+            data: {
+              id,
+              agents: [
+                { role: 'lead', assistant_name: '货代', conversation_id: `conv-lead-${createdTeams}` },
+                { role: 'teammate', assistant_name: '货代 2', conversation_id: `conv-mate-${createdTeams}` },
+              ],
+            },
+          })
+        );
+        return;
+      }
+      if (/^\/api\/teams\/team-\d+\/conversations\/[^/]+\/config-options$/.test(request.url ?? '') && request.method === 'GET') {
+        if (memberNotReady) {
+          response.statusCode = 409;
+          response.end(JSON.stringify({ error: 'Team agent runtime is not ready for conversation: x' }));
+          return;
+        }
+        response.statusCode = configOptionsGetStatus;
+        response.end(JSON.stringify(configOptionsAnswer ?? { data: {} }));
+        return;
+      }
+      if (/^\/api\/teams\/team-\d+\/session$/.test(request.url ?? '') && request.method === 'POST') {
+        memberNotReady = false; // the warmup the retry path performs
+        response.end(JSON.stringify({ data: {} }));
+        return;
+      }
+      if (/^\/api\/teams\/team-\d+\/conversations\/[^/]+\/config-options\/[^/]+$/.test(request.url ?? '') && request.method === 'PUT') {
+        configPuts.push({ path: request.url ?? '', body });
+        response.statusCode = configPutStatus;
+        response.end(JSON.stringify({ data: {} }));
         return;
       }
       if (request.url?.startsWith('/api/teams/') && request.url.endsWith('/messages') && request.method === 'POST') {
@@ -589,5 +633,87 @@ describe('teams.cjs under the TEAMS.md write lock', () => {
     expect(answer.status).toBe(0);
     expect(teamsNow().map((team) => team.name)).toContain('排队队');
     expect(existsSync(lockFile)).toBe(false);
+  });
+});
+
+/** The thinking levels a stub conversation offers, as the kyrn adapter reports them. */
+const thinkingOptions = (levels: string[]): unknown => ({
+  data: {
+    config_options: [
+      {
+        id: 'thinking',
+        category: 'thought_level',
+        type: 'select',
+        currentValue: levels[levels.length - 1],
+        options: levels.map((level) => ({ value: level, name: level })),
+      },
+    ],
+  },
+});
+
+describe("teams.cjs think — the lead's level duty (escaped quotes: esbuild rejects raw ones)", () => {
+  beforeEach(async () => {
+    configOptionsAnswer = thinkingOptions(['off', 'low', 'medium', 'high']);
+    configOptionsGetStatus = 200;
+    configPutStatus = 200;
+    configPuts.length = 0;
+    await run(['add', '--name', '档位队', '--positions', 'forwarder,worker']);
+  });
+
+  it('sets a named member slot to the asked level', async () => {
+    const answer = await run(['think', '--team', '档位队', '--agent', '货代 2', '--level', 'low']);
+    expect(answer.status).toBe(0);
+    expect(answer.out).toContain('THINK_SET agent=货代 2 level=low');
+    const put = configPuts.findLast((entry) => entry.path.includes('config-options/thinking'));
+    expect(put?.body).toEqual({ value: 'low' });
+    expect(put?.path).toContain('conv-mate-');
+  });
+
+  it('`lead` names the lead slot', async () => {
+    const answer = await run(['think', '--team', '档位队', '--agent', 'lead', '--level', 'off']);
+    expect(answer.status).toBe(0);
+    expect(answer.out).toContain('THINK_SET agent=货代 level=off');
+    expect(configPuts.findLast((entry) => entry.path.includes('config-options/thinking'))?.path).toContain(
+      'conv-lead-'
+    );
+  });
+
+  it('clamps to the nearest offered level, cheaper first, and says what was asked', async () => {
+    configOptionsAnswer = thinkingOptions(['off', 'medium', 'high']);
+    const answer = await run(['think', '--team', '档位队', '--agent', '货代 2', '--level', 'low']);
+    expect(answer.status).toBe(0);
+    expect(answer.out).toContain('THINK_SET agent=货代 2 level=off (asked=low)');
+    expect(configPuts.findLast((entry) => entry.path.includes('config-options/thinking'))?.body).toEqual({
+      value: 'off',
+    });
+  });
+
+  it('a slot that cannot be graded stays a warn line, never a failed dispatch', async () => {
+    configOptionsGetStatus = 404;
+    const answer = await run(['think', '--team', '档位队', '--agent', '货代 2', '--level', 'low']);
+    expect(answer.status).toBe(0); // non-fatal by contract
+    expect(answer.err).toContain('THINK_FAILED');
+    expect(answer.err).toContain('options-unreadable');
+  });
+
+  it('retries once through the team session warmup when the member runtime is not ready', async () => {
+    // First read answers the backend's not-ready 409; the warmup POST clears
+    // the stub's flag and the retry lands — the lead never sees a cold member as a failure.
+    memberNotReady = true;
+    const answer = await run(['think', '--team', '档位队', '--agent', '货代 2', '--level', 'low']);
+    expect(answer.status).toBe(0);
+    expect(answer.out).toContain('THINK_SET agent=货代 2 level=low');
+    expect(configPuts.findLast((entry) => entry.path.includes('config-options/thinking'))?.body).toEqual({
+      value: 'low',
+    });
+  });
+
+  it('refuses a level outside the four, and a slot no team carries', async () => {
+    const badLevel = await run(['think', '--team', '档位队', '--agent', '货代 2', '--level', 'turbo']);
+    expect(badLevel.status).toBe(1);
+    expect(badLevel.err).toContain('--level must be one of');
+    const ghost = await run(['think', '--team', '档位队', '--agent', '幽灵成员', '--level', 'low']);
+    expect(ghost.status).toBe(1);
+    expect(ghost.err).toContain('no slot named');
   });
 });

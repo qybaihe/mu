@@ -30,5 +30,15 @@
   "hint": {
     "title": " Schnellentscheidung: Zuweisungshinweis angehängt",
     "body": "Vorgematchte Kandidatenpositionen {{positions}} reisen als Hinweiszeile mit, damit der Supervisor sie prüft. {{reason}}"
+  },
+  "thinking": {
+    "title": "Schnellentscheidung: Denken auf „{{level}}“ gestellt",
+    "body": "Die Unterhaltung läuft mit dieser Denkestufe für die Aufgabe. {{reason}}",
+    "level": {
+      "off": "aus",
+      "low": "niedrig",
+      "medium": "mittel",
+      "high": "hoch"
+    }
   }
 }

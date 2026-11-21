@@ -16,6 +16,7 @@
  */
 import { bridge } from '../../../platform/bridge';
 import type { KyrnResult } from '../../../kyrn/errors';
+import type { PositionThinkingLevel } from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 
 /** The send asking for a route: the task as typed, and the conversation's position marker (supervisor or a position id). */
 export type QuickDecisionRouteParams = {
@@ -73,6 +74,22 @@ export type QuickDecisionRouteTeamResult = QuickDecisionDirectResult | QuickDeci
 /** Point D: a supervisor send asking for pre-matched candidate positions. */
 export type QuickDecisionHintParams = { input: string };
 
+/** Point F's ask: one task text whose complexity decides the target session's thinking level. */
+export type QuickDecisionThinkingParams = { input: string };
+
+/** Point F's answer: the level the target conversation should run this task on, or keep the current one. */
+export type QuickDecisionThinkingResult =
+  | {
+      action: 'set';
+      level: PositionThinkingLevel;
+      reason: string;
+      confidence: number;
+      model: string;
+      durationMs: number;
+      cached: boolean;
+    }
+  | { action: 'keep'; reason: string };
+
 /** Point D's answer: the hint line to prefix the task with, or nothing. */
 export type QuickDecisionHintResult =
   | {
@@ -116,5 +133,14 @@ export const quickDecisionBridge = {
    */
   dispatchHint: bridge.buildProvider<KyrnResult<QuickDecisionHintResult>, QuickDecisionHintParams>(
     'quickDecision.dispatchHint'
+  ),
+  /**
+   * Evaluates one task's complexity into one of the four thinking levels
+   * (`off`/`low`/`medium`/`high`). `set` is the caller's cue to switch the
+   * target conversation's thinking option BEFORE the send; `keep` — every
+   * doubt, and an unconfigured engine — leaves the current level untouched.
+   */
+  thinkingLevel: bridge.buildProvider<KyrnResult<QuickDecisionThinkingResult>, QuickDecisionThinkingParams>(
+    'quickDecision.thinkingLevel'
   ),
 };

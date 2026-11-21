@@ -20,7 +20,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Checkbox, Input, Message, Radio } from '@arco-design/web-react';
+import { Button, Checkbox, Input, Message, Radio, Select } from '@arco-design/web-react';
 import classNames from 'classnames';
 import { ipcBridge } from '@/common';
 import { positionBridge } from '@/common/chat/team/positions/positionBridge';
@@ -31,6 +31,10 @@ import {
   type PositionOverlapReason,
 } from '@/common/chat/team/positions/positionProjectProfile';
 import { describeDraft, describeGapQuestions } from '@/common/chat/team/positions/positionDescribeCore';
+import {
+  POSITION_THINKING_LEVELS,
+  type PositionThinkingLevel,
+} from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 import { positionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
 import MuModal from '@renderer/components/base/MuModal';
 import PositionTemplatePicker, { type TemplateDraftResult } from '@renderer/pages/positions/PositionTemplatePicker';
@@ -46,13 +50,22 @@ type PositionCreationModalProps = {
 type WizardMode = 'directory' | 'template' | 'describe';
 
 /** What the review step edits; initialized from either flavour's draft, freely editable. */
-type WizardForm = { id: string; displayName: string; description: string; antiJob: string; body: string };
+type WizardForm = {
+  id: string;
+  displayName: string;
+  description: string;
+  antiJob: string;
+  /** The optional starting thinking level ('' = no declaration, the conversation keeps its own). */
+  thinkingLevel: PositionThinkingLevel | '';
+  body: string;
+};
 
 const formOf = (analysis: ProjectAnalysis): WizardForm => ({
   id: analysis.draft.id,
   displayName: analysis.draft.displayNameCandidates[0] ?? analysis.profile.projectName ?? '',
   description: analysis.draft.description,
   antiJob: '',
+  thinkingLevel: '',
   body: analysis.draft.body,
 });
 
@@ -141,6 +154,7 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
       displayName: draft.displayNameCandidates[0] ?? '',
       description: draft.description,
       antiJob: draft.antiJob.join('\n'),
+      thinkingLevel: '',
       body: draft.body,
     });
     setNameCandidates(draft.displayNameCandidates);
@@ -154,7 +168,14 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
   const adoptDescribe = useCallback(() => {
     const draft = describeDraft(describeText);
     setAnalysis(undefined);
-    setForm({ id: '', displayName: '', description: draft.description, antiJob: '', body: draft.body });
+    setForm({
+      id: '',
+      displayName: '',
+      description: draft.description,
+      antiJob: '',
+      thinkingLevel: '',
+      body: draft.body,
+    });
     setNameCandidates([]);
     setReviewing(true);
   }, [describeText]);
@@ -194,6 +215,7 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
         displayName: form.displayName.trim(),
         description: form.description.trim(),
         ...(antiJob.length > 0 ? { antiJob } : {}),
+        ...(form.thinkingLevel ? { thinkingLevel: form.thinkingLevel } : {}),
         body: form.body,
       });
       if (answer.ok === false) {
@@ -471,6 +493,23 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
                 autoSize={{ minRows: 2, maxRows: 4 }}
                 placeholder={t('positions.wizard.antiJobPlaceholder')}
                 onChange={(value) => setForm({ ...form, antiJob: value })}
+              />
+            </div>
+            <div data-testid='position-creation-thinking'>
+              <div className='mb-6px text-13px font-500 text-t-primary'>{t('positions.wizard.thinkingLabel')}</div>
+              <Select
+                data-testid='position-creation-thinking-select'
+                aria-label={t('positions.wizard.thinkingLabel')}
+                value={form.thinkingLevel || undefined}
+                placeholder={t('positions.wizard.thinkingPlaceholder')}
+                allowClear
+                onChange={(value: PositionThinkingLevel | undefined) =>
+                  setForm({ ...form, thinkingLevel: value ?? '' })
+                }
+                options={POSITION_THINKING_LEVELS.map((level) => ({
+                  value: level,
+                  label: t(`positions.wizard.thinking.${level}`),
+                }))}
               />
             </div>
             <div>

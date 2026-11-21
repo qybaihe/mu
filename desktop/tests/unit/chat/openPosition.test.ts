@@ -57,6 +57,20 @@ describe('positionCreateParams', () => {
       extra: { workspace: 'E:/data/positions/forwarder', custom_workspace: true, position: 'forwarder' },
     });
   });
+
+  it('rides a declared thinking level on the creation override, applied before the first turn', () => {
+    const withLevel: PositionInfo = { ...position, thinkingLevel: 'low' };
+    expect(
+      positionCreateParams(withLevel, 'E:/data/positions/forwarder', { id: 'bare:1', modelId: 'zai/glm' })
+    ).toEqual({
+      name: '货代',
+      assistant: { id: 'bare:1', conversation_overrides: { model: 'zai/glm', thought_level: 'low' } },
+      extra: { workspace: 'E:/data/positions/forwarder', custom_workspace: true, position: 'forwarder' },
+    });
+    // No declaration — no override key: the conversation keeps its own level.
+    const params = positionCreateParams(position, 'E:/data/positions/forwarder', { id: 'bare:1' });
+    expect(params.assistant.conversation_overrides).toBeUndefined();
+  });
 });
 
 describe('openPositionConversation', () => {

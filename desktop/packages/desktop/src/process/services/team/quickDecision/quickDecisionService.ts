@@ -28,6 +28,7 @@ import {
 } from '@/common/chat/team/supervisor/supervisorCore';
 import {
   QUICK_DECISION_CACHE_TTL_MS,
+  QUICK_DECISION_MIN_CONFIDENCE,
   QUICK_DECISION_TIMEOUT_MS,
   activeTeamsForDecision,
   buildContextStewardPrompt,
@@ -51,7 +52,13 @@ import type {
   QuickDecisionRouteParams,
   QuickDecisionRouteResult,
   QuickDecisionRouteTeamResult,
+  QuickDecisionThinkingResult,
 } from '@/common/chat/team/quickDecision/quickDecisionBridge';
+import {
+  buildThinkingLevelPrompt,
+  parseThinkingLevelDecision,
+  type PositionThinkingLevel,
+} from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 import { listSupervisorTeams, reuseSupervisorTeamIn } from '@process/services/team/supervisor';
 import { POSITION_LIBRARY_DIR, scanPositionLibrary } from '@process/services/team/positions/positionService';
 import { getPlatformServices } from '@/common/platform';
@@ -714,3 +721,78 @@ export const dispatchHintFor = (params: { input: string }): Promise<QuickDecisio
 /** Point E's bridge entry: the steward's one question, asked only when a session stands at its line. */
 export const contextStewardDecision = (params: ContextStewardAskParams): Promise<ContextStewardEngineResult> =>
   contextStewardDecisionIn(prodDeps(), state.counters, params);
+
+/**
+ * Point F: one task's complexity as one of the four thinking levels, cached
+ * like the hint — the answer is a function of the task text alone, so a
+ * replayed verdict is as good as a fresh one. `keep` is the majority answer
+ * by design: no model, a malformed answer or a confidence under the bar all
+ * leave the conversation's current level untouched.
+ */
+export async function thinkingLevelIn(
+  deps: QuickDecisionDeps,
+  cache: Map<string, QuickDecisionCacheEntry>,
+  counters: QuickDecisionCounters,
+  params: { input: string }
+): Promise<QuickDecisionThinkingResult> {
+  const model = await resolveModel(deps);
+  if (!model) return { action: 'keep', reason: 'no-model-configured' };
+  const input = params.input.trim();
+  if (!input) return { action: 'keep', reason: 'empty-input' };
+  const key = decisionCacheKey('thinking-level', 'task', input);
+  const startedAt = deps.now();
+
+  const setResult = (
+    verdict: { level: PositionThinkingLevel; reason: string; confidence: number },
+    cached: boolean
+  ): QuickDecisionThinkingResult => ({
+    action: 'set',
+    level: verdict.level,
+    reason: verdict.reason,
+    confidence: verdict.confidence,
+    model: model.use_model,
+    durationMs: deps.now() - startedAt,
+    cached,
+  });
+
+  // Cache hit: the answer is a function of the task text alone, so a fresh
+  // replay is as good as a fresh ask (and costs no round).
+  const hit = cache.get(key);
+  if (isCacheEntryFresh(hit, deps.now()) && hit && hit.verdict.action === 'set') {
+    counters.shortCircuits += 1;
+    logDecision(deps, counters, {
+      action: 'set',
+      kind: 'thinking-level',
+      cached: true,
+      extra: `level=${hit.verdict.level} model=${model.use_model}`,
+    });
+    return setResult(hit.verdict, true);
+  }
+
+  const ask = await askModel(deps, counters, model, 'thinking-level', buildThinkingLevelPrompt(input), startedAt);
+  if (ask.ok === false) return { action: 'keep', reason: ask.reason };
+  const decision = parseThinkingLevelDecision(ask.raw, { minConfidence: QUICK_DECISION_MIN_CONFIDENCE });
+  if (decision.action === 'keep') {
+    counters.fallbacks += 1;
+    logDecision(deps, counters, {
+      action: 'full',
+      kind: 'thinking-level',
+      cached: false,
+      extra: `reason=${decision.reason} model=${model.use_model}`,
+    });
+    return { action: 'keep', reason: decision.reason };
+  }
+  counters.shortCircuits += 1;
+  cache.set(key, { verdict: decision, expiresAt: deps.now() + QUICK_DECISION_CACHE_TTL_MS });
+  logDecision(deps, counters, {
+    action: 'set',
+    kind: 'thinking-level',
+    cached: false,
+    extra: `level=${decision.level} model=${model.use_model} duration=${deps.now() - startedAt}ms confidence=${decision.confidence}`,
+  });
+  return setResult(decision, false);
+}
+
+/** Point F's bridge entry: the send box asks right before a position-bound send. */
+export const thinkingLevelFor = (params: { input: string }): Promise<QuickDecisionThinkingResult> =>
+  thinkingLevelIn(prodDeps(), state.cache, state.counters, params);

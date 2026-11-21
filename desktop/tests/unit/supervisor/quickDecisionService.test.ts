@@ -15,6 +15,7 @@ import {
   routeQuickDecisionIn,
   routeTeamMessageIn,
   dispatchHintIn,
+  thinkingLevelIn,
   type QuickDecisionCounters,
   type QuickDecisionDeps,
   contextStewardDecisionIn,
@@ -580,5 +581,55 @@ describe('contextStewardDecisionIn — point E, the one question the steward ask
       const answer = await ask(baseDeps({ complete: async () => raw }));
       expect(answer.answered).toBe(true);
     }
+  });
+});
+
+describe('thinkingLevelIn — point F, one task, one level', () => {
+  const ask = (deps: QuickDecisionDeps, input = '查一下 CNS 客户') =>
+    thinkingLevelIn(
+      deps,
+      new Map<string, QuickDecisionCacheEntry>(),
+      { shortCircuits: 0, fallbacks: 0, savedTurns: 0 },
+      {
+        input,
+      }
+    );
+
+  it('no model configured answers keep without a round', async () => {
+    const deps = baseDeps({ readSetting: async () => undefined });
+    expect(await ask(deps)).toEqual({ action: 'keep', reason: 'no-model-configured' });
+    expect(deps.calls.complete).toBe(0);
+  });
+
+  it('empty input answers keep without a round', async () => {
+    const deps = baseDeps();
+    expect(await ask(deps, '   ')).toEqual({ action: 'keep', reason: 'empty-input' });
+    expect(deps.calls.complete).toBe(0);
+  });
+
+  it('a malformed or doubtful answer answers keep and counts a fallback', async () => {
+    const deps = baseDeps({ complete: async () => '不想答' });
+    expect(await ask(deps)).toEqual({ action: 'keep', reason: 'unparseable-answer' });
+  });
+
+  it('a confident set answers with the level and caches it', async () => {
+    const deps = baseDeps({
+      complete: async () => '{"action":"set","level":"low","reason":"机械","confidence":0.95}',
+    });
+    const cache = new Map<string, QuickDecisionCacheEntry>();
+    const counters: QuickDecisionCounters = { shortCircuits: 0, fallbacks: 0, savedTurns: 0 };
+    const first = await thinkingLevelIn(deps, cache, counters, { input: '把这张表转成 markdown' });
+    expect(first.action).toBe('set');
+    if (first.action === 'set') {
+      expect(first.level).toBe('low');
+      expect(first.cached).toBe(false);
+      expect(first.model).toBe('cheap');
+    }
+    // The replay is a cache hit — zero model calls.
+    const callsBefore = deps.calls.complete;
+    const second = await thinkingLevelIn(deps, cache, counters, { input: '把这张表转成 markdown' });
+    expect(second.action).toBe('set');
+    if (second.action === 'set') expect(second.cached).toBe(true);
+    expect(deps.calls.complete).toBe(callsBefore);
   });
 });

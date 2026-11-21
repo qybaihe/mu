@@ -21,6 +21,7 @@
  * also build the prompt for and parse.
  */
 import type { PositionInfo } from './positionLibraryCore';
+import type { PositionThinkingLevel } from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 
 /** The context files the analyzer reads, by the name it asks for them. */
 export const PROJECT_CONTEXT_FILES = ['AGENTS.md', 'HANDOFF.md', 'README.md', 'package.json'] as const;
@@ -445,6 +446,8 @@ export function buildPositionDocument(draft: {
   displayName: string;
   description: string;
   antiJob?: readonly string[];
+  /** The optional `thinking` frontmatter level; omitted when the wizard made no choice. */
+  thinkingLevel?: PositionThinkingLevel;
   body: string;
 }): string {
   return [
@@ -453,6 +456,7 @@ export function buildPositionDocument(draft: {
     `display_name: ${oneLine(draft.displayName, 40)}`,
     `description: ${oneLine(draft.description, 200)}`,
     ...antiJobFrontmatterLines(draft.antiJob ?? []),
+    ...(draft.thinkingLevel ? [`thinking: ${draft.thinkingLevel}`] : []),
     '---',
     '',
     draft.body.trimEnd(),

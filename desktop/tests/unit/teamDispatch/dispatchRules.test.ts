@@ -70,7 +70,7 @@ describe('planDispatchSeed', () => {
 
 describe('the v2-v4 sections: gating, claiming, ownership, wrap-up ledger and dedup gate', () => {
   it('binds every member, not just the lead, and no longer tells teammates to ignore the file', () => {
-    expect(TEAM_DISPATCH_RULES_VERSION).toBe(4);
+    expect(TEAM_DISPATCH_RULES_VERSION).toBe(5);
     expect(TEAM_DISPATCH_RULES_BODY).not.toContain('Teammate 读到时忽略本文件');
     expect(TEAM_DISPATCH_RULES_BODY).toContain(
       '「依赖门控与受阻任务」「待领任务与空闲主动认领」「完成自回查与收尾落账」「新项目/新岗位去重」各节约束全体成员'
@@ -136,6 +136,44 @@ describe('the v2-v4 sections: gating, claiming, ownership, wrap-up ledger and de
     expect(plan.changed).toBe(true);
     expect(plan.next).toContain(`<!-- mu-team-dispatch v${TEAM_DISPATCH_RULES_VERSION} -->`);
     expect(plan.next).toContain('完成自回查与收尾落账（全体成员，硬规则）');
+    expect(plan.next).toContain('# 用户前言');
+    expect(plan.next).toContain('用户后记');
+  });
+});
+
+describe('the v5 section: thinking-level dispatch duty', () => {
+  it('names the think tool with its four levels and the clamp behaviour', () => {
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('思考档分派（lead 的权与责，硬规则）');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('teams.cjs think --team');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('<off|low|medium|high>');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('自动就近');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('不阻塞分派');
+  });
+  it('grades the four bars and honours the position default declared in its md', () => {
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('纯机械操作');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('简单单步');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('常规多步');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('规划/架构/评审/跨域整合');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('`thinking: 档位`');
+  });
+  it('pins the chores to off and forbids model switching through think', () => {
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('**内部杂务固定 off**');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('回执播报、巡检摘要播报、纯转告、纯确认');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('**只调档不换模型**');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('拿不准时不动现状');
+  });
+  it('upgrades a live v4 block in place, keeping the surroundings', () => {
+    const v4 = `<!-- mu-team-dispatch v4 -->
+旧版守则正文。
+${TEAM_DISPATCH_RULES_END_MARKER}`;
+    const existing = `# 用户前言
+
+${v4}
+用户后记`;
+    const plan = planDispatchSeed(existing);
+    expect(plan.changed).toBe(true);
+    expect(plan.next).toContain(`<!-- mu-team-dispatch v${TEAM_DISPATCH_RULES_VERSION} -->`);
+    expect(plan.next).toContain('思考档分派（lead 的权与责，硬规则）');
     expect(plan.next).toContain('# 用户前言');
     expect(plan.next).toContain('用户后记');
   });

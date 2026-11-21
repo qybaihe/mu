@@ -87,6 +87,15 @@
         "customer-sales": "Clients & ventes",
         "inbox-calendar": "Boîte & calendrier"
       }
+    },
+    "thinkingLabel": "Niveau de réflexion par défaut (facultatif)",
+    "thinkingPlaceholder": "Aucun = aucune déclaration (la conversation garde le sien)",
+    "thinkingBadge": "Réflexion par défaut : {{level}}",
+    "thinking": {
+      "off": "désactivée",
+      "low": "basse",
+      "medium": "moyenne",
+      "high": "haute"
     }
   }
 }

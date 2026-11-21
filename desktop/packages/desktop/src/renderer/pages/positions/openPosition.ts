@@ -49,14 +49,24 @@ export const positionCreateParams = (
   assistant: { id: string; modelId?: string }
 ): {
   name: string;
-  assistant: { id: string; conversation_overrides?: { model?: string } };
+  assistant: { id: string; conversation_overrides?: { model?: string; thought_level?: string } };
   extra: { workspace: string; custom_workspace: true; position: string };
 } => ({
   // The conversation's display name is the position's; the marker stays the id.
   name: position.displayName,
   assistant: {
     id: assistant.id,
-    ...(assistant.modelId ? { conversation_overrides: { model: assistant.modelId } } : {}),
+    ...(assistant.modelId || position.thinkingLevel
+      ? {
+          conversation_overrides: {
+            ...(assistant.modelId ? { model: assistant.modelId } : {}),
+            // The position's declared thinking level rides the same
+            // creation override the Guid page uses — applied when the runtime
+            // first starts, before the first turn, so no later switch races.
+            ...(position.thinkingLevel ? { thought_level: position.thinkingLevel } : {}),
+          },
+        }
+      : {}),
   },
   extra: { workspace, custom_workspace: true, position: position.name },
 });

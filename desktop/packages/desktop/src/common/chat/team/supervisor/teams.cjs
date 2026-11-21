@@ -20,6 +20,9 @@
  *   send --team X (--file F | --message M)  deliver a task to the team and refresh
  *                                           its lifecycle (the team's own ttlDays;
  *                                           permanent teams never expire)
+ *   think --team X --agent N --level L      set one slot's thinking level (off/low/
+ *                                           medium/high; L clamps to what the slot's
+ *                                           model takes). The lead's dispatch duty.
  *   lesson --position a --text "..."        append one lesson line to the shared
  *                                           ledger ../_shared/LESSONS.md (the wrap-up
  *                                           gate's double write: date|position|one line)
@@ -127,11 +130,12 @@ function positionAliases() {
   const library = process.env.MU_POSITION_LIBRARY || path.join(os.homedir(), '.mu', 'agent', 'agents');
   const aliases = new Map();
   const displayNames = new Map();
+  const thinkingLevels = new Map();
   let files;
   try {
     files = fs.readdirSync(library);
   } catch {
-    return { aliases, displayNames };
+    return { aliases, displayNames, thinkingLevels };
   }
   for (const file of files) {
     if (!file.toLowerCase().endsWith('.md')) continue;
@@ -156,8 +160,10 @@ function positionAliases() {
       aliases.set(`${displayName}(${name})`, name);
       displayNames.set(name, displayName);
     }
+    const thinking = (fields.thinking || '').trim().toLowerCase();
+    if (['off', 'low', 'medium', 'high'].includes(thinking)) thinkingLevels.set(name, thinking);
   }
-  return { aliases, displayNames };
+  return { aliases, displayNames, thinkingLevels };
 }
 
 /** A position's user-facing slot label: its display name when the library has one, else the id. */
@@ -472,6 +478,26 @@ async function cmdAdd(args) {
   }
   await Promise.all(renameJobs);
 
+  // The positions' declared thinking levels (frontmatter `thinking`) ride the
+  // fresh slots — best-effort, per slot, never fatal: a slot whose level
+  // could not be set keeps what its model starts on, and the lead re-sets
+  // per task anyway (the dispatch rules' think duty).
+  const { thinkingLevels } = positionAliases();
+  const defaultJobs = teamAgents.map((agent, index) => {
+    const positionId = positions[Math.min(index, positions.length - 1)];
+    const declared = thinkingLevels.get(positionId);
+    if (!declared || !agent.conversation_id) return Promise.resolve();
+    return (async () => {
+      const result = await setThinkingLevel(team.id, agent.conversation_id, declared);
+      if (result.ok)
+        console.log(
+          `THINK_SET agent=${agent.assistant_name || agent.name || positionId} level=${result.level} (default)`
+        );
+      else console.warn(`THINK_FAILED agent=${positionId} reason=${result.reason} (default)`);
+    })();
+  });
+  await Promise.all(defaultJobs);
+
   const row = {
     name,
     positions,
@@ -553,6 +579,143 @@ function lessonPositionOf(value) {
   return aliases.get(trimmed) || (stripped && aliases.get(stripped[1])) || trimmed;
 }
 
+/** pi's thinking-level order, weakest first — the ladder the clamp walks. */
+const PI_LEVELS = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+const THINK_LEVELS = ['off', 'low', 'medium', 'high'];
+/** One level switch gets this long; past it the duty degrades to a warn line. */
+const THINK_TIMEOUT_MS = 8000;
+
+/** The level nearest the requested one the option offers, stepping toward `off` first (the cheaper direction). */
+function clampLevel(requested, available) {
+  if (!Array.isArray(available) || available.length === 0) return undefined;
+  if (available.includes(requested)) return requested;
+  const rank = PI_LEVELS.indexOf(requested);
+  const offered = PI_LEVELS.filter((level) => available.includes(level));
+  if (offered.length === 0 || rank < 0) return undefined;
+  const lower = [...offered].reverse().find((level) => PI_LEVELS.indexOf(level) < rank);
+  if (lower) return lower;
+  return offered.find((level) => PI_LEVELS.indexOf(level) > rank);
+}
+
+/** The thinking option of one conversation's config options: category `thought_level`, or one of the known ids. */
+function thoughtOptionOf(configOptions) {
+  if (!Array.isArray(configOptions)) return undefined;
+  return configOptions.find(
+    (option) =>
+      option &&
+      (option.category === 'thought_level' || ['thinking', 'thought_level', 'reasoning_effort'].includes(option.id))
+  );
+}
+
+/** One slot of a team by the `--agent` spelling: `lead` names the lead slot, anything else matches the slot's name exactly. */
+function findSlot(teamAgents, agent) {
+  const wanted = String(agent || '').trim();
+  if (!wanted) return undefined;
+  if (wanted === 'lead') return teamAgents.find((a) => a.role === 'lead' || a.role === 'leader');
+  return teamAgents.find((a) => (a.assistant_name || a.name || '') === wanted);
+}
+
+/** Fetch with a timeout, in ms; a slow or dead call rejects (never hangs the caller). */
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Sets one conversation's thinking level through its config options: read the
+ * options, clamp the requested level to what the model takes, PUT the value.
+ * Best-effort by contract — every failure answers `{ok: false}` (never exits,
+ * never throws): a level switch must not break the work around it.
+ */
+async function setThinkingLevel(teamId, conversationId, requested) {
+  // Plain fetch, never `api()`: its failure path exits the process, and a
+  // best-effort duty must survive a dead or slow runtime. The reads and writes
+  // ride the TEAM config-options routes — a team conversation answers the
+  // plain conversation routes with 409 ("use the team runtime session").
+  const request = async (method, apiPath, body) => {
+    const options = { method };
+    if (body !== undefined) {
+      options.headers = { 'Content-Type': 'application/json; charset=utf-8' };
+      options.body = JSON.stringify(body);
+    }
+    const response = await fetchWithTimeout(`${BASE_URL}${apiPath}`, options, THINK_TIMEOUT_MS);
+    const text = await response.text();
+    let json = null;
+    try {
+      json = JSON.parse(text);
+    } catch {}
+    if (!response.ok) throw new Error(`${response.status}: ${(json && json.error) || text.slice(0, 120)}`);
+    return json && typeof json === 'object' ? (json.data ?? json) : null;
+  };
+  let ensured;
+  try {
+    ensured = await request('GET', `/api/teams/${teamId}/conversations/${conversationId}/config-options`);
+  } catch (error) {
+    return { ok: false, reason: `options-unreadable (${error.message})` };
+  }
+  const option = thoughtOptionOf(ensured && (ensured.config_options || ensured));
+  if (!option || !option.id) return { ok: false, reason: 'no-thinking-option' };
+  const offered = (option.options || [])
+    .map((choice) => choice && choice.value)
+    .filter((value) => typeof value === 'string');
+  const level = clampLevel(requested, offered);
+  if (!level) return { ok: false, reason: 'level-not-offered' };
+  try {
+    await request('PUT', `/api/teams/${teamId}/conversations/${conversationId}/config-options/${encodeURIComponent(option.id)}`, {
+      value: level,
+    });
+  } catch (error) {
+    return { ok: false, reason: `set-failed (${error.message})` };
+  }
+  return { ok: true, level, asked: requested };
+}
+
+/** The lead's dispatch duty from the rules: set a slot's thinking level for the task it is about to take. */
+async function cmdThink(args) {
+  const name = String(args.team || '').trim();
+  const agent = String(args.agent || '').trim();
+  const level = String(args.level || '')
+    .trim()
+    .toLowerCase();
+  if (!name) fail('--team is required');
+  if (!agent) fail('--agent is required (a member name, or lead)');
+  if (!THINK_LEVELS.includes(level)) fail(`--level must be one of ${THINK_LEVELS.join('|')}`);
+  const team = findTeam(
+    readTeams().filter((t) => !isDeleted(t)),
+    name
+  );
+  if (!team) fail(`no team named "${name}"`);
+  const answer = await api('GET', `/api/teams/${team.teamId}`);
+  const teamAgents = (answer && (answer.agents || answer.assistants)) || [];
+  const slot = findSlot(teamAgents, agent);
+  if (!slot || !slot.conversation_id) fail(`no slot named "${agent}" on team "${name}" (see team_members)`);
+  let result = await setThinkingLevel(team.teamId, slot.conversation_id, level);
+  // A dormant member answers "runtime is not ready": warm the team session and
+  // retry with a little patience — the member is spawning, not broken (the
+  // lead runs think right before dispatching, so the member wakes anyway).
+  // A still-cold member after the retries stays a warn line, never a failure.
+  for (let attempt = 0; attempt < 3 && !result.ok && /not ready/i.test(String(result.reason)); attempt += 1) {
+    if (attempt === 0) await api('POST', `/api/teams/${team.teamId}/session`);
+    sleepSync(3000);
+    result = await setThinkingLevel(team.teamId, slot.conversation_id, level);
+  }
+  if (result.ok) {
+    console.log(
+      `THINK_SET agent=${slot.assistant_name || slot.name || agent} level=${result.level}${
+        result.asked !== result.level ? ` (asked=${result.asked})` : ''
+      }`
+    );
+  } else {
+    // Non-fatal by contract: a level the slot could not take must never block the dispatch.
+    console.warn(`THINK_FAILED agent=${agent} reason=${result.reason}`);
+  }
+}
+
 /** A local `YYYY-MM-DD` (the ledger's first cell): lessons are read by humans in their own timezone. */
 const localDate = () => {
   const now = new Date();
@@ -596,7 +759,7 @@ async function cmdLesson(args) {
   console.log(`LESSON_ADDED date=${date} position=${position}`);
 }
 
-const COMMANDS = { list: cmdList, match: cmdMatch, add: cmdAdd, send: cmdSend, lesson: cmdLesson };
+const COMMANDS = { list: cmdList, match: cmdMatch, add: cmdAdd, send: cmdSend, think: cmdThink, lesson: cmdLesson };
 
 (async () => {
   const [command, ...rest] = process.argv.slice(2);

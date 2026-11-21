@@ -87,6 +87,15 @@
         "customer-sales": "고객·영업",
         "inbox-calendar": "수신함·캘린더"
       }
+    },
+    "thinkingLabel": "기본 사고 수준(선택)",
+    "thinkingPlaceholder": "선택 안 함 = 선언 안 함(대화 설정 유지)",
+    "thinkingBadge": "기본 사고 수준: {{level}}",
+    "thinking": {
+      "off": "끔",
+      "low": "낮음",
+      "medium": "중간",
+      "high": "높음"
     }
   }
 }

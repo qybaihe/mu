@@ -17,6 +17,7 @@ import type { PositionInfo } from './positionLibraryCore';
 import type { PositionDraft, ProjectProfile } from './positionProjectProfile';
 import type { TemplateCatalogStatus, TemplateEntry } from './templateCatalogCore';
 import type { TrashedPosition } from './positionTrashCore';
+import type { PositionThinkingLevel } from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 
 /** The position's workspace folder, and whether its injected rules file changed. */
 export type PositionWorkspaceResult = { workspace: string; changed: boolean };
@@ -35,6 +36,8 @@ export type CreatePositionParams = {
   displayName: string;
   description: string;
   antiJob?: string[];
+  /** Optional starting thinking level (`off`/`low`/`medium`/`high`); written as the frontmatter `thinking`. */
+  thinkingLevel?: PositionThinkingLevel;
   body: string;
 };
 

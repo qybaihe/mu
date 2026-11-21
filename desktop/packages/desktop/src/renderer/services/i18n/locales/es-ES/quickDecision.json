@@ -30,5 +30,15 @@
   "hint": {
     "title": " Decisión rápida: sugerencia de asignación adjuntada",
     "body": "Posiciones candidatas pre-emparejadas {{positions}} viajan como línea de sugerencia para que el supervisor las verifique. {{reason}}"
+  },
+  "thinking": {
+    "title": "Decisión rápida: reflexión ajustada a «{{level}}»",
+    "body": "La conversación ejecuta esta tarea con ese nivel de reflexión. {{reason}}",
+    "level": {
+      "off": "apagada",
+      "low": "baja",
+      "medium": "media",
+      "high": "alta"
+    }
   }
 }

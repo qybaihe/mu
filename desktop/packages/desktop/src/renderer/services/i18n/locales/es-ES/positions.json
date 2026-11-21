@@ -87,6 +87,15 @@
         "customer-sales": "Clientes y ventas",
         "inbox-calendar": "Bandeja y calendario"
       }
+    },
+    "thinkingLabel": "Nivel de reflexión predeterminado (opcional)",
+    "thinkingPlaceholder": "Ninguno = sin declaración (la conversación conserva el suyo)",
+    "thinkingBadge": "Reflexión predeterminada: {{level}}",
+    "thinking": {
+      "off": "apagada",
+      "low": "baja",
+      "medium": "media",
+      "high": "alta"
     }
   }
 }

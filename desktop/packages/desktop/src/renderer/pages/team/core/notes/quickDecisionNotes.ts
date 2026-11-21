@@ -17,6 +17,7 @@ import type {
   QuickDecisionHintResult,
   QuickDecisionRouteResult,
   QuickDecisionRouteTeamResult,
+  QuickDecisionThinkingResult,
 } from '@/common/chat/team/quickDecision/quickDecisionBridge';
 
 /** One short-circuit as the conversation shows it: what was decided, on what basis, about which task. */
@@ -24,7 +25,7 @@ export type QuickDecisionNote = {
   id: string;
   conversationId: string;
   createdAt: number;
-  kind: 'reuse' | 'reject' | 'route' | 'hint';
+  kind: 'reuse' | 'reject' | 'route' | 'hint' | 'thinking';
   /** The task's text as typed, capped — the receipt quotes it. */
   input: string;
   teamName?: string;
@@ -33,6 +34,8 @@ export type QuickDecisionNote = {
   suggestLabel?: string;
   memberName?: string;
   hintLabels?: string[];
+  /** The thinking level a `thinking` note set (`off`/`low`/`medium`/`high`). */
+  thinkingLevel?: string;
   reason?: string;
   confidence?: number;
   model?: string;
@@ -106,8 +109,8 @@ export const appendQuickDecisionNote = (
   conversationId: string,
   input: string,
   verdict: Extract<
-    QuickDecisionRouteResult | QuickDecisionRouteTeamResult | QuickDecisionHintResult,
-    { action: 'reuse' | 'reject' | 'direct' | 'hint' }
+    QuickDecisionRouteResult | QuickDecisionRouteTeamResult | QuickDecisionHintResult | QuickDecisionThinkingResult,
+    { action: 'reuse' | 'reject' | 'direct' | 'hint' | 'set' }
   >
 ): QuickDecisionNote => {
   const shared = {
@@ -134,7 +137,9 @@ export const appendQuickDecisionNote = (
         ? { ...shared, kind: 'reject', suggestLabel: verdict.suggestLabel }
         : verdict.action === 'direct'
           ? { ...shared, kind: 'route', memberName: verdict.memberName }
-          : { ...shared, kind: 'hint', hintLabels: verdict.positions.map((position) => position.label) };
+          : verdict.action === 'hint'
+            ? { ...shared, kind: 'hint', hintLabels: verdict.positions.map((position) => position.label) }
+            : { ...shared, kind: 'thinking', thinkingLevel: verdict.level };
   persist([...loadAll(), note].slice(-NOTES_CAP));
   return note;
 };

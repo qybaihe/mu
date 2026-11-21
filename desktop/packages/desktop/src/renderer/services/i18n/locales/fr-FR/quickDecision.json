@@ -30,5 +30,15 @@
   "hint": {
     "title": " Décision rapide : indice de répartition joint",
     "body": "Postes candidats pré-appariés {{positions}} accompagnent la tâche comme ligne d’indice que le superviseur vérifiera. {{reason}}"
+  },
+  "thinking": {
+    "title": "Décision rapide : réflexion réglée sur « {{level}} »",
+    "body": "La conversation exécute cette tâche à ce niveau de réflexion. {{reason}}",
+    "level": {
+      "off": "désactivée",
+      "low": "basse",
+      "medium": "moyenne",
+      "high": "haute"
+    }
   }
 }

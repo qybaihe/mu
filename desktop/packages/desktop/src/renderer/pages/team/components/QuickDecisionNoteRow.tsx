@@ -49,7 +49,13 @@ const QuickDecisionNoteRow: React.FC<{ note: QuickDecisionNote }> = ({ note }) =
         ? t('quickDecision.reject.title')
         : note.kind === 'route'
           ? t('quickDecision.route.title', { member: note.memberName ?? '' })
-          : t('quickDecision.hint.title');
+          : note.kind === 'thinking'
+            ? t('quickDecision.thinking.title', {
+                level: t(`quickDecision.thinking.level.${note.thinkingLevel ?? 'low'}`, {
+                  defaultValue: note.thinkingLevel ?? 'low',
+                }),
+              })
+            : t('quickDecision.hint.title');
   const body =
     note.kind === 'reuse'
       ? t('quickDecision.reuse.body', { reason: note.reason ?? '' })
@@ -57,10 +63,12 @@ const QuickDecisionNoteRow: React.FC<{ note: QuickDecisionNote }> = ({ note }) =
         ? t('quickDecision.reject.body', { suggest: note.suggestLabel ?? '', reason: note.reason ?? '' })
         : note.kind === 'route'
           ? t('quickDecision.route.body', { member: note.memberName ?? '', reason: note.reason ?? '' })
-          : t('quickDecision.hint.body', {
-              positions: (note.hintLabels ?? []).join('、') || '—',
-              reason: note.reason ?? '',
-            });
+          : note.kind === 'thinking'
+            ? t('quickDecision.thinking.body', { reason: note.reason ?? '' })
+            : t('quickDecision.hint.body', {
+                positions: (note.hintLabels ?? []).join('、') || '—',
+                reason: note.reason ?? '',
+              });
   return (
     <div className='flex flex-col gap-4px py-6px' data-testid='quick-decision-row' data-note-kind={note.kind}>
       <div className='flex items-center gap-6px'>

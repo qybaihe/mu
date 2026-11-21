@@ -9,6 +9,7 @@ import {
   type QuickDecisionRouteResult,
 } from '@/common/chat/team/quickDecision/quickDecisionBridge';
 import { SUPERVISOR_POSITION_NAME } from '@/common/chat/team/supervisor/supervisorCore';
+import { clampThinkingLevelTo, isSystemChoreText } from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 import type { KyrnResult } from '@/common/kyrn/errors';
 import { appendQuickDecisionNote, shouldAskQuickDecision } from '@renderer/pages/team/core/notes/quickDecisionNotes';
 import { parseError, uuid } from '@/common/utils';
@@ -30,7 +31,13 @@ import FileAttachButton from '@/renderer/components/media/FileAttachButton';
 import { audioExts, getFileExtension, imageExts } from '@/renderer/services/FileService';
 import FilePreview from '@/renderer/components/media/FilePreview';
 import HorizontalFileList from '@/renderer/components/media/HorizontalFileList';
-import { classifyConfigSetError, useAcpConfigOptions } from '@/renderer/hooks/agent/useAcpConfigOptions';
+import {
+  classifyConfigSetError,
+  findConfigOption,
+  useAcpConfigOptions,
+  type AcpDerivedOption,
+} from '@/renderer/hooks/agent/useAcpConfigOptions';
+import { ensureConversationRuntime } from '@/renderer/pages/conversation/utils/ensureConversationRuntime';
 import {
   ComposerModelChip,
   GoalLine,
@@ -371,6 +378,75 @@ const AcpSendBox: React.FC<{
             // An unreachable hint layer is the ordinary un-prefixed send.
           }
         }
+        // The thinking level (point F): a task about to reach a position
+        // conversation gets its complexity graded by the cheap model, and the
+        // conversation's thinking option switches to the graded level BEFORE
+        // the turn starts (a busy session refuses a switch, so this only ever
+        // lands between turns). `keep` — every doubt, an unconfigured engine,
+        // a level the model does not take — sends at the current level,
+        // unchanged. The level layer must never break a send.
+        if (
+          positionMarker &&
+          teamSendMessage === undefined &&
+          files.length === 0 &&
+          input.trim().length > 0 &&
+          !input.trimStart().startsWith('/') &&
+          !isSystemChoreText(input)
+        ) {
+          try {
+            const graded = await quickDecisionBridge.thinkingLevel.invoke({ input });
+            const verdict = graded.ok ? graded.data : undefined;
+            let option: AcpDerivedOption | undefined = runtimeThoughtLevel ?? undefined;
+            let offered = option?.options.map((choice) => choice.value);
+            // A cold runtime has not answered its options yet: ask once more
+            // before giving up — the level switch only ever lands between turns,
+            // and a lost race here would silently drop the graded level.
+            if (!offered?.length) {
+              try {
+                const ensured = await ensureConversationRuntime(conversation_id);
+                const found = findConfigOption(ensured?.config_options, 'thought_level', [
+                  'thought_level',
+                  'reasoning_effort',
+                ]);
+                if (found) {
+                  offered = found.options.map((choice) => choice.value);
+                  option =
+                    option ??
+                    {
+                      id: found.id,
+                      currentValue: found.current_value ?? '',
+                      options: found.options.map((choice) => ({
+                        value: choice.value,
+                        label: choice.label ?? choice.name ?? choice.value,
+                      })),
+                      category: 'thought_level',
+                    };
+                }
+              } catch {
+                // No options, no switch: the send keeps the current level.
+              }
+            }
+            if (verdict?.action === 'set' && option && offered) {
+              const level = clampThinkingLevelTo(verdict.level, offered);
+              // Always set when the verdict is decisive: the cached current
+              // value may be stale (another surface may have switched the
+              // level out-of-band), and the PUT is idempotent — the adapter
+              // no-ops a level that already stands.
+              if (level) {
+                await runtimeConfig.setConfigOption(option.id, level);
+                // The note carries the level actually applied (the clamp may
+                // have stepped to a neighbour the model offers); the label
+                // falls back to the raw string outside the four.
+                appendQuickDecisionNote(conversation_id, input, {
+                  ...verdict,
+                  level: level as typeof verdict.level,
+                });
+              }
+            }
+          } catch {
+            // An unreachable grading layer is the ordinary send at the current level.
+          }
+        }
         void checkAndUpdateTitle(conversation_id, input);
         if (teamSendMessage) {
           await teamSendMessage({ input: effectiveInput, files });
@@ -482,6 +558,8 @@ Please check your local CLI tool authentication status`,
       markSendStarted,
       positionMarker,
       resetState,
+      runtimeConfig,
+      runtimeThoughtLevel,
       setAiProcessing,
       t,
       teamPermission,

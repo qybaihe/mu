@@ -87,6 +87,15 @@
         "customer-sales": "Kunden & Vertrieb",
         "inbox-calendar": "Posteingang & Kalender"
       }
+    },
+    "thinkingLabel": "Standard-Denkestufe (optional)",
+    "thinkingPlaceholder": "Keine = keine Angabe (Unterhaltung behält ihre eigene)",
+    "thinkingBadge": "Standard-Denken: {{level}}",
+    "thinking": {
+      "off": "aus",
+      "low": "niedrig",
+      "medium": "mittel",
+      "high": "hoch"
     }
   }
 }

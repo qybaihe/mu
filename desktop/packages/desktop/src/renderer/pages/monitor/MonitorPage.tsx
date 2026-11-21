@@ -222,6 +222,17 @@ const PositionWallCard: React.FC<{
         {t(stateLabelKey(state))}
       </div>
       <div className='text-13px text-t-secondary truncate h-20px leading-[1.45]'>{doing}</div>
+      {position.thinkingLevel ? (
+        /* The declared default level, as the roster shows it: an at-a-glance hint of what this position's sessions start on. */
+        <div
+          data-testid={`monitor-position-${position.name}-thinking`}
+          className='text-12px text-t-quaternary leading-[1.45]'
+        >
+          {t('positions.wizard.thinkingBadge', {
+            level: t(`positions.wizard.thinking.${position.thinkingLevel}`),
+          })}
+        </div>
+      ) : null}
       <div className='flex items-center gap-8px min-w-0'>
         <RelativeTime ts={card.lastActiveAt} now={now} />
         <span className='flex-1' />

@@ -30,5 +30,15 @@
   "hint": {
     "title": " Decisão rápida: dica de despacho anexada",
     "body": "Posições candidatas pré-combinadas {{positions}} vão como linha de dica para o supervisor verificar. {{reason}}"
+  },
+  "thinking": {
+    "title": "Decisão rápida: reflexão ajustada para \"{{level}}\"",
+    "body": "A conversação executa esta tarefa nesse nível de reflexão. {{reason}}",
+    "level": {
+      "off": "desligada",
+      "low": "baixa",
+      "medium": "média",
+      "high": "alta"
+    }
   }
 }

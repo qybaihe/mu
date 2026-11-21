@@ -87,6 +87,15 @@
         "customer-sales": "Müşteri ve satış",
         "inbox-calendar": "Gelen kutusu ve takvim"
       }
+    },
+    "thinkingLabel": "Varsayılan düşünme seviyesi (isteğe bağlı)",
+    "thinkingPlaceholder": "Seçilmez = beyan yok (konuşma kendi seviyesini korur)",
+    "thinkingBadge": "Varsayılan düşünme: {{level}}",
+    "thinking": {
+      "off": "kapalı",
+      "low": "düşük",
+      "medium": "orta",
+      "high": "yüksek"
     }
   }
 }

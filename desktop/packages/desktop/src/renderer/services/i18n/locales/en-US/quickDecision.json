@@ -30,5 +30,15 @@
   "hint": {
     "title": " Quick decision: dispatch hint attached",
     "body": "Pre-matched candidate positions {{positions}} ride along as a hint line for the supervisor to verify. {{reason}}"
+  },
+  "thinking": {
+    "title": "Quick decision: thinking set to \"{{level}}\"",
+    "body": "The conversation now runs this task at that thinking level. {{reason}}",
+    "level": {
+      "off": "off",
+      "low": "low",
+      "medium": "medium",
+      "high": "high"
+    }
   }
 }

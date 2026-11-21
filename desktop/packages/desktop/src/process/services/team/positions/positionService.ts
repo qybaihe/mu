@@ -40,6 +40,10 @@ import {
   type PositionInfo,
 } from '@/common/chat/team/positions/positionLibraryCore';
 import { SHARED_TEAMS_FOLDER } from '@/common/chat/team/supervisor/supervisorCore';
+import {
+  POSITION_THINKING_LEVELS,
+  type PositionThinkingLevel,
+} from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 import { USER_PORTRAIT_FILE_NAME, buildUserPortraitSkeleton } from '@/common/chat/team/positions/userPortraitCore';
 import {
   POSITION_TRASH_FOLDER,
@@ -240,6 +244,8 @@ export type CreatePositionParams = {
   description: string;
   /** Optional taboos, one line each; written as the frontmatter `anti_job`. */
   antiJob?: string[];
+  /** Optional starting thinking level (`off`/`low`/`medium`/`high`); written as the frontmatter `thinking`. */
+  thinkingLevel?: PositionThinkingLevel;
   body: string;
 };
 
@@ -280,6 +286,9 @@ export async function createPositionIn(
   const antiJob = (params.antiJob ?? []).map((item) => item.trim()).filter((item) => item.length > 0);
   if (antiJob.some((item) => /[\r\n]/.test(item)))
     throw new KyrnError('invalid', 'A taboo is one non-empty line', { antiJob });
+  const thinkingLevel: PositionThinkingLevel | undefined = POSITION_THINKING_LEVELS.find(
+    (level) => level === params.thinkingLevel
+  );
 
   await mkdir(options.libraryDir, { recursive: true });
   const file = join(options.libraryDir, `${id}.md`);
@@ -288,7 +297,7 @@ export async function createPositionIn(
   if ((await scanPositionLibrary(options.libraryDir)).some((position) => position.name === id))
     throw new KyrnError('invalid', 'A position of that id already exists — pick another id', { id });
 
-  const content = buildPositionDocument({ ...params, antiJob });
+  const content = buildPositionDocument({ ...params, antiJob, thinkingLevel });
   const parsed = parsePositionDocument(`${id}.md`, content);
   if (!parsed) throw new KyrnError('invalid', 'The generated document does not parse as a position', { id });
   await writeFile(file, content, 'utf8');
