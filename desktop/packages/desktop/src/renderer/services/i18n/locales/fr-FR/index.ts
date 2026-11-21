@@ -28,6 +28,7 @@ import monitor from './monitor.json';
 import quickDecision from './quickDecision.json';
 import inspection from './inspection.json';
 import contextSteward from './contextSteward.json';
+import webhook from './webhook.json';
 
 export default {
   common,
@@ -55,4 +56,5 @@ export default {
   quickDecision,
   inspection,
   contextSteward,
+  webhook,
 };

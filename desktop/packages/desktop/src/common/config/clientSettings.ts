@@ -39,6 +39,20 @@ export type ContextStewardToggleSetting = boolean | undefined;
  */
 export type ContextStewardRatioSetting = number | undefined;
 
+/**
+ * The webhook trigger's master switch: undefined = OFF (a fresh install
+ * never listens), only an explicit `true` starts the loopback listener —
+ * the inverse of the inspection toggles, because this one opens a socket.
+ */
+export type WebhookToggleSetting = boolean | undefined;
+
+/**
+ * The per-position webhook modes (`auto` = start work, `notify` = suggest
+ * only). Undefined entries — and the whole map's absence — mean `notify`, the
+ * conservative default; only a deliberate `auto` opts a position into work.
+ */
+export type WebhookModeSetting = Record<string, 'auto' | 'notify'> | undefined;
+
 export type ClientBusinessSettingMap = {
   'google.config': GoogleClientSetting;
   'mcp.config': IMcpServer[] | undefined;
@@ -48,6 +62,10 @@ export type ClientBusinessSettingMap = {
   'tools.inspectionWasteEnabled': InspectionToggleSetting;
   'tools.contextStewardEnabled': ContextStewardToggleSetting;
   'tools.contextStewardCheckRatio': ContextStewardRatioSetting;
+  'tools.webhookEnabled': WebhookToggleSetting;
+  /** Generated once on first enable and persisted, so external callers' URLs survive restarts. */
+  'tools.webhookToken': string | undefined;
+  'tools.webhookPositionModes': WebhookModeSetting;
   'acp.promptTimeout': number | undefined;
   'acp.agentIdleTimeout': number | undefined;
   /**

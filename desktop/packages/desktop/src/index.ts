@@ -20,6 +20,7 @@ import { initMainAdapterWithWindow } from './common/adapter/main';
 import { ipcBridge } from './common';
 import { initializeProcess } from './process';
 import { startBackendOrExit } from './process/startup/backendStartup';
+import { syncWebhookWithSettings } from './process/services/team/webhook';
 import { planStartupNodeRuntime } from './process/startup/nodeRuntimeStartup';
 import { assertStartupArchitectureCompatible } from './process/startup/architectureCompatibility';
 import { classifyBackendStartupFailure } from './process/startup/backendStartupFailure';
@@ -347,6 +348,7 @@ function markBackendReady(backendPort: number, source: string): void {
   console.log(`[mu] ${source} ready (port=${backendPort})`);
   exposeBackendPort(backendPort);
   registerCronResumeBridge(backendPort);
+  void syncWebhookWithSettings().catch((error) => console.warn('[mu] webhook boot sync failed:', error));
   backendStartedOk = true;
   backendStartupFailed = false;
   backendStartupFailureInfo = null;

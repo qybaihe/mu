@@ -7,6 +7,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ConversationPreferences from '@/renderer/components/settings/SettingsModal/contents/SystemModalContent/ConversationPreferences';
+import WebhookSection from '@/renderer/components/settings/SettingsModal/contents/SystemModalContent/WebhookSection';
 import { SettingsPage } from '../components/SettingsPageHeader';
 import ImportChats from './ImportChats';
 
@@ -19,6 +20,7 @@ const ConversationSettings: React.FC = () => {
   return (
     <SettingsPage title={t('settings.conversations')}>
       <ConversationPreferences />
+      <WebhookSection />
       <ImportChats />
     </SettingsPage>
   );

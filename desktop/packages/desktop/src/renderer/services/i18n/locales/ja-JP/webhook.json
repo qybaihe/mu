@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "master": "Webhook トリガー",
+    "masterHint": "外部イベントの HTTP POST でポジションを起床：ループバック 127.0.0.1 のみ。公開は自分のトンネルで",
+    "url": "Webhook URL",
+    "urlHint": "「岗位id」をポジション ID に置き換えて外部システムに設定",
+    "copyUrl": "Webhook URL をコピー",
+    "token": "アクセストークン",
+    "tokenHint": "リクエストヘッダー x-mu-hook-token にこのトークンを指定",
+    "copyToken": "アクセストークンをコピー",
+    "modesTitle": "ポジションごとのモード（既定：通知のみ）",
+    "modeNotify": "通知のみ：提案して確認待ち",
+    "modeAuto": "自動：担当判定して即実行",
+    "noPositions": "ポジションライブラリが空です。先にポジションを作成",
+    "loopbackNote": "ループバックのみリッスン。外部から利用する場合は安全なトンネル（ngrock など）を自分で用意し、ポートを直接公開しない。",
+    "updateFailed": "Webhook 設定の更新に失敗"
+  }
+}

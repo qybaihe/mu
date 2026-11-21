@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "master": "Gatilho Webhook",
+    "masterHint": "Acordar cargos via POST HTTP externo: apenas loopback 127.0.0.1; exposição pública exige túnel próprio",
+    "url": "URL do webhook",
+    "urlHint": "Troque « 岗位id » pelo id do cargo e configure no sistema externo",
+    "copyUrl": "Copiar URL do webhook",
+    "token": "Token de acesso",
+    "tokenHint": "Envie este token no cabeçalho x-mu-hook-token",
+    "copyToken": "Copiar token de acesso",
+    "modesTitle": "Modo de gatilho por cargo (padrão: só notificar)",
+    "modeNotify": "Só notificar: sugerir e aguardar confirmação",
+    "modeAuto": "Automático: validar pertinência e executar",
+    "noPositions": "Biblioteca de cargos vazia; crie um cargo primeiro",
+    "loopbackNote": "Escuta apenas no loopback. Para acesso externo, configure seu próprio túnel seguro (ex.: ngrok); nunca exponha a porta diretamente.",
+    "updateFailed": "Falha ao atualizar as configurações do webhook"
+  }
+}

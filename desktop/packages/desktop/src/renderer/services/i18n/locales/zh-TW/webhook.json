@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "master": "Webhook 觸發",
+    "masterHint": "外部事件 HTTP POST 喚醒崗位：本機 127.0.0.1 監聽，公網暴露需自建隧道",
+    "url": "Webhook 位址",
+    "urlHint": "把「岗位id」替換為崗位英文 id 後設定到外部系統",
+    "copyUrl": "複製 Webhook 位址",
+    "token": "存取權杖",
+    "tokenHint": "請求頭 x-mu-hook-token 帶上此權杖",
+    "copyToken": "複製存取權杖",
+    "modesTitle": "各崗位觸發模式（預設僅通知）",
+    "modeNotify": "僅通知：給建議，等確認",
+    "modeAuto": "自動開工：判定歸屬即執行",
+    "noPositions": "崗位庫為空，先在崗位名冊建立崗位",
+    "loopbackNote": "僅監聽本機回環位址；外部系統需公網存取時請自行設定安全隧道（如 ngrok），不要直接暴露埠。",
+    "updateFailed": "Webhook 設定更新失敗"
+  }
+}

@@ -23,6 +23,7 @@ import { initSupervisorBridge } from '../services/team/supervisor';
 import { initQuickDecisionBridge } from '../services/team/quickDecision';
 import { initContextStewardBridge } from '../services/team/contextSteward';
 import { initInspectionBridge } from '../services/team/inspection';
+import { initWebhookBridge } from '../services/team/webhook';
 
 export type BridgeDependencies = Record<string, never>;
 
@@ -46,6 +47,7 @@ export function initAllBridges(_deps: BridgeDependencies = {}): void {
   initQuickDecisionBridge();
   initContextStewardBridge();
   initInspectionBridge();
+  initWebhookBridge();
 }
 
 export {

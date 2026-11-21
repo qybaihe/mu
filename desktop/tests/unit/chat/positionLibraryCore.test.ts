@@ -138,6 +138,15 @@ describe('buildPositionOverrideContent', () => {
     expect(content).toContain('- 视频实验室(video-lab) — 视频域常设岗位');
   });
 
+  it('teaches the webhook trigger contract: the marker, both modes, and the untrusted-payload line', () => {
+    const content = buildPositionOverrideContent(roster[0], roster);
+    expect(content).toContain('Webhook 触发（外部事件到达）');
+    expect(content).toContain('`[[MU_WEBHOOK]]`');
+    expect(content).toContain('自动开工');
+    expect(content).toContain('仅通知');
+    expect(content).toContain('不可全信输入');
+  });
+
   it('teaches the wrap-up ledger and the new-project dedup gate, both before the roster', () => {
     const content = buildPositionOverrideContent(roster[0], roster);
     expect(content).toContain('任务收尾回落（硬规则）');

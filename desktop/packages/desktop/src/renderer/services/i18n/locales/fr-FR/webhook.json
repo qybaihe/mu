@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "master": "Déclencheur Webhook",
+    "masterHint": "Réveiller des postes par POST HTTP externe : boucle locale 127.0.0.1 seule ; exposition publique via votre propre tunnel",
+    "url": "URL du webhook",
+    "urlHint": "Remplacer « 岗位id » par un id de poste, puis coller dans le système externe",
+    "copyUrl": "Copier l'URL du webhook",
+    "token": "Jeton d'accès",
+    "tokenHint": "Envoyer ce jeton dans l'en-tête x-mu-hook-token",
+    "copyToken": "Copier le jeton d'accès",
+    "modesTitle": "Mode de déclenchement par poste (défaut : notification seule)",
+    "modeNotify": "Notification seule : suggérer, attendre confirmation",
+    "modeAuto": "Automatique : valider la attribution et démarrer",
+    "noPositions": "Bibliothèque de postes vide ; créer d'abord un poste",
+    "loopbackNote": "Écoute uniquement en boucle locale. Pour un accès externe, configurez votre propre tunnel sécurisé (ex. ngrok) ; n'exposez jamais le port directement.",
+    "updateFailed": "Échec de mise à jour des réglages webhook"
+  }
+}

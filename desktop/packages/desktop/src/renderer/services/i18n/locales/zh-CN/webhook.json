@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "master": "Webhook 触发",
+    "masterHint": "外部事件 HTTP POST 唤醒岗位：本机 127.0.0.1 监听，公网暴露需自建隧道",
+    "url": "Webhook 地址",
+    "urlHint": "把「岗位id」替换为岗位英文 id 后配置到外部系统",
+    "copyUrl": "复制 Webhook 地址",
+    "token": "访问令牌",
+    "tokenHint": "请求头 x-mu-hook-token 携带此令牌",
+    "copyToken": "复制访问令牌",
+    "modesTitle": "各岗位触发模式（默认仅通知）",
+    "modeNotify": "仅通知：给建议，等确认",
+    "modeAuto": "自动开工：判定归属即执行",
+    "noPositions": "岗位库为空，先在岗位名册创建岗位",
+    "loopbackNote": "仅监听本机回环地址；外部系统需公网访问时请自行配置安全隧道（如 ngrok），不要直接暴露端口。",
+    "updateFailed": "Webhook 设置更新失败"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "master": "Disparador Webhook",
+    "masterHint": "Despertar puestos con POST HTTP externo: solo bucle local 127.0.0.1; exposición pública con tu propio túnel",
+    "url": "URL del webhook",
+    "urlHint": "Sustituye « 岗位id » por un id de puesto y configúralo en el sistema externo",
+    "copyUrl": "Copiar URL del webhook",
+    "token": "Token de acceso",
+    "tokenHint": "Envía este token en la cabecera x-mu-hook-token",
+    "copyToken": "Copiar token de acceso",
+    "modesTitle": "Modo de disparo por puesto (por defecto: solo avisar)",
+    "modeNotify": "Solo avisar: sugerir y esperar confirmación",
+    "modeAuto": "Automático: validar pertenencia y empezar",
+    "noPositions": "La biblioteca de puestos está vacía; crea un puesto primero",
+    "loopbackNote": "Escucha solo en bucle local. Para acceso externo, configura tu propio túnel seguro (p. ej. ngrok); no expongas el puerto directamente.",
+    "updateFailed": "Error al actualizar los ajustes del webhook"
+  }
+}

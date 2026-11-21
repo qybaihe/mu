@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "master": "Webhook-Trigger",
+    "masterHint": "Positionen per externem HTTP-POST wecken: nur Loopback 127.0.0.1; öffentlicher Zugang über eigenen Tunnel",
+    "url": "Webhook-URL",
+    "urlHint": "「岗位id」 durch eine Positions-ID ersetzen und im externen System eintragen",
+    "copyUrl": "Webhook-URL kopieren",
+    "token": "Zugriffstoken",
+    "tokenHint": "Diesen Token im Header x-mu-hook-token mitsenden",
+    "copyToken": "Zugriffstoken kopieren",
+    "modesTitle": "Trigger-Modus je Position (Standard: nur benachrichtigen)",
+    "modeNotify": "Nur benachrichtigen: Vorschlag, auf Bestätigung warten",
+    "modeAuto": "Automatisch: Zuständigkeit prüfen und starten",
+    "noPositions": "Positionsbibliothek ist leer; erst eine Position anlegen",
+    "loopbackNote": "Lauscht nur auf Loopback. Für externen Zugriff einen eigenen sicheren Tunnel (z. B. ngrok) einrichten und den Port nie direkt freigeben.",
+    "updateFailed": "Webhook-Einstellungen konnten nicht gespeichert werden"
+  }
+}

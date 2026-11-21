@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "master": "Webhook trigger",
+    "masterHint": "Wake positions via external HTTP POST: loopback 127.0.0.1 only; public exposure needs your own tunnel",
+    "url": "Webhook URL",
+    "urlHint": "Replace 岗位id with a position id, then paste into the external system",
+    "copyUrl": "Copy webhook URL",
+    "token": "Access token",
+    "tokenHint": "Send this token in the x-mu-hook-token header",
+    "copyToken": "Copy access token",
+    "modesTitle": "Per-position trigger mode (default: notify only)",
+    "modeNotify": "Notify only: suggest, wait for confirm",
+    "modeAuto": "Auto: own the task, start work",
+    "noPositions": "Position library is empty; create a position first",
+    "loopbackNote": "Listens on loopback only. To reach it from outside, set up your own secure tunnel (e.g. ngrok); never expose the port directly.",
+    "updateFailed": "Failed to update webhook settings"
+  }
+}

@@ -5015,7 +5015,21 @@ export type I18nKey =
   | 'update.readyTitle'
   | 'update.restartToUpdate'
   | 'update.showInFolder'
-  | 'update.upToDateTitle';
+  | 'update.upToDateTitle'
+  | 'webhook.settings.copyToken'
+  | 'webhook.settings.copyUrl'
+  | 'webhook.settings.loopbackNote'
+  | 'webhook.settings.master'
+  | 'webhook.settings.masterHint'
+  | 'webhook.settings.modeAuto'
+  | 'webhook.settings.modeNotify'
+  | 'webhook.settings.modesTitle'
+  | 'webhook.settings.noPositions'
+  | 'webhook.settings.token'
+  | 'webhook.settings.tokenHint'
+  | 'webhook.settings.updateFailed'
+  | 'webhook.settings.url'
+  | 'webhook.settings.urlHint';
 
 export type I18nModule =
   | 'common'
@@ -5041,4 +5055,5 @@ export type I18nModule =
   | 'supervisor'
   | 'quickDecision'
   | 'inspection'
-  | 'contextSteward';
+  | 'contextSteward'
+  | 'webhook';

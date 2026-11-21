@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "master": "Webhook tetikleyici",
+    "masterHint": "Dış HTTP POST ile pozisyonları uyandır: yalnızca 127.0.0.1 loopback; genel erişim kendi tünelinizle",
+    "url": "Webhook URL'si",
+    "urlHint": "« 岗位id » yerine bir pozisyon id koyup dış sisteme tanımlayın",
+    "copyUrl": "Webhook URL'sini kopyala",
+    "token": "Erişim anahtarı",
+    "tokenHint": "Bu anahtarı x-mu-hook-token başlığında gönderin",
+    "copyToken": "Erişim anahtarını kopyala",
+    "modesTitle": "Pozisyon bazlı tetik modu (varsayılan: yalnızca bildir)",
+    "modeNotify": "Yalnızca bildir: öner, onay bekle",
+    "modeAuto": "Otomatik: aidiyeti doğrula ve başla",
+    "noPositions": "Pozisyon kitaplığı boş; önce bir pozisyon oluşturun",
+    "loopbackNote": "Yalnızca loopback dinler. Dış erişim için kendi güvenli tünelinizi (örn. ngrok) kurun; portu doğrudan açmayın.",
+    "updateFailed": "Webhook ayarları güncellenemedi"
+  }
+}
