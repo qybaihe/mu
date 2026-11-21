@@ -20,6 +20,9 @@ import {
   type PositionThinkingLevel,
 } from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
 
+/** The marker a review role's model hint carries: the seat should run a different model than the producing seats. */
+export const MODEL_HINT_DIFFER = '应异于产出岗';
+
 /** One role of a recipe: what the slot does, and which position it wants. */
 export type RecipeRole = {
   /**
@@ -35,6 +38,13 @@ export type RecipeRole = {
   antiJob?: readonly string[];
   /** The thinking level the slot (and a drafted position) starts on. */
   thinkingLevel?: PositionThinkingLevel;
+  /**
+   * Frontmatter `model`: an advisory hint for the seat's model pick — the
+   * {@link MODEL_HINT_DIFFER} marker on review roles, or a concrete
+   * `provider/model` id. Purely advisory: the group dialog shows it beside
+   * the seat's model dropdown; nothing is applied without the person's pick.
+   */
+  modelHint?: string;
 };
 
 /** One recipe: a named, ordered lineup a group chat can be built from in one click. */
@@ -98,6 +108,7 @@ export const BUILTIN_RECIPES: readonly TeamRecipe[] = [
         roleName: '审核官',
         duty: '终审一切对外内容，把关事实与口径，唯一放行口',
         thinkingLevel: 'medium',
+        modelHint: MODEL_HINT_DIFFER,
       },
     ],
   },
@@ -117,6 +128,7 @@ export const BUILTIN_RECIPES: readonly TeamRecipe[] = [
         duty: '核对来源、数据与结论',
         antiJob: ['严禁编造来源、数据与结论；未核实的一律显式标注'],
         thinkingLevel: 'medium',
+        modelHint: MODEL_HINT_DIFFER,
       },
     ],
   },
@@ -135,7 +147,13 @@ export const BUILTIN_RECIPES: readonly TeamRecipe[] = [
         antiJob: ['严禁删除或覆盖原始素材；产出只新增'],
         thinkingLevel: 'low',
       },
-      { positionId: 'reviewer', roleName: '审核官', duty: '验收成品与 brief 的一致性', thinkingLevel: 'medium' },
+      {
+        positionId: 'reviewer',
+        roleName: '审核官',
+        duty: '验收成品与 brief 的一致性',
+        thinkingLevel: 'medium',
+        modelHint: MODEL_HINT_DIFFER,
+      },
     ],
   },
 ];
@@ -169,7 +187,7 @@ const ROLE_FIELD_RE = /^\s*([A-Za-z_-]+):\s*(.*)$/;
 
 /**
  * The role lines under `roles:`: each `- ` item carries `position`/`name`/
- * `duty`/`anti_job`/`thinking` pairs separated by ` | `. `anti_job` items
+ * `duty`/`anti_job`/`thinking`/`model` pairs separated by ` | `. `anti_job` items
  * split on `；`. A line without a `name` pair is skipped, not fatal — a
  * hand-edited half-line loses one role, not the recipe.
  */
@@ -201,12 +219,14 @@ function parseRoleLines(frontmatterLines: readonly string[]): RecipeRole[] {
       .filter((entry) => entry.length > 0)
       .slice(0, RECIPE_ANTI_JOB_ITEM_CAP);
     const thinkingLevel = parsePositionThinkingField(fields.get('thinking'));
+    const modelHint = oneLineOf(fields.get('model') ?? '');
     roles.push({
       ...(positionId ? { positionId } : {}),
       roleName,
       duty: oneLineOf(fields.get('duty') ?? ''),
       ...(antiJob.length > 0 ? { antiJob } : {}),
       ...(thinkingLevel ? { thinkingLevel } : {}),
+      ...(modelHint ? { modelHint } : {}),
     });
   }
   return roles.slice(0, RECIPE_ROLE_CAP);
@@ -258,6 +278,7 @@ export function buildRecipeDocument(recipe: Omit<TeamRecipe, 'source'>): string 
       role.duty ? `duty: ${mdLine(role.duty)}` : '',
       role.antiJob && role.antiJob.length > 0 ? `anti_job: ${mdLine(role.antiJob.join('；'))}` : '',
       role.thinkingLevel ? `thinking: ${role.thinkingLevel}` : '',
+      role.modelHint ? `model: ${mdLine(role.modelHint)}` : '',
     ].filter((part) => part.length > 0);
     return `  - ${parts.join(' | ')}`;
   });

@@ -14,6 +14,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BUILTIN_RECIPES,
+  MODEL_HINT_DIFFER,
   buildRecipeDocument,
   draftPositionFromRole,
   mergeRecipes,
@@ -49,6 +50,15 @@ describe('BUILTIN_RECIPES', () => {
     expect(mediaBuyer.antiJob?.[0]).toContain('严禁未经用户确认对外发布');
     expect(marketing.roles[4]?.positionId).toBe('reviewer'); // the only seat a library usually answers
     expect(marketing.roles[0]?.thinkingLevel).toBe('high');
+  });
+
+  it('marks every built-in review seat with the cross-model hint, and no producing seat', () => {
+    for (const recipe of BUILTIN_RECIPES) {
+      for (const role of recipe.roles) {
+        const isReview = /审核|评审/.test(role.roleName);
+        expect(role.modelHint === MODEL_HINT_DIFFER).toBe(isReview);
+      }
+    }
   });
 
   it('reuses the ecosystem generic positions for research', () => {
@@ -95,6 +105,22 @@ describe('parseRecipeDocument', () => {
       thinkingLevel: 'medium',
     });
     expect(recipe?.roles[1]?.positionId).toBeUndefined();
+  });
+
+  it('parses a role model hint — the differ marker and a concrete provider/model id alike', () => {
+    const doc = [
+      '---',
+      'name: model-crew',
+      'roles:',
+      '  - position: worker | name: 执行 | duty: 干活',
+      `  - position: reviewer | name: 评审 | duty: 核验 | model: ${MODEL_HINT_DIFFER}`,
+      '  - name: 备用 | duty: 待命 | model: openai/gpt-5',
+      '---',
+    ].join('\n');
+    const recipe = parseRecipeDocument('model-crew.md', doc);
+    expect(recipe?.roles[0]?.modelHint).toBeUndefined();
+    expect(recipe?.roles[1]?.modelHint).toBe(MODEL_HINT_DIFFER);
+    expect(recipe?.roles[2]?.modelHint).toBe('openai/gpt-5');
   });
 
   it('refuses files that are not recipes: no frontmatter, no roles, or README', () => {
@@ -276,5 +302,23 @@ describe('recipeFromTeam', () => {
     );
     const parsed = parseRecipeDocument(`${recipe.id}.md`, buildRecipeDocument(recipe));
     expect(parsed).toMatchObject({ ...recipe, source: 'custom' });
+  });
+
+  it('round-trips a model hint: the built document carries the model pair, the parse reads it back', () => {
+    const recipe: Omit<TeamRecipe, 'source'> = {
+      id: 'hint-crew',
+      displayName: '提示队',
+      description: '模型提示往返',
+      pipeline: '执行 → 评审',
+      roles: [
+        { positionId: 'worker', roleName: '执行', duty: '干活' },
+        { positionId: 'reviewer', roleName: '评审', duty: '核验', modelHint: MODEL_HINT_DIFFER },
+      ],
+    };
+    const doc = buildRecipeDocument(recipe);
+    expect(doc).toContain('model: 应异于产出岗');
+    const parsed = parseRecipeDocument('hint-crew.md', doc);
+    expect(parsed?.roles[1]?.modelHint).toBe(MODEL_HINT_DIFFER);
+    expect(parsed?.roles[0]?.modelHint).toBeUndefined();
   });
 });

@@ -116,7 +116,10 @@ beforeAll(async () => {
         );
         return;
       }
-      if (/^\/api\/teams\/team-\d+\/conversations\/[^/]+\/config-options$/.test(request.url ?? '') && request.method === 'GET') {
+      if (
+        /^\/api\/teams\/team-\d+\/conversations\/[^/]+\/config-options$/.test(request.url ?? '') &&
+        request.method === 'GET'
+      ) {
         if (memberNotReady) {
           response.statusCode = 409;
           response.end(JSON.stringify({ error: 'Team agent runtime is not ready for conversation: x' }));
@@ -131,7 +134,10 @@ beforeAll(async () => {
         response.end(JSON.stringify({ data: {} }));
         return;
       }
-      if (/^\/api\/teams\/team-\d+\/conversations\/[^/]+\/config-options\/[^/]+$/.test(request.url ?? '') && request.method === 'PUT') {
+      if (
+        /^\/api\/teams\/team-\d+\/conversations\/[^/]+\/config-options\/[^/]+$/.test(request.url ?? '') &&
+        request.method === 'PUT'
+      ) {
         configPuts.push({ path: request.url ?? '', body });
         response.statusCode = configPutStatus;
         response.end(JSON.stringify({ data: {} }));
@@ -649,6 +655,87 @@ const thinkingOptions = (levels: string[]): unknown => ({
       },
     ],
   },
+});
+
+/** The model select a stub conversation offers, as the kyrn adapter reports it (`provider/model` values). */
+const modelOptions = (values: string[], current: string): unknown => ({
+  data: {
+    config_options: [
+      {
+        id: 'model',
+        category: 'model',
+        type: 'select',
+        currentValue: current,
+        options: values.map((value) => ({ value, name: value })),
+      },
+    ],
+  },
+});
+
+describe('teams.cjs model — the cross-model review duty', () => {
+  beforeEach(async () => {
+    configOptionsAnswer = modelOptions(
+      ['anthropic/claude-sonnet', 'openai/gpt-5', 'deepseek/deepseek-chat'],
+      'anthropic/claude-sonnet'
+    );
+    configOptionsGetStatus = 200;
+    configPutStatus = 200;
+    configPuts.length = 0;
+    await run(['add', '--name', '模型队', '--positions', 'forwarder,worker']);
+  });
+
+  it('sets a named member slot to the asked model', async () => {
+    const answer = await run(['model', '--team', '模型队', '--agent', '货代 2', '--model', 'openai/gpt-5']);
+    expect(answer.status).toBe(0);
+    expect(answer.out).toContain('MODEL_SET agent=货代 2 model=openai/gpt-5');
+    expect(configPuts.findLast((entry) => entry.path.includes('config-options/model'))?.body).toEqual({
+      value: 'openai/gpt-5',
+    });
+  });
+
+  it('--diff-from lead picks the first offered model the lead is not running, and says which', async () => {
+    const answer = await run(['model', '--team', '模型队', '--agent', '货代 2', '--diff-from', 'lead']);
+    expect(answer.status).toBe(0);
+    expect(answer.out).toContain('MODEL_SET agent=货代 2 model=openai/gpt-5 (differs-from=anthropic/claude-sonnet)');
+    expect(configPuts.findLast((entry) => entry.path.includes('config-options/model'))?.body).toEqual({
+      value: 'openai/gpt-5',
+    });
+  });
+
+  it('--diff-from with a single configured model answers the degradation the supervisor must say out loud', async () => {
+    configOptionsAnswer = modelOptions(['anthropic/claude-sonnet'], 'anthropic/claude-sonnet');
+    const answer = await run(['model', '--team', '模型队', '--agent', '货代 2', '--diff-from', 'lead']);
+    expect(answer.status).toBe(0); // non-fatal by contract
+    expect(answer.err).toContain('MODEL_FAILED');
+    expect(answer.err).toContain('only-one-model');
+    expect(configPuts).toHaveLength(0);
+  });
+
+  it('a model the select does not offer stays a warn line, never a failed dispatch', async () => {
+    const answer = await run(['model', '--team', '模型队', '--agent', '货代 2', '--model', 'ghost/model-x']);
+    expect(answer.status).toBe(0);
+    expect(answer.err).toContain('MODEL_FAILED');
+    expect(answer.err).toContain('model-not-offered');
+  });
+
+  it('refuses both or neither of --model / --diff-from', async () => {
+    const neither = await run(['model', '--team', '模型队', '--agent', '货代 2']);
+    expect(neither.status).toBe(1);
+    expect(neither.err).toContain('exactly one of');
+    const both = await run([
+      'model',
+      '--team',
+      '模型队',
+      '--agent',
+      '货代 2',
+      '--model',
+      'openai/gpt-5',
+      '--diff-from',
+      'lead',
+    ]);
+    expect(both.status).toBe(1);
+    expect(both.err).toContain('exactly one of');
+  });
 });
 
 describe("teams.cjs think — the lead's level duty (escaped quotes: esbuild rejects raw ones)", () => {

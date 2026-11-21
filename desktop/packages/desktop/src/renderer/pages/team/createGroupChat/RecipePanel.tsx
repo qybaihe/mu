@@ -35,11 +35,13 @@ import { usePositionRoster, refreshPositions } from '@renderer/pages/positions/u
 import { rowButtonProps } from '@renderer/utils/ui/rowButton';
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 
-/** What the panel hands the dialog: the seats (ordered position ids) and each seat's thinking tier. */
+/** What the panel hands the dialog: the seats (ordered position ids), each seat's thinking tier, and each seat's model pick. */
 export type RecipeGroupPlan = {
   recipeId: string;
   positionIds: string[];
   thinkingBySeat: (PositionThinkingLevel | undefined)[];
+  /** Per-seat model picks ('' or 'default' = the default model), parallel to `positionIds`. */
+  modelsBySeat: string[];
   /**
    * The seats' roster entries, resolved and drafted alike: the dialog's own
    * roster snapshot may still be the pre-refresh one when the ready plan
@@ -56,6 +58,8 @@ type RecipePanelProps = {
   /** The drafts were created: the final plan (ids computed here, not from a roster re-render) — the dialog may create the group now. */
   onReadyToCreate: (plan: RecipeGroupPlan) => void;
   busy: boolean;
+  /** The model ids the per-role model dropdowns offer (the mu assistant's configured list). */
+  models: string[];
 };
 
 /** One role row's outcome against the roster, after the user's swap/remove overrides. */
@@ -66,7 +70,7 @@ type EffectiveRole = {
   forcedDraft: boolean;
 };
 
-const RecipePanel: React.FC<RecipePanelProps> = ({ open, onPlan, onReadyToCreate, busy }) => {
+const RecipePanel: React.FC<RecipePanelProps> = ({ open, onPlan, onReadyToCreate, busy, models }) => {
   const { t } = useTranslation();
   const { positions: roster } = usePositionRoster();
   const [recipes, setRecipes] = useState<TeamRecipe[] | undefined>();
@@ -74,6 +78,8 @@ const RecipePanel: React.FC<RecipePanelProps> = ({ open, onPlan, onReadyToCreate
   const [selectedId, setSelectedId] = useState<string | undefined>();
   /** Role overrides by index: removed, or swapped to a roster id ('' = forced draft). */
   const [overrides, setOverrides] = useState<Record<number, { removed?: boolean; swapTo?: string }>>({});
+  /** Per-role model picks by index ('' = the default model). */
+  const [modelByRole, setModelByRole] = useState<Record<number, string>>({});
   const [reviewOpen, setReviewOpen] = useState(false);
   const [draftForms, setDraftForms] = useState<Record<number, RecipePositionDraft>>({});
   const [creatingMissing, setCreatingMissing] = useState(false);
@@ -85,6 +91,7 @@ const RecipePanel: React.FC<RecipePanelProps> = ({ open, onPlan, onReadyToCreate
     if (!open) {
       setSelectedId(undefined);
       setOverrides({});
+      setModelByRole({});
       setReviewOpen(false);
       setDraftForms({});
       setCreatingMissing(false);
@@ -146,8 +153,15 @@ const RecipePanel: React.FC<RecipePanelProps> = ({ open, onPlan, onReadyToCreate
     if (!recipe || missingIndices.length > 0) return null;
     const seatInfos = kept.flatMap((entry) => (entry.position ? [entry.position] : []));
     const thinkingBySeat = kept.map((entry) => recipe.roles[entry.roleIndex]?.thinkingLevel);
-    return { recipeId: recipe.id, positionIds: seatInfos.map((position) => position.name), thinkingBySeat, seatInfos };
-  }, [kept, missingIndices.length, recipe]);
+    const modelsBySeat = kept.map((entry) => modelByRole[entry.roleIndex] ?? '');
+    return {
+      recipeId: recipe.id,
+      positionIds: seatInfos.map((position) => position.name),
+      thinkingBySeat,
+      modelsBySeat,
+      seatInfos,
+    };
+  }, [kept, missingIndices.length, modelByRole, recipe]);
 
   useEffect(() => {
     onPlan(plan);
@@ -157,6 +171,7 @@ const RecipePanel: React.FC<RecipePanelProps> = ({ open, onPlan, onReadyToCreate
   const pickRecipe = useCallback((id: string) => {
     setSelectedId(id);
     setOverrides({});
+    setModelByRole({});
     setReviewOpen(false);
     setDraftForms({});
   }, []);
@@ -205,17 +220,20 @@ const RecipePanel: React.FC<RecipePanelProps> = ({ open, onPlan, onReadyToCreate
       setReviewOpen(false);
       const seatInfos: PositionInfo[] = [];
       const thinkingBySeat: (PositionThinkingLevel | undefined)[] = [];
+      const modelsBySeat: string[] = [];
       for (const entry of kept) {
         const seat = entry.position ?? created.get(entry.roleIndex);
         if (!seat || seatInfos.some((taken) => taken.name === seat.name)) continue; // one position seats once
         seatInfos.push(seat);
         thinkingBySeat.push(recipe.roles[entry.roleIndex]?.thinkingLevel);
+        modelsBySeat.push(modelByRole[entry.roleIndex] ?? '');
       }
       if (seatInfos.length === 0) return;
       onReadyToCreate({
         recipeId: recipe.id,
         positionIds: seatInfos.map((seat) => seat.name),
         thinkingBySeat,
+        modelsBySeat,
         seatInfos,
       });
     } catch (error) {
@@ -225,7 +243,7 @@ const RecipePanel: React.FC<RecipePanelProps> = ({ open, onPlan, onReadyToCreate
     } finally {
       setCreatingMissing(false);
     }
-  }, [busy, creatingMissing, draftForms, kept, missingIndices, onReadyToCreate, recipe, t]);
+  }, [busy, creatingMissing, draftForms, kept, missingIndices, modelByRole, onReadyToCreate, recipe, t]);
 
   const sourceBadge = (entry: TeamRecipe) =>
     entry.source === 'builtin' ? (
@@ -486,6 +504,37 @@ const RecipePanel: React.FC<RecipePanelProps> = ({ open, onPlan, onReadyToCreate
                   </Select.Option>
                 ))}
               </Select>
+            </div>
+            {/* The seat's model pick: 'default' or one of the configured
+                models. A role whose recipe declares a model hint (the review
+                roles' 「应异于产出岗」) shows it beside the dropdown — advisory,
+                applied only by the person's pick. */}
+            <div className='flex items-center gap-8px'>
+              <span className='text-11px text-t-tertiary w-64px shrink-0'>{t('team.recipes.modelLabel')}</span>
+              <Select
+                data-testid={`recipe-role-model-${entry.roleIndex}`}
+                className='flex-1 min-w-0'
+                size='small'
+                value={modelByRole[entry.roleIndex] || 'default'}
+                onChange={(value: string) =>
+                  setModelByRole((prev) => ({ ...prev, [entry.roleIndex]: value === 'default' ? '' : value }))
+                }
+              >
+                <Select.Option value='default'>{t('team.recipes.modelDefault')}</Select.Option>
+                {models.map((model) => (
+                  <Select.Option key={model} value={model}>
+                    {model}
+                  </Select.Option>
+                ))}
+              </Select>
+              {role.modelHint ? (
+                <span
+                  data-testid={`recipe-role-modelhint-${entry.roleIndex}`}
+                  className='px-6px h-18px leading-18px rd-9px text-11px bg-warning-light-1 text-warning shrink-0 whitespace-nowrap'
+                >
+                  {t('team.recipes.modelHintBadge', { hint: role.modelHint })}
+                </span>
+              ) : null}
             </div>
           </div>
         );

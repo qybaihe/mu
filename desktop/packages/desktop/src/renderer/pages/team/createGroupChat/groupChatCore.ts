@@ -28,6 +28,8 @@ export type GroupChatFormState = {
   /** The lifecycle the dialog carries: whole days (1-365), or permanent. */
   ttlDays: number;
   permanent: boolean;
+  /** Per-seat model picks parallel to `positionIds` ('' = the default model). */
+  modelsBySeat: string[];
 };
 
 /** The form's fresh state: the default 7-day, non-permanent lifecycle. */
@@ -36,6 +38,7 @@ export const initialGroupChatFormState = (): GroupChatFormState => ({
   positionIds: [],
   ttlDays: TEAM_TTL_DEFAULT_DAYS,
   permanent: false,
+  modelsBySeat: [],
 });
 
 /** The lifecycle a form submits: the day count clamped into range, plus the

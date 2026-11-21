@@ -28,6 +28,7 @@ import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
 import { ensureTeamDispatchSeeded } from '@renderer/pages/team/core/teamDispatchSeed';
 import RecipePanel, { type RecipeGroupPlan } from '@renderer/pages/team/createGroupChat/RecipePanel';
 import { applySlotThinkingLevels } from '@renderer/pages/team/createGroupChat/applySlotThinking';
+import { applySlotModels } from '@renderer/pages/team/createGroupChat/applySlotModels';
 import { TEAM_TTL_MAX_DAYS, TEAM_TTL_MIN_DAYS } from '@/common/chat/team/supervisor/supervisorCore';
 import {
   GROUP_NAME_MAX_LENGTH,
@@ -57,11 +58,14 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
   const { presetAssistants } = useConversationAssistants();
   // The mu slot every position becomes: the shared selectable order puts mu first;
   // team capability narrows it. The dialog never offers per-slot agent choice —
-  // the full-MU lineup is the rule.
-  const assistantId = useMemo(
-    () => selectableAssistants(presetAssistants.filter((a) => a.team_selectable))[0]?.id ?? '',
+  // the full-MU lineup is the rule. The kept assistant also names the models
+  // the per-seat model dropdowns offer (the agent's own configured list).
+  const assistant = useMemo(
+    () => selectableAssistants(presetAssistants.filter((a) => a.team_selectable))[0],
     [presetAssistants]
   );
+  const assistantId = assistant?.id ?? '';
+  const offeredModels = assistant?.models ?? [];
 
   const [form, setForm] = useState<GroupChatFormState>(initialGroupChatFormState);
   const [creating, setCreating] = useState(false);
@@ -160,6 +164,10 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
         // A recipe's declared tiers ride the fresh seats, best-effort (a
         // dormant teammate keeps its model's start level until its first task).
         if (effectivePlan) await applySlotThinkingLevels(team, effectivePlan.thinkingBySeat);
+        // The seats' picked models ride along the same way: config-options
+        // first, the agent route for a slot the conversation one cannot reach.
+        const seatModels = effectivePlan ? effectivePlan.modelsBySeat : form.modelsBySeat.slice(0, ids.length);
+        if (seatModels.some((model) => model && model !== 'default')) await applySlotModels(team, seatModels);
         onCreated(team);
         closeAndReset();
       } catch (error) {
@@ -262,7 +270,15 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
               aria-label={t('team.groupChat.positionsLabel')}
               value={form.positionIds}
               placeholder={t('team.groupChat.positionsPlaceholder')}
-              onChange={(value) => setForm((prev) => ({ ...prev, positionIds: (value ?? []) as string[] }))}
+              onChange={(value) =>
+                setForm((prev) => {
+                  const positionIds = (value ?? []) as string[];
+                  // The per-seat model picks stay parallel to the seats: a
+                  // removed seat drops its pick, a new one starts on default.
+                  const modelsBySeat = positionIds.map((_, index) => prev.modelsBySeat[index] ?? '');
+                  return { ...prev, positionIds, modelsBySeat };
+                })
+              }
             >
               {positions.map((position) => (
                 <Select.Option key={position.name} value={position.name}>
@@ -273,9 +289,50 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
               ))}
             </Select>
             <div className='mt-4px text-12px text-t-tertiary'>{t('team.groupChat.positionsHint')}</div>
+            {picked.length > 0 ? (
+              <div className='mt-10px flex flex-col gap-6px'>
+                <div className='text-12px font-500 text-t-secondary'>{t('team.groupChat.modelLabel')}</div>
+                {picked.map((position, index) => (
+                  <div key={position.name} className='flex items-center gap-8px'>
+                    <span className='text-12px text-t-tertiary w-96px shrink-0 truncate'>{position.displayName}</span>
+                    <Select
+                      className='flex-1'
+                      size='small'
+                      data-testid={`new-group-chat-model-${index}`}
+                      aria-label={t('team.groupChat.modelLabel')}
+                      value={form.modelsBySeat[index] || 'default'}
+                      onChange={(value: string) =>
+                        setForm((prev) => {
+                          const modelsBySeat = [...prev.modelsBySeat];
+                          modelsBySeat[index] = value === 'default' ? '' : value;
+                          return { ...prev, modelsBySeat };
+                        })
+                      }
+                    >
+                      <Select.Option value='default'>{t('team.recipes.modelDefault')}</Select.Option>
+                      {offeredModels.map((model) => (
+                        <Select.Option key={model} value={model}>
+                          {model}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                    {index === 0 ? (
+                      <span className='text-11px text-t-tertiary shrink-0'>{t('team.members.leadBadge')}</span>
+                    ) : null}
+                  </div>
+                ))}
+                <div className='text-12px text-t-tertiary'>{t('team.groupChat.modelHint')}</div>
+              </div>
+            ) : null}
           </div>
         ) : (
-          <RecipePanel open={open} onPlan={handlePlan} onReadyToCreate={handlePlanReady} busy={creating} />
+          <RecipePanel
+            open={open}
+            onPlan={handlePlan}
+            onReadyToCreate={handlePlanReady}
+            busy={creating}
+            models={offeredModels}
+          />
         )}
 
         <div>

@@ -627,34 +627,39 @@ async function fetchWithTimeout(url, options, timeoutMs) {
 }
 
 /**
+ * A config-options request on the team conversation routes — shared by the
+ * thinking and model duties. Plain fetch, never `api()`: its failure path
+ * exits the process, and a best-effort duty must survive a dead or slow
+ * runtime. The reads and writes ride the TEAM config-options routes — a team
+ * conversation answers the plain conversation routes with 409 ("use the team
+ * runtime session").
+ */
+async function teamConfigRequest(method, apiPath, body) {
+  const options = { method };
+  if (body !== undefined) {
+    options.headers = { 'Content-Type': 'application/json; charset=utf-8' };
+    options.body = JSON.stringify(body);
+  }
+  const response = await fetchWithTimeout(`${BASE_URL}${apiPath}`, options, THINK_TIMEOUT_MS);
+  const text = await response.text();
+  let json = null;
+  try {
+    json = JSON.parse(text);
+  } catch {}
+  if (!response.ok) throw new Error(`${response.status}: ${(json && json.error) || text.slice(0, 120)}`);
+  return json && typeof json === 'object' ? (json.data ?? json) : null;
+}
+
+/**
  * Sets one conversation's thinking level through its config options: read the
  * options, clamp the requested level to what the model takes, PUT the value.
  * Best-effort by contract — every failure answers `{ok: false}` (never exits,
  * never throws): a level switch must not break the work around it.
  */
 async function setThinkingLevel(teamId, conversationId, requested) {
-  // Plain fetch, never `api()`: its failure path exits the process, and a
-  // best-effort duty must survive a dead or slow runtime. The reads and writes
-  // ride the TEAM config-options routes — a team conversation answers the
-  // plain conversation routes with 409 ("use the team runtime session").
-  const request = async (method, apiPath, body) => {
-    const options = { method };
-    if (body !== undefined) {
-      options.headers = { 'Content-Type': 'application/json; charset=utf-8' };
-      options.body = JSON.stringify(body);
-    }
-    const response = await fetchWithTimeout(`${BASE_URL}${apiPath}`, options, THINK_TIMEOUT_MS);
-    const text = await response.text();
-    let json = null;
-    try {
-      json = JSON.parse(text);
-    } catch {}
-    if (!response.ok) throw new Error(`${response.status}: ${(json && json.error) || text.slice(0, 120)}`);
-    return json && typeof json === 'object' ? (json.data ?? json) : null;
-  };
   let ensured;
   try {
-    ensured = await request('GET', `/api/teams/${teamId}/conversations/${conversationId}/config-options`);
+    ensured = await teamConfigRequest('GET', `/api/teams/${teamId}/conversations/${conversationId}/config-options`);
   } catch (error) {
     return { ok: false, reason: `options-unreadable (${error.message})` };
   }
@@ -666,9 +671,11 @@ async function setThinkingLevel(teamId, conversationId, requested) {
   const level = clampLevel(requested, offered);
   if (!level) return { ok: false, reason: 'level-not-offered' };
   try {
-    await request('PUT', `/api/teams/${teamId}/conversations/${conversationId}/config-options/${encodeURIComponent(option.id)}`, {
-      value: level,
-    });
+    await teamConfigRequest(
+      'PUT',
+      `/api/teams/${teamId}/conversations/${conversationId}/config-options/${encodeURIComponent(option.id)}`,
+      { value: level }
+    );
   } catch (error) {
     return { ok: false, reason: `set-failed (${error.message})` };
   }
@@ -716,6 +723,103 @@ async function cmdThink(args) {
   }
 }
 
+/** The model option of one conversation's config options: the `model` select the kyrn adapter reports (`provider/model` values). */
+function modelOptionOf(configOptions) {
+  if (!Array.isArray(configOptions)) return undefined;
+  return configOptions.find((option) => option && (option.category === 'model' || option.id === 'model'));
+}
+
+/** Reads one conversation's model option as {id, values, current}, or a best-effort failure. */
+async function readModelOption(teamId, conversationId) {
+  let ensured;
+  try {
+    ensured = await teamConfigRequest('GET', `/api/teams/${teamId}/conversations/${conversationId}/config-options`);
+  } catch (error) {
+    return { ok: false, reason: `options-unreadable (${error.message})` };
+  }
+  const option = modelOptionOf(ensured && (ensured.config_options || ensured));
+  if (!option || !option.id) return { ok: false, reason: 'no-model-option' };
+  const values = (option.options || [])
+    .map((choice) => choice && choice.value)
+    .filter((value) => typeof value === 'string');
+  const current = typeof option.currentValue === 'string' ? option.currentValue : '';
+  return { ok: true, id: option.id, values, current };
+}
+
+/** Sets one conversation's model through its config options; same best-effort contract as the thinking duty. */
+async function setSlotModel(teamId, conversationId, model) {
+  const read = await readModelOption(teamId, conversationId);
+  if (!read.ok) return read;
+  if (!read.values.includes(model)) return { ok: false, reason: 'model-not-offered', offered: read.values };
+  try {
+    await teamConfigRequest(
+      'PUT',
+      `/api/teams/${teamId}/conversations/${conversationId}/config-options/${encodeURIComponent(read.id)}`,
+      { value: model }
+    );
+  } catch (error) {
+    return { ok: false, reason: `set-failed (${error.message})` };
+  }
+  return { ok: true, model };
+}
+
+/** The lead's cross-model duty: set one slot's model, or with `--diff-from` pick the first offered model another slot is NOT running. */
+async function cmdModel(args) {
+  const name = String(args.team || '').trim();
+  const agent = String(args.agent || '').trim();
+  const model = String(args.model || '').trim();
+  const diffFrom = String(args['diff-from'] || '').trim();
+  if (!name) fail('--team is required');
+  if (!agent) fail('--agent is required (a member name, or lead)');
+  if (Boolean(model) === Boolean(diffFrom)) fail('exactly one of --model <provider/model> or --diff-from <member|lead>');
+  const team = findTeam(
+    readTeams().filter((t) => !isDeleted(t)),
+    name
+  );
+  if (!team) fail(`no team named "${name}"`);
+  const answer = await api('GET', `/api/teams/${team.teamId}`);
+  const teamAgents = (answer && (answer.agents || answer.assistants)) || [];
+  const slot = findSlot(teamAgents, agent);
+  if (!slot || !slot.conversation_id) fail(`no slot named "${agent}" on team "${name}" (see team_members)`);
+  let wanted = model;
+  let fromCurrent;
+  if (diffFrom) {
+    const reference = findSlot(teamAgents, diffFrom);
+    if (!reference || !reference.conversation_id) fail(`no slot named "${diffFrom}" on team "${name}"`);
+    const read = await readModelOption(team.teamId, reference.conversation_id);
+    if (!read.ok) {
+      console.warn(`MODEL_FAILED agent=${agent} reason=${read.reason}`);
+      return;
+    }
+    fromCurrent = read.current;
+    const candidates = read.values.filter((value) => value && value !== read.current);
+    if (candidates.length === 0) {
+      // One configured model cannot give the review seat a different brain:
+      // the caller (the supervisor's rule) says the degradation out loud.
+      console.warn(`MODEL_FAILED agent=${agent} reason=only-one-model current=${read.current}`);
+      return;
+    }
+    wanted = candidates[0];
+  }
+  let result = await setSlotModel(team.teamId, slot.conversation_id, wanted);
+  // A dormant member answers "runtime is not ready": warm the team session and
+  // retry with a little patience — same contract as the thinking duty.
+  for (let attempt = 0; attempt < 3 && !result.ok && /not ready/i.test(String(result.reason)); attempt += 1) {
+    if (attempt === 0) await api('POST', `/api/teams/${team.teamId}/session`);
+    sleepSync(3000);
+    result = await setSlotModel(team.teamId, slot.conversation_id, wanted);
+  }
+  if (result.ok) {
+    console.log(
+      `MODEL_SET agent=${slot.assistant_name || slot.name || agent} model=${result.model}${
+        fromCurrent !== undefined ? ` (differs-from=${fromCurrent || 'none'})` : ''
+      }`
+    );
+  } else {
+    console.warn(`MODEL_FAILED agent=${agent} reason=${result.reason}`);
+  }
+}
+
 /** A local `YYYY-MM-DD` (the ledger's first cell): lessons are read by humans in their own timezone. */
 const localDate = () => {
   const now = new Date();
@@ -759,7 +863,7 @@ async function cmdLesson(args) {
   console.log(`LESSON_ADDED date=${date} position=${position}`);
 }
 
-const COMMANDS = { list: cmdList, match: cmdMatch, add: cmdAdd, send: cmdSend, think: cmdThink, lesson: cmdLesson };
+const COMMANDS = { list: cmdList, match: cmdMatch, add: cmdAdd, send: cmdSend, think: cmdThink, model: cmdModel, lesson: cmdLesson };
 
 (async () => {
   const [command, ...rest] = process.argv.slice(2);

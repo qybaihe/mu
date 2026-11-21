@@ -314,6 +314,17 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('禁止自己接手执行任务');
   });
 
+  it('rule 12 sends the review seat to a different model, and says the degradation when none exists', () => {
+    const content = buildSupervisorOverrideContent(roster);
+    expect(content).toContain('规则 12');
+    expect(content).toContain('node teams.cjs model --team');
+    expect(content).toContain('--diff-from lead');
+    expect(content).toContain('复核岗已用不同模型');
+    expect(content).toContain('无第二模型可用');
+    // Never fatal: a failed switch must not block the dispatch.
+    expect(content).toContain('不阻塞派发');
+  });
+
   it('teaches the pre-rule-0 interview: vague tasks get one question at a time, no team and no dispatch, until the requirements list is possible', () => {
     const content = buildSupervisorOverrideContent(roster);
     expect(content).toContain('规则 0 前判定');

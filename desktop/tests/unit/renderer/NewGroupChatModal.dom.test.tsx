@@ -17,10 +17,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TTeam } from '@/common/types/team/teamTypes';
 
 let positions: { name: string; displayName: string; description: string }[];
-let assistants: { id: string; name: string; team_selectable: boolean }[];
+let assistants: { id: string; name: string; team_selectable: boolean; models?: string[] }[];
 let create: ReturnType<typeof vi.fn>;
 let conversationUpdate: ReturnType<typeof vi.fn>;
 let registerTeam: ReturnType<typeof vi.fn>;
+let applyModels: ReturnType<typeof vi.fn>;
 let created: TTeam[];
 
 vi.mock('react-i18next', () => ({
@@ -44,6 +45,9 @@ vi.mock('@/renderer/pages/conversation/hooks/useConversationAssistants', () => (
 }));
 vi.mock('@/renderer/pages/team/core/teamDispatchSeed', () => ({
   ensureTeamDispatchSeeded: vi.fn(async () => undefined),
+}));
+vi.mock('@/renderer/pages/team/createGroupChat/applySlotModels', () => ({
+  applySlotModels: (...args: unknown[]) => applyModels(...args),
 }));
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -92,10 +96,13 @@ describe('NewGroupChatModal', () => {
       { name: 'forwarder', displayName: '货代', description: '' },
       { name: 'reviewer', displayName: '评审', description: '' },
     ];
-    assistants = [{ id: 'bare:mu', name: 'mu', team_selectable: true }];
+    assistants = [
+      { id: 'bare:mu', name: 'mu', team_selectable: true, models: ['anthropic/claude-sonnet', 'openai/gpt-5'] },
+    ];
     create = vi.fn(async () => teamOf('货代、评审'));
     conversationUpdate = vi.fn(async () => true);
     registerTeam = vi.fn(async () => ({ ok: true, data: { teams: [] } }));
+    applyModels = vi.fn(async () => undefined);
     created = [];
   });
   afterEach(() => cleanup());
@@ -173,5 +180,35 @@ describe('NewGroupChatModal', () => {
     rerender(<NewGroupChatModal open={false} onClose={() => {}} onCreated={() => {}} />);
     rerender(<NewGroupChatModal open onClose={() => {}} onCreated={() => {}} />);
     expect(screen.getByTestId('new-group-chat-name')).toHaveValue('');
+  });
+
+  it('offers a per-seat model pick and lands the picks through the config-options channel after creation', async () => {
+    render(<NewGroupChatModal open onClose={() => {}} onCreated={() => {}} />);
+    fireEvent.click(screen.getByTestId('new-group-chat-positions'));
+    fireEvent.click(await screen.findByText('货代'));
+    fireEvent.click(await screen.findByText('评审'));
+    // Both seats start on the default model; the dropdown offers the configured ones.
+    expect(screen.getAllByTestId(/^new-group-chat-model-\d+$/)).toHaveLength(2);
+    expect(applyModels).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('new-group-chat-model-1'));
+    fireEvent.click(await screen.findByText('openai/gpt-5'));
+    fireEvent.click(screen.getByTestId('new-group-chat-submit'));
+    await waitFor(() => expect(applyModels).toHaveBeenCalledTimes(1));
+    const [team, seatModels] = applyModels.mock.calls[0];
+    expect(team.id).toBe('t-new');
+    expect(seatModels).toEqual(['', 'openai/gpt-5']); // the lead keeps the default
+    // A create where every seat stays default never touches the model channel.
+    applyModels.mockClear();
+  });
+
+  it('skips the model channel entirely when every seat stays on the default', async () => {
+    render(<NewGroupChatModal open onClose={() => {}} onCreated={() => {}} />);
+    fireEvent.click(screen.getByTestId('new-group-chat-positions'));
+    fireEvent.click(await screen.findByText('货代'));
+    fireEvent.click(await screen.findByText('评审'));
+    fireEvent.click(screen.getByTestId('new-group-chat-submit'));
+    await waitFor(() => expect(create).toHaveBeenCalled());
+    await waitFor(() => expect(registerTeam).toHaveBeenCalled());
+    expect(applyModels).not.toHaveBeenCalled();
   });
 });
