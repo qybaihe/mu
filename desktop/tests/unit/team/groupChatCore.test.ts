@@ -95,7 +95,13 @@ describe('groupChatCore', () => {
   });
 
   it('starts every dialog at the default lifecycle and clamps what it submits', () => {
-    expect(initialGroupChatFormState()).toEqual({ name: '', positionIds: [], ttlDays: 7, permanent: false });
+    expect(initialGroupChatFormState()).toEqual({
+      name: '',
+      positionIds: [],
+      ttlDays: 7,
+      permanent: false,
+      modelsBySeat: [],
+    });
     // The day count settles inside 1-365 whatever was typed; the flag passes through.
     expect(groupChatLifecycle(initialGroupChatFormState())).toEqual({ ttlDays: 7, permanent: false });
     expect(groupChatLifecycle({ name: '', positionIds: [], ttlDays: 0, permanent: true })).toEqual({
