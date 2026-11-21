@@ -43,7 +43,8 @@
     "deleteA11y": "刪除{{name}}",
     "deleteFailed": "刪除群聊失敗。",
     "deletedFold": "已刪除 {{count}} 隊",
-    "restoreFailed": "恢復群聊失敗。"
+    "restoreFailed": "恢復群聊失敗。",
+    "verified": "已驗證 {{count}}"
   },
   "empty": {
     "hint": "找主管派個活試試：跟主管說一句話，它會自動組建或複用團隊並跟到底。",

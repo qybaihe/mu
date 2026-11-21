@@ -43,7 +43,8 @@
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
     "deletedFold": "{{count}} deleted teams",
-    "restoreFailed": "Failed to restore the group chat."
+    "restoreFailed": "Failed to restore the group chat.",
+    "verified": "Verified {{count}}"
   },
   "empty": {
     "hint": "Ask the supervisor for a job: one message and it assembles or reuses a team and follows it through.",

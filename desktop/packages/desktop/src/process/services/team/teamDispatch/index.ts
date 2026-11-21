@@ -10,9 +10,10 @@
 import { dispatchSeedBridge } from '@/common/chat/team/teamDispatch/dispatchSeedBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
 import { getPlatformServices } from '@/common/platform';
-import { isSeedableTeamWorkspace, seedDispatchRulesIn } from './dispatchSeedService';
+import { isSeedableTeamWorkspace, seedDispatchRulesIn, seedTeamApprovalIn } from './dispatchSeedService';
+import { effectiveApprovalMode } from '@/common/chat/team/teamDispatch/approvalCore';
 
-export { isSeedableTeamWorkspace, seedDispatchRulesIn } from './dispatchSeedService';
+export { isSeedableTeamWorkspace, seedDispatchRulesIn, seedTeamApprovalIn } from './dispatchSeedService';
 
 // Always answer, failures included: the generic bridge only logs a provider's exception, and the window would wait.
 async function result<T>(work: () => Promise<T>): Promise<KyrnResult<T>> {
@@ -32,6 +33,15 @@ export function initTeamDispatchBridge(): void {
       if (!isSeedableTeamWorkspace(workspace, dataDir))
         console.warn(`[teamDispatch] refused to seed a workspace outside the app data dir: ${workspace}`);
       return { changed: await seedDispatchRulesIn(workspace, { dataDir }) };
+    })
+  );
+  dispatchSeedBridge.seedApproval.provider(({ workspace, mode }) =>
+    result(async () => {
+      const dataDir = getPlatformServices().paths.getDataDir();
+      if (!isSeedableTeamWorkspace(workspace, dataDir))
+        console.warn(`[teamDispatch] refused to seed approval outside the app data dir: ${workspace}`);
+      const tier = effectiveApprovalMode(mode);
+      return { changed: await seedTeamApprovalIn(workspace, tier, { dataDir }) };
     })
   );
 }

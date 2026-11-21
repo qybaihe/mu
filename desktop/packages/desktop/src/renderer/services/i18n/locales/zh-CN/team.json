@@ -102,7 +102,9 @@
     "lifecycleLabel": "生命周期",
     "lifecycleDays": "天",
     "lifecyclePermanent": "永久",
-    "lifecycleHint": "默认 7 天；到期未复用自动退役，每次复用续命；开启永久则不过期。"
+    "lifecycleHint": "默认 7 天；到期未复用自动退役，每次复用续命；开启永久则不过期。",
+    "modelLabel": "成员模型",
+    "modelHint": "按席位指定模型（留「默认」跟随全局）；复核/评审岗建议与产出岗用不同模型。"
   },
   "members": {
     "manageA11y": "管理成员",
@@ -158,6 +160,23 @@
     "loadFailed": "配方加载失败：{{error}}",
     "empty": "暂无可用配方。",
     "needRoles": "配方至少保留一个角色。",
-    "noPlan": "先选择配方；有将新建的岗位时先点确认。"
+    "noPlan": "先选择配方；有将新建的岗位时先点确认。",
+    "modelLabel": "模型",
+    "modelDefault": "默认（跟随全局）",
+    "modelHintBadge": "配方提示：{{hint}}"
+  },
+  "taskVerification": {
+    "verified": "已验证",
+    "pending": "待验证",
+    "verifiedTitle": "完成自回查通过：产出文件全部存在（{{count}} 个路径已核验）",
+    "pendingTitle": "宣称完成但产出未核验通过（缺失或无可核验产出）"
+  },
+  "approval": {
+    "label": "审批模式",
+    "riskOnly": "仅风险动作",
+    "all": "全部写操作",
+    "none": "不审批",
+    "hint": "覆盖各岗位自身审批档位；付款在任何档位都必须先问。",
+    "positionLine": "岗位审批：{{mode}}"
   }
 }

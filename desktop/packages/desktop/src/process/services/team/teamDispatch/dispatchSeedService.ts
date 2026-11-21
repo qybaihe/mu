@@ -16,6 +16,7 @@ import { isAbsolute, join, relative, resolve } from 'node:path';
 import { KyrnError } from '@/common/kyrn/errors';
 import { hasControlCharacter } from '@/common/chat/fileRefs/pathLike';
 import { planDispatchSeed } from '@/common/chat/team/teamDispatch/dispatchRules';
+import { planTeamApprovalSeed, type TeamApprovalMode } from '@/common/chat/team/teamDispatch/approvalCore';
 
 /**
  * The project-memory file the lead runtime reads (a mu lead reads AGENTS.md,
@@ -79,6 +80,33 @@ export async function seedDispatchRulesIn(workspace: string, options: { dataDir:
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
   const plan = planDispatchSeed(existing);
+  if (!plan.changed) return false;
+  await mkdir(workspace, { recursive: true });
+  await writeFile(file, `${plan.next}\n`, 'utf8');
+  return true;
+}
+
+/**
+ * Seeds the workspace's approval block — the group's risk-approval tier as
+ * its own managed block in the same AGENTS.md (the dispatch rules' sibling;
+ * a mode switch replaces the block in place, see approvalCore). Same
+ * workspace bar as {@link seedDispatchRulesIn}.
+ */
+export async function seedTeamApprovalIn(
+  workspace: string,
+  mode: TeamApprovalMode,
+  options: { dataDir: string }
+): Promise<boolean> {
+  if (!isSeedableTeamWorkspace(workspace, options.dataDir))
+    throw new KyrnError('invalid', 'The workspace is not a team workspace of this app', { workspace });
+  const file = join(workspace, RULES_FILE_NAME);
+  let existing: string | undefined;
+  try {
+    existing = await readFile(file, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+  const plan = planTeamApprovalSeed(existing, mode);
   if (!plan.changed) return false;
   await mkdir(workspace, { recursive: true });
   await writeFile(file, `${plan.next}\n`, 'utf8');

@@ -53,6 +53,14 @@ export type WebhookToggleSetting = boolean | undefined;
  */
 export type WebhookModeSetting = Record<string, 'auto' | 'notify'> | undefined;
 
+/**
+ * The per-group risk-approval tiers (batch L ③): one `risk-only`/`all`/
+ * `none` per team id. An absent entry — and the whole map's absence — means
+ * `risk-only`, the same default the position frontmatter's `approval` reads;
+ * a group's entry overrides its seats' own tiers inside that group.
+ */
+export type TeamApprovalModesSetting = Record<string, 'risk-only' | 'all' | 'none'> | undefined;
+
 export type ClientBusinessSettingMap = {
   'google.config': GoogleClientSetting;
   'mcp.config': IMcpServer[] | undefined;
@@ -66,6 +74,7 @@ export type ClientBusinessSettingMap = {
   /** Generated once on first enable and persisted, so external callers' URLs survive restarts. */
   'tools.webhookToken': string | undefined;
   'tools.webhookPositionModes': WebhookModeSetting;
+  'tools.teamApprovalModes': TeamApprovalModesSetting;
   'acp.promptTimeout': number | undefined;
   'acp.agentIdleTimeout': number | undefined;
   /**

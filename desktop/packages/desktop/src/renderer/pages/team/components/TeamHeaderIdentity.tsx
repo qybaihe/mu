@@ -22,6 +22,7 @@ import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import TeamMembersManager from './TeamMembersManager';
 import TeamWorkspaceHandoff from './TeamWorkspaceHandoff';
 import TeamDeliverables from './TeamDeliverables';
+import TeamApprovalMode from './TeamApprovalMode';
 
 /** How many member circles the strip shows before it summarizes the rest. */
 const MAX_VISIBLE_MEMBERS = 3;
@@ -90,6 +91,10 @@ const TeamHeaderIdentity: React.FC<Props> = ({ teamId, role }) => {
         {/* Member management lives on the group chat itself: the lead thread. A teammate's
             private thread sees the identity but never the manager. */}
         {role === 'lead' ? <TeamMembersManager team={team} /> : null}
+        {/* The approval tier is the group's own setting too — same lead-only
+            surface: every seat reads the block it seeds, but the setting is
+            the group's, not one thread's. */}
+        {role === 'lead' ? <TeamApprovalMode team={team} /> : null}
       </div>
     </Tooltip>
   );

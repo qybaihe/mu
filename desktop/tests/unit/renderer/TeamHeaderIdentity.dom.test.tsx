@@ -80,15 +80,21 @@ describe('TeamHeaderIdentity', () => {
     expect(screen.getByTestId('team-header-identity-pill').textContent).toBe('team.header.groupChatPill:count=2');
   });
 
-  it('says a member thread on a teammate conversation — without the member manager', async () => {
+  it('says a member thread on a teammate conversation — without the member manager or the approval select', async () => {
     render(<TeamHeaderIdentity teamId='t1' role='teammate' />);
     expect(await screen.findByTestId('team-header-identity-pill')).toHaveTextContent('team.header.teamPill:count=2');
     expect(screen.queryByTestId('team-members-manager-stub')).toBeNull();
+    expect(screen.queryByTestId('team-approval-mode')).toBeNull();
   });
 
   it('offers member management on the group chat itself', async () => {
     render(<TeamHeaderIdentity teamId='t1' role='lead' />);
     expect(await screen.findByTestId('team-members-manager-stub')).toBeInTheDocument();
+  });
+
+  it('offers the approval tier on the group chat itself (batch L ③)', async () => {
+    render(<TeamHeaderIdentity teamId='t1' role='lead' />);
+    expect(await screen.findByTestId('team-approval-mode')).toBeInTheDocument();
   });
 
   it('summarizes members beyond three as a count', async () => {

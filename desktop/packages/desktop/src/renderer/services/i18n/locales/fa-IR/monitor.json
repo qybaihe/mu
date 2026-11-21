@@ -43,7 +43,8 @@
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
     "deletedFold": "{{count}} تیم حذف‌شده",
-    "restoreFailed": "بازیابی گفتگوی گروهی ناموفق بود."
+    "restoreFailed": "بازیابی گفتگوی گروهی ناموفق بود.",
+    "verified": "تأییدشده {{count}}"
   },
   "empty": {
     "hint": "از سرپرست کاری بخواهید: یک پیام کافی است تا تیمی بسازد یا بازاستفاده کند و تا انتها پیگیری کند.",

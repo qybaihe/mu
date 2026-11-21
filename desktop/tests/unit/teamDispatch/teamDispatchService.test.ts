@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { isSeedableTeamWorkspace, seedDispatchRulesIn } from '@process/services/team/teamDispatch';
+import { isSeedableTeamWorkspace, seedDispatchRulesIn, seedTeamApprovalIn } from '@process/services/team/teamDispatch';
 import { TEAM_DISPATCH_RULES_VERSION } from '@/common/chat/team/teamDispatch/dispatchRules';
 
 /**
@@ -131,5 +131,31 @@ describe('seedDispatchRulesIn', () => {
     const dir = dataDir();
     const escape = join(dir, 'teams', '..', 'positions', '_supervisor');
     await expect(seedDispatchRulesIn(escape, { dataDir: dir })).rejects.toMatchObject({ code: 'invalid' });
+  });
+});
+
+describe('seedTeamApprovalIn (batch L ③)', () => {
+  it('seeds the approval block beside the dispatch rules in the same AGENTS.md', async () => {
+    const dir = dataDir();
+    const workspace = teamWorkspaceIn(dir);
+    await seedDispatchRulesIn(workspace, { dataDir: dir });
+    await expect(seedTeamApprovalIn(workspace, 'risk-only', { dataDir: dir })).resolves.toBe(true);
+    const content = readFileSync(join(workspace, 'AGENTS.md'), 'utf8');
+    expect(content).toContain('<!-- mu-team-dispatch v');
+    expect(content).toContain('<!-- mu-team-approval v1 -->');
+    expect(content).toContain('本群审批模式：risk-only');
+    // Same mode again is free; a mode switch rewrites in place.
+    await expect(seedTeamApprovalIn(workspace, 'risk-only', { dataDir: dir })).resolves.toBe(false);
+    await expect(seedTeamApprovalIn(workspace, 'none', { dataDir: dir })).resolves.toBe(true);
+    const switched = readFileSync(join(workspace, 'AGENTS.md'), 'utf8');
+    expect(switched).toContain('本群审批模式：none');
+    expect(switched).not.toContain('本群审批模式：risk-only');
+    expect(switched).toContain('<!-- mu-team-dispatch v'); // the sibling block survived
+  });
+
+  it('refuses a workspace outside the app data dir like the dispatch seed', async () => {
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), 'mu-team-approval-evil-')));
+    dirs.push(outside);
+    await expect(seedTeamApprovalIn(outside, 'all', { dataDir: dataDir() })).rejects.toMatchObject({ code: 'invalid' });
   });
 });

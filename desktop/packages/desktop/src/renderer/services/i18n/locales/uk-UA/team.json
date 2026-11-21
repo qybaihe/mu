@@ -102,7 +102,9 @@
     "lifecycleLabel": "Lifecycle",
     "lifecycleDays": "days",
     "lifecyclePermanent": "Permanent",
-    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires.",
+    "modelLabel": "Моделі учасників",
+    "modelHint": "Модель на кожне місце (типово — як глобально); ревʼюєру потрібна інша модель, ніж у виконавця."
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "Не вдалося завантажити рецепти: {{error}}",
     "empty": "Рецептів ще немає.",
     "needRoles": "Залиште хоча б одну роль.",
-    "noPlan": "Спочатку виберіть рецепт; підтвердіть посади до створення."
+    "noPlan": "Спочатку виберіть рецепт; підтвердіть посади до створення.",
+    "modelLabel": "Модель",
+    "modelDefault": "Типова (як глобально)",
+    "modelHintBadge": "Підказка рецепта: {{hint}}"
+  },
+  "taskVerification": {
+    "verified": "Перевірено",
+    "pending": "Не перевірено",
+    "verifiedTitle": "Самоперевірка пройдена: усі файли на місці (перевірено шляхів: {{count}})",
+    "pendingTitle": "Заявлено готово, але результат не підтверджено (немає файлів або не знайдені)"
+  },
+  "approval": {
+    "label": "Режим погодження",
+    "riskOnly": "Лише ризиковані",
+    "all": "Усі записи",
+    "none": "Без погодження",
+    "hint": "Перекриває рівень посади; платежі питаються завжди.",
+    "positionLine": "Погодження посади: {{mode}}"
   }
 }

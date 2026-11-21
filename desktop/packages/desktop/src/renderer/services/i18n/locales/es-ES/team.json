@@ -102,7 +102,9 @@
     "lifecycleLabel": "Lifecycle",
     "lifecycleDays": "days",
     "lifecyclePermanent": "Permanent",
-    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires.",
+    "modelLabel": "Modelos de miembros",
+    "modelHint": "Elige un modelo por asiento (Predeterminado sigue el global); el asiento de revisión debe diferir del productor."
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "Fallo al cargar recetas: {{error}}",
     "empty": "Aún no hay recetas.",
     "needRoles": "Conserva al menos un rol.",
-    "noPlan": "Elige primero una receta; confirma los puestos por crear."
+    "noPlan": "Elige primero una receta; confirma los puestos por crear.",
+    "modelLabel": "Modelo",
+    "modelDefault": "Predeterminado (seguir global)",
+    "modelHintBadge": "Pista de receta: {{hint}}"
+  },
+  "taskVerification": {
+    "verified": "Verificado",
+    "pending": "Sin verificar",
+    "verifiedTitle": "Autochequeo superado: todos los archivos existen ({{count}} rutas comprobadas)",
+    "pendingTitle": "Declarado listo pero la salida no verificó (falta o nada verificable)"
+  },
+  "approval": {
+    "label": "Modo de aprobación",
+    "riskOnly": "Solo acciones de riesgo",
+    "all": "Todas las escrituras",
+    "none": "Sin aprobación",
+    "hint": "Prevalece sobre el nivel del puesto; los pagos siempre preguntan.",
+    "positionLine": "Aprobación del puesto: {{mode}}"
   }
 }

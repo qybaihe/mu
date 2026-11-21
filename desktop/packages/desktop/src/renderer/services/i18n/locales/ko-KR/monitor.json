@@ -43,7 +43,8 @@
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
     "deletedFold": "삭제됨 {{count}}팀",
-    "restoreFailed": "그룹 채팅 복원에 실패했습니다."
+    "restoreFailed": "그룹 채팅 복원에 실패했습니다.",
+    "verified": "검증됨 {{count}}"
   },
   "empty": {
     "hint": "주관에게 일을 맡겨 보세요: 한마디면 팀을 꾸려 끝까지 추적합니다.",

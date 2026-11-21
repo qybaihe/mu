@@ -102,7 +102,9 @@
     "lifecycleLabel": "Lifecycle",
     "lifecycleDays": "days",
     "lifecyclePermanent": "Permanent",
-    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires.",
+    "modelLabel": "メンバーモデル",
+    "modelHint": "席ごとにモデルを指定（デフォルトはグローバルに従う）；レビュー席は作成席と別モデルを推奨。"
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "レシピの読み込みに失敗：{{error}}",
     "empty": "レシピはまだありません。",
     "needRoles": "ロールを 1 つ以上残してください。",
-    "noPlan": "先にレシピを選択。作成が必要なポジションは先に確認してください。"
+    "noPlan": "先にレシピを選択。作成が必要なポジションは先に確認してください。",
+    "modelLabel": "モデル",
+    "modelDefault": "デフォルト（グローバルに従う）",
+    "modelHintBadge": "レシヒント：{{hint}}"
+  },
+  "taskVerification": {
+    "verified": "検証済み",
+    "pending": "未検証",
+    "verifiedTitle": "自己チェック合格：産出ファイルがすべて存在（{{count}} 件確認）",
+    "pendingTitle": "完了宣言だが産出を検証できず（欠落または検証対象なし）"
+  },
+  "approval": {
+    "label": "承認モード",
+    "riskOnly": "リスク操作のみ",
+    "all": "すべての書き込み",
+    "none": "承認なし",
+    "hint": "各ポジションの承認段階を上書き；支払いはどの段階でも必ず確認。",
+    "positionLine": "ポジション承認：{{mode}}"
   }
 }

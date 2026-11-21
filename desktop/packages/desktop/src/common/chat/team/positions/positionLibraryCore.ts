@@ -28,6 +28,11 @@
  */
 import { userPortraitSectionLines } from '@/common/chat/team/positions/userPortraitCore';
 import {
+  positionApprovalGateLines,
+  parseApprovalField,
+  type TeamApprovalMode,
+} from '@/common/chat/team/teamDispatch/approvalCore';
+import {
   parsePositionThinkingField,
   type PositionThinkingLevel,
 } from '@/common/chat/team/thinkingLevel/thinkingLevelCore';
@@ -62,6 +67,13 @@ export type PositionInfo = {
    * runs on.
    */
   thinkingLevel?: PositionThinkingLevel;
+  /**
+   * Frontmatter `approval`: the position's risk-approval tier
+   * (`risk-only`/`all`/`none`, see approvalCore; absent = risk-only). The
+   * gate turns it into the hard-rules section beside the reverse taboos; a
+   * group chat's own approval block overrides it inside that group.
+   */
+  approval?: TeamApprovalMode;
 };
 
 /** The conversation-extra key that binds a conversation to one position. */
@@ -149,7 +161,8 @@ export function parsePositionDocument(fileName: string, content: string): Positi
   const displayName = asTrimmedString(fields.get('display_name')) ?? name;
   const antiJob = parseAntiJobField(frontmatterLines, fields);
   const thinkingLevel = parsePositionThinkingField(fields.get('thinking'));
-  return { name, displayName, description, projectRoot, body, antiJob, thinkingLevel };
+  const approval = parseApprovalField(fields.get('approval'));
+  return { name, displayName, description, projectRoot, body, antiJob, thinkingLevel, approval };
 }
 
 /**
@@ -181,6 +194,7 @@ export function buildPositionOverrideContent(
     '',
     ...antiJobLines,
     '',
+    ...positionApprovalGateLines(position.approval),
     ...firstExchangeLines(),
     '',
     '## 任务归属判定（硬规则）',

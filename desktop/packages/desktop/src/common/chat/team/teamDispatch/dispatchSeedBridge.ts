@@ -17,6 +17,13 @@ import type { KyrnResult } from '../../../kyrn/errors';
 /** Whether the file changed; `false` means the rules were already in place. */
 export type DispatchSeedResult = { changed: boolean };
 
+/** The group's approval tier for one seed call (`risk-only` is the default). */
+export type TeamApprovalSeedParams = { workspace: string; mode: 'risk-only' | 'all' | 'none' };
+
 export const dispatchSeedBridge = {
   seed: bridge.buildProvider<KyrnResult<DispatchSeedResult>, { workspace: string }>('team-dispatch.seed'),
+  /** Seeds the group's approval block (batch L ③): same workspace bar, its own managed block. */
+  seedApproval: bridge.buildProvider<KyrnResult<DispatchSeedResult>, TeamApprovalSeedParams>(
+    'team-dispatch.seed-approval'
+  ),
 };

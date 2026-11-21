@@ -102,7 +102,9 @@
     "lifecycleLabel": "Lifecycle",
     "lifecycleDays": "days",
     "lifecyclePermanent": "Permanent",
-    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires.",
+    "modelLabel": "مدل اعضا",
+    "modelHint": "برای هر صندلی یک مدل انتخاب کنید (پیش‌فرض از سراسری پیروی می‌کند)؛ صندلی بازبینی باید با تولیدکننده متفاوت باشد."
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "بارگذاری دستورها ناموفق بود: {{error}}",
     "empty": "هنوز دستوری نیست.",
     "needRoles": "حداقل یک نقش را نگه دارید.",
-    "noPlan": "اول یک دستور انتخاب کنید؛ جایگاه‌های ایجادشونده را تأیید کنید."
+    "noPlan": "اول یک دستور انتخاب کنید؛ جایگاه‌های ایجادشونده را تأیید کنید.",
+    "modelLabel": "مدل",
+    "modelDefault": "پیش‌فرض (پیروی از سراسری)",
+    "modelHintBadge": "نکته دستور: {{hint}}"
+  },
+  "taskVerification": {
+    "verified": "تأیید شد",
+    "pending": "تأیید نشده",
+    "verifiedTitle": "خودبازبینی موفق: همه فایل‌ها موجودند ({{count}} مسیر بررسی شد)",
+    "pendingTitle": "کامل اعلام شده اما خروجی تأیید نشد (گمشده یا قابل بررسی نیست)"
+  },
+  "approval": {
+    "label": "حالت تأیید",
+    "riskOnly": "فقط اقدام‌های پرخطر",
+    "all": "همه نوشتن‌ها",
+    "none": "بدون تأیید",
+    "hint": "بر سطح تأیید جایگاه اولویت دارد؛ پرداخت همیشه پرسیده می‌شود.",
+    "positionLine": "تأیید جایگاه: {{mode}}"
   }
 }

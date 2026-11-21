@@ -102,7 +102,9 @@
     "lifecycleLabel": "Lifecycle",
     "lifecycleDays": "days",
     "lifecyclePermanent": "Permanent",
-    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires.",
+    "modelLabel": "Mitgliedermodelle",
+    "modelHint": "Modell pro Sitz wählen (Standard folgt global); Review-Sitz soll vom Producer abweichen."
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "Rezepte konnten nicht geladen werden: {{error}}",
     "empty": "Noch keine Rezepte.",
     "needRoles": "Mindestens eine Rolle behalten.",
-    "noPlan": "Zuerst ein Rezept wählen; anzulegende Positionen vorher bestätigen."
+    "noPlan": "Zuerst ein Rezept wählen; anzulegende Positionen vorher bestätigen.",
+    "modelLabel": "Modell",
+    "modelDefault": "Standard (global folgen)",
+    "modelHintBadge": "Rezept-Hinweis: {{hint}}"
+  },
+  "taskVerification": {
+    "verified": "Verifiziert",
+    "pending": "Unverifiziert",
+    "verifiedTitle": "Selbstprüfung bestanden: alle Dateien vorhanden ({{count}} Pfade geprüft)",
+    "pendingTitle": "Als fertig gemeldet, aber Output nicht verifiziert (fehlt oder nichts Prüfbares)"
+  },
+  "approval": {
+    "label": "Freigabemodus",
+    "riskOnly": "Nur riskante Aktionen",
+    "all": "Alle Schreibvorgänge",
+    "none": "Keine Freigabe",
+    "hint": "Überschreibt die Stufe der Position; Zahlungen fragen immer.",
+    "positionLine": "Positions-Freigabe: {{mode}}"
   }
 }

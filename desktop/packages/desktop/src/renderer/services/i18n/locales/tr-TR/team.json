@@ -102,7 +102,9 @@
     "lifecycleLabel": "Lifecycle",
     "lifecycleDays": "days",
     "lifecyclePermanent": "Permanent",
-    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires.",
+    "modelLabel": "Üye modelleri",
+    "modelHint": "Koltuk başına model seçin (Varsayılan geneli izler); inceleme koltuğu üretim koltuğundan farklı model kullanmalı."
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "Tarifler yüklenemedi: {{error}}",
     "empty": "Henüz tarif yok.",
     "needRoles": "En az bir rol bırakın.",
-    "noPlan": "Önce bir tarif seçin; oluşturulacak pozisyonları onaylayın."
+    "noPlan": "Önce bir tarif seçin; oluşturulacak pozisyonları onaylayın.",
+    "modelLabel": "Model",
+    "modelDefault": "Varsayılan (geneli izle)",
+    "modelHintBadge": "Tarif ipucu: {{hint}}"
+  },
+  "taskVerification": {
+    "verified": "Doğrulandı",
+    "pending": "Doğrulanmadı",
+    "verifiedTitle": "Öz denetim geçti: üretilen tüm dosyalar mevcut ({{count}} yol kontrol edildi)",
+    "pendingTitle": "Tamamlandı dendi ama çıktı doğrulanamadı (eksik veya kontrol edilecek şey yok)"
+  },
+  "approval": {
+    "label": "Onay modu",
+    "riskOnly": "Sadece riskli eylemler",
+    "all": "Tüm yazmalar",
+    "none": "Onay yok",
+    "hint": "Pozisyonların onay kademesini geçersiz kılar; ödeme her kademede sorulur.",
+    "positionLine": "Pozisyon onayı: {{mode}}"
   }
 }

@@ -43,7 +43,8 @@
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
     "deletedFold": "{{count}} silinen takım",
-    "restoreFailed": "Grup sohbeti geri yüklenemedi."
+    "restoreFailed": "Grup sohbeti geri yüklenemedi.",
+    "verified": "Doğrulandı {{count}}"
   },
   "empty": {
     "hint": "Süpervizöre bir iş ver: tek mesajla bir ekip kurar ya da yeniden kullanır ve sonuna kadar izler.",

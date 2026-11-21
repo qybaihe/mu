@@ -43,7 +43,8 @@
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
     "deletedFold": "{{count}} gelöschte Teams",
-    "restoreFailed": "Wiederherstellen des Gruppenchats fehlgeschlagen."
+    "restoreFailed": "Wiederherstellen des Gruppenchats fehlgeschlagen.",
+    "verified": "Verifiziert {{count}}"
   },
   "empty": {
     "hint": "Gib dem Supervisor eine Aufgabe: eine Nachricht, und er stellt ein Team zusammen oder nutzt eines und verfolgt alles bis zum Ende.",

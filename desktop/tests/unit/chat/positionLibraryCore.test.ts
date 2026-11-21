@@ -134,6 +134,15 @@ describe('parsePositionDocument', () => {
     expect(truncated?.antiJob?.[0]).toHaveLength(200);
     expect(truncated?.antiJob?.[0]?.endsWith('…')).toBe(true);
   });
+
+  it('parses the approval tier; a malformed or absent value reads as the default (batch L ③)', () => {
+    const declared = parsePositionDocument('a.md', '---\nname: a\ndescription: d\napproval: all\n---\n\n正文');
+    expect(declared?.approval).toBe('all');
+    const malformed = parsePositionDocument('b.md', '---\nname: b\ndescription: d\napproval: sometimes\n---\n\n正文');
+    expect(malformed?.approval).toBeUndefined();
+    const absent = parsePositionDocument('c.md', '---\nname: c\ndescription: d\n---\n\n正文');
+    expect(absent?.approval).toBeUndefined();
+  });
 });
 
 describe('buildPositionOverrideContent', () => {
@@ -141,6 +150,19 @@ describe('buildPositionOverrideContent', () => {
     { name: 'forwarder', displayName: '货代', description: '货代业务常设岗位', body: '正文甲' },
     { name: 'video-lab', displayName: '视频实验室', description: '视频域常设岗位', body: '正文乙' },
   ];
+
+  it('carries the approval tier as hard rules beside the reverse taboos — the declared tier, else the default', () => {
+    const declared = buildPositionOverrideContent({ ...roster[0], approval: 'none' }, roster);
+    expect(declared).toContain('## 风险动作审批（硬规则）');
+    expect(declared).toContain('本岗审批档位：none');
+    // The payment iron line rides every tier, `none` included.
+    expect(declared).toContain('任何付款/资金操作');
+    // The section sits with the fences, before the ownership gate.
+    expect(declared.indexOf('风险动作审批')).toBeGreaterThan(declared.indexOf('反向禁忌'));
+    expect(declared.indexOf('风险动作审批')).toBeLessThan(declared.indexOf('任务归属判定'));
+    const undeclared = buildPositionOverrideContent(roster[0], roster);
+    expect(undeclared).toContain('本岗审批档位：risk-only');
+  });
 
   it('states the position identity, the ownership gate, the instructions and the whole roster', () => {
     const content = buildPositionOverrideContent(roster[0], roster);

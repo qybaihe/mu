@@ -102,7 +102,9 @@
     "lifecycleLabel": "生命週期",
     "lifecycleDays": "天",
     "lifecyclePermanent": "永久",
-    "lifecycleHint": "預設 7 天；到期未複用自動退役，每次複用續命；開啟永久則不過期。"
+    "lifecycleHint": "預設 7 天；到期未複用自動退役，每次複用續命；開啟永久則不過期。",
+    "modelLabel": "成員模型",
+    "modelHint": "按席位指定模型（留「預設」跟隨全域）；複核/評審崗建議與產出崗用不同模型。"
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "配方載入失敗：{{error}}",
     "empty": "暫無可用配方。",
     "needRoles": "配方至少保留一個角色。",
-    "noPlan": "先選擇配方；有將新建的崗位時先點確認。"
+    "noPlan": "先選擇配方；有將新建的崗位時先點確認。",
+    "modelLabel": "模型",
+    "modelDefault": "預設（跟隨全域）",
+    "modelHintBadge": "配方提示：{{hint}}"
+  },
+  "taskVerification": {
+    "verified": "已驗證",
+    "pending": "待驗證",
+    "verifiedTitle": "完成自查通過：產出檔案全部存在（{{count}} 個路徑已核驗）",
+    "pendingTitle": "宣稱完成但產出未核驗通過（缺失或無可核驗產出）"
+  },
+  "approval": {
+    "label": "審批模式",
+    "riskOnly": "僅風險動作",
+    "all": "全部寫入操作",
+    "none": "不審批",
+    "hint": "覆蓋各崗位自身審批檔位；付款在任何檔位都必須先問。",
+    "positionLine": "崗位審批：{{mode}}"
   }
 }

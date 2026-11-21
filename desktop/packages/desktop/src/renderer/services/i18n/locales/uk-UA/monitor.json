@@ -43,7 +43,8 @@
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
     "deletedFold": "видалено команд: {{count}}",
-    "restoreFailed": "Не вдалося відновити груповий чат."
+    "restoreFailed": "Не вдалося відновити груповий чат.",
+    "verified": "Перевірено {{count}}"
   },
   "empty": {
     "hint": "Дайте супервайзеру завдання: одне повідомлення — і він збере або використає команду й доведе до кінця.",

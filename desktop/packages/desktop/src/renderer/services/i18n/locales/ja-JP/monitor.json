@@ -43,7 +43,8 @@
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
     "deletedFold": "削除済み {{count}}チーム",
-    "restoreFailed": "グループチャットの復元に失敗しました。"
+    "restoreFailed": "グループチャットの復元に失敗しました。",
+    "verified": "検証済み {{count}}"
   },
   "empty": {
     "hint": "主管に仕事を頼んでみましょう：一言送れば、チームを組み立てて最後まで追跡します。",

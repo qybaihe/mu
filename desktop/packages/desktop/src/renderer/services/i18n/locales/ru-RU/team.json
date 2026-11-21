@@ -102,7 +102,9 @@
     "lifecycleLabel": "Lifecycle",
     "lifecycleDays": "days",
     "lifecyclePermanent": "Permanent",
-    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires.",
+    "modelLabel": "Модели участников",
+    "modelHint": "Модель на каждое место (по умолчанию — как глобально); ревьюеру нужна другая модель, чем у производящего."
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "Не удалось загрузить рецепты: {{error}}",
     "empty": "Рецептов пока нет.",
     "needRoles": "Оставьте хотя бы одну роль.",
-    "noPlan": "Сначала выберите рецепт; подтвердите роли к созданию."
+    "noPlan": "Сначала выберите рецепт; подтвердите роли к созданию.",
+    "modelLabel": "Модель",
+    "modelDefault": "По умолчанию (как глобально)",
+    "modelHintBadge": "Подсказка рецепта: {{hint}}"
+  },
+  "taskVerification": {
+    "verified": "Проверено",
+    "pending": "Не проверено",
+    "verifiedTitle": "Самопроверка пройдена: все файлы на месте (проверено путей: {{count}})",
+    "pendingTitle": "Заявлено готово, но результат не подтверждён (нет файлов или не найдены)"
+  },
+  "approval": {
+    "label": "Режим согласования",
+    "riskOnly": "Только рискованные",
+    "all": "Все записи",
+    "none": "Без согласования",
+    "hint": "Перекрывает уровень позиции; платежи спрашиваются всегда.",
+    "positionLine": "Согласование позиции: {{mode}}"
   }
 }

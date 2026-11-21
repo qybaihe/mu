@@ -43,7 +43,8 @@
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
     "deletedFold": "{{count}} equipos eliminados",
-    "restoreFailed": "Error al restaurar el chat de grupo."
+    "restoreFailed": "Error al restaurar el chat de grupo.",
+    "verified": "Verificados {{count}}"
   },
   "empty": {
     "hint": "Pídele una tarea al supervisor: un mensaje y monta o reutiliza un equipo hasta el final.",

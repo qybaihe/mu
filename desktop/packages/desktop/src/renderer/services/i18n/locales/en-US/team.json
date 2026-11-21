@@ -102,7 +102,9 @@
     "lifecycleLabel": "Lifecycle",
     "lifecycleDays": "days",
     "lifecyclePermanent": "Permanent",
-    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires.",
+    "modelLabel": "Member models",
+    "modelHint": "Pick a model per seat (leave Default to follow global); review seats should differ from the producing seats."
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "Loading recipes failed: {{error}}",
     "empty": "No recipes yet.",
     "needRoles": "Keep at least one role.",
-    "noPlan": "Pick a recipe first; confirm any to-create positions."
+    "noPlan": "Pick a recipe first; confirm any to-create positions.",
+    "modelLabel": "Model",
+    "modelDefault": "Default (follow global)",
+    "modelHintBadge": "Recipe hint: {{hint}}"
+  },
+  "taskVerification": {
+    "verified": "Verified",
+    "pending": "Unverified",
+    "verifiedTitle": "Self-check passed: every produced file exists ({{count}} paths checked)",
+    "pendingTitle": "Claimed done but the output did not verify (missing or nothing checkable)"
+  },
+  "approval": {
+    "label": "Approval mode",
+    "riskOnly": "Risky actions only",
+    "all": "All writes",
+    "none": "No approval",
+    "hint": "Overrides each position's own tier; payments always ask, in every tier.",
+    "positionLine": "Position approval: {{mode}}"
   }
 }

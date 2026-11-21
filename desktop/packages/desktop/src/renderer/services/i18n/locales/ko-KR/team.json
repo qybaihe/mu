@@ -102,7 +102,9 @@
     "lifecycleLabel": "Lifecycle",
     "lifecycleDays": "days",
     "lifecyclePermanent": "Permanent",
-    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires."
+    "lifecycleHint": "7 days by default; a team retires when unused, every reuse extends it; permanent never expires.",
+    "modelLabel": "멤버 모델",
+    "modelHint": "좌석별 모델 지정(기본은 전역 따름); 검토 좌석은 생산 좌석과 다른 모델 권장."
   },
   "members": {
     "manageA11y": "Manage members",
@@ -158,6 +160,23 @@
     "loadFailed": "레시피 불러오기 실패: {{error}}",
     "empty": "레시피가 없습니다.",
     "needRoles": "역할을 하나 이상 남겨야 합니다.",
-    "noPlan": "먼저 레시피를 고르고, 생성할 포지션을 먼저 확인하세요."
+    "noPlan": "먼저 레시피를 고르고, 생성할 포지션을 먼저 확인하세요.",
+    "modelLabel": "모델",
+    "modelDefault": "기본(전역 따름)",
+    "modelHintBadge": "레시피 힌트: {{hint}}"
+  },
+  "taskVerification": {
+    "verified": "검증됨",
+    "pending": "미검증",
+    "verifiedTitle": "자체 점검 통과: 산출 파일 모두 존재({{count}}개 경로 확인)",
+    "pendingTitle": "완료 선언했으나 산출 검증 실패(누락 또는 검증 대상 없음)"
+  },
+  "approval": {
+    "label": "승인 모드",
+    "riskOnly": "위험 동작만",
+    "all": "모든 쓰기",
+    "none": "승인 없음",
+    "hint": "각 포지션의 승인 등급을 덮어씀; 결제는 모든 등급에서 반드시 확인.",
+    "positionLine": "포지션 승인: {{mode}}"
   }
 }

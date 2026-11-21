@@ -43,7 +43,8 @@
     "deleteA11y": "Delete {{name}}",
     "deleteFailed": "Failed to delete the group chat.",
     "deletedFold": "{{count}} équipes supprimées",
-    "restoreFailed": "Échec de la restauration du groupe."
+    "restoreFailed": "Échec de la restauration du groupe.",
+    "verified": "Vérifiés {{count}}"
   },
   "empty": {
     "hint": "Demande une tâche au superviseur : un message et il assemble ou réutilise une équipe jusqu'au bout.",
