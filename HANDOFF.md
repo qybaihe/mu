@@ -550,3 +550,9 @@ LESSON: 守则/配置类注入若依赖「某个 UI 挂载才落盘」，REST �
 - 🟡 新面：S7 `positions.analyzeProject` 渲染层任意路径读（#442 同族读原语）；S8 parseTrashManifest 不拒 `..`/分隔符；S9 TEAMS.md teamId 无形状校验流入后端 URL；S10 64MB 帽与注释不符；S11 locales 24 项（结构性例外续）；S12 supervisor 规则 zh-first 需 issue 声明
 - 剥离清单+issue 11-15+PR10-13 修订见审计文档；B4/S8/S9/S10 修完约 1.5h，B5/B6 是拆 PR 时的剥离动作
 - IPC 安全面核过：supervisor 5 新 IPC 只接 teamId 写固定 TEAMS.md；trash/restore 无任意文件移动口子；catalog URL 常量非渲染层可控
+
+## 2026-11-21 · 任务所有权守则硬化（dispatch rules v4，未 push/issue/PR）
+- 后端不拦所有权（teammate 可改 lead 任务）→ 守则层补闸：dispatchRules v3→4，「待领」节追加「所有权闸」——成员 team_task_update 仅限①认领 owner 空的待领②流转自己的任务，其余（lead 的/他岗的）不得 update/delete，问题群里 @ owner 说，lead 分派调度除外
+- 版本随正文一起 bump（同版本块永不重写，bump 才能让存量 v3 工作区下次打开原位替换）；单测补 7 条文本断言；关联面 151 例全绿
+- 全量对拍实证零新增：11 个失败文件（67 例）与 HEAD 基线逐文件一致（piRpc 8v7 系负载抖动，单跑两边均 7）；tsc 190 错/oxlint 全过均为存量
+- commit `ff65d2552`（feat/team-workbench 本地）；改动 `desktop/packages/desktop/src/common/chat/team/teamDispatch/dispatchRules.ts` + `desktop/tests/unit/teamDispatch/dispatchRules.test.ts`
