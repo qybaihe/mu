@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "ذخیره به‌صورت دستور",
+    "saveRecipeApply": "ذخیره",
+    "saveRecipeDone": "به‌صورت دستور «{{name}}» ذخیره شد",
+    "saveRecipeFailed": "ذخیره دستور ناموفق بود: {{error}}",
+    "saveRecipeHint": "این ترکیب (شامل ممنوعیت‌ها و سطوح تفکر) را به‌صورت دستور قابل استفاده مجدد ذخیره می‌کند."
   },
   "deliverables": {
     "entry": "تحویل‌شده‌ها",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "{{count}} فایل در این دور تغییر کرد"
+  },
+  "recipes": {
+    "modeManual": "انتخاب دستی",
+    "modeRecipe": "شروع از دستور",
+    "builtinBadge": "داخلی",
+    "customBadge": "سفارشی",
+    "pipelineLabel": "خط تولید",
+    "rolesCount": "{{count}} نقش",
+    "changeRecipe": "تغییر دستور",
+    "resolvedBadge": "آماده",
+    "missingBadge": "ایجاد می‌شود",
+    "thinkingBadge": "تفکر: {{level}}",
+    "antiJobLabel": "ممنوعیت‌ها",
+    "swapPlaceholder": "جایگزینی با جایگاه موجود",
+    "swapDraftOption": "ایجاد جدید",
+    "removeRole": "حذف {{name}}",
+    "confirmMissing": "تأیید {{count}} جایگاه برای ایجاد",
+    "reviewTitle": "جایگاه‌های ایجادشونده ({{count}})",
+    "reviewHint": "این نقش‌ها جایگاه موجود ندارند؛ هرکدام با پیش‌نویس زیر ایجاد و سپس به گروه می‌پیوندند. همه فیلدها قابل ویرایش‌اند.",
+    "reviewCreate": "ایجاد و ساخت گروه",
+    "createFailed": "ایجاد جایگاه «{{name}}» ناموفق بود: {{error}}",
+    "loading": "در حال بارگذاری دستورها…",
+    "loadFailed": "بارگذاری دستورها ناموفق بود: {{error}}",
+    "empty": "هنوز دستوری نیست.",
+    "needRoles": "حداقل یک نقش را نگه دارید.",
+    "noPlan": "اول یک دستور انتخاب کنید؛ جایگاه‌های ایجادشونده را تأیید کنید."
   }
 }

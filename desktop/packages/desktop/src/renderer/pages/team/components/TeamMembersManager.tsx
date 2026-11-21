@@ -17,11 +17,13 @@
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Message, Popover, Select } from '@arco-design/web-react';
+import { Button, Input, Message, Popover, Select } from '@arco-design/web-react';
 import { Close, People } from '@icon-park/react';
 import classNames from 'classnames';
 import { ipcBridge } from '@/common';
 import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
+import { recipeBridge } from '@/common/chat/team/recipes/recipeBridge';
+import { recipeFromTeam } from '@/common/chat/team/recipes/recipeCore';
 import type { TTeam } from '@/common/types/team/teamTypes';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { leadConversationIdOf, teammateThreadName } from '@renderer/pages/team/createGroupChat/groupChatCore';
@@ -39,6 +41,9 @@ const TeamMembersManager: React.FC<TeamMembersManagerProps> = ({ team }) => {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // The save-as-recipe row: one inline name (defaults to the group's own), one click.
+  const [saveName, setSaveName] = useState<string | undefined>();
+  const [saving, setSaving] = useState(false);
 
   const addable = useMemo(() => addablePositions(team, roster), [team, roster]);
 
@@ -129,6 +134,29 @@ const TeamMembersManager: React.FC<TeamMembersManagerProps> = ({ team }) => {
     }
   };
 
+  /** Saves this group's current lineup as a custom recipe (one role per seat, lead first). */
+  const saveAsRecipe = async (): Promise<void> => {
+    if (saving) return;
+    const displayName = (saveName ?? '').trim() || team.name;
+    setSaving(true);
+    try {
+      const draft = recipeFromTeam(team, roster);
+      const answer = await recipeBridge.save.invoke({ ...draft, displayName });
+      if (answer.ok === false) {
+        Message.error(t('team.members.saveRecipeFailed', { error: answer.error }));
+        return;
+      }
+      Message.success(t('team.members.saveRecipeDone', { name: answer.data.displayName }));
+      setSaveName(undefined);
+    } catch (error) {
+      Message.error(
+        t('team.members.saveRecipeFailed', { error: error instanceof Error ? error.message : String(error) })
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const content = (
     <div className='flex flex-col gap-10px w-260px py-4px' data-testid='team-members-popover'>
       <div className='text-12px font-500 text-t-primary'>
@@ -203,6 +231,30 @@ const TeamMembersManager: React.FC<TeamMembersManagerProps> = ({ team }) => {
       ) : (
         <div className='text-12px text-t-tertiary'>{t('team.members.addAllOnTeam')}</div>
       )}
+      <div className='flex flex-col gap-6px pt-6px border-t-1px border-t-solid border-[var(--color-border-2)]'>
+        <div className='text-12px font-500 text-t-primary'>{t('team.members.saveRecipeLabel')}</div>
+        <div className='flex items-center gap-6px'>
+          <Input
+            className='flex-1 min-w-0'
+            data-testid='team-members-save-recipe-name'
+            aria-label={t('team.members.saveRecipeLabel')}
+            size='small'
+            value={saveName ?? team.name}
+            maxLength={60}
+            onChange={(value) => setSaveName(value)}
+          />
+          <Button
+            data-testid='team-members-save-recipe-apply'
+            size='small'
+            loading={saving}
+            disabled={team.assistants.length === 0}
+            onClick={() => void saveAsRecipe()}
+          >
+            {t('team.members.saveRecipeApply')}
+          </Button>
+        </div>
+        <div className='text-11px text-t-tertiary'>{t('team.members.saveRecipeHint')}</div>
+      </div>
     </div>
   );
 

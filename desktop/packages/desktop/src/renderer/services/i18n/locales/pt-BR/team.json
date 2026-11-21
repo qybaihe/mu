@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "Salvar como receita",
+    "saveRecipeApply": "Salvar",
+    "saveRecipeDone": "Salva como receita “{{name}}”",
+    "saveRecipeFailed": "Falha ao salvar a receita: {{error}}",
+    "saveRecipeHint": "Guarda esta escalação (proibições e níveis de raciocínio incluídos) como receita reutilizável."
   },
   "deliverables": {
     "entry": "Entregáveis",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "{{count}} arquivos alterados nesta rodada"
+  },
+  "recipes": {
+    "modeManual": "Escolher manualmente",
+    "modeRecipe": "Começar de uma receita",
+    "builtinBadge": "Interna",
+    "customBadge": "Personalizada",
+    "pipelineLabel": "Linha",
+    "rolesCount": "{{count}} papéis",
+    "changeRecipe": "Trocar receita",
+    "resolvedBadge": "Pronta",
+    "missingBadge": "A criar",
+    "thinkingBadge": "Raciocínio: {{level}}",
+    "antiJobLabel": "Proibições",
+    "swapPlaceholder": "Trocar por um cargo existente",
+    "swapDraftOption": "Criar novo",
+    "removeRole": "Remover {{name}}",
+    "confirmMissing": "Confirmar {{count}} cargos a criar",
+    "reviewTitle": "Cargos a criar ({{count}})",
+    "reviewHint": "Estes papéis não têm cargo existente; cada um é redigido abaixo e criado antes de entrar no grupo. Todos os campos são editáveis.",
+    "reviewCreate": "Criar e montar o grupo",
+    "createFailed": "Falha ao criar o cargo “{{name}}”: {{error}}",
+    "loading": "Carregando receitas…",
+    "loadFailed": "Falha ao carregar receitas: {{error}}",
+    "empty": "Ainda não há receitas.",
+    "needRoles": "Mantenha pelo menos um papel.",
+    "noPlan": "Escolha uma receita primeiro; confirme os cargos a criar."
   }
 }

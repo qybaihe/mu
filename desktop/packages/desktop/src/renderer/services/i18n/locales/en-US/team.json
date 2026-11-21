@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "Save as recipe",
+    "saveRecipeApply": "Save",
+    "saveRecipeDone": "Saved as recipe \"{{name}}\"",
+    "saveRecipeFailed": "Saving the recipe failed: {{error}}",
+    "saveRecipeHint": "Stores this lineup (taboos and thinking tiers included) as a reusable recipe."
   },
   "deliverables": {
     "entry": "Deliverables",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "{{count}} files changed this round"
+  },
+  "recipes": {
+    "modeManual": "Hand-pick",
+    "modeRecipe": "Start from a recipe",
+    "builtinBadge": "Built-in",
+    "customBadge": "Custom",
+    "pipelineLabel": "Pipeline",
+    "rolesCount": "{{count}} roles",
+    "changeRecipe": "Change recipe",
+    "resolvedBadge": "Ready",
+    "missingBadge": "To create",
+    "thinkingBadge": "Thinking: {{level}}",
+    "antiJobLabel": "Taboos",
+    "swapPlaceholder": "Swap to an existing position",
+    "swapDraftOption": "Create new",
+    "removeRole": "Remove {{name}}",
+    "confirmMissing": "Confirm {{count}} positions to create",
+    "reviewTitle": "Positions to create ({{count}})",
+    "reviewHint": "These roles have no existing position; each is drafted below and created before joining the group. Every field is editable.",
+    "reviewCreate": "Create and build the group",
+    "createFailed": "Creating position \"{{name}}\" failed: {{error}}",
+    "loading": "Loading recipes…",
+    "loadFailed": "Loading recipes failed: {{error}}",
+    "empty": "No recipes yet.",
+    "needRoles": "Keep at least one role.",
+    "noPlan": "Pick a recipe first; confirm any to-create positions."
   }
 }

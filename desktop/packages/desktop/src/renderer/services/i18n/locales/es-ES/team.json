@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "Guardar como receta",
+    "saveRecipeApply": "Guardar",
+    "saveRecipeDone": "Guardada como receta «{{name}}»",
+    "saveRecipeFailed": "Error al guardar la receta: {{error}}",
+    "saveRecipeHint": "Guarda esta alineación (prohibiciones y niveles de reflexión incluidos) como receta reutilizable."
   },
   "deliverables": {
     "entry": "Entregables",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "{{count}} archivos modificados en esta ronda"
+  },
+  "recipes": {
+    "modeManual": "Elegir a mano",
+    "modeRecipe": "Empezar de una receta",
+    "builtinBadge": "Integrada",
+    "customBadge": "Personal",
+    "pipelineLabel": "Cadena",
+    "rolesCount": "{{count}} roles",
+    "changeRecipe": "Cambiar receta",
+    "resolvedBadge": "Lista",
+    "missingBadge": "Por crear",
+    "thinkingBadge": "Reflexión: {{level}}",
+    "antiJobLabel": "Prohibiciones",
+    "swapPlaceholder": "Cambiar por un puesto existente",
+    "swapDraftOption": "Crear nuevo",
+    "removeRole": "Quitar {{name}}",
+    "confirmMissing": "Confirmar {{count}} puestos por crear",
+    "reviewTitle": "Puestos por crear ({{count}})",
+    "reviewHint": "Estos roles no tienen puesto existente; se redactan abajo y se crean antes de entrar al grupo. Todos los campos son editables.",
+    "reviewCreate": "Crear y formar el grupo",
+    "createFailed": "Fallo al crear el puesto «{{name}}»: {{error}}",
+    "loading": "Cargando recetas…",
+    "loadFailed": "Fallo al cargar recetas: {{error}}",
+    "empty": "Aún no hay recetas.",
+    "needRoles": "Conserva al menos un rol.",
+    "noPlan": "Elige primero una receta; confirma los puestos por crear."
   }
 }

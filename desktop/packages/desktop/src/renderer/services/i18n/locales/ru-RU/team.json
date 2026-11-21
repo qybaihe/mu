@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "Сохранить как рецепт",
+    "saveRecipeApply": "Сохранить",
+    "saveRecipeDone": "Сохранено как рецепт «{{name}}»",
+    "saveRecipeFailed": "Не удалось сохранить рецепт: {{error}}",
+    "saveRecipeHint": "Сохраняет этот состав (запреты и уровни мышления включительно) как переиспользуемый рецепт."
   },
   "deliverables": {
     "entry": "Результаты",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "Изменено файлов за этот раунд: {{count}}"
+  },
+  "recipes": {
+    "modeManual": "Выбрать вручную",
+    "modeRecipe": "Из рецепта",
+    "builtinBadge": "Встроенный",
+    "customBadge": "Свой",
+    "pipelineLabel": "Конвейер",
+    "rolesCount": "ролей: {{count}}",
+    "changeRecipe": "Другой рецепт",
+    "resolvedBadge": "Готово",
+    "missingBadge": "Создать",
+    "thinkingBadge": "Мышление: {{level}}",
+    "antiJobLabel": "Запреты",
+    "swapPlaceholder": "Заменить существующей ролью",
+    "swapDraftOption": "Создать новую",
+    "removeRole": "Убрать {{name}}",
+    "confirmMissing": "Подтвердить {{count}} ролей к созданию",
+    "reviewTitle": "Роли к созданию ({{count}})",
+    "reviewHint": "У этих ролей нет существующей позиции; каждая создаётся по черновику ниже и затем входит в группу. Все поля можно править.",
+    "reviewCreate": "Создать и собрать группу",
+    "createFailed": "Не удалось создать роль «{{name}}»: {{error}}",
+    "loading": "Загрузка рецептов…",
+    "loadFailed": "Не удалось загрузить рецепты: {{error}}",
+    "empty": "Рецептов пока нет.",
+    "needRoles": "Оставьте хотя бы одну роль.",
+    "noPlan": "Сначала выберите рецепт; подтвердите роли к созданию."
   }
 }

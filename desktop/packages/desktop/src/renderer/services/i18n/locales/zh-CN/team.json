@@ -114,7 +114,12 @@
     "addLabel": "添加岗位",
     "addPlaceholder": "选择要添加的岗位",
     "addApply": "添加",
-    "addAllOnTeam": "岗位名册已全部在群内。"
+    "addAllOnTeam": "岗位名册已全部在群内。",
+    "saveRecipeLabel": "存为配方",
+    "saveRecipeApply": "保存",
+    "saveRecipeDone": "已保存为配方「{{name}}」",
+    "saveRecipeFailed": "保存配方失败：{{error}}",
+    "saveRecipeHint": "把当前阵容（含禁忌与思考档）存为可复用配方。"
   },
   "deliverables": {
     "entry": "交付物",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "本轮改动文件 {{count}} 个"
+  },
+  "recipes": {
+    "modeManual": "手动挑选",
+    "modeRecipe": "从配方开始",
+    "builtinBadge": "内置",
+    "customBadge": "自定义",
+    "pipelineLabel": "流水线",
+    "rolesCount": "{{count}} 个角色",
+    "changeRecipe": "换个配方",
+    "resolvedBadge": "现成",
+    "missingBadge": "将新建",
+    "thinkingBadge": "思考：{{level}}",
+    "antiJobLabel": "禁忌",
+    "swapPlaceholder": "换成现有岗位",
+    "swapDraftOption": "新建岗位",
+    "removeRole": "移除 {{name}}",
+    "confirmMissing": "确认 {{count}} 个将新建的岗位",
+    "reviewTitle": "将新建的岗位（{{count}} 个）",
+    "reviewHint": "以下角色没有现成岗位，将按草稿建岗后入群；每个字段可改。",
+    "reviewCreate": "确认创建并建群",
+    "createFailed": "创建岗位「{{name}}」失败：{{error}}",
+    "loading": "正在加载配方…",
+    "loadFailed": "配方加载失败：{{error}}",
+    "empty": "暂无可用配方。",
+    "needRoles": "配方至少保留一个角色。",
+    "noPlan": "先选择配方；有将新建的岗位时先点确认。"
   }
 }

@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "Tarif olarak kaydet",
+    "saveRecipeApply": "Kaydet",
+    "saveRecipeDone": "«{{name}}» olarak tarife kaydedildi",
+    "saveRecipeFailed": "Tarif kaydedilemedi: {{error}}",
+    "saveRecipeHint": "Bu kadroyu (yasaklar ve düşünme düzeyleri dahil) yeniden kullanılabilir bir tarif olarak kaydeder."
   },
   "deliverables": {
     "entry": "Teslimler",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "Bu turda {{count}} dosya değişti"
+  },
+  "recipes": {
+    "modeManual": "Elle seç",
+    "modeRecipe": "Tariften başla",
+    "builtinBadge": "Yerleşik",
+    "customBadge": "Özel",
+    "pipelineLabel": "Hattı",
+    "rolesCount": "{{count}} rol",
+    "changeRecipe": "Tarifi değiştir",
+    "resolvedBadge": "Hazır",
+    "missingBadge": "Yeni oluşturulacak",
+    "thinkingBadge": "Düşünme: {{level}}",
+    "antiJobLabel": "Yasaklar",
+    "swapPlaceholder": "Var olan bir pozisyonla değiştir",
+    "swapDraftOption": "Yeni oluştur",
+    "removeRole": "{{name}} kaldır",
+    "confirmMissing": "Oluşturulacak {{count}} pozisyonu onayla",
+    "reviewTitle": "Oluşturulacak pozisyonlar ({{count}})",
+    "reviewHint": "Bu rollerin var olan pozisyonu yok; her biri aşağıdaki taslakla oluşturulup gruba katılır. Tüm alanlar düzenlenebilir.",
+    "reviewCreate": "Oluştur ve grubu kur",
+    "createFailed": "«{{name}}» pozisyonu oluşturulamadı: {{error}}",
+    "loading": "Tarifler yükleniyor…",
+    "loadFailed": "Tarifler yüklenemedi: {{error}}",
+    "empty": "Henüz tarif yok.",
+    "needRoles": "En az bir rol bırakın.",
+    "noPlan": "Önce bir tarif seçin; oluşturulacak pozisyonları onaylayın."
   }
 }

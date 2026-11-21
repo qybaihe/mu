@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "Зберегти як рецепт",
+    "saveRecipeApply": "Зберегти",
+    "saveRecipeDone": "Збережено як рецепт «{{name}}»",
+    "saveRecipeFailed": "Не вдалося зберегти рецепт: {{error}}",
+    "saveRecipeHint": "Зберігає цей склад (заборони та рівні мислення) як багаторазовий рецепт."
   },
   "deliverables": {
     "entry": "Здобутки",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "Змінено файлів за цей раунд: {{count}}"
+  },
+  "recipes": {
+    "modeManual": "Вибрати вручну",
+    "modeRecipe": "З рецепта",
+    "builtinBadge": "Вбудований",
+    "customBadge": "Власний",
+    "pipelineLabel": "Конвеєр",
+    "rolesCount": "ролей: {{count}}",
+    "changeRecipe": "Інший рецепт",
+    "resolvedBadge": "Готово",
+    "missingBadge": "Створити",
+    "thinkingBadge": "Мислення: {{level}}",
+    "antiJobLabel": "Заборони",
+    "swapPlaceholder": "Замінити наявною посадою",
+    "swapDraftOption": "Створити нову",
+    "removeRole": "Прибрати {{name}}",
+    "confirmMissing": "Підтвердити {{count}} посад до створення",
+    "reviewTitle": "Посади до створення ({{count}})",
+    "reviewHint": "У цих ролей немає наявної посади; кожна створюється за чернеткою нижче і потім входить до групи. Усі поля можна правити.",
+    "reviewCreate": "Створити й зібрати групу",
+    "createFailed": "Не вдалося створити посаду «{{name}}»: {{error}}",
+    "loading": "Завантаження рецептів…",
+    "loadFailed": "Не вдалося завантажити рецепти: {{error}}",
+    "empty": "Рецептів ще немає.",
+    "needRoles": "Залиште хоча б одну роль.",
+    "noPlan": "Спочатку виберіть рецепт; підтвердіть посади до створення."
   }
 }

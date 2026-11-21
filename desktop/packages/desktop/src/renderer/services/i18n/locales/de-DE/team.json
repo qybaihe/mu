@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "Als Rezept speichern",
+    "saveRecipeApply": "Speichern",
+    "saveRecipeDone": "Als Rezept „{{name}}“ gespeichert",
+    "saveRecipeFailed": "Speichern des Rezepts fehlgeschlagen: {{error}}",
+    "saveRecipeHint": "Speichert diese Aufstellung (inkl. Tabus und Denkestufen) als wiederverwendbares Rezept."
   },
   "deliverables": {
     "entry": "Ergebnisse",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "{{count}} Dateien in dieser Runde geändert"
+  },
+  "recipes": {
+    "modeManual": "Manuell wählen",
+    "modeRecipe": "Mit Rezept starten",
+    "builtinBadge": "Integriert",
+    "customBadge": "Eigene",
+    "pipelineLabel": "Pipeline",
+    "rolesCount": "{{count}} Rollen",
+    "changeRecipe": "Rezept wechseln",
+    "resolvedBadge": "Vorhanden",
+    "missingBadge": "Neu anlegen",
+    "thinkingBadge": "Denken: {{level}}",
+    "antiJobLabel": "Tabus",
+    "swapPlaceholder": "Durch bestehende Position ersetzen",
+    "swapDraftOption": "Neu anlegen",
+    "removeRole": "{{name}} entfernen",
+    "confirmMissing": "{{count}} anzulegende Positionen bestätigen",
+    "reviewTitle": "Neu anzulegende Positionen ({{count}})",
+    "reviewHint": "Für diese Rollen gibt es keine bestehende Position; sie werden als Entwurf angelegt und treten dann der Gruppe bei. Jedes Feld ist editierbar.",
+    "reviewCreate": "Anlegen und Gruppe erstellen",
+    "createFailed": "Anlegen der Position „{{name}}“ fehlgeschlagen: {{error}}",
+    "loading": "Rezepte werden geladen…",
+    "loadFailed": "Rezepte konnten nicht geladen werden: {{error}}",
+    "empty": "Noch keine Rezepte.",
+    "needRoles": "Mindestens eine Rolle behalten.",
+    "noPlan": "Zuerst ein Rezept wählen; anzulegende Positionen vorher bestätigen."
   }
 }

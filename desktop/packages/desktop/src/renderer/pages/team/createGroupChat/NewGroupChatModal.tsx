@@ -14,9 +14,9 @@
  * (days or permanent), so it carries the same reuse semantics as a
  * supervisor-assembled team.
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Input, InputNumber, Message, Select, Switch } from '@arco-design/web-react';
+import { Button, Input, InputNumber, Message, Radio, Select, Switch } from '@arco-design/web-react';
 import { ipcBridge } from '@/common';
 import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import type { TTeam } from '@/common/types/team/teamTypes';
@@ -26,9 +26,12 @@ import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { getConversationCreateErrorMessage } from '@renderer/pages/conversation/utils/conversationCreateError';
 import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
 import { ensureTeamDispatchSeeded } from '@renderer/pages/team/core/teamDispatchSeed';
+import RecipePanel, { type RecipeGroupPlan } from '@renderer/pages/team/createGroupChat/RecipePanel';
+import { applySlotThinkingLevels } from '@renderer/pages/team/createGroupChat/applySlotThinking';
 import { TEAM_TTL_MAX_DAYS, TEAM_TTL_MIN_DAYS } from '@/common/chat/team/supervisor/supervisorCore';
 import {
   GROUP_NAME_MAX_LENGTH,
+  MAX_GROUP_POSITIONS,
   autoGroupName,
   buildGroupChatCreateInput,
   groupChatLifecycle,
@@ -62,10 +65,20 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
 
   const [form, setForm] = useState<GroupChatFormState>(initialGroupChatFormState);
   const [creating, setCreating] = useState(false);
+  // Recipe mode: the panel picks the seats; manual mode keeps the form's
+  // multi-select. The plan rides in a ref too — the panel hands the final
+  // version over a callback, and the submit must read that exact one.
+  const [mode, setMode] = useState<'manual' | 'recipe'>('manual');
+  const [plan, setPlan] = useState<RecipeGroupPlan | null>(null);
+  const planRef = useRef<RecipeGroupPlan | null>(null);
 
   // A closed dialog forgets its form; the next open starts fresh.
   useEffect(() => {
-    if (!open) setForm(initialGroupChatFormState());
+    if (open) return;
+    setForm(initialGroupChatFormState());
+    setMode('manual');
+    setPlan(null);
+    planRef.current = null;
   }, [open]);
 
   const closeAndReset = useCallback(() => {
@@ -74,64 +87,107 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
     onClose();
   }, [onClose]);
 
-  const validation = validateGroupChatForm(form);
-  const picked = positionsByIds(form.positionIds, positions);
+  const validation =
+    mode === 'manual'
+      ? validateGroupChatForm(form)
+      : plan === null
+        ? 'recipeNoPlan'
+        : plan.positionIds.length === 0
+          ? 'noPositions'
+          : plan.positionIds.length > MAX_GROUP_POSITIONS
+            ? 'tooManyPositions'
+            : null;
+  const seatIds = mode === 'recipe' ? (plan?.positionIds ?? []) : form.positionIds;
+  const picked = positionsByIds(seatIds, positions);
   const resolvedName = form.name.trim() || (picked.length > 0 ? autoGroupName(picked) : '');
 
-  const submit = useCallback(async () => {
-    if (creating) return;
-    if (validateGroupChatForm(form) !== null) return;
-    if (!assistantId) return;
-    setCreating(true);
-    try {
-      const user = await ipcBridge.auth.currentUser.invoke().catch((): undefined => undefined);
-      const team = await ipcBridge.team.create.invoke(
-        buildGroupChatCreateInput(form, positions, assistantId, user?.id ?? '')
-      );
-      const groupName = team.name;
-      // Seed the workspace's dispatch rules before the first turn can need them;
-      // the helper swallows its own failures (the team store retries).
-      await ensureTeamDispatchSeeded(team);
-      // Name the threads for the sidebar: the lead conversation IS the group
-      // chat, each teammate thread says whose it is. A rename must not fail the
-      // creation — the team already exists.
-      await Promise.allSettled(
-        team.assistants.flatMap((agent) => {
-          if (!agent.conversation_id) return [];
-          const label =
-            agent.role === 'leader' ? leadThreadName(groupName) : teammateThreadName(agent.assistant_name, groupName);
-          return [
-            ipcBridge.conversation.update.invoke({
-              id: agent.conversation_id,
-              updates: { name: label, name_source: 'user' },
-            }),
-          ];
-        })
-      );
-      // Register in the shared index: the lifecycle the dialog picked (days,
-      // or permanent). A failed registration never fails the creation.
-      const leadConversationId = leadConversationIdOf(team);
-      if (leadConversationId) {
-        await supervisorBridge.registerTeam
-          .invoke({
-            name: groupName,
-            positions: positionsByIds(form.positionIds, positions).map((position) => position.name),
-            teamId: team.id,
-            leadConversationId,
-            ...groupChatLifecycle(form),
+  const submit = useCallback(
+    async (recipePlan?: RecipeGroupPlan | null) => {
+      if (creating) return;
+      const effectivePlan = recipePlan ?? planRef.current;
+      const ids = effectivePlan ? effectivePlan.positionIds : form.positionIds;
+      if (ids.length === 0 || ids.length > MAX_GROUP_POSITIONS) return;
+      if (!assistantId) return;
+      setCreating(true);
+      try {
+        // The recipe path may carry seats the dialog's roster snapshot does
+        // not know yet (it was created moments ago): the plan's own seat
+        // entries fill the gaps before the create call looks anyone up.
+        const rosterForCreate = [...positions];
+        if (effectivePlan) {
+          for (const seat of effectivePlan.seatInfos) {
+            if (!rosterForCreate.some((position) => position.name === seat.name)) rosterForCreate.push(seat);
+          }
+        }
+        const user = await ipcBridge.auth.currentUser.invoke().catch((): undefined => undefined);
+        const team = await ipcBridge.team.create.invoke(
+          buildGroupChatCreateInput({ ...form, positionIds: ids }, rosterForCreate, assistantId, user?.id ?? '')
+        );
+        const groupName = team.name;
+        // Seed the workspace's dispatch rules before the first turn can need them;
+        // the helper swallows its own failures (the team store retries).
+        await ensureTeamDispatchSeeded(team);
+        // Name the threads for the sidebar: the lead conversation IS the group
+        // chat, each teammate thread says whose it is. A rename must not fail the
+        // creation — the team already exists.
+        await Promise.allSettled(
+          team.assistants.flatMap((agent) => {
+            if (!agent.conversation_id) return [];
+            const label =
+              agent.role === 'leader' ? leadThreadName(groupName) : teammateThreadName(agent.assistant_name, groupName);
+            return [
+              ipcBridge.conversation.update.invoke({
+                id: agent.conversation_id,
+                updates: { name: label, name_source: 'user' },
+              }),
+            ];
           })
-          .catch((): undefined => undefined);
+        );
+        // Register in the shared index: the lifecycle the dialog picked (days,
+        // or permanent). A failed registration never fails the creation.
+        const leadConversationId = leadConversationIdOf(team);
+        if (leadConversationId) {
+          await supervisorBridge.registerTeam
+            .invoke({
+              name: groupName,
+              positions: positionsByIds(ids, rosterForCreate).map((position) => position.name),
+              teamId: team.id,
+              leadConversationId,
+              ...groupChatLifecycle(form),
+            })
+            .catch((): undefined => undefined);
+        }
+        // A recipe's declared tiers ride the fresh seats, best-effort (a
+        // dormant teammate keeps its model's start level until its first task).
+        if (effectivePlan) await applySlotThinkingLevels(team, effectivePlan.thinkingBySeat);
+        onCreated(team);
+        closeAndReset();
+      } catch (error) {
+        console.error('[NewGroupChatModal] create failed', error);
+        Message.error(
+          getConversationCreateErrorMessage(error, t, (detail) =>
+            t('team.groupChat.errorWithDetail', { error: detail })
+          )
+        );
+        setCreating(false);
       }
-      onCreated(team);
-      closeAndReset();
-    } catch (error) {
-      console.error('[NewGroupChatModal] create failed', error);
-      Message.error(
-        getConversationCreateErrorMessage(error, t, (detail) => t('team.groupChat.errorWithDetail', { error: detail }))
-      );
-      setCreating(false);
-    }
-  }, [assistantId, closeAndReset, creating, form, onCreated, positions, t]);
+    },
+    [assistantId, closeAndReset, creating, form, onCreated, positions, t]
+  );
+
+  // The panel's live plan drives the footer; the panel's ready callback hands
+  // the exact final plan and runs the creation itself.
+  const handlePlan = useCallback((next: RecipeGroupPlan | null) => {
+    planRef.current = next;
+    setPlan(next);
+  }, []);
+  const handlePlanReady = useCallback(
+    (readyPlan: RecipeGroupPlan) => {
+      handlePlan(readyPlan);
+      void submit(readyPlan);
+    },
+    [handlePlan, submit]
+  );
 
   return (
     <MuModal
@@ -168,6 +224,19 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
       unmountOnExit
     >
       <div className='flex flex-col gap-16px' data-testid='new-group-chat-form'>
+        {/* The two ways in: hand-pick positions, or start from a recipe card. */}
+        <Radio.Group
+          data-testid='new-group-chat-mode'
+          type='button'
+          size='small'
+          value={mode}
+          disabled={creating}
+          onChange={(value) => setMode(value as 'manual' | 'recipe')}
+        >
+          <Radio value='manual'>{t('team.recipes.modeManual')}</Radio>
+          <Radio value='recipe'>{t('team.recipes.modeRecipe')}</Radio>
+        </Radio.Group>
+
         <div>
           <div className='mb-6px text-13px font-500 text-t-primary'>{t('team.groupChat.nameLabel')}</div>
           <Input
@@ -183,27 +252,31 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
           </div>
         </div>
 
-        <div>
-          <div className='mb-6px text-13px font-500 text-t-primary'>{t('team.groupChat.positionsLabel')}</div>
-          <Select
-            className='w-full'
-            mode='multiple'
-            data-testid='new-group-chat-positions'
-            aria-label={t('team.groupChat.positionsLabel')}
-            value={form.positionIds}
-            placeholder={t('team.groupChat.positionsPlaceholder')}
-            onChange={(value) => setForm((prev) => ({ ...prev, positionIds: (value ?? []) as string[] }))}
-          >
-            {positions.map((position) => (
-              <Select.Option key={position.name} value={position.name}>
-                <div className='flex items-center min-w-0'>
-                  <span className='truncate'>{position.displayName}</span>
-                </div>
-              </Select.Option>
-            ))}
-          </Select>
-          <div className='mt-4px text-12px text-t-tertiary'>{t('team.groupChat.positionsHint')}</div>
-        </div>
+        {mode === 'manual' ? (
+          <div>
+            <div className='mb-6px text-13px font-500 text-t-primary'>{t('team.groupChat.positionsLabel')}</div>
+            <Select
+              className='w-full'
+              mode='multiple'
+              data-testid='new-group-chat-positions'
+              aria-label={t('team.groupChat.positionsLabel')}
+              value={form.positionIds}
+              placeholder={t('team.groupChat.positionsPlaceholder')}
+              onChange={(value) => setForm((prev) => ({ ...prev, positionIds: (value ?? []) as string[] }))}
+            >
+              {positions.map((position) => (
+                <Select.Option key={position.name} value={position.name}>
+                  <div className='flex items-center min-w-0'>
+                    <span className='truncate'>{position.displayName}</span>
+                  </div>
+                </Select.Option>
+              ))}
+            </Select>
+            <div className='mt-4px text-12px text-t-tertiary'>{t('team.groupChat.positionsHint')}</div>
+          </div>
+        ) : (
+          <RecipePanel open={open} onPlan={handlePlan} onReadyToCreate={handlePlanReady} busy={creating} />
+        )}
 
         <div>
           <div className='mb-6px text-13px font-500 text-t-primary'>{t('team.groupChat.lifecycleLabel')}</div>
@@ -237,7 +310,7 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
 
         {validation !== null ? (
           <div data-testid='new-group-chat-error' className='text-12px text-[rgb(var(--danger-6))]'>
-            {t(`team.groupChat.errors.${validation}`)}
+            {validation === 'recipeNoPlan' ? t('team.recipes.noPlan') : t(`team.groupChat.errors.${validation}`)}
           </div>
         ) : null}
       </div>

@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "存成配方",
+    "saveRecipeApply": "儲存",
+    "saveRecipeDone": "已存成配方「{{name}}」",
+    "saveRecipeFailed": "儲存配方失敗：{{error}}",
+    "saveRecipeHint": "把目前陣容（含禁忌與思考檔）存成可重用配方。"
   },
   "deliverables": {
     "entry": "交付物",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "本輪變更檔案 {{count}} 個"
+  },
+  "recipes": {
+    "modeManual": "手動挑選",
+    "modeRecipe": "從配方開始",
+    "builtinBadge": "內建",
+    "customBadge": "自訂",
+    "pipelineLabel": "流水線",
+    "rolesCount": "{{count}} 個角色",
+    "changeRecipe": "換個配方",
+    "resolvedBadge": "現成",
+    "missingBadge": "將新建",
+    "thinkingBadge": "思考：{{level}}",
+    "antiJobLabel": "禁忌",
+    "swapPlaceholder": "換成現有崗位",
+    "swapDraftOption": "新建崗位",
+    "removeRole": "移除 {{name}}",
+    "confirmMissing": "確認 {{count}} 個將新建的崗位",
+    "reviewTitle": "將新建的崗位（{{count}} 個）",
+    "reviewHint": "以下角色沒有現成崗位，將按草稿建崗後入群；每個欄位可改。",
+    "reviewCreate": "確認建立並建群",
+    "createFailed": "建立崗位「{{name}}」失敗：{{error}}",
+    "loading": "正在載入配方…",
+    "loadFailed": "配方載入失敗：{{error}}",
+    "empty": "暫無可用配方。",
+    "needRoles": "配方至少保留一個角色。",
+    "noPlan": "先選擇配方；有將新建的崗位時先點確認。"
   }
 }

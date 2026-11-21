@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "レシピとして保存",
+    "saveRecipeApply": "保存",
+    "saveRecipeDone": "レシピ「{{name}}」として保存しました",
+    "saveRecipeFailed": "レシピの保存に失敗：{{error}}",
+    "saveRecipeHint": "この編成（タブーと思考レベルを含む）を再利用可能なレシピとして保存します。"
   },
   "deliverables": {
     "entry": "成果物",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "今回の変更ファイル {{count}} 件"
+  },
+  "recipes": {
+    "modeManual": "手動で選択",
+    "modeRecipe": "レシピから始める",
+    "builtinBadge": "内蔵",
+    "customBadge": "カスタム",
+    "pipelineLabel": "パイプライン",
+    "rolesCount": "{{count}} ロール",
+    "changeRecipe": "レシピを変える",
+    "resolvedBadge": "既存",
+    "missingBadge": "新規作成",
+    "thinkingBadge": "思考：{{level}}",
+    "antiJobLabel": "タブー",
+    "swapPlaceholder": "既存ポジションに交代",
+    "swapDraftOption": "新規作成",
+    "removeRole": "{{name}} を外す",
+    "confirmMissing": "新規作成する {{count}} ポジションを確認",
+    "reviewTitle": "新規作成するポジション（{{count}} 件）",
+    "reviewHint": "これらのロールには既存ポジションがなく、下書きを作成してからグループに参加します。各項目は編集できます。",
+    "reviewCreate": "作成してグループを立てる",
+    "createFailed": "ポジション「{{name}}」の作成に失敗：{{error}}",
+    "loading": "レシピを読み込み中…",
+    "loadFailed": "レシピの読み込みに失敗：{{error}}",
+    "empty": "レシピはまだありません。",
+    "needRoles": "ロールを 1 つ以上残してください。",
+    "noPlan": "先にレシピを選択。作成が必要なポジションは先に確認してください。"
   }
 }

@@ -114,7 +114,12 @@
     "addLabel": "Add positions",
     "addPlaceholder": "Pick positions to add",
     "addApply": "Add",
-    "addAllOnTeam": "Every roster position is already in this group."
+    "addAllOnTeam": "Every roster position is already in this group.",
+    "saveRecipeLabel": "레시피로 저장",
+    "saveRecipeApply": "저장",
+    "saveRecipeDone": "레시피 \"{{name}}\"(으)로 저장했습니다",
+    "saveRecipeFailed": "레시피 저장 실패: {{error}}",
+    "saveRecipeHint": "이 편성(금기와 사고 수준 포함)을 재사용 가능한 레시피로 저장합니다."
   },
   "deliverables": {
     "entry": "산출물",
@@ -128,5 +133,31 @@
   },
   "changedFiles": {
     "title": "이번 라운드 변경 파일 {{count}}개"
+  },
+  "recipes": {
+    "modeManual": "직접 고르기",
+    "modeRecipe": "레시피로 시작",
+    "builtinBadge": "내장",
+    "customBadge": "사용자",
+    "pipelineLabel": "파이프라인",
+    "rolesCount": "역할 {{count}}개",
+    "changeRecipe": "다른 레시피",
+    "resolvedBadge": "있음",
+    "missingBadge": "신규 생성",
+    "thinkingBadge": "사고: {{level}}",
+    "antiJobLabel": "금기",
+    "swapPlaceholder": "기존 포지션으로 교체",
+    "swapDraftOption": "새로 만들기",
+    "removeRole": "{{name}} 제거",
+    "confirmMissing": "생성할 포지션 {{count}}개 확인",
+    "reviewTitle": "생성할 포지션 ({{count}}개)",
+    "reviewHint": "이 역할에는 기존 포지션이 없어 아래 초안으로 만든 뒤 그룹에 참여합니다. 모든 항목을 수정할 수 있습니다.",
+    "reviewCreate": "생성하고 그룹 만들기",
+    "createFailed": "포지션 \"{{name}}\" 생성 실패: {{error}}",
+    "loading": "레시피 불러오는 중…",
+    "loadFailed": "레시피 불러오기 실패: {{error}}",
+    "empty": "레시피가 없습니다.",
+    "needRoles": "역할을 하나 이상 남겨야 합니다.",
+    "noPlan": "먼저 레시피를 고르고, 생성할 포지션을 먼저 확인하세요."
   }
 }
