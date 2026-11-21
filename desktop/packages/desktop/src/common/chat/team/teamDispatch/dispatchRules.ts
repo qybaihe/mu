@@ -27,7 +27,7 @@
  */
 
 /** The seeded block's version. Raise it to replace older blocks on open. */
-export const TEAM_DISPATCH_RULES_VERSION = 3;
+export const TEAM_DISPATCH_RULES_VERSION = 4;
 
 /** Closes the app-managed block. */
 export const TEAM_DISPATCH_RULES_END_MARKER = '<!-- /mu-team-dispatch -->';
@@ -64,6 +64,7 @@ export const TEAM_DISPATCH_RULES_BODY = `# 团队 Lead 自动分派守则（Team
   - 对照本岗职责（自己的岗位名与职责描述）：职责匹配 → 一次 \`team_task_update\`（owner=自己 + status=in_progress）认领，并立即 \`team_send_message\` 向 lead 播报一句「我领了 <任务名>」，然后开工。
   - 职责不匹配 → 不碰不抢（宁可不领，绝不越职责揽活）；受阻任务（blocked_by 非空）绝不认领。
   - 自己手上已有 in_progress 任务时不扫不领，先干完手上的。
+- **所有权闸（后端不拦所有权，人人自守）**：成员对 \`team_task_update\` 的使用仅限两种：①认领 owner 为空的待领任务（改 owner=自己 + status=in_progress）；②流转 owner 是自己的任务（改状态、补信息）。其余任何任务——lead 的、他岗成员的——一律不得 update/delete，发现问题也不许代改，\`team_send_message\` 在群里 @ 对应负责人说，由他处置；lead 行使分派调度职责（建任务、派 owner、补 blocked_by、催办纠偏）不在此限。
 
 ## 点名消息 → 尊重点名
 

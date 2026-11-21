@@ -68,9 +68,9 @@ describe('planDispatchSeed', () => {
   });
 });
 
-describe('the v2/v3 sections: gating, claiming, wrap-up ledger and dedup gate', () => {
+describe('the v2-v4 sections: gating, claiming, ownership, wrap-up ledger and dedup gate', () => {
   it('binds every member, not just the lead, and no longer tells teammates to ignore the file', () => {
-    expect(TEAM_DISPATCH_RULES_VERSION).toBe(3);
+    expect(TEAM_DISPATCH_RULES_VERSION).toBe(4);
     expect(TEAM_DISPATCH_RULES_BODY).not.toContain('Teammate 读到时忽略本文件');
     expect(TEAM_DISPATCH_RULES_BODY).toContain(
       '「依赖门控与受阻任务」「待领任务与空闲主动认领」「完成自回查与收尾落账」「新项目/新岗位去重」各节约束全体成员'
@@ -91,6 +91,16 @@ describe('the v2/v3 sections: gating, claiming, wrap-up ledger and dedup gate', 
     expect(TEAM_DISPATCH_RULES_BODY).toContain('没有 in_progress 任务');
     expect(TEAM_DISPATCH_RULES_BODY).toContain('播报一句「我领了 <任务名>」');
     expect(TEAM_DISPATCH_RULES_BODY).toContain('职责不匹配 → 不碰不抢');
+  });
+
+  it('v4 gates ownership: team_task_update is a member’s own two lanes only, never anyone else’s task', () => {
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('所有权闸（后端不拦所有权，人人自守）');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('成员对 `team_task_update` 的使用仅限两种');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('①认领 owner 为空的待领任务（改 owner=自己 + status=in_progress）');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('②流转 owner 是自己的任务');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('一律不得 update/delete，发现问题也不许代改');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('@ 对应负责人说，由他处置');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('lead 行使分派调度职责');
   });
 
   it('v3 requires a completion self-check before any completed mark', () => {
