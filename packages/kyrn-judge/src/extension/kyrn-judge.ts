@@ -262,6 +262,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	// gear before memory and skills read it. Every `tool_call` handler is final
 	// (pi's `ToolCallHandlerOptions`): mu loads before the user's extensions, and
 	// its checks read the call as it runs, after theirs changed it, in this order.
+	let registerConstraintConsumption: (() => void) | undefined;
 	const features: readonly [FeatureName, (runtime: KyrnRuntime) => void][] = [
 		["interjection", registerInterjection],
 		["preflight", registerPreflight],
@@ -284,7 +285,12 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		// is refused before anyone is asked to allow it.
 		["injection", registerInjection],
 		["guard", registerGuard],
-		["constraints", registerConstraints],
+		[
+			"constraints",
+			(shared) => {
+				registerConstraintConsumption = registerConstraints(shared);
+			},
+		],
 		// After the constraint gate and before the permission gate: plan mode refuses a call nobody is asked about.
 		["plan", registerPlan],
 		// After the constraint gate: a call the user ruled out is stopped before anyone is asked to allow it.
@@ -343,8 +349,15 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["googleLogin", registerGoogleLogin],
 		// Adds mu's default-off features to the catalog, which is first read when a turn starts.
 		["featureOffers", (shared) => registerFeatureOffers(shared, roots?.agentDir)],
-		// Last: its tool_call handler marks a call as started, so every check that may stop the call comes first.
-		["recovery", registerRecovery],
+		// Last: consume a one-call exception after the other gates, then mark the call as started.
+		[
+			"recovery",
+			(shared) => {
+				registerConstraintConsumption?.();
+				registerConstraintConsumption = undefined;
+				registerRecovery(shared);
+			},
+		],
 	];
 	// Before the features that send the agent back to work: the end of the run that answers a nudge is read here before
 	// they decide on it, and they may send another.
@@ -354,6 +367,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		options.trace?.(name);
 		register(runtime);
 	}
+	// Feature subsets used by the harness can omit recovery.
+	registerConstraintConsumption?.();
 	options.trace?.("kernel");
 	// What was put back on the model's list since by something other than the masks (another extension, a tool that
 	// sets the list itself) comes off again before the next request.

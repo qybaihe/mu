@@ -35,6 +35,12 @@ From this repository, `kyrn/bin/mu` (on Windows `kyrn\bin\mu.cmd`; the launcher 
 
 Environment: `MU_JUDGE=mude,llm:provider/model` (or `off`), `MU_JUDGE_MODE=active`, `MU_TIME_BUDGET_S=900` (the run's time budget in seconds from mu's start: the watchdog cuts a thinking-only reply in time for its retry, and the model hears the time left at 50% and 80%; `features.deadline`); the `KYRN_` spellings still work. In a session: `/mu`, `/mu judge mude,jev`, `/mu mode tool.admission active`, `/agents`, `/remember`.
 
+## Task constraints
+
+mu distinguishes work to do from limits on that work. “Rename notes.md to NOTES.md” is a task; “Do not edit NOTES.md” is a limit. An unrelated edit doesn't violate either instruction. The tool judge sees which file an edit changes and a bounded preview of the replacements. Only a confident direct violation blocks the call. To block a call or change a limit, mu uses the selected answer’s probability, or the provider’s confidence if that probability is missing. A choice without either score does neither.
+
+Use `/frame` to see active constraints and any known constraints waiting for a writer retry, with their IDs. You can withdraw or replace a rule in conversation. Permission to start implementation can end a hold on that work. “Commit this fix once” is different: mu keeps the rule to ask before each commit. A one-call exception applies only in the current turn, when a judge can check the complete call against what you authorized. It doesn't override another rule, permission mode or the sandbox. It expires on new input and isn't restored or inherited. If mu can't identify the rule or its writer fails, `/frame remove <id>` removes the rule from this branch without asking either model. A unique prefix of the ID is enough. It doesn't change past entries or remove standing lessons; use `/forget` for a lesson.
+
 ## What the main model gets
 
 | Tool | What happens behind it |

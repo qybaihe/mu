@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "Aufgabentyp",
+        "change": "Änderung an der Aufgabe",
+        "limit": "Änderung an den Vorgaben",
         "gear": "Aufgabenstufe",
         "thinking": "Denkstufe",
         "agent": "Vorgeschlagene Rolle",
@@ -489,6 +491,10 @@
         "correction": "Korrektur",
         "subgoal": "Neues Teilziel",
         "unclear": "Lässt sich nicht sagen",
+        "add": "Vorgabe hinzufügen",
+        "withdraw": "Vorgabe aufheben",
+        "allow_once": "Einmalige Ausnahme erlauben",
+        "replace": "Vorgabe ersetzen",
         "hold": "Zurückhalten",
         "no_answer": "Keine rechtzeitige Antwort",
         "aborted": "Abgebrochen",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "Änderung an der Aufgabe"
+            "change": "Änderung an der Aufgabe",
+            "limit": "Änderung an den Vorgaben"
           },
           "answers": {
             "new_task": "Eine neue Aufgabe",
             "constraint": "Eine neue Regel für die Arbeit",
             "correction": "Der Ansatz ist falsch",
             "subgoal": "Nächster Schritt derselben Aufgabe",
-            "none": "Keine Änderung"
+            "none": "Keine Änderung",
+            "add": "Vorgabe hinzufügen",
+            "unclear": "Lässt sich nicht sagen",
+            "withdraw": "Vorgabe {{number}} aufheben",
+            "once": "Einmalige Ausnahme von Vorgabe {{number}} erlauben",
+            "replace": "Vorgabe {{number}} ersetzen"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "Verstößt gegen Vorgabe {{number}}"
+            "constraint": "Verstößt der Aufruf gegen Vorgabe {{number}}?",
+            "permission_once": "Hast du genau diesen Aufruf ausdrücklich einmal erlaubt?"
+          },
+          "answers": {
+            "violates": "Direkter Verstoß",
+            "compatible": "Kein direkter Verstoß",
+            "unclear": "Lässt sich nicht sagen"
           }
         },
         "capabilities": {

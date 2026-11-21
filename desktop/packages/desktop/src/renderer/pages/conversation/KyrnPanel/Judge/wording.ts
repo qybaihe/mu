@@ -114,10 +114,23 @@ export function answerLabel(t: TFunction, language: string, stage: JudgeStage, i
  * An answer to a choice in the app language, by the words its decision point gives it; undefined for an answer it
  * has none for (an element, a role or an item named at run time, or an answer a newer harness adds).
  */
-export function answerValue(t: TFunction, stage: JudgeStage, id: string, value: string): string | undefined {
+export function answerValue(
+  t: TFunction,
+  language: string,
+  stage: JudgeStage,
+  id: string,
+  value: string
+): string | undefined {
   const question = questionOf(stage, id)?.question;
-  return question?.type === 'choice' && question.answers.includes(value)
-    ? t(`${KEY}.answerWords.${stage}.answers.${value}`)
+  if (question?.type !== 'choice') return undefined;
+  const words = `${KEY}.answerWords.${stage}.answers`;
+  if (question.answers.includes(value)) return t(`${words}.${value}`);
+  if (!question.numberedAnswers) return undefined;
+  const numbered = /^([a-z]+)_([1-9]\d*)$/.exec(value);
+  if (!numbered || !question.numberedAnswers.includes(numbered[1])) return undefined;
+  const number = Number(numbered[2]);
+  return Number.isSafeInteger(number)
+    ? t(`${words}.${numbered[1]}`, { number: formatNumber(number, language) })
     : undefined;
 }
 

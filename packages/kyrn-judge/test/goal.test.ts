@@ -473,6 +473,21 @@ describe("goal mode", () => {
 			expect(states(harness).at(-1)).toMatchObject({ status: "met", checkedBy: "jev" });
 		});
 
+		it("falls back to the judge when the model check does not finish in time", async () => {
+			const harness = await start(verdicts({ achieved: yes, needs_user: no }), {
+				goal: { checker: "model", checkTimeoutMs: 50 },
+			});
+			const reply = Promise.withResolvers<ReturnType<typeof fauxAssistantMessage>>();
+			harness.setResponses([fauxAssistantMessage("The tests pass."), () => reply.promise]);
+			try {
+				await harness.session.prompt("/goal every test passes");
+				await vi.waitFor(() => expect(states(harness).at(-1)).toMatchObject({ status: "met", checkedBy: "jev" }));
+				expect(sent(harness)).toHaveLength(1);
+			} finally {
+				reply.resolve(fauxAssistantMessage('{"verdict":"continue","next":"Run the tests again"}'));
+			}
+		});
+
 		it("asks for the condition when /goal comes alone, and enters goal mode with the answer", async () => {
 			const harness = await start(() => ({}), { goal: { checker: "model" } });
 			const asked: string[] = [];

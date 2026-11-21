@@ -10,8 +10,7 @@ import {
 	parseGoalJudgement,
 } from "../../goal/check.ts";
 import { type Coded, say } from "../../language.ts";
-import type { LlmCompletion } from "../../providers/llm.ts";
-import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
+import { askWithin, clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 import { describeCall } from "./constraints.ts";
 
@@ -207,7 +206,9 @@ export function registerGoal(runtime: KyrnRuntime): void {
 			: rest;
 		adopt(stored);
 		pi.appendEntry<GoalState>(GOAL_ENTRY, stored);
+		const entryId = runtime.ctx?.sessionManager.getLeafId() ?? undefined;
 		runtime.present("goal.state", { ...stored, maxContinuations: options.maxContinuations });
+		return entryId;
 	};
 	const pause = (ctx: ExtensionContext, reason: string, coded: Coded) => {
 		if (!goal) return;
@@ -274,31 +275,22 @@ export function registerGoal(runtime: KyrnRuntime): void {
 			if (command && pi.getCommands().some((candidate) => candidate.name === command)) return undefined;
 			// The user is back and has seen where things stand: a paused goal goes on, with a fresh allowance.
 			if (goal?.status === "paused") save({ ...goal, status: "active", reason: undefined, continuations: 0 });
-			if (goal?.status === "active") {
-				if (goal.continuations > 0) adopt({ ...goal, continuations: 0 });
-				fresh();
-			}
+			else if (goal?.status === "active") adopt({ ...goal, continuations: 0 });
+			if (goal?.status === "active") fresh();
 			return undefined;
 		}),
 	);
 
-	/** The model that checks the goal: the one configured for it, else the session's own. */
-	const checkerModel = (ctx: ExtensionContext): LlmCompletion | undefined => {
-		const thinking = options.checkThinking;
-		if (options.checkModel) return runtime.llm(options.checkModel, { thinking });
-		return ctx.model ? runtime.llm(`${ctx.model.provider}/${ctx.model.id}`, { thinking }) : undefined;
-	};
-
 	const askModel = async (ctx: ExtensionContext, evidence: GoalEvidence): Promise<GoalJudgement | undefined> => {
-		const complete = checkerModel(ctx);
+		const model = options.checkModel || (ctx.model && `${ctx.model.provider}/${ctx.model.id}`);
+		const complete = model ? runtime.llm(model, { thinking: options.checkThinking }) : undefined;
 		if (!complete) return undefined;
 		try {
-			const reply = await complete({
-				system: GOAL_CHECK_SYSTEM,
-				user: goalCheckRequest(evidence),
-				signal: AbortSignal.timeout(options.checkTimeoutMs),
-			});
-			return parseGoalJudgement(reply.text);
+			const reply = await askWithin(
+				(signal) => complete({ system: GOAL_CHECK_SYSTEM, user: goalCheckRequest(evidence), signal }),
+				options.checkTimeoutMs,
+			);
+			return reply && parseGoalJudgement(reply.text);
 		} catch {
 			return undefined;
 		}
@@ -328,17 +320,19 @@ export function registerGoal(runtime: KyrnRuntime): void {
 				};
 			}
 		}
-		const decision = await runtime.engine.decide(goalMet, {
+		const input = {
 			goal: evidence.goal,
 			finalMessage: clip(evidence.finalMessage, 800),
 			openItems: evidence.openItems.length,
 			unverified: evidence.unverifiedFiles.length > 0,
-		});
-		const by: GoalCheckedBy = decision.source === "judge" ? "jev" : "rules";
-		if (decision.outcome === "met") return { outcome: { kind: "met" }, by };
-		if (decision.outcome === "ask") return { outcome: { kind: "ask" }, by };
-		if (decision.outcome === "unjudged") return { outcome: { kind: "unjudged" }, by };
-		return { outcome: { kind: "continue", stalled: false }, by };
+		};
+		const decision = await askWithin(
+			(signal) => runtime.engine.decide(goalMet, input, { signal }),
+			options.checkTimeoutMs,
+		);
+		const by = decision?.source === "judge" ? "jev" : "rules";
+		const kind = decision?.outcome ?? goalMet.fallback(input);
+		return { outcome: kind === "continue" ? { kind, stalled: false } : { kind }, by };
 	};
 
 	pi.on(
@@ -509,11 +503,11 @@ export function registerGoal(runtime: KyrnRuntime): void {
 	);
 
 	const begin = (ctx: ExtensionContext, text: string) => {
-		save({ status: "active", text, continuations: 0 });
+		const entryId = save({ status: "active", text, continuations: 0 });
 		fresh();
 		lastCheck = undefined;
-		// The condition is the user's own sentence: the task frame reads it like any other message of theirs.
-		runtime.beginTurn(text);
+		// This entry holds the user's words. The message sent below is custom, not a second user input.
+		runtime.beginTurn(text, entryId);
 		show(
 			ctx,
 			say({

@@ -981,6 +981,7 @@
   },
   "commands": {
     "frame": "Show the task frame: the goal, your constraints with their source, the current subgoal and the acceptance criteria",
+    "frame_with_remove": "Show the task frame and its constraint IDs; /frame remove <id> removes one constraint",
     "remember": "Save a lesson for later work in this project: /remember <what to do>",
     "lessons": "List this project's lessons (id · kind · recalled/followed · lesson); /lessons all adds global and retired lessons",
     "forget": "Retire a lesson so it's no longer recalled: /forget <id prefix> (find IDs with /lessons)",

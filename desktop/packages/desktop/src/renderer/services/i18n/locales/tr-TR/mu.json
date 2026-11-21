@@ -975,6 +975,7 @@
   },
   "commands": {
     "frame": "Görev çerçevesi: hedef, koyduğunuz kesin kısıtlar ve bunları nerede söylediğiniz, alt hedef, kabul ölçütleri",
+    "frame_with_remove": "Görev çerçevesini ve kısıt kimliklerini göster; /frame remove <id> bir kısıtı kaldırır",
     "remember": "Bu projedeki sonraki konuşmalar için bir ders kaydeder: /remember <ne yapılmalı>",
     "lessons": "Bu projenin dersleri: /lessons id · tür · hatırlanma/uyulma · ders listesini verir, /lessons all her yerde geçerli olanları ve devre dışı bırakılanları da ekler",
     "forget": "Bir dersi devre dışı bırakır, artık hatırlanmaz: /forget <id başlangıcı> (id’ler /lessons içinde)",

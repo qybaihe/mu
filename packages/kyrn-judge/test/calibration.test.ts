@@ -34,16 +34,26 @@ describe("reading an answer through a curve", () => {
 	});
 
 	it("reads a choice by the probability of the option it picked, and leaves the others and the pick alone", () => {
-		const answer: Answer = { type: "choice", choice: "needed", probabilities: { needed: 0.95, beyond: 0.05 } };
+		const answer: Answer = {
+			type: "choice",
+			choice: "needed",
+			probabilities: { needed: 0.95, beyond: 0.05 },
+			confidence: 0.5,
+		};
 		expect(readThrough(answer, WRITTEN)).toEqual({
 			type: "choice",
 			choice: "needed",
 			probabilities: { needed: 0.8, beyond: 0.05 },
+			confidence: 0.5,
 			said: 0.95,
 		});
-		// A judge that gives no distribution said no probability to read.
 		const bare: Answer = { type: "choice", choice: "needed" };
 		expect(readThrough(bare, WRITTEN)).toBe(bare);
+	});
+
+	it("reads confidence when the distribution does not score the picked option", () => {
+		const answer: Answer = { type: "choice", choice: "needed", probabilities: { beyond: 0.05 }, confidence: 0.95 };
+		expect(readThrough(answer, WRITTEN)).toStrictEqual({ ...answer, confidence: 0.8, said: 0.95 });
 	});
 
 	it("leaves a score as it is: a place on a rubric is not a probability", () => {

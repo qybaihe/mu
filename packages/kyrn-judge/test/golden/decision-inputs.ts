@@ -41,6 +41,7 @@ import { turnCompletion } from "../../src/decisions/turn-completion.ts";
 import { turnContinue } from "../../src/decisions/turn-continue.ts";
 import { turnDrift } from "../../src/decisions/turn-drift.ts";
 import { turnRewind } from "../../src/decisions/turn-rewind.ts";
+import { constraintInput } from "../../src/extension/features/constraints.ts";
 import type { JsonValue, Questions } from "../../src/types.ts";
 
 /** One decision and the input its golden request is rendered from. */
@@ -324,6 +325,7 @@ export const GOLDEN_CASES: readonly GoldenCase[] = [
 			constraints: ["Do not change the public API of src/parse.ts"],
 			currentSubgoal: "Make the regex read every unit",
 		},
+		activeConstraints: [{ text: "Do not change the public API of src/parse.ts", source: { turn: 2 } }],
 		recentTurns: ["user: fix the failing parseDuration test", "assistant: the regex stops after the first unit"],
 	}),
 	golden(toolAdmission, {
@@ -365,11 +367,18 @@ export const GOLDEN_CASES: readonly GoldenCase[] = [
 		call: "bash: npm test",
 		where: "a program run in the project folder",
 	}),
-	golden(toolConstraint, {
-		toolName: "edit",
-		call: "src/parse.ts <- export function parseTime(input: string): number {",
-		constraints: ["Do not change the public API of src/parse.ts", "Do not touch package.json"],
-	}),
+	golden(
+		toolConstraint,
+		constraintInput(
+			"edit",
+			{
+				path: "src/parse.ts",
+				edits: [{ oldText: "export function parseDuration(", newText: "export function parseTime(" }],
+			},
+			["Ask before renaming public functions in src/parse.ts", "Do not touch package.json"],
+			{ index: 0, userMessage: "I authorize renaming parseDuration to parseTime once." },
+		),
+	),
 	golden(toolDescription, {
 		server: "mcp__docs",
 		passages: [

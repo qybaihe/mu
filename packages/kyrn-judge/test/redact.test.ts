@@ -3,7 +3,7 @@ import { DecisionEngine, defineDecision } from "../src/decision.ts";
 import { carriesCredential, sendsCredentialFile } from "../src/extension/features/guard.ts";
 import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
-import { environmentSecrets, holdsCredential, REDACTED, redactSecrets } from "../src/redact.ts";
+import { environmentSecrets, holdsCredential, REDACTED, redactJson, redactSecrets } from "../src/redact.ts";
 import type { Questions } from "../src/types.ts";
 
 /** Made-up credentials, each in the shape of a real kind. */
@@ -48,7 +48,9 @@ describe("credentials out of a text", () => {
 			"fix the password reset flow and rotate the token cache",
 			"Basic usage: pass a Bearer authentication header",
 			"MAX_TOKENS=4096 and TOKEN_LIMIT=8000",
-			'{"max_tokens": 100000, "token_type": "Bearer"}',
+			'{"max_tokens": 100000, "token_type": "Bearer service", "password_reset": "open the help page"}',
+			'The password reset message is "open the help page".',
+			'{"not a password": "ordinary prose", "tokenizer": "example tokenizer"}',
 			"git push origin main && rm -rf build",
 			"commit 3e62668b1f0a9c8d7e6b5a4c3d2e1f0a9b8c7d6e",
 			"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGq user@host",
@@ -60,7 +62,7 @@ describe("credentials out of a text", () => {
 
 	it("takes a credential's value and keeps its name", () => {
 		expect(redactSecrets("export STRIPE_SECRET_KEY='sk_live_51Habcdefghijklmnop'")).toBe(
-			`export STRIPE_SECRET_KEY=${REDACTED}`,
+			`export STRIPE_SECRET_KEY='${REDACTED}'`,
 		);
 		expect(redactSecrets('{"password": "hunter2hunter2"}')).toBe(`{"password": "${REDACTED}"}`);
 		expect(redactSecrets("const apiKey = 'abcd1234efgh';")).toBe(`const apiKey = '${REDACTED}';`);
@@ -70,6 +72,35 @@ describe("credentials out of a text", () => {
 		expect(redactSecrets("Authorization: Bearer abc123def456ghi789")).toBe(`Authorization: Bearer ${REDACTED}`);
 		expect(redactSecrets("postgres://app:s3cret-pass@db.internal:5432/app")).toBe(
 			`postgres://app:${REDACTED}@db.internal:5432/app`,
+		);
+	});
+
+	it.each([
+		'fixture-prefix"fixture-suffix',
+		'fixture with spaces and a "quote"',
+		"fixture with an apostrophe, a tab\t and a trailing backslash\\",
+		"short",
+	])("keeps JSON valid while taking the whole password %j", (password) => {
+		const input = JSON.stringify({ password, host: "db.example" });
+		const clean = redactSecrets(input);
+		expect(JSON.parse(clean)).toEqual({ password: REDACTED, host: "db.example" });
+		expect(clean).toBe(JSON.stringify({ password: REDACTED, host: "db.example" }));
+	});
+
+	it("keeps prior protection for versioned names and masks a preview ending mid-value", () => {
+		expect(redactSecrets('{"db_password_v2":"fictional-7493"}')).toBe(`{"db_password_v2":"${REDACTED}"}`);
+		expect(redactSecrets(`notes {"password": "fictional prefix`)).toBe(`notes {"password": "${REDACTED}`);
+	});
+
+	it("keeps the single quotes and adjacent assignments after escaping and spaces", () => {
+		const input = String.raw`API_KEY='fixture-prefix\'fixture suffix "quote"\\'; MODE='read only'`;
+		expect(redactSecrets(input)).toBe(`API_KEY='${REDACTED}'; MODE='read only'`);
+	});
+
+	it("takes the whole quoted value before other redaction can alter its escapes", () => {
+		const input = JSON.stringify({ password: 'fixture-prefix"fixture-suffix', host: "db.example" });
+		expect(redactSecrets(input, ["fixture-prefix\\"])).toBe(
+			JSON.stringify({ password: REDACTED, host: "db.example" }),
 		);
 	});
 
@@ -88,6 +119,31 @@ describe("credentials out of a text", () => {
 				KEYBOARD_LAYOUT: "us-international-alt",
 			}),
 		).toEqual([SECRETS.openai, "mude-0123456789abcdef", "tr0ub4dor&3"]);
+	});
+});
+
+describe("credentials out of a JSON value", () => {
+	it("takes named credentials from tool inputs without known secrets or token shapes", () => {
+		const request = {
+			path: "docs/AGENTS.md",
+			headers: { Authorization: "Bearer fixture", "x-api-key": "tiny", "content-type": "application/json" },
+			accounts: [{ password: 'fixture "with quotes" and spaces', refreshToken: "also a fixture", name: "demo" }],
+			credentials: { username: "demo", private_key: "fixture key" },
+			options: { token_type: "Bearer", passwordReset: "email", tokenizer: "demo tokenizer", key: "lookup id" },
+		};
+		expect(redactJson(request)).toEqual({
+			path: request.path,
+			headers: { Authorization: REDACTED, "x-api-key": REDACTED, "content-type": "application/json" },
+			accounts: [{ password: REDACTED, refreshToken: REDACTED, name: "demo" }],
+			credentials: { username: "demo", private_key: REDACTED },
+			options: request.options,
+		});
+		expect(request.headers.Authorization).toBe("Bearer fixture");
+	});
+
+	it("redacts a JSON snippet inside an otherwise ordinary string field", () => {
+		const body = JSON.stringify({ clientSecret: 'fixture "with quotes" and spaces', enabled: true });
+		expect(redactJson({ body })).toEqual({ body: JSON.stringify({ clientSecret: REDACTED, enabled: true }) });
 	});
 });
 

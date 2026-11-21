@@ -402,9 +402,6 @@ describe('Judge cards: readable result and details', () => {
     expect(resultFacts(card(ledger({ specId: 'output.drift', outcome: { broken: [0, 2] } })))).toEqual([
       { name: 'broken', values: ['1', '3'] },
     ]);
-    expect(resultFacts(card(ledger({ specId: 'tool.constraint', outcome: { broken: [1] } })))).toEqual([
-      { name: 'broken', values: ['2'] },
-    ]);
     expect(
       resultFacts(card(ledger({ specId: 'tool.admission.test-log', outcome: { omit: ['part_0', 'part_3'] } })))
     ).toEqual([{ name: 'omit', values: ['1', '4'] }]);
@@ -423,16 +420,112 @@ describe('Judge cards: readable result and details', () => {
     ]);
   });
 
-  it('has words in every language for what the browser step, the compaction, the board and the test log record', () => {
+  it('summarizes task and limit changes separately and keeps the target in the raw record', () => {
+    const outcome = { change: 'subgoal', limit: { kind: 'replace', id: 'rule-id' } };
+    const answers = {
+      change: { type: 'choice', choice: 'subgoal' },
+      limit: { type: 'choice', choice: 'replace_2', probabilities: { replace_2: 0.9, withdraw_1: 0.1 } },
+    };
+    const frame = card(ledger({ specId: 'task.frame', specVersion: 2, outcome, answers }));
+
+    expect(resultFacts(frame)).toEqual([
+      { name: 'change', values: ['subgoal'] },
+      { name: 'limit', values: ['replace'] },
+    ]);
+    expect(answerRows(frame).rows).toContainEqual({
+      id: 'limit',
+      type: 'choice',
+      choice: 'replace_2',
+      options: [
+        { name: 'replace_2', probability: 0.9 },
+        { name: 'withdraw_1', probability: 0.1 },
+      ],
+    });
+    expect(frame.evidence[0].payload.outcome).toEqual(outcome);
+  });
+
+  it.each([
+    ['once_2', 'allow_once'],
+    ['withdraw_2', 'withdraw'],
+  ])('keeps the v6 limit choice %s distinct from other changes', (choice, kind) => {
+    const outcome = { change: 'subgoal', limit: { kind, id: 'rule-id' } };
+    const frame = card(
+      ledger({
+        specId: 'task.frame',
+        specVersion: 6,
+        outcome,
+        answers: { limit: { type: 'choice', choice } },
+      })
+    );
+    expect(resultFacts(frame)).toEqual([
+      { name: 'change', values: ['subgoal'] },
+      { name: 'limit', values: [kind] },
+    ]);
+    expect(answerRows(frame).rows).toEqual([{ id: 'limit', type: 'choice', choice, options: [] }]);
+    expect(frame.evidence[0].payload.outcome).toEqual(outcome);
+  });
+
+  it('keeps the optional exact-call permission answer separate from constraint verdicts', () => {
+    const answers = {
+      constraint_0: { type: 'choice', choice: 'violates' },
+      permission_once: { type: 'boolean', probability: 0.95 },
+    };
+    const constraint = card(ledger({ specId: 'tool.constraint', outcome: { broken: [] }, answers }));
+
+    expect(resultFacts(constraint)).toEqual([{ name: 'broken', values: ['none'] }]);
+    expect(answerRows(constraint).rows).toEqual([
+      { id: 'constraint_0', type: 'choice', choice: 'violates', options: [] },
+      { id: 'permission_once', type: 'boolean', probability: 0.95 },
+    ]);
+  });
+
+  it('shows that no rule was broken without hiding the judge’s uncertainty', () => {
+    const answers = {
+      constraint_0: { type: 'choice', choice: 'unclear', probabilities: { unclear: 0.9 } },
+    };
+    const constraint = card(ledger({ specId: 'tool.constraint', specVersion: 2, outcome: { broken: [] }, answers }));
+
+    expect(resultFacts(constraint)).toEqual([{ name: 'broken', values: ['none'] }]);
+    expect(answerRows(constraint).rows).toEqual([
+      { id: 'constraint_0', type: 'choice', choice: 'unclear', options: [{ name: 'unclear', probability: 0.9 }] },
+    ]);
+  });
+
+  it('replays a v1 scalar task-frame verdict and a boolean constraint verdict', () => {
+    const frame = card(
+      ledger({
+        specId: 'task.frame',
+        specVersion: 1,
+        outcome: 'constraint',
+        answers: { change: { type: 'choice', choice: 'constraint' } },
+      })
+    );
+    expect(resultFacts(frame)).toEqual([{ name: 'result', values: ['constraint'] }]);
+    expect(answerRows(frame).rows).toEqual([{ id: 'change', type: 'choice', choice: 'constraint', options: [] }]);
+
+    const constraint = card(
+      ledger({
+        specId: 'tool.constraint',
+        specVersion: 1,
+        outcome: { broken: [1] },
+        answers: { constraint_1: { type: 'boolean', probability: 0.9 } },
+      })
+    );
+    expect(resultFacts(constraint)).toEqual([{ name: 'broken', values: ['2'] }]);
+    expect(answerRows(constraint).rows).toEqual([{ id: 'constraint_1', type: 'boolean', probability: 0.9 }]);
+  });
+
+  it('has words in every language for browser, compaction, board, test log and task-frame results', () => {
     const facts = [
       ...resultFacts(
         card(ledger({ specId: 'browser.step', outcome: { operation: 'SCROLL_DOWN', target: '3', probability: 0.9 } }))
       ),
       ...resultFacts(card(ledger({ specId: 'board.read', outcome: { key: [0] } }))),
       ...resultFacts(card(ledger({ specId: 'tool.admission.test-log', outcome: { omit: ['part_1'] } }))),
+      ...resultFacts(card(ledger({ specId: 'task.frame', outcome: { limit: { kind: 'allow_once', id: 'rule-id' } } }))),
     ];
     const fields = facts.map((fact) => fact.name);
-    expect(fields).toEqual(['operation', 'target', 'probability', 'key', 'omit']);
+    expect(fields).toEqual(['operation', 'target', 'probability', 'key', 'omit', 'limit']);
     const choices = (specId: keyof typeof JUDGE_QUESTIONS, id: string) =>
       JUDGE_QUESTIONS[specId].flatMap((question) =>
         question.id === id && question.type === 'choice' ? question.answers : []
@@ -442,6 +535,8 @@ describe('Judge cards: readable result and details', () => {
       ...choices('browser.step', 'operation').filter((operation) => operation !== 'other'),
       'BLOCKED',
       ...choices('context.compact', 'kind'),
+      'allow_once',
+      'withdraw',
     ];
     expect(values).toContain('SCROLL_DOWN');
 
@@ -453,6 +548,7 @@ describe('Judge cards: readable result and details', () => {
       for (const field of fields) expect(view.fields[field], `${language} fields.${field}`).toBeTruthy();
       for (const value of values) expect(view.values[value], `${language} values.${value}`).toBeTruthy();
       expect(view.questions.testLog, `${language} questions.testLog`).toBeTruthy();
+      expect(view.values.allow_once, language).not.toBe(view.values.withdraw);
     }
   });
 

@@ -136,8 +136,8 @@ const DESCRIBED: HarnessManifest = {
 			feature: "frame",
 			title: { zh: "任务帧更新", en: "Task frame update" },
 			summary: {
-				zh: "每条消息判断一次：它是新任务、新的硬约束、对做法的纠正、新的子目标，还是什么都没变。只有变了才让模型重写任务帧。",
-				en: "Classifies each message as a new task, a new hard constraint, a correction, a new subgoal or no change. Only a change makes a model rewrite the task frame.",
+				zh: "一次请求分开问两件事：你的消息如何改变要做的事，以及是否新增、撤销或替换一条硬约束。",
+				en: "In one request, asks what your message changes about the work and, separately, whether it adds, lifts or replaces a hard limit.",
 			},
 		},
 		{

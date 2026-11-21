@@ -211,18 +211,18 @@
 			"fa-IR": "به‌روزرسانی چارچوب وظیفه"
 		},
 		"decisions[id=task.frame].summary": {
-			"en": "Classifies each message as a new task, a new hard constraint, a correction, a new subgoal or no change. Only a change makes a model rewrite the task frame.",
-			"zh-TW": "每則訊息判斷一次：它是新任務、新的硬性約束、對做法的糾正、新的子目標，還是什麼都沒變。只有變了才讓模型重寫任務框架。",
-			"ja-JP": "メッセージごとに、新しいタスク、新しい制約、訂正、新しいサブ目標、変更なしのどれにあたるかを判定します。変更があったときだけ、モデルがタスクフレームを書き直します。",
-			"ko-KR": "메시지마다 새 작업인지, 새 제약 조건인지, 정정인지, 새 하위 목표인지, 아니면 바뀐 것이 없는지 묻습니다. 바뀐 것이 있을 때만 모델이 작업 프레임을 다시 씁니다.",
-			"de-DE": "Fragt bei jeder Nachricht: eine neue Aufgabe, eine neue feste Vorgabe, eine Korrektur, ein neues Teilziel oder keine Änderung? Nur bei einer Änderung schreibt ein Modell den Aufgabenrahmen neu.",
-			"fr-FR": "Pose une question pour chaque message : nouvelle tâche, nouvelle contrainte stricte, correction, nouveau sous-objectif ou aucun changement. Seul un changement fait réécrire le cadre de la tâche par un modèle.",
-			"es-ES": "Para cada mensaje se pregunta si trae una tarea nueva, una restricción estricta nueva, una corrección, un subobjetivo nuevo o ningún cambio. Solo si hay un cambio, un modelo reescribe el marco de la tarea.",
-			"pt-BR": "Pergunta sobre cada mensagem: é uma nova tarefa, uma nova restrição rígida, uma correção, um novo subobjetivo ou nada mudou? Só quando algo muda, um modelo reescreve a definição da tarefa.",
-			"ru-RU": "О каждом сообщении спрашивает: это новая задача, новое жёсткое ограничение, исправление, новая подцель или ничего не изменилось? Только при изменении модель переписывает постановку задачи.",
-			"uk-UA": "Для кожного повідомлення з’ясовує: це нове завдання, нове жорстке обмеження, виправлення, нова проміжна мета чи нічого не змінилося. Лише коли щось змінилося, модель переписує рамку завдання.",
-			"tr-TR": "Her mesaj için sorar: yeni bir görev mi, yeni bir kesin kısıt mı, bir düzeltme mi, yeni bir alt hedef mi, yoksa değişiklik yok mu? Görev çerçevesini yalnızca bir değişiklik olduğunda bir model yeniden yazar.",
-			"fa-IR": "دربارهٔ هر پیام می‌پرسد که وظیفهٔ تازه، محدودیت قطعی تازه، اصلاح یا زیرهدف تازه است، یا چیزی تغییر نکرده. فقط وقتی چیزی تغییر کرده باشد، یک مدل چارچوب وظیفه را بازنویسی می‌کند."
+			"en": "In one request, asks what your message changes about the work and, separately, whether it adds, lifts or replaces a hard limit.",
+			"zh-TW": "一次請求分開問兩件事：你的訊息如何改變要做的事，以及是否新增、撤銷或替換一條硬性約束。",
+			"ja-JP": "1 回の問い合わせで、メッセージが作業内容をどう変えるかと、厳守すべき制約を追加・解除・置換するかを別々に尋ねます。",
+			"ko-KR": "한 번의 요청에서 메시지가 작업 내용을 어떻게 바꾸는지, 반드시 지켜야 할 제한을 추가하거나 해제하거나 교체하는지를 따로 묻습니다.",
+			"de-DE": "Fragt in einer Anfrage getrennt, was deine Nachricht an der Arbeit ändert und ob sie eine verbindliche Vorgabe hinzufügt, aufhebt oder ersetzt.",
+			"fr-FR": "Dans une même requête, demande séparément ce que ton message change dans le travail et s’il ajoute, lève ou remplace une contrainte stricte.",
+			"es-ES": "En una sola consulta, pregunta qué cambia tu mensaje en el trabajo y, por separado, si añade, levanta o sustituye una restricción estricta.",
+			"pt-BR": "Em uma só consulta, pergunta o que sua mensagem muda no trabalho e, separadamente, se ela acrescenta, retira ou substitui uma restrição obrigatória.",
+			"ru-RU": "В одном запросе выясняет, что ваше сообщение меняет в работе и, отдельно, добавляет ли оно жёсткое ограничение, снимает или заменяет его.",
+			"uk-UA": "В одному запиті окремо з’ясовує, що ваше повідомлення змінює в роботі та чи додає, скасовує або замінює жорстке обмеження.",
+			"tr-TR": "Tek bir istekte iki ayrı soru sorar: Mesajın yapılacak işi nasıl değiştiriyor? Kesin bir kısıt ekliyor, kaldırıyor veya başka bir kısıtla değiştiriyor mu?",
+			"fa-IR": "در یک درخواست، جداگانه می‌پرسد پیام شما چه تغییری در کار می‌دهد و آیا محدودیتی قطعی را اضافه، لغو یا جایگزین می‌کند."
 		},
 		"decisions[id=input.interjection].title": {
 			"en": "Mid-run messages",

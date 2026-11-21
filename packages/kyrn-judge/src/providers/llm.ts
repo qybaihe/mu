@@ -58,14 +58,20 @@ function toAnswer(question: Question, raw: unknown): Answer | undefined {
 		if (typeof record.score !== "number") return undefined;
 		return { type: "score", score: clamp(record.score, 0, question.criteria.length - 1) };
 	}
+	const { choice, confidence, p } = record;
+	if (typeof choice !== "string" || !Object.hasOwn(question.criteria, choice)) return undefined;
+	const answer = {
+		type: "choice" as const,
+		choice,
+		...(typeof confidence === "number" && confidence >= 0 && confidence <= 1 ? { confidence } : {}),
+	};
+	// A valid pick without a probability is still an answer, but not a scored one.
+	if (typeof p !== "number" || !Number.isFinite(p)) return answer;
 	const options = Object.keys(question.criteria);
-	if (typeof record.choice !== "string" || !options.includes(record.choice)) return undefined;
-	const picked = typeof record.p === "number" ? clamp(record.p, 0, 1) : 1;
+	const picked = clamp(p, 0, 1);
 	const rest = options.length > 1 ? (1 - picked) / (options.length - 1) : 0;
-	const probabilities = Object.fromEntries(
-		options.map((option) => [option, option === record.choice ? picked : rest]),
-	);
-	return { type: "choice", choice: record.choice, probabilities };
+	const probabilities = Object.fromEntries(options.map((option) => [option, option === choice ? picked : rest]));
+	return { ...answer, probabilities };
 }
 
 /** The outermost JSON object in a reply that may be wrapped in prose or a code fence. */

@@ -14,6 +14,7 @@ import {
   scoreLevel,
 } from '../../../../packages/desktop/src/renderer/pages/conversation/KyrnPanel/Judge/wording';
 import common from '../../../../packages/desktop/src/renderer/services/i18n/locales/en-US/common.json';
+import faIR from '../../../../packages/desktop/src/renderer/services/i18n/locales/fa-IR/common.json';
 import zhCN from '../../../../packages/desktop/src/renderer/services/i18n/locales/zh-CN/common.json';
 import zhTW from '../../../../packages/desktop/src/renderer/services/i18n/locales/zh-TW/common.json';
 
@@ -22,6 +23,7 @@ const zh = zhCN.kyrn.judgeView;
 
 let en: TFunction;
 let chinese: TFunction;
+let persian: TFunction;
 beforeAll(async () => {
   const make = async (lng: string, translation: Record<string, unknown>) => {
     const i18n = createInstance();
@@ -30,6 +32,7 @@ beforeAll(async () => {
   };
   en = await make('en-US', { common });
   chinese = await make('zh-CN', { common: zhCN });
+  persian = await make('fa-IR', { common: faIR });
 });
 
 /** The harness's own sentences (packages/kyrn-judge/src/extension/features/preflight.ts, PREFLIGHT_HINTS). */
@@ -121,17 +124,47 @@ describe('Judge card wording: hints and answers', () => {
 
   it('says a choice’s answers in the decision point’s words, and leaves an answer named at run time to the view', () => {
     const words = copy.answerWords;
-    expect(answerValue(en, 'approval', 'verdict', 'needed')).toBe(words.approval.answers.needed);
-    expect(answerValue(en, 'approval', 'verdict', 'unclear')).toBe(words.approval.answers.unclear);
-    expect(answerValue(chinese, 'relate', 'relation', 'supersedes')).toBe(zh.answerWords.relate.answers.supersedes);
-    expect(answerValue(en, 'browser', 'operation', 'SCROLL_DOWN')).toBe(words.browser.answers.SCROLL_DOWN);
-    expect(answerValue(en, 'admission', 'k2', 'passing')).toBe(words.admission.answers.passing);
-    expect(answerValue(en, 'board', 'event_3', 'key')).toBe(words.board.answers.key);
+    expect(answerValue(en, 'en-US', 'approval', 'verdict', 'needed')).toBe(words.approval.answers.needed);
+    expect(answerValue(en, 'en-US', 'approval', 'verdict', 'unclear')).toBe(words.approval.answers.unclear);
+    expect(answerValue(chinese, 'zh-CN', 'relate', 'relation', 'supersedes')).toBe(
+      zh.answerWords.relate.answers.supersedes
+    );
+    expect(answerValue(en, 'en-US', 'browser', 'operation', 'SCROLL_DOWN')).toBe(words.browser.answers.SCROLL_DOWN);
+    expect(answerValue(en, 'en-US', 'admission', 'k2', 'passing')).toBe(words.admission.answers.passing);
+    expect(answerValue(en, 'en-US', 'board', 'event_3', 'key')).toBe(words.board.answers.key);
     // An element number, a role, an answer a newer harness adds, a question that is no choice.
-    expect(answerValue(en, 'browser', 'click_target', '3')).toBeUndefined();
-    expect(answerValue(en, 'routing', 'agent', 'scout')).toBeUndefined();
-    expect(answerValue(en, 'drift', 'course', 'sideways')).toBeUndefined();
-    expect(answerValue(en, 'risk', 'destructive', 'true')).toBeUndefined();
+    expect(answerValue(en, 'en-US', 'browser', 'click_target', '3')).toBeUndefined();
+    expect(answerValue(en, 'en-US', 'routing', 'agent', 'scout')).toBeUndefined();
+    expect(answerValue(en, 'en-US', 'drift', 'course', 'sideways')).toBeUndefined();
+    expect(answerValue(en, 'en-US', 'risk', 'destructive', 'true')).toBeUndefined();
+  });
+
+  it('names a constraint target using its recorded 1-based number in the app language', () => {
+    expect(answerLabel(en, 'en-US', 'taskFrame', 'limit')).toBe('Change to constraints');
+    expect(answerValue(en, 'en-US', 'taskFrame', 'limit', 'withdraw_2')).toBe('Lift constraint 2');
+    expect(answerValue(en, 'en-US', 'taskFrame', 'limit', 'replace_1')).toBe('Replace constraint 1');
+    expect(answerValue(persian, 'fa-IR', 'taskFrame', 'limit', 'withdraw_2')).toBe('لغو محدودیت ۲');
+    expect(answerValue(en, 'en-US', 'taskFrame', 'limit', 'withdraw_0')).toBeUndefined();
+    expect(answerValue(en, 'en-US', 'taskFrame', 'limit', 'keep_2')).toBeUndefined();
+    expect(answerValue(en, 'en-US', 'taskFrame', 'change', 'replace_1')).toBeUndefined();
+  });
+
+  it('distinguishes allowing one exact call from lifting the rule', () => {
+    expect(answerValue(en, 'en-US', 'taskFrame', 'limit', 'once_2')).toBe('Allow a one-time exception to constraint 2');
+    expect(answerValue(persian, 'fa-IR', 'taskFrame', 'limit', 'once_2')).toBe('اجازهٔ استثنای یک‌باره برای محدودیت ۲');
+    expect(answerValue(en, 'en-US', 'taskFrame', 'limit', 'once_0')).toBeUndefined();
+    expect(answerLabel(en, 'en-US', 'constraint', 'permission_once')).toBe(
+      'Did you explicitly allow this exact call once?'
+    );
+    expect(answerValue(en, 'en-US', 'constraint', 'permission_once', 'true')).toBeUndefined();
+  });
+
+  it('labels constraint verdicts and keeps the v1 task-frame choice readable', () => {
+    expect(answerLabel(en, 'en-US', 'constraint', 'constraint_0')).toBe('Does the call violate constraint 1?');
+    expect(answerValue(en, 'en-US', 'constraint', 'constraint_0', 'violates')).toBe('Direct violation');
+    expect(answerValue(en, 'en-US', 'constraint', 'constraint_0', 'compatible')).toBe('No direct violation');
+    expect(answerValue(en, 'en-US', 'constraint', 'constraint_0', 'unclear')).toBe("Can't tell");
+    expect(answerValue(en, 'en-US', 'taskFrame', 'change', 'constraint')).toBe('A new rule for the work');
   });
 
   it('says the step a score lands on, as the harness rounds it', () => {

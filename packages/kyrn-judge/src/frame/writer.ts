@@ -1,26 +1,30 @@
 import {
 	type AcceptanceItem,
-	type Constraint,
+	applyLimit,
+	changesWork,
+	constraintId,
 	type Frame,
 	flat,
+	limitQuotes,
 	MAX_ACCEPTANCE,
 	MAX_OPEN_QUESTIONS,
+	noteUnresolved,
+	quoteWords,
 	type UserText,
-	verbatimConstraint,
 } from "./frame.ts";
 
 /**
  * The contract with the writer model. A judge cannot write, so a generative
  * model produces the new frame, and this file is what keeps it honest: its
- * reply is parsed strictly, and a hard constraint only gets in when it is the
- * user's own words. A paraphrase is swapped for the sentence it paraphrases.
+ * reply is parsed strictly. The writer may select an exact new quote only
+ * when the independent limit verdict permits it, and cannot remove a rule.
  */
 export const WRITER_SYSTEM = `You maintain the task frame of a coding agent: a short, exact record of what the user wants. You get the current frame and what the user just said. Reply with the new frame as one JSON object and nothing else:
 {"goal": string, "constraints": string[], "current_subgoal": string | null, "acceptance": [{"id": string, "text": string}], "open_questions": string[]}
 
 - goal: one or two sentences. Keep the current goal unless the user replaced the task.
-- constraints: hard limits the user set, such as "do not touch the database". Copy each one WORD FOR WORD from the user's message, in the user's language. Never translate, shorten or rephrase one. Keep every existing constraint exactly as it is, unless the user withdrew it or it only concerned a task that was replaced.
-- current_subgoal: what the user wants done right now, or null.
+- constraints: an array of STRINGS, not objects. Return only NEW limits, never the existing_limits from the input. For limit: add or replace, copy each complete new limit clause WORD FOR WORD from that user message, including qualifiers and exceptions. For replace, return just the new limit, not words granting permission. For all other verdicts return []. Example: for “Rename the file, but do not change its contents.” with limit: add, return ["do not change its contents."], not the rename.
+- current_subgoal: the work wanted right now, or null. Do not include limits here; a message that only changes a limit does not change the work.
 - acceptance: what must be true for the task to be finished, as the user said or clearly implied. Keep existing items with their "id"; leave "id" out of new ones. At most 8.
 - open_questions: what is still undecided. If you cannot tell whether the message replaces the task or adds to it, keep the goal and put that question here.`;
 
@@ -35,14 +39,17 @@ export interface WriterFrame {
 export function writerRequest(frame: Frame, said: readonly UserText[]): { system: string; user: string } {
 	const current = {
 		goal: frame.goal,
-		constraints: frame.constraints.map((constraint) => constraint.text),
+		existing_limits: frame.constraints.map(({ text }) => text),
 		current_subgoal: frame.currentSubgoal ?? null,
 		acceptance: frame.acceptance.map((item) => ({ id: item.id, text: item.text, done: item.done })),
 		open_questions: frame.openQuestions,
 	};
-	const messages = said.map(
-		(each) => `USER MESSAGE (turn ${each.turn}, read by the judge as: ${each.change ?? "unclear"}):\n${each.text}`,
-	);
+	const messages = said.map((each) => {
+		const limit = each.limit;
+		const oldRule =
+			limit?.kind === "replace" ? frame.constraints.find(({ text }) => constraintId(text) === limit.id) : undefined;
+		return `USER MESSAGE (turn ${each.turn}, work: ${each.change ?? "none"}, limit: ${limit?.kind ?? "none"}${oldRule ? `, replacing ${JSON.stringify(oldRule.text)}` : ""}):\n${each.text}`;
+	});
 	return {
 		system: WRITER_SYSTEM,
 		user: `CURRENT FRAME:\n${JSON.stringify(current, null, 1)}\n\n${messages.join("\n\n")}`,
@@ -105,121 +112,28 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&
 /**
  * Where `needle` stands in `haystack`, as the haystack spells it. Line breaks,
  * runs of spaces, wrapping quotes and a closing full stop do not count as a
- * difference; any other difference does.
+ * difference; any other difference does. This locates words, not clause
+ * boundaries: a found fragment is not enough to add a limit.
  */
 export function findVerbatim(haystack: string, needle: string): string | undefined {
-	const core = needle
-		.trim()
-		.replace(/^["'“”‘’「『]+|["'“”‘’」』]+$/g, "")
-		.replace(/[.。!！]+$/, "")
-		.trim();
+	const core = quoteWords(needle);
 	if (!core) return undefined;
-	const words = core.split(/\s+/).map(escapeRegExp);
+	const words = core.split(" ").map(escapeRegExp);
 	return new RegExp(words.join("\\s+")).exec(haystack)?.[0];
 }
-
-/** Sentences as the user wrote them. A dot inside a path or a version number does not end one. */
-export function sentencesOf(text: string): string[] {
-	return text
-		.split(/(?<=[。！？；])|(?<=[.!?;])\s+|\n+/)
-		.map((sentence) => sentence.trim())
-		.filter((sentence) => sentence.length > 1);
-}
-
-function bigrams(text: string): Map<string, number> {
-	const letters = text.toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, "");
-	const counts = new Map<string, number>();
-	for (let at = 0; at + 1 < letters.length; at++) {
-		const pair = letters.slice(at, at + 2);
-		counts.set(pair, (counts.get(pair) ?? 0) + 1);
-	}
-	return counts;
-}
-
-/** Dice coefficient over character pairs: works for Chinese and English alike, needs no tokenizer. */
-export function similarity(a: string, b: string): number {
-	const left = bigrams(a);
-	const right = bigrams(b);
-	let shared = 0;
-	let total = 0;
-	for (const [pair, count] of left) {
-		shared += Math.min(count, right.get(pair) ?? 0);
-		total += count;
-	}
-	for (const count of right.values()) total += count;
-	return total === 0 ? 0 : (2 * shared) / total;
-}
-
-/** Below this a sentence is not "the one that was paraphrased", just a sentence. */
-const PARAPHRASE_FLOOR = 0.12;
-
-interface Found {
-	readonly text: string;
-	readonly from: UserText;
-}
-
-function closestSentence(said: readonly UserText[], paraphrase: string): Found | undefined {
-	let best: (Found & { score: number }) | undefined;
-	for (const from of said) {
-		for (const text of sentencesOf(from.text)) {
-			const score = similarity(text, paraphrase);
-			if (score >= PARAPHRASE_FLOOR && (!best || score > best.score)) best = { text, from, score };
-		}
-	}
-	return best;
-}
-
-const sameWords = (a: string, b: string) => a.replace(/\s+/g, " ").trim() === b.replace(/\s+/g, " ").trim();
 
 /**
  * The writer's reply merged over the last valid frame.
  *
- * What the code guarantees, whatever the model wrote:
- * - every constraint is an existing one, or a piece of what the user just said;
- * - a constraint or an acceptance item only disappears when the user replaced
- *   the task or corrected the approach, never as a side effect of another update;
- * - a message the judge read as a constraint or a correction leaves at least
- *   one constraint in the user's own words;
- * - done flags and evidence survive, and a rewritten item has to be met again.
+ * Work verdicts authorize changes to the task. Limit verdicts authorize exact
+ * quotes or a targeted removal, never removal by omission. The acceptance
+ * list still keeps ticks and evidence unless the writer rewords an item.
  */
 export function mergeWriterFrame(frame: Frame, reply: WriterFrame, said: readonly UserText[]): Frame {
 	const latest = said.at(-1);
-	const mayDrop = said.some((each) => each.change === "new_task" || each.change === "correction");
+	const newTask = said.some((each) => each.change === "new_task");
+	const mayDrop = newTask || said.some((each) => each.change === "correction");
 	const questions = reply.openQuestions.map((question) => flat(question, 300)).filter(Boolean);
-
-	const kept = new Set<Constraint>();
-	const added: Constraint[] = [];
-	for (const wanted of reply.constraints) {
-		const existing = frame.constraints.find((constraint) => sameWords(constraint.text, wanted));
-		if (existing) {
-			kept.add(existing);
-			continue;
-		}
-		let found: Found | undefined;
-		for (const from of said) {
-			const text = findVerbatim(from.text, wanted);
-			if (text) {
-				found = { text, from };
-				break;
-			}
-		}
-		found ??= closestSentence(said, wanted);
-		if (!found) {
-			questions.push(`Not the user's words, so not recorded as a constraint: "${flat(wanted, 200)}"`);
-			continue;
-		}
-		const constraint = verbatimConstraint({ ...found.from, text: found.text });
-		const known = [...frame.constraints, ...added].some((each) => each.text === constraint.text);
-		if (!known) added.push(constraint);
-	}
-	for (const each of said) {
-		if (each.change !== "constraint" && each.change !== "correction") continue;
-		if (added.some((constraint) => constraint.source.turn === each.turn && each.text.includes(constraint.text)))
-			continue;
-		const whole = verbatimConstraint(each);
-		if (![...frame.constraints, ...added].some((constraint) => constraint.text === whole.text)) added.push(whole);
-	}
-	const constraints = [...frame.constraints.filter((constraint) => kept.has(constraint) || !mayDrop), ...added];
 
 	let nextItem = frame.nextItem;
 	const seen = new Set<string>();
@@ -240,11 +154,16 @@ export function mergeWriterFrame(frame: Frame, reply: WriterFrame, said: readonl
 	}
 	if (!mayDrop) acceptance.unshift(...frame.acceptance.filter((item) => !seen.has(item.id)));
 
-	return {
+	const workChanged = said.some((each) => changesWork(each.change));
+	const workUnclear = said.some((each) => each.change === "unclear");
+	let next: Frame = {
+		...frame,
 		version: frame.version + 1,
-		goal: flat(reply.goal, 600),
-		constraints,
-		currentSubgoal: reply.currentSubgoal ? flat(reply.currentSubgoal, 300) : undefined,
+		goal: newTask ? flat(reply.goal, 600) : frame.goal,
+		currentSubgoal:
+			workChanged || (workUnclear && reply.currentSubgoal)
+				? reply.currentSubgoal && flat(reply.currentSubgoal, 300)
+				: frame.currentSubgoal,
 		acceptance,
 		openQuestions: [...new Set(questions)].slice(0, MAX_OPEN_QUESTIONS),
 		updatedTurn: latest?.turn ?? frame.updatedTurn,
@@ -252,4 +171,15 @@ export function mergeWriterFrame(frame: Frame, reply: WriterFrame, said: readonl
 		change: latest?.change,
 		nextItem,
 	};
+	const writerQuotes = new Set(reply.constraints.map(quoteWords).filter(Boolean));
+	const subgoalWords = reply.currentSubgoal ? [quoteWords(reply.currentSubgoal)] : [];
+	const taskWords = newTask ? [...subgoalWords, quoteWords(reply.goal)] : subgoalWords;
+	for (const each of said) {
+		if ((each.change === "unclear" && !reply.currentSubgoal) || each.change === "constraint")
+			next = noteUnresolved(next, each);
+		const workWords = each.change === "new_task" ? taskWords : changesWork(each.change) ? subgoalWords : [];
+		const quotes = limitQuotes(each, writerQuotes, workWords);
+		next = applyLimit(next, each, quotes);
+	}
+	return next;
 }

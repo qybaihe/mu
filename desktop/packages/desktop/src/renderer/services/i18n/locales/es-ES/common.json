@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "Tipo de tarea",
+        "change": "Cambio en la tarea",
+        "limit": "Cambio en las restricciones",
         "gear": "Nivel de la tarea",
         "thinking": "Nivel de razonamiento",
         "agent": "Rol sugerido",
@@ -489,6 +491,10 @@
         "correction": "Corrección",
         "subgoal": "Nuevo subobjetivo",
         "unclear": "No se puede saber",
+        "add": "Añadir una restricción",
+        "withdraw": "Levantar una restricción",
+        "allow_once": "Permitir una excepción puntual",
+        "replace": "Sustituir una restricción",
         "hold": "Retener",
         "no_answer": "Sin respuesta a tiempo",
         "aborted": "Cancelado",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "Cambio en la tarea"
+            "change": "Cambio en la tarea",
+            "limit": "Cambio en las restricciones"
           },
           "answers": {
             "new_task": "Una tarea nueva",
             "constraint": "Una regla nueva para el trabajo",
             "correction": "El enfoque es incorrecto",
             "subgoal": "El siguiente paso de la misma tarea",
-            "none": "Ningún cambio"
+            "none": "Ningún cambio",
+            "add": "Añadir una restricción",
+            "unclear": "No se puede saber",
+            "withdraw": "Levantar la restricción {{number}}",
+            "once": "Permitir una excepción puntual a la restricción {{number}}",
+            "replace": "Sustituir la restricción {{number}}"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "Va contra la restricción {{number}}"
+            "constraint": "¿La llamada infringe la restricción {{number}}?",
+            "permission_once": "¿Autorizaste expresamente esta llamada exacta una sola vez?"
+          },
+          "answers": {
+            "violates": "Infracción directa",
+            "compatible": "Sin infracción directa",
+            "unclear": "No se puede saber"
           }
         },
         "capabilities": {

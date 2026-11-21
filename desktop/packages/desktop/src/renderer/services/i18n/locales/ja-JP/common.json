@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "タスクの種類",
+        "change": "タスクへの変化",
+        "limit": "制約の変更",
         "gear": "タスクの重さ",
         "thinking": "思考レベル",
         "agent": "推奨される役割",
@@ -489,6 +491,10 @@
         "correction": "訂正",
         "subgoal": "新しいサブ目標",
         "unclear": "判断できない",
+        "add": "制約を追加",
+        "withdraw": "制約を解除",
+        "allow_once": "一度限りの例外を許可",
+        "replace": "制約を置き換え",
         "hold": "保留",
         "no_answer": "時間内に回答なし",
         "aborted": "キャンセル済み",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "タスクへの変化"
+            "change": "タスクへの変化",
+            "limit": "制約の変更"
           },
           "answers": {
             "new_task": "新しいタスク",
             "constraint": "作業の新しいルール",
             "correction": "やり方が間違っている",
             "subgoal": "同じタスクの次のステップ",
-            "none": "変化なし"
+            "none": "変化なし",
+            "add": "制約を追加",
+            "unclear": "判断できない",
+            "withdraw": "制約{{number}}を解除",
+            "once": "制約{{number}}に一度限りの例外を許可",
+            "replace": "制約{{number}}を置き換え"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "制約{{number}}に反する"
+            "constraint": "この呼び出しは制約{{number}}に違反しますか？",
+            "permission_once": "ユーザーはこの呼び出しそのものを一度だけ明示的に許可しましたか？"
+          },
+          "answers": {
+            "violates": "直接違反する",
+            "compatible": "直接違反しない",
+            "unclear": "判断できない"
           }
         },
         "capabilities": {

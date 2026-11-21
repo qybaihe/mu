@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "Type de tâche",
+        "change": "Changement de la tâche",
+        "limit": "Modification des contraintes",
         "gear": "Niveau de la tâche",
         "thinking": "Niveau de réflexion",
         "agent": "Rôle suggéré",
@@ -489,6 +491,10 @@
         "correction": "Correction",
         "subgoal": "Nouveau sous-objectif",
         "unclear": "Impossible à dire",
+        "add": "Ajouter une contrainte",
+        "withdraw": "Lever une contrainte",
+        "allow_once": "Autoriser une exception ponctuelle",
+        "replace": "Remplacer une contrainte",
         "hold": "Retenir",
         "no_answer": "Pas de réponse à temps",
         "aborted": "Annulé",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "Changement de la tâche"
+            "change": "Changement de la tâche",
+            "limit": "Modification des contraintes"
           },
           "answers": {
             "new_task": "Une nouvelle tâche",
             "constraint": "Une nouvelle règle pour le travail",
             "correction": "L’approche est mauvaise",
             "subgoal": "Étape suivante de la même tâche",
-            "none": "Aucun changement"
+            "none": "Aucun changement",
+            "add": "Ajouter une contrainte",
+            "unclear": "Impossible à dire",
+            "withdraw": "Lever la contrainte {{number}}",
+            "once": "Autoriser une exception ponctuelle à la contrainte {{number}}",
+            "replace": "Remplacer la contrainte {{number}}"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "Va à l’encontre de la contrainte {{number}}"
+            "constraint": "L’appel enfreint-il la contrainte {{number}} ?",
+            "permission_once": "Avez-vous explicitement autorisé cet appel précis une seule fois ?"
+          },
+          "answers": {
+            "violates": "Violation directe",
+            "compatible": "Pas de violation directe",
+            "unclear": "Impossible à dire"
           }
         },
         "capabilities": {

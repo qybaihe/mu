@@ -27,7 +27,9 @@ describe("mu's slash commands in the reader's language", () => {
     expect(languages).toHaveLength(13);
     for (const language of languages) {
       const lines = muTexts(language).commands as Record<string, string>;
-      expect(Object.keys(lines).toSorted(), language).toEqual([...MU_COMMAND_WORDS.keys()].toSorted());
+      expect(Object.keys(lines).toSorted(), language).toEqual(
+        [...MU_COMMAND_WORDS.keys(), 'frame_with_remove'].toSorted()
+      );
       for (const [name, line] of Object.entries(lines)) expect(line.trim(), `${language} ${name}`).not.toBe('');
     }
   });
@@ -52,6 +54,26 @@ describe("mu's slash commands in the reader's language", () => {
     expect(
       commandDescription({ name: 'import-chat', description: MU_COMMAND_WORDS.get('import-chat')![0] }, german)
     ).toBe((muTexts('de-DE').commands as Record<string, string>)['import-chat']);
+  });
+
+  it.each(languages)('translates both versions of /frame in %s, mentioning remove only when supported', (language) => {
+    const t = translator(language);
+    const lines = muTexts(language).commands as Record<string, string>;
+    const current = [
+      'Show the task frame and its constraint IDs; /frame remove <id> removes one constraint',
+      '显示任务帧；/frame remove <id> 移除指定的硬约束',
+    ];
+    const older = [
+      'Show the task frame: the goal, your constraints with their source, the current subgoal and the acceptance criteria',
+      '任务帧：目标、你的硬约束（原话加出处）、当前子目标、验收条件',
+      'The task frame: goal, your constraints (with where you stated them), current subgoal and acceptance criteria',
+      'The task frame: goal, your hard constraints and where you said them, subgoal, acceptance items',
+    ];
+    expect(lines.frame_with_remove).toContain('/frame remove <id>');
+    expect(lines.frame).not.toContain('/frame remove');
+    for (const description of current)
+      expect(commandDescription({ name: 'frame', description }, t)).toBe(lines.frame_with_remove);
+    for (const description of older) expect(commandDescription({ name: 'frame', description }, t)).toBe(lines.frame);
   });
 
   it('leaves another agent’s command of the same name, a template or skill, and reworded text as they came', () => {

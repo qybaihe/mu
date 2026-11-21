@@ -41,14 +41,42 @@ const KEY_WORD = "(?:SECRET|TOKEN|PASSWD|PASSWORD|API_?KEY|ACCESS_?KEY|PRIVATE_?
  * Values under a credential's name. Eight characters at least: `MAX_TOKENS=4096` is a setting.
  */
 
-/** `DB_PASSWORD=…`, `export API_KEY="…"`: an environment variable's value. */
-const ENV_VALUE = new RegExp(`\\b([A-Z0-9_]*${KEY_WORD}[A-Z0-9_]*=)("[^"\\n]{8,}"|'[^'\\n]{8,}'|[^\\s"';&|]{8,})`, "g");
+/** `DB_PASSWORD=…`: an unquoted environment variable's value. */
+const ENV_VALUE = new RegExp(`\\b([A-Z0-9_]*${KEY_WORD}[A-Z0-9_]*=)[^\\s"';&|]{8,}`, "g");
 
-/** `"password": "…"`, `apiKey = '…'`: a string literal. */
-const QUOTED_VALUE = new RegExp(
-	`(["']?[A-Za-z0-9_-]*${KEY_WORD.replaceAll("_?", "[_-]?")}[A-Za-z0-9_-]*["']?\\s*[:=]\\s*)(["'])[^"'\\s]{8,}\\2`,
-	"gi",
-);
+/** `"password":` or `apiKey =`, immediately before a quoted value. */
+const QUOTED_ASSIGNMENT = /(?<![-\w.'"\\])(["']?)([A-Za-z0-9_.-]+)\1\s*[:=]\s*(?=["'])/g;
+const QUOTED_LITERAL = /"(?:[^"\\\r\n]|\\[^\r\n])*"|'(?:[^'\\\r\n]|\\[^\r\n])*'/y;
+// Earlier redaction also covered versioned or nonstandard credential names such as DB_PASSWORD_V2.
+const LEGACY_CREDENTIAL_NAME = new RegExp(KEY_WORD.replaceAll("_?", "[_-]?"), "i");
+
+/** Name a credential, not a setting about one (`token_type`, `passwordReset`) or an arbitrary `key`. */
+function isCredentialField(name: string): boolean {
+	const words = name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/([A-Z])([A-Z][a-z])/g, "$1-$2");
+	return /(?:^|[_.-])(?:secret|token|passwd|password|passphrase|(?:api|access|private|secret)[_.-]?key|authorization|credentials?)$/i.test(
+		words,
+	);
+}
+
+function redactQuotedValues(text: string): string {
+	let clean = "";
+	let end = 0;
+	for (const match of text.matchAll(QUOTED_ASSIGNMENT)) {
+		if (match.index < end) continue;
+		const name = match[2];
+		const credential = isCredentialField(name);
+		if (!credential && !LEGACY_CREDENTIAL_NAME.test(name)) continue;
+		const start = match.index + match[0].length;
+		QUOTED_LITERAL.lastIndex = start;
+		const literal = QUOTED_LITERAL.exec(text)?.[0];
+		// A bounded preview can end inside the value. Never send the unterminated prefix.
+		if (!literal) return `${clean}${text.slice(end, start + 1)}${REDACTED}`;
+		if (!credential && (literal.length < 10 || (/\s/.test(literal) && !/^[A-Z0-9_]+=$/.test(match[0])))) continue;
+		clean += `${text.slice(end, start + 1)}${REDACTED}${literal[0]}`;
+		end = start + literal.length;
+	}
+	return clean + text.slice(end);
+}
 
 /** `  password: hunter2hunter2` on a line of its own, as YAML and .properties files write it. */
 const LINE_VALUE = new RegExp(
@@ -79,14 +107,14 @@ export function environmentSecrets(env: Readonly<Record<string, string | undefin
 
 /** `text` with every credential in it replaced by `[redacted]`. `known` are values to take out wherever they are. */
 export function redactSecrets(text: string, known: readonly string[] = []): string {
-	let clean = text;
+	// Take complete literals before a different rule can replace a backslash or quote inside one.
+	let clean = redactQuotedValues(text);
 	for (const secret of known) if (clean.includes(secret)) clean = clean.split(secret).join(REDACTED);
 	for (const shape of SHAPES) clean = clean.replace(shape, REDACTED);
 	return clean
 		.replace(BEARER, `$1$2${REDACTED}`)
 		.replace(URL_PASSWORD, `$1${REDACTED}$2`)
 		.replace(ENV_VALUE, `$1${REDACTED}`)
-		.replace(QUOTED_VALUE, `$1$2${REDACTED}$2`)
 		.replace(LINE_VALUE, `$1${REDACTED}`);
 }
 
@@ -108,13 +136,16 @@ export function holdsCredential(text: string, known: readonly string[] = []): bo
 	);
 }
 
-/** The same through a JSON value: every string in it, keys kept as they are. */
+/** Redact through a JSON value, taking entire string fields named for credentials and keeping the keys. */
 export function redactJson<T>(value: T, known: readonly string[] = []): T {
 	if (typeof value === "string") return redactSecrets(value, known) as T;
 	if (Array.isArray(value)) return value.map((item) => redactJson(item, known)) as T;
 	if (value && typeof value === "object") {
 		return Object.fromEntries(
-			Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, redactJson(item, known)]),
+			Object.entries(value as Record<string, unknown>).map(([key, item]) => [
+				key,
+				typeof item === "string" && isCredentialField(key) ? REDACTED : redactJson(item, known),
+			]),
 		) as T;
 	}
 	return value;

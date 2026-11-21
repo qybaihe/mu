@@ -547,7 +547,7 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 	{
 		type: "kyrn.frame",
 		kind: "entry",
-		version: 1,
+		version: 2,
 		writers: [features("frame")],
 		readers: [],
 		summary: "The task frame: the goal, the user's constraints and the checklist.",

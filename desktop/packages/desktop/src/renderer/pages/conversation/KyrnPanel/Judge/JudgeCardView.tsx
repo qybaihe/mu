@@ -111,7 +111,8 @@ export default function JudgeCardView({
   // A question and its answers in the decision point's own words; an answer it has none for (an element, a role or an
   // item named at run time) is shown as recorded, numbers in the app language.
   const answer = (row: JudgeAnswer) => {
-    const said = (value: string): string => answerValue(t, card.stage, row.id, value) ?? label('values', value);
+    const said = (value: string): string =>
+      answerValue(t, language, card.stage, row.id, value) ?? label('values', value);
     return (
       <li key={row.id} className={styles.answer}>
         <span className={styles.answerId}>{answerLabel(t, language, card.stage, row.id)}</span>

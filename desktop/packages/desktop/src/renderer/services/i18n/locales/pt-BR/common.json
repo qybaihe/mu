@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "Tipo de tarefa",
+        "change": "Mudança na tarefa",
+        "limit": "Mudança nas restrições",
         "gear": "Nível da tarefa",
         "thinking": "Nível de raciocínio",
         "agent": "Papel sugerido",
@@ -489,6 +491,10 @@
         "correction": "Correção",
         "subgoal": "Novo subobjetivo",
         "unclear": "Não dá para saber",
+        "add": "Adicionar uma restrição",
+        "withdraw": "Revogar uma restrição",
+        "allow_once": "Permitir uma exceção única",
+        "replace": "Substituir uma restrição",
         "hold": "Adiar",
         "no_answer": "Sem resposta a tempo",
         "aborted": "Cancelado",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "Mudança na tarefa"
+            "change": "Mudança na tarefa",
+            "limit": "Mudança nas restrições"
           },
           "answers": {
             "new_task": "Uma nova tarefa",
             "constraint": "Uma nova regra para o trabalho",
             "correction": "A abordagem está errada",
             "subgoal": "Próximo passo da mesma tarefa",
-            "none": "Nenhuma mudança"
+            "none": "Nenhuma mudança",
+            "add": "Adicionar uma restrição",
+            "unclear": "Não dá para saber",
+            "withdraw": "Revogar a restrição {{number}}",
+            "once": "Permitir uma exceção única à restrição {{number}}",
+            "replace": "Substituir a restrição {{number}}"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "Vai contra a restrição {{number}}"
+            "constraint": "A chamada viola a restrição {{number}}?",
+            "permission_once": "Você autorizou expressamente esta chamada exata uma única vez?"
+          },
+          "answers": {
+            "violates": "Violação direta",
+            "compatible": "Sem violação direta",
+            "unclear": "Não dá para saber"
           }
         },
         "capabilities": {
