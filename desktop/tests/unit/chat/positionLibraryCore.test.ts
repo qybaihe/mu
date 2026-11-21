@@ -199,6 +199,27 @@ describe('buildPositionOverrideContent', () => {
     expect(content).toContain('无任务分派时保持安静，严禁主动客套刷屏或无任务找活（通用底线）');
     expect(content).not.toContain('本岗绝不：');
   });
+
+  it('injects the first-exchange tacit-knowledge protocol: three self-checks, one-at-a-time mining capped at 3, append-only ledger', () => {
+    const content = buildPositionOverrideContent(roster[0], roster);
+    expect(content).toContain('## 首次对话开场（暗默知识挖掘，只在信息真的缺时触发）');
+    expect(content).toContain('冲突信息以哪为准');
+    expect(content).toContain('如何验收');
+    expect(content).toContain('何时必须停下求助');
+    expect(content).toContain('一次只问一个问题');
+    expect(content).toContain('最多 3 问');
+    expect(content).toContain('回复必须以那个问题结尾');
+    expect(content).toContain('严禁自查后自己拟定答案或「默认做法」顶上');
+    expect(content).toContain('当时为什么选这条路、没选另一条');
+    // The ledger: the position's own project AGENTS.md, appended, never rewritten.
+    expect(content).toContain('岗位暗默知识');
+    expect(content).toContain('只追加，禁止删改既有内容');
+    // Anti-disturbance is the bar, not a default: a manual that answers means no questions at all.
+    expect(content).toContain('不问任何开场问题');
+    // Order: the taboos still outrank everything; the protocol precedes the ownership gate.
+    expect(content.indexOf('## 反向禁忌')).toBeLessThan(content.indexOf('## 首次对话开场'));
+    expect(content.indexOf('## 首次对话开场')).toBeLessThan(content.indexOf('## 任务归属判定'));
+  });
 });
 
 describe('findPositionConversationId', () => {

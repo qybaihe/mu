@@ -8,9 +8,11 @@
     "entry": "新建岗位",
     "tabDirectory": "从项目目录",
     "tabTemplate": "从模板库起步",
+    "tabDescribe": "我来描述",
     "title": "新建岗位",
     "stepPick": "第 1 步 · 选择项目目录",
     "stepTemplate": "第 1 步 · 从模板库挑选",
+    "stepDescribe": "第 1 步 · 我来描述",
     "stepReview": "第 2 步 · 确认岗位选项",
     "pick": "选择目录…",
     "repick": "重选目录",
@@ -48,6 +50,16 @@
       "name": "同名称",
       "project-root": "同项目根",
       "description": "描述高度相似"
+    },
+    "describeLabel": "描述这个岗位（要它做什么、管什么）",
+    "describePlaceholder": "例：帮我盯 E:/Projects/freight-lab 项目，负责报价表解析与核价，验收是所有行解析成功且汇总数字对得上",
+    "describeGapTitle": "描述里还缺这些信息，建议补齐：",
+    "describeGapAllSet": "项目根、职责、验收三类信息已可辨认",
+    "describeSupervisorHint": "描述不清楚？可把任务发给「主管」会话，它会像业务分析师一样一次一问采访你",
+    "describeGap": {
+      "project-root": "项目根：岗位管哪个项目？目录路径是什么？",
+      "duty-boundary": "职责边界：它负责什么、明确不做什么？",
+      "acceptance": "验收标准：做到什么程度算完成？"
     },
     "template": {
       "hint": "从社区模板起步（awesome-grokbot，CC0）：搜索并采用一条，回填草稿后仍可编辑",

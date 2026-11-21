@@ -30,6 +30,7 @@ import {
   findPositionOverlaps,
   type PositionOverlapReason,
 } from '@/common/chat/team/positions/positionProjectProfile';
+import { describeDraft, describeGapQuestions } from '@/common/chat/team/positions/positionDescribeCore';
 import { positionIdentityColor } from '@/common/chat/team/positions/positionIdentityColor';
 import MuModal from '@renderer/components/base/MuModal';
 import PositionTemplatePicker, { type TemplateDraftResult } from '@renderer/pages/positions/PositionTemplatePicker';
@@ -41,8 +42,8 @@ type PositionCreationModalProps = {
   onClose: () => void;
 };
 
-/** How the wizard starts: a project directory's files, or a catalog template. */
-type WizardMode = 'directory' | 'template';
+/** How the wizard starts: a project directory's files, a catalog template, or the user's own description. */
+type WizardMode = 'directory' | 'template' | 'describe';
 
 /** What the review step edits; initialized from either flavour's draft, freely editable. */
 type WizardForm = { id: string; displayName: string; description: string; antiJob: string; body: string };
@@ -69,6 +70,7 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
   const [form, setForm] = useState<WizardForm | undefined>();
   const [nameCandidates, setNameCandidates] = useState<string[]>([]);
   const [mode, setMode] = useState<WizardMode>('directory');
+  const [describeText, setDescribeText] = useState('');
   const [forceOverlap, setForceOverlap] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -86,6 +88,7 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
     setForm(undefined);
     setNameCandidates([]);
     setMode('directory');
+    setDescribeText('');
     setForceOverlap(false);
     setCreating(false);
     setError(undefined);
@@ -143,6 +146,18 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
     setNameCandidates(draft.displayNameCandidates);
     setReviewing(true);
   }, []);
+
+  /** What the describe flavour is missing, live: the checklist guides the supplement, one pass, no interview. */
+  const describeGaps = useMemo(() => describeGapQuestions(describeText), [describeText]);
+
+  /** A description's hand-off to the review step: the draft it yields, every field editable. */
+  const adoptDescribe = useCallback(() => {
+    const draft = describeDraft(describeText);
+    setAnalysis(undefined);
+    setForm({ id: '', displayName: '', description: draft.description, antiJob: '', body: draft.body });
+    setNameCandidates([]);
+    setReviewing(true);
+  }, [describeText]);
 
   const overlaps = useMemo(
     () =>
@@ -206,7 +221,9 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
           ? t('positions.wizard.stepReview')
           : mode === 'template'
             ? t('positions.wizard.stepTemplate')
-            : t('positions.wizard.stepPick'),
+            : mode === 'describe'
+              ? t('positions.wizard.stepDescribe')
+              : t('positions.wizard.stepPick'),
         showClose: true,
       }}
       visible={open}
@@ -231,6 +248,17 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
                 type='primary'
                 disabled={analysis === undefined}
                 onClick={() => setReviewing(true)}
+                className='px-20px min-w-80px'
+              >
+                {t('positions.wizard.next')}
+              </Button>
+            ) : null}
+            {!reviewing && mode === 'describe' ? (
+              <Button
+                data-testid='position-creation-describe-next'
+                type='primary'
+                disabled={describeText.trim().length === 0}
+                onClick={adoptDescribe}
                 className='px-20px min-w-80px'
               >
                 {t('positions.wizard.next')}
@@ -265,10 +293,41 @@ const PositionCreationModal: React.FC<PositionCreationModalProps> = ({ open, onC
           >
             <Radio value='directory'>{t('positions.wizard.tabDirectory')}</Radio>
             <Radio value='template'>{t('positions.wizard.tabTemplate')}</Radio>
+            <Radio value='describe'>{t('positions.wizard.tabDescribe')}</Radio>
           </Radio.Group>
         ) : null}
 
         {mode === 'template' && !reviewing ? <PositionTemplatePicker onAdopt={adoptTemplate} /> : null}
+
+        {/* Step one, describe flavour: the pasted text, its missing-information checklist, and the pointer to the supervisor's interview. */}
+        {mode === 'describe' && !reviewing ? (
+          <div data-testid='position-creation-describe' className='flex flex-col gap-10px'>
+            <div className='text-13px font-500 text-t-primary'>{t('positions.wizard.describeLabel')}</div>
+            <Input.TextArea
+              data-testid='position-creation-describe-text'
+              aria-label={t('positions.wizard.describeLabel')}
+              value={describeText}
+              autoSize={{ minRows: 5, maxRows: 10 }}
+              placeholder={t('positions.wizard.describePlaceholder')}
+              onChange={(value) => setDescribeText(value)}
+            />
+            <div className='text-12px text-t-tertiary'>{t('positions.wizard.describeSupervisorHint')}</div>
+            <div data-testid='position-creation-describe-gaps' className='flex flex-col gap-6px text-13px'>
+              {describeGaps.length > 0 ? (
+                <>
+                  <div className='text-t-secondary'>{t('positions.wizard.describeGapTitle')}</div>
+                  {describeGaps.map((gap) => (
+                    <div key={gap} data-testid={`position-creation-describe-gap-${gap}`} className='text-warning'>
+                      {t(`positions.wizard.describeGap.${gap}`)}
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className='text-t-tertiary'>{t('positions.wizard.describeGapAllSet')}</div>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         {/* Step one, directory flavour: the directory and what the files say about it. */}
         {mode === 'directory' || reviewing ? (

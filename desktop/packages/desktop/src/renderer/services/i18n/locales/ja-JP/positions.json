@@ -49,6 +49,18 @@
       "project-root": "同じプロジェクトルート",
       "description": "記述が酷似"
     },
+    "tabDescribe": "自分で記述する",
+    "stepDescribe": "ステップ 1 · 自分で記述する",
+    "describeLabel": "このポジションを記述する（何をするか、何を担当するか）",
+    "describePlaceholder": "例：E:/Projects/freight-lab プロジェクトを見守り、見積表の解析と検証を担当。完了基準は全行の解析成功と合計数字の一致",
+    "describeGapTitle": "記述にまだ足りない情報があります。補うことをおすすめします：",
+    "describeGapAllSet": "プロジェクトルート・職責・完了基準の3情報を認識できました",
+    "describeSupervisorHint": "記述がまとまらない場合は「スーパーバイザー」会話にタスクを送ってください。業務アナリストのように一問ずつインタビューします",
+    "describeGap": {
+      "project-root": "プロジェクトルート：どのプロジェクトを担当？ディレクトリのパスは？",
+      "duty-boundary": "職責の境界：何を担当し、何を明確にしないか？",
+      "acceptance": "完了基準：どこまでできたら完成とみなす？"
+    },
     "template": {
       "hint": "コミュニティテンプレートから始める（awesome-grokbot、CC0）：検索して採用し、草案は自由に編集できます",
       "searchPlaceholder": "テンプレートを検索（中国語・英語可）",

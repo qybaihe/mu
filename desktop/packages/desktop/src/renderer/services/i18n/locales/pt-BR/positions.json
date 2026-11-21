@@ -49,6 +49,18 @@
       "project-root": "mesma raiz de projeto",
       "description": "descrição muito parecida"
     },
+    "tabDescribe": "Eu descrevo",
+    "stepDescribe": "Etapa 1 · Eu descrevo",
+    "describeLabel": "Descreva esta posição (o que faz, do que cuida)",
+    "describePlaceholder": "ex.: cuidar do projeto E:/Projects/freight-lab, analisar e verificar planilhas de cotação; aceite: todas as linhas analisadas e totais conferindo",
+    "describeGapTitle": "Ainda falta esta informação na descrição — vale completar:",
+    "describeGapAllSet": "Raiz do projeto, responsabilidades e aceite já são reconhecíveis",
+    "describeSupervisorHint": "Descrição confusa? Envie a tarefa para a conversa do Supervisor — ele entrevista você uma pergunta por vez, como analista de negócios",
+    "describeGap": {
+      "project-root": "Raiz do projeto: de qual projeto ela cuida? Qual o caminho do diretório?",
+      "duty-boundary": "Limite de responsabilidade: do que responde e o que explicitamente não faz?",
+      "acceptance": "Critérios de aceite: até onde se considera concluído?"
+    },
     "template": {
       "hint": "Comece com um modelo da comunidade (awesome-grokbot, CC0): busque, adote um e edite o rascunho",
       "searchPlaceholder": "Pesquisar modelos (chinês ou inglês)",

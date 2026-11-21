@@ -49,6 +49,18 @@
       "project-root": "même racine de projet",
       "description": "descriptions très proches"
     },
+    "tabDescribe": "Je le décris",
+    "stepDescribe": "Étape 1 · Je le décris",
+    "describeLabel": "Décris ce poste (ce qu’il fait, ce dont il est responsable)",
+    "describePlaceholder": "ex. : surveille le projet E:/Projects/freight-lab, analyse et vérifie les feuilles de devis ; acceptation : toutes les lignes analysées et les totaux justes",
+    "describeGapTitle": "Il manque encore ces informations à la description — à compléter :",
+    "describeGapAllSet": "Racine du projet, responsabilités et critères d’acceptation sont reconnaissables",
+    "describeSupervisorHint": "Description floue ? Envoie la tâche à la conversation Superviseur : il t’interviewe une question à la fois, comme un analyste métier",
+    "describeGap": {
+      "project-root": "Racine du projet : de quel projet est-il responsable ? Quel est le chemin du répertoire ?",
+      "duty-boundary": "Limite de responsabilité : de quoi répond-il, que ne fait-il explicitement pas ?",
+      "acceptance": "Critères d'acceptation : jusqu'où est-ce fini ?"
+    },
     "template": {
       "hint": "Démarrez d'un modèle communautaire (awesome-grokbot, CC0) : cherchez, adoptez, puis modifiez le brouillon",
       "searchPlaceholder": "Rechercher des modèles (chinois ou anglais)",

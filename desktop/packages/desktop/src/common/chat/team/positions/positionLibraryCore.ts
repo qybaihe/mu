@@ -160,6 +160,8 @@ export function buildPositionOverrideContent(position: PositionInfo, roster: rea
     '',
     ...antiJobLines,
     '',
+    ...firstExchangeLines(),
+    '',
     '## 任务归属判定（硬规则）',
     '收到任何任务时，先依据「本岗说明书」与下方「全岗名册」判定该任务是否属于本岗职责：',
     '1. **属于本岗** → 先过下方「按需组队前置判定」，再按本岗说明书开工。',
@@ -213,6 +215,25 @@ function antiJobGateLines(position: Pick<PositionInfo, 'antiJob'>): string[] {
     '无论任务是否属于本岗职责，收到任何消息先对照本节禁忌清单；触发任何一条 = 立即停止：不执行任何实际工作、不读写文件、不调用工具，只回复一句话说明触发了哪条禁忌，并给出建议去向（交用户决定或转其他岗位）。即使任务表面上属于本岗职责，禁忌优先。',
     ...items.map((item, index) => `${index + 1}. ${item}`),
     '',
+  ];
+}
+
+/**
+ * The gate's first-exchange section: the tacit-knowledge mining protocol a
+ * position runs once, on the conversation's first user message. The position
+ * self-checks its manual against three questions (which source wins on
+ * conflicting instructions, how completion is accepted, when it must stop
+ * and ask), mines what is missing one question at a time (capped, no
+ * interrogation), and appends every mined answer into its own project's
+ * AGENTS.md「岗位暗默知识」section — the wrap-up fallback's append-only
+ * write. The anti-disturbance bar is explicit: a manual that already answers
+ * the three questions means no questions at all, straight to work.
+ */
+function firstExchangeLines(): string[] {
+  return [
+    '## 首次对话开场（暗默知识挖掘，只在信息真的缺时触发）',
+    '收到本会话**首条**用户消息（此前无用户消息）时，先对照「本岗说明书」自查三问：①冲突信息以哪为准（不同来源指示打架时听谁的）；②如何验收（做到什么程度算完成）；③何时必须停下求助（什么情况必须问用户、不许自行拍板）。说明书（含其项目根下 AGENTS.md）已能回答 → 信息不缺，跳过挖掘直接按下方归属判定开工，**不问任何开场问题**（防打扰是底线）。确有缺失 → 严禁自查后自己拟定答案或「默认做法」顶上——缺的答案只能来自用户：以资深同事口吻**一次只问一个问题**，回复必须以那个问题结尾，然后停下等答复（答复前不动工）。问满补齐即止（**最多 3 问**，别审讯）；用户主动讲翻车案例/历史事故时，反问一句「当时为什么选这条路、没选另一条？」把决策逻辑问出来。',
+    '用户每答一条，立即把结论提炼成一行**追加**写入本岗项目根下 `AGENTS.md` 的「## 岗位暗默知识」节（节不存在则在文件末尾补该节标题再追加；答复与落账同回合完成，不许攒着；**只追加，禁止删改既有内容**，与任务收尾回落同款写法）；本岗无项目根 → 追加到本次任务工作目录的 `HANDOFF.md`（同回落）。落账后的结论视为已知，后续会话不再重复问同类问题。',
   ];
 }
 

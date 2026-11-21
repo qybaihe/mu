@@ -49,6 +49,18 @@
       "project-root": "misma raíz de proyecto",
       "description": "descripción muy parecida"
     },
+    "tabDescribe": "Lo describo yo",
+    "stepDescribe": "Paso 1 · Lo describo yo",
+    "describeLabel": "Describe este puesto (qué hace, de qué se encarga)",
+    "describePlaceholder": "ej.: vigila el proyecto E:/Projects/freight-lab, parsea y verifica hojas de cotización; aceptación: todas las filas parseadas y los totales cuadran",
+    "describeGapTitle": "A la descripción le falta esta información; conviene añadirla:",
+    "describeGapAllSet": "Raíz del proyecto, responsabilidades y aceptación ya son reconocibles",
+    "describeSupervisorHint": "¿Descripción confusa? Envía la tarea a la conversación del Supervisor: te entrevista de una pregunta en una, como analista de negocio",
+    "describeGap": {
+      "project-root": "Raíz del proyecto: ¿de qué proyecto se encarga? ¿Cuál es la ruta del directorio?",
+      "duty-boundary": "Límite de responsabilidad: ¿de qué responde y qué no hace expresamente?",
+      "acceptance": "Criterios de aceptación: ¿hasta qué punto se considera terminado?"
+    },
     "template": {
       "hint": "Empieza con una plantilla de la comunidad (awesome-grokbot, CC0): busca, adopta una y edita el borrador",
       "searchPlaceholder": "Buscar plantillas (chino o inglés)",

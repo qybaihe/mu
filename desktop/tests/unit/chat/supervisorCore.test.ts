@@ -314,6 +314,21 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('禁止自己接手执行任务');
   });
 
+  it('teaches the pre-rule-0 interview: vague tasks get one question at a time, no team and no dispatch, until the requirements list is possible', () => {
+    const content = buildSupervisorOverrideContent(roster);
+    expect(content).toContain('规则 0 前判定');
+    expect(content).toContain('不运行 match、不建队、不派活、也不自己执行');
+    expect(content).toContain('一次只问一个问题');
+    expect(content).toContain('严禁自己拟定需求或「先干着看」顶上');
+    expect(content).toContain('资深业务分析师');
+    // The exit condition and the restate-align step: list requirements, confirm, then dispatch.
+    expect(content).toContain('岗位可匹配 + 任务需求清单可列出');
+    expect(content).toContain('复述确认');
+    expect(content).toContain('复述与派发不得同回合完成');
+    // The interview reads before rule 0 — it is the gate rule 0 sits behind.
+    expect(content.indexOf('规则 0 前判定')).toBeLessThan(content.indexOf('**规则 0（无条件第一个动作）**'));
+  });
+
   it('teaches the new-project dedup gate: positions.cjs first, merge or hand to rule 6, never create positions unasked', () => {
     const content = buildSupervisorOverrideContent(roster);
     expect(content).toContain('node positions.cjs list');

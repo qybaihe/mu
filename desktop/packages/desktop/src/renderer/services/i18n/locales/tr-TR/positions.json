@@ -49,6 +49,18 @@
       "project-root": "aynı proje kökü",
       "description": "açıklamalar çok benzer"
     },
+    "tabDescribe": "Ben tarif edeyim",
+    "stepDescribe": "Adım 1 · Ben tarif edeyim",
+    "describeLabel": "Bu pozisyonu tarif et (ne yapar, nelerden sorumlu)",
+    "describePlaceholder": "örn.: E:/Projects/freight-lab projesini izle, teklif tablolarını çözümle ve doğrula; kabul: tüm satırlar çözümlendi ve toplamlar tutuyor",
+    "describeGapTitle": "Tarifte bu bilgi hâlâ eksik — eklemen önerilir:",
+    "describeGapAllSet": "Proje kökü, sorumluluklar ve kabul ölçütleri tanınabilir",
+    "describeSupervisorHint": "Tarif belirsiz mi? Görevi Süpervizör sohbetine gönder — bir iş analisti gibi tek soruyla röportaj yapar",
+    "describeGap": {
+      "project-root": "Proje kökü: hangi projeden sorumlu? Dizin yolu ne?",
+      "duty-boundary": "Sorumluluk sınırı: nelerden sorumlu, neleri açıkça yapmaz?",
+      "acceptance": "Kabul ölçütleri: ne kadar iyi olunca tamam sayılır?"
+    },
     "template": {
       "hint": "Topluluk şablonuyla başlayın (awesome-grokbot, CC0): arayın, benimseyin ve taslağı düzenleyin",
       "searchPlaceholder": "Şablon ara (Çince veya İngilizce)",

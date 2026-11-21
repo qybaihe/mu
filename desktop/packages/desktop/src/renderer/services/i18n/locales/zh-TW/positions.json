@@ -49,6 +49,18 @@
       "project-root": "同專案根",
       "description": "描述高度相似"
     },
+    "tabDescribe": "我來描述",
+    "stepDescribe": "第 1 步 · 我來描述",
+    "describeLabel": "描述這個崗位（要它做什麼、管什麼）",
+    "describePlaceholder": "例：幫我盯 E:/Projects/freight-lab 專案，負責報價表解析與核價，驗收是所有行解析成功且彙總數字對得上",
+    "describeGapTitle": "描述裡還缺這些資訊，建議補齊：",
+    "describeGapAllSet": "專案根、職責、驗收三類資訊已可辨認",
+    "describeSupervisorHint": "描述不清楚？可把任務發給「主管」會話，它會像業務分析師一樣一次一問採訪你",
+    "describeGap": {
+      "project-root": "專案根：崗位管哪個專案？目錄路徑是什麼？",
+      "duty-boundary": "職責邊界：它負責什麼、明確不做什麼？",
+      "acceptance": "驗收標準：做到什麼程度算完成？"
+    },
     "template": {
       "hint": "從社群模板起步（awesome-grokbot，CC0）：搜尋並採用一條，回填草稿後仍可編輯",
       "searchPlaceholder": "搜尋模板（中英文皆可）",

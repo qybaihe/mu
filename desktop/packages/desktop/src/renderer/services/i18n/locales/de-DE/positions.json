@@ -49,6 +49,18 @@
       "project-root": "gleiche Projektwurzel",
       "description": "sehr ähnliche Beschreibung"
     },
+    "tabDescribe": "Ich beschreibe es",
+    "stepDescribe": "Schritt 1 · Ich beschreibe es",
+    "describeLabel": "Beschreibe diese Position (was sie tut, wofür sie zuständig ist)",
+    "describePlaceholder": "z. B. das Projekt E:/Projects/freight-lab betreuen, Angebotsblätter parsen und prüfen; Akzeptanz: alle Zeilen geparst, Summen stimmen",
+    "describeGapTitle": "In der Beschreibung fehlt noch diese Information — sinnvoll zu ergänzen:",
+    "describeGapAllSet": "Projektwurzel, Zuständigkeiten und Akzeptanz sind erkennbar",
+    "describeSupervisorHint": "Beschreibung unklar? Schicke die Aufgabe an das Supervisor-Gespräch — es interviewt dich wie ein Business Analyst, eine Frage nach der anderen",
+    "describeGap": {
+      "project-root": "Projektwurzel: Für welches Projekt ist sie zuständig? Wie lautet der Verzeichnispfad?",
+      "duty-boundary": "Zuständigkeitsgrenze: Wofür ist sie verantwortlich, was macht sie ausdrücklich nicht?",
+      "acceptance": "Akzeptanzkriterien: Was gilt als fertig und gut?"
+    },
     "template": {
       "hint": "Mit einer Community-Vorlage starten (awesome-grokbot, CC0): suchen, übernehmen und den Entwurf frei bearbeiten",
       "searchPlaceholder": "Vorlagen suchen (Chinesisch oder Englisch)",

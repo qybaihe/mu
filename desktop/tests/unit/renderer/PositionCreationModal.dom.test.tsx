@@ -306,6 +306,53 @@ describe('PositionCreationModal', () => {
     });
   });
 
+  it('starts from a description: the tab surfaces the missing-information checklist live and points at the supervisor interview', async () => {
+    render(<PositionCreationModal open onClose={() => undefined} />);
+    fireEvent.click(screen.getAllByRole('radio')[2]); // the third flavour: I'll describe it
+    expect(screen.getByTestId('position-creation-describe')).toBeDefined();
+    expect(screen.getByTestId('position-creation-describe-text').textContent).toBe('');
+    // The supervisor pointer: the wizard does not interview, the supervisor does.
+    expect(screen.getByTestId('position-creation-describe').textContent).toContain(
+      'positions.wizard.describeSupervisorHint'
+    );
+    // A thin description misses all three dimensions — the checklist says so.
+    fireEvent.change(screen.getByTestId('position-creation-describe-text'), { target: { value: '帮我弄一下那个' } });
+    expect(screen.getByTestId('position-creation-describe-gap-project-root')).toBeDefined();
+    expect(screen.getByTestId('position-creation-describe-gap-duty-boundary')).toBeDefined();
+    expect(screen.getByTestId('position-creation-describe-gap-acceptance')).toBeDefined();
+    // Supplemented text clears its gap from the checklist as the markers arrive.
+    fireEvent.change(screen.getByTestId('position-creation-describe-text'), {
+      target: { value: '盯 E:/Projects/freight-lab，负责报价表解析与核价，验收是行行对上' },
+    });
+    expect(screen.queryByTestId('position-creation-describe-gap-project-root')).toBeNull();
+    expect(screen.queryByTestId('position-creation-describe-gap-duty-boundary')).toBeNull();
+    expect(screen.queryByTestId('position-creation-describe-gap-acceptance')).toBeNull();
+    expect(screen.getByTestId('position-creation-describe-gaps').textContent).toContain(
+      'positions.wizard.describeGapAllSet'
+    );
+  });
+
+  it('hands the description to the review step as a draft: first sentence the description, the lifted root in the body', async () => {
+    render(<PositionCreationModal open onClose={() => undefined} />);
+    fireEvent.click(screen.getAllByRole('radio')[2]);
+    fireEvent.change(screen.getByTestId('position-creation-describe-text'), {
+      target: { value: '盯 E:/Projects/freight-lab 的报价表。其余随便。' },
+    });
+    // Next stays disabled until there is text; then it opens the review with the draft.
+    fireEvent.change(screen.getByTestId('position-creation-describe-text'), { target: { value: '' } });
+    expect(screen.getByTestId('position-creation-describe-next')).toHaveProperty('disabled', true);
+    fireEvent.change(screen.getByTestId('position-creation-describe-text'), {
+      target: { value: '盯 E:/Projects/freight-lab 的报价表。其余随便。' },
+    });
+    fireEvent.click(screen.getByTestId('position-creation-describe-next'));
+    expect(screen.getByTestId('position-creation-desc')).toHaveValue('盯 E:/Projects/freight-lab 的报价表');
+    expect(screen.getByTestId('position-creation-body').textContent).toContain('- 项目根：`E:/Projects/freight-lab`');
+    expect(screen.getByTestId('position-creation-body').textContent).toContain('其余随便');
+    // Back returns to the describe tab with the text kept, not the directory picker.
+    fireEvent.click(screen.getByTestId('position-creation-back'));
+    expect(screen.getByTestId('position-creation-describe-text').textContent).toContain('freight-lab');
+  });
+
   it('shows the unavailable catalog as a state with a retry, search disabled', async () => {
     templatesSearch = vi.fn(async () => ({
       ok: true,

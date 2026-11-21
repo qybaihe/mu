@@ -49,6 +49,18 @@
       "project-root": "same project root",
       "description": "very similar description"
     },
+    "tabDescribe": "I'll describe it",
+    "stepDescribe": "Step 1 · I'll describe it",
+    "describeLabel": "Describe this position (what it does, what it owns)",
+    "describePlaceholder": "e.g. Watch E:/Projects/freight-lab for me, parse and verify quotation sheets, acceptance is every row parsed and totals matching",
+    "describeGapTitle": "Your description still misses this information — worth adding:",
+    "describeGapAllSet": "Project root, duties and acceptance are all recognizable",
+    "describeSupervisorHint": "Description unclear? Send the task to the Supervisor conversation — it interviews you one question at a time, like a business analyst",
+    "describeGap": {
+      "project-root": "Project root: which project does it own? What is the directory path?",
+      "duty-boundary": "Duty boundary: what is it responsible for, what does it explicitly not do?",
+      "acceptance": "Acceptance criteria: how good is good enough?"
+    },
     "template": {
       "hint": "Start from a community template (awesome-grokbot, CC0): search, adopt one, then edit the draft as you like",
       "searchPlaceholder": "Search templates (Chinese or English)",
