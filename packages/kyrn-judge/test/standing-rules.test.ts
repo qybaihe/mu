@@ -71,7 +71,7 @@ describe("a standing rule at the constraint gate", () => {
 			return { content: [{ type: "text", text: "ok" }], details: {} };
 		},
 	};
-	const yes: Answer = { type: "boolean", probability: 0.96 };
+	const violates: Answer = { type: "choice", choice: "violates", probabilities: { violates: 0.96 } };
 
 	async function start(lessons: readonly StoredLesson[], constraints: Record<string, unknown> = {}) {
 		const folder = mkdtempSync(join(tmpdir(), "mu-standing-"));
@@ -81,8 +81,12 @@ describe("a standing rule at the constraint gate", () => {
 		const provider = new MockJudgeProvider((request: JudgeRequest): Record<string, Answer> => {
 			const answers: Record<string, Answer> = {};
 			for (const [id, question] of Object.entries(request.questions)) {
-				if (id.startsWith("constraint_") && String(question.instructions).includes("never npm test"))
-					answers[id] = yes;
+				if (
+					question.type === "choice" &&
+					id.startsWith("constraint_") &&
+					String(question.instructions).includes("never npm test")
+				)
+					answers[id] = violates;
 			}
 			return answers;
 		});
@@ -116,10 +120,16 @@ describe("a standing rule at the constraint gate", () => {
 		expect(blocked).toContain(
 			"It is a standing rule from an earlier session (lesson abcd1234; the user removes one with /forget).",
 		);
-		const [asked] = provider.calls.filter((call) => "constraint_0" in call.questions);
-		expect(asked.questions.constraint_0.instructions).toBe(
-			'Does `tool_call` go against this instruction from the user? "Run ./test.sh, never npm test."',
-		);
+		const calls = provider.calls.filter((call) => "constraint_0" in call.questions);
+		expect(calls).toHaveLength(1);
+		const [asked] = calls;
+		expect(asked.state).toEqual({ tool_call: "bash: npm test" });
+		expect(asked.questions.constraint_0).toMatchObject({
+			type: "choice",
+			instructions: expect.stringContaining(
+				'directly contradict this user instruction? "Run ./test.sh, never npm test."',
+			),
+		});
 	});
 
 	it("is not checked when it is only a lesson, when it was forgotten, or when no standing rule is checked", async () => {

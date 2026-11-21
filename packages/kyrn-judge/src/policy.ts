@@ -67,6 +67,12 @@ export function pickChoice<Option extends string>(
 	return answer.choice as Exclude<Option, EscapeOption>;
 }
 
+/** Require a score for the picked option. Provider confidence counts only when its probability is absent. */
+export function hasChoiceEvidence(answer: ChoiceAnswer, minimum: number): boolean {
+	const score = answer.probabilities?.[answer.choice] ?? answer.confidence;
+	return score !== undefined && score >= minimum;
+}
+
 /** Nearest rubric level, zero-based. */
 export function scoreLevel(answer: ScoreAnswer): number {
 	return Math.round(answer.score);

@@ -16,7 +16,8 @@ import { MAX_ERROR_MESSAGE_LENGTH, messageFromErrorBody } from "./http.ts";
 const TOP_LOGPROBS = 20;
 /** Below this share of the first token's probability on the labels, the answer is reported as off-format. */
 const MIN_LABEL_MASS = 0.5;
-const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+// Leave existing labels in place; decisions with three choices per target can need a 27th single-token label.
+const CHOICE_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 export const LOGPROB_SYSTEM_PROMPT =
 	"You are a judgment function inside a coding agent harness. Read STATE and answer QUESTION about it. Reply with exactly one label from LABELS and nothing else.";
@@ -51,14 +52,13 @@ export function renderLabeledPrompt(state: JudgeInput, question: Question): Labe
 		if (question.criteria?.false) lines.push(`no: ${text(question.criteria.false)}`);
 	} else if (question.type === "choice") {
 		const options = Object.entries(question.criteria);
-		if (options.length > LETTERS.length) {
-			throw new JudgeError("bad_request", `A labeled prompt holds at most ${LETTERS.length} options`);
+		if (options.length > CHOICE_LABELS.length) {
+			throw new JudgeError("bad_request", `A labeled prompt holds at most ${CHOICE_LABELS.length} options`);
 		}
 		for (const [index, [option, description]] of options.entries()) {
-			labels[LETTERS[index]] = option;
-			lines.push(
-				description ? `${LETTERS[index]}: ${option} - ${text(description)}` : `${LETTERS[index]}: ${option}`,
-			);
+			const label = CHOICE_LABELS[index];
+			labels[label] = option;
+			lines.push(description ? `${label}: ${option} - ${text(description)}` : `${label}: ${option}`);
 		}
 	} else {
 		if (question.criteria.length > 10)

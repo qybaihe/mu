@@ -975,6 +975,7 @@
   },
   "commands": {
     "frame": "Der Aufgabenrahmen: Ziel, deine festen Vorgaben und wo du sie genannt hast, Teilziel, Abnahmekriterien",
+    "frame_with_remove": "Aufgabenrahmen und IDs der Vorgaben anzeigen; /frame remove <id> hebt eine Vorgabe auf",
     "remember": "Eine Lektion für künftige Gespräche in diesem Projekt speichern: /remember <was zu tun ist>",
     "lessons": "Die Lektionen dieses Projekts: /lessons listet ID · Art · abgerufen/befolgt · Lektion, /lessons all zeigt auch die überall geltenden und die ausgemusterten",
     "forget": "Eine Lektion ausmustern, damit sie nicht mehr abgerufen wird: /forget <ID-Anfang> (die IDs stehen in /lessons)",

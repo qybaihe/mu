@@ -91,7 +91,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 ### `input`
 
-1. `kernel`
+1. `kernel` ×2
 2. `interjection`
 3. `preflight`
 4. `frame`
@@ -207,7 +207,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 6. `monitor`, final
 7. `lsp`, final
 8. `checkpoint`, final
-9. `recovery`, final
+9. `recovery` ×2, final
 
 ### `tool_execution_end`
 
@@ -351,6 +351,8 @@ is marked: two features that set it in the same turn decide between them by the 
 | `evolve` | `extension/features/evolve.ts` | `extension/features/ask-user.ts`, `extension/features/commands.ts`, `extension/features/interjection.ts`, `extension/features/permissions.ts`, `extension/features/preload.ts`, `extension/features/snapshot.ts` |
 | `floor` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/packs/debugger.ts` |
 | `floorExit` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/permissions.ts` |
+| `framePermissionInput` | `extension/features/frame.ts` | `extension/features/frame.ts`, `extension/runtime.ts` |
+| `framePermissionOnce` (set in more than one file) | `extension/features/constraints.ts`, `extension/features/frame.ts` | `extension/features/constraints.ts`, `extension/runtime.ts` |
 | `frameState` | `extension/features/frame.ts` | `extension/features/frame.ts`, `extension/features/interjection.ts`, `extension/runtime.ts` |
 | `goalActive` | `extension/features/goal.ts` | `extension/features/board.ts`, `extension/features/completion.ts`, `extension/features/continuation.ts` |
 | `harnessAbort` (set in more than one file) | `extension/features/ttsr.ts`, `extension/features/watchdog.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/evolve.ts`, `extension/features/goal.ts`, `extension/features/interrupted.ts` |

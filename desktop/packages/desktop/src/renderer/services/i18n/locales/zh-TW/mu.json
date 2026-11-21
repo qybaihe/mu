@@ -981,6 +981,7 @@
   },
   "commands": {
     "frame": "任務框架：目標、你的硬性限制（原話加出處）、目前的子目標、驗收條件",
+    "frame_with_remove": "顯示任務框架及其約束 ID；/frame remove <id> 移除指定的約束",
     "remember": "為這個專案記下一條經驗，之後的對話都會用上：/remember <該怎麼做>",
     "lessons": "這個專案的經驗：/lessons 列出 id · 類型 · 召回/照做次數 · 經驗，/lessons all 連同到處適用的和已退役的一起列出",
     "forget": "讓一條經驗退役，之後不再召回：/forget <id 前幾碼>（id 見 /lessons）",

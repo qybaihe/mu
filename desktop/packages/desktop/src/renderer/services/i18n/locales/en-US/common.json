@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "Task type",
+        "change": "Change to the task",
+        "limit": "Change to constraints",
         "gear": "Effort",
         "thinking": "Thinking level",
         "agent": "Suggested role",
@@ -489,6 +491,10 @@
         "correction": "Correction",
         "subgoal": "New subgoal",
         "unclear": "Can't tell",
+        "add": "Add a constraint",
+        "withdraw": "Lift a constraint",
+        "allow_once": "Allow a one-time exception",
+        "replace": "Replace a constraint",
         "hold": "Hold back",
         "no_answer": "No answer in time",
         "aborted": "Canceled",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "Change to the task"
+            "change": "Change to the task",
+            "limit": "Change to constraints"
           },
           "answers": {
             "new_task": "A new task",
             "constraint": "A new rule for the work",
             "correction": "The approach is wrong",
             "subgoal": "Next step of the same task",
-            "none": "No change"
+            "none": "No change",
+            "add": "Add a constraint",
+            "unclear": "Can't tell",
+            "withdraw": "Lift constraint {{number}}",
+            "once": "Allow a one-time exception to constraint {{number}}",
+            "replace": "Replace constraint {{number}}"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "Goes against constraint {{number}}"
+            "constraint": "Does the call violate constraint {{number}}?",
+            "permission_once": "Did you explicitly allow this exact call once?"
+          },
+          "answers": {
+            "violates": "Direct violation",
+            "compatible": "No direct violation",
+            "unclear": "Can't tell"
           }
         },
         "capabilities": {

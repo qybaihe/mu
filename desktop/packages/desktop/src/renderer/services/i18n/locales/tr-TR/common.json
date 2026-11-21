@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "Görev türü",
+        "change": "Görevdeki değişiklik",
+        "limit": "Kısıtlardaki değişiklik",
         "gear": "Görev düzeyi",
         "thinking": "Düşünme düzeyi",
         "agent": "Önerilen rol",
@@ -489,6 +491,10 @@
         "correction": "Düzeltme",
         "subgoal": "Yeni alt hedef",
         "unclear": "Belli değil",
+        "add": "Kısıt ekle",
+        "withdraw": "Kısıtı kaldır",
+        "allow_once": "Tek seferlik istisnaya izin ver",
+        "replace": "Kısıtı değiştir",
         "hold": "Beklet",
         "no_answer": "Zamanında yanıt gelmedi",
         "aborted": "İptal edildi",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "Görevdeki değişiklik"
+            "change": "Görevdeki değişiklik",
+            "limit": "Kısıtlardaki değişiklik"
           },
           "answers": {
             "new_task": "Yeni bir görev",
             "constraint": "İş için yeni bir kural",
             "correction": "Yaklaşım yanlış",
             "subgoal": "Aynı görevin sonraki adımı",
-            "none": "Değişiklik yok"
+            "none": "Değişiklik yok",
+            "add": "Kısıt ekle",
+            "unclear": "Belli değil",
+            "withdraw": "{{number}} numaralı kısıtı kaldır",
+            "once": "{{number}} numaralı kısıt için tek seferlik istisnaya izin ver",
+            "replace": "{{number}} numaralı kısıtı değiştir"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "Kısıt {{number}} ile çelişiyor"
+            "constraint": "Çağrı {{number}} numaralı kısıtı ihlal ediyor mu?",
+            "permission_once": "Tam olarak bu çağrıya bir kereliğine açıkça izin verdiniz mi?"
+          },
+          "answers": {
+            "violates": "Doğrudan ihlal",
+            "compatible": "Doğrudan ihlal yok",
+            "unclear": "Belli değil"
           }
         },
         "capabilities": {

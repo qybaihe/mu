@@ -528,7 +528,11 @@ export function resultFacts(card: JudgeCard, lessonText?: (id: string) => string
   }
   if (scalar(outcome)) return [{ name: 'result', values: [scalar(outcome)] }];
   return Object.entries(record(outcome))
-    .flatMap(([name, value]): JudgeFact[] => {
+    .flatMap(([name, recorded]): JudgeFact[] => {
+      // The stable target id stays in the raw record; the answer names the target as numbered in the question.
+      const value = card.stage === 'taskFrame' && name === 'limit' ? record(recorded).kind : recorded;
+      if (card.stage === 'constraint' && name === 'broken' && Array.isArray(value) && value.length === 0)
+        return [{ name, values: ['none'] }];
       if (name === 'ranked')
         return [
           capped(

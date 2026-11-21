@@ -981,6 +981,7 @@
   },
   "commands": {
     "frame": "任务帧：目标、你的硬约束（原话加出处）、当前子目标、验收条件",
+    "frame_with_remove": "显示任务帧；/frame remove <id> 移除指定的硬约束",
     "remember": "给这个项目记一条经验，以后的会话都会用上：/remember <该怎么做>",
     "lessons": "这个项目的经验：/lessons 列出 id · 类型 · 召回/照做次数 · 经验，/lessons all 连到处适用的和已退役的一起列",
     "forget": "让一条经验退役，以后不再召回：/forget <id 前几位>（id 见 /lessons）",

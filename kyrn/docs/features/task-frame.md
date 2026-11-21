@@ -1,6 +1,10 @@
 # 任务帧与待办清单
 
-更新日期：2026-11-10（一轮结束时的清单通知，第 8 节；其余为 2026-09-22 的记录）。对应 PRD `06-harness-prd.md` 的 FR-02（P0）。代码在 `packages/kyrn-judge`：纯模型 `src/frame/`，决策 `src/decisions/task-frame.ts`，功能 `src/extension/features/frame.ts`，接缝在 `src/extension/runtime.ts`。
+**当前行为（`task.frame` v7）：** 一次请求分开问两件事：用户消息如何改变要做的事，以及是否明确新增、撤销或替换一条硬约束。例如，“把 `agents.md` 重命名为 `AGENTS.md`”是一次性动作，不是以后每次编辑都要遵守的约束；“重命名后不要再改 `AGENTS.md`”则同时交代了动作和约束。
+
+“只允许这一次”不等于撤销约束：只在本回合对一次与授权匹配的调用生效，其他约束不变。会话恢复后不会重新授权。
+
+下文是历史记录：第 8 节的清单通知更新于 2026-11-10，其余记录于 2026-09-22，不代表当前实现或验证结果。对应 PRD `06-harness-prd.md` 的 FR-02（P0）。代码在 `packages/kyrn-judge`：纯模型 `src/frame/`，决策 `src/decisions/task-frame.ts`，功能 `src/extension/features/frame.ts`，接缝在 `src/extension/runtime.ts`。
 
 ## 1. 它解决什么
 

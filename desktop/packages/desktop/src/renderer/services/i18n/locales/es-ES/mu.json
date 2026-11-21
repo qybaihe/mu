@@ -975,6 +975,7 @@
   },
   "commands": {
     "frame": "El marco de la tarea: objetivo, tus restricciones firmes y dónde las dijiste, subobjetivo, criterios de aceptación",
+    "frame_with_remove": "Mostrar el marco de la tarea y los ID de sus restricciones; /frame remove <id> elimina una restricción",
     "remember": "Guardar una lección para las próximas conversaciones de este proyecto: /remember <qué hacer>",
     "lessons": "Las lecciones de este proyecto: /lessons lista id · tipo · recuperada/seguida · lección, /lessons all añade las de todas partes y las retiradas",
     "forget": "Retirar una lección para que ya no se recupere: /forget <inicio del id> (los id están en /lessons)",

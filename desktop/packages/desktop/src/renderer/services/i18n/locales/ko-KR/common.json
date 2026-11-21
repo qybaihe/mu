@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "작업 유형",
+        "change": "작업의 변화",
+        "limit": "제약 조건 변경",
         "gear": "작업 단계",
         "thinking": "사고 수준",
         "agent": "제안된 역할",
@@ -489,6 +491,10 @@
         "correction": "정정",
         "subgoal": "새 하위 목표",
         "unclear": "판단할 수 없음",
+        "add": "제약 조건 추가",
+        "withdraw": "제약 조건 해제",
+        "allow_once": "일회성 예외 허용",
+        "replace": "제약 조건 교체",
         "hold": "보류",
         "no_answer": "시간 내 응답 없음",
         "aborted": "취소됨",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "작업의 변화"
+            "change": "작업의 변화",
+            "limit": "제약 조건 변경"
           },
           "answers": {
             "new_task": "새 작업",
             "constraint": "작업의 새 규칙",
             "correction": "접근 방식이 틀림",
             "subgoal": "같은 작업의 다음 단계",
-            "none": "변화 없음"
+            "none": "변화 없음",
+            "add": "제약 조건 추가",
+            "unclear": "판단할 수 없음",
+            "withdraw": "{{number}}번 제약 조건 해제",
+            "once": "{{number}}번 제약 조건에 일회성 예외 허용",
+            "replace": "{{number}}번 제약 조건 교체"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "{{number}}번 제약 조건에 어긋남"
+            "constraint": "이 호출은 {{number}}번 제약 조건을 위반하나요?",
+            "permission_once": "사용자가 바로 이 호출을 한 번만 허용한다고 명시했나요?"
+          },
+          "answers": {
+            "violates": "직접 위반함",
+            "compatible": "직접 위반하지 않음",
+            "unclear": "판단할 수 없음"
           }
         },
         "capabilities": {

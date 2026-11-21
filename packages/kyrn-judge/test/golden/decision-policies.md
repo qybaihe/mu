@@ -542,16 +542,34 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: {"strength":0.5,"thinking":"medium","agent":null}
 - the judge failed: {"strength":0.5,"thinking":"medium","agent":null} (fallback)
 
-## task.frame v1
+## task.frame v7
 
-- `change` (choice):
-  - new_task: 0.3–0.55 → "none"; 0.6–0.99 → "new_task"; without p → "new_task"
-  - constraint: 0.3–0.55 → "none"; 0.6–0.99 → "constraint"; without p → "constraint"
-  - correction: 0.3–0.55 → "none"; 0.6–0.99 → "correction"; without p → "correction"
-  - subgoal: 0.3–0.55 → "none"; 0.6–0.99 → "subgoal"; without p → "subgoal"
-  - none: 0.3–0.99 → "none"; without p → "none"
-- no answer: "none" (fallback)
-- the judge failed: "none" (fallback)
+- `change` (choice), the others high:
+  - new_task: 0.3–0.55 → {"change":"none","limit":{"kind":"none"}}; 0.6–0.99 → {"change":"new_task","limit":{"kind":"none"}}; without p → {"change":"new_task","limit":{"kind":"none"}}
+  - correction: 0.3–0.55 → {"change":"none","limit":{"kind":"none"}}; 0.6–0.99 → {"change":"correction","limit":{"kind":"none"}}; without p → {"change":"correction","limit":{"kind":"none"}}
+  - subgoal: 0.3–0.55 → {"change":"none","limit":{"kind":"none"}}; 0.6–0.99 → {"change":"subgoal","limit":{"kind":"none"}}; without p → {"change":"subgoal","limit":{"kind":"none"}}
+  - none: 0.3–0.99 → {"change":"none","limit":{"kind":"none"}}; without p → {"change":"none","limit":{"kind":"none"}}
+- `change` (choice), the others low:
+  - new_task: 0.3–0.55 → {"change":"none","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; 0.6–0.99 → {"change":"new_task","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"new_task","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}
+  - correction: 0.3–0.55 → {"change":"none","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; 0.6–0.99 → {"change":"correction","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"correction","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}
+  - subgoal: 0.3–0.55 → {"change":"none","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; 0.6–0.99 → {"change":"subgoal","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"subgoal","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}
+  - none: 0.3–0.99 → {"change":"none","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"none","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}
+- `limit` (choice), the others high:
+  - none: 0.3–0.99 → {"change":"new_task","limit":{"kind":"none"}}; without p → {"change":"new_task","limit":{"kind":"none"}}
+  - add: 0.3–0.55 → {"change":"new_task","limit":{"kind":"unclear"}}; 0.6–0.99 → {"change":"new_task","limit":{"kind":"add"}}; without p → {"change":"new_task","limit":{"kind":"unclear"}}
+  - unclear: 0.3–0.99 → {"change":"new_task","limit":{"kind":"unclear"}}; without p → {"change":"new_task","limit":{"kind":"unclear"}}
+  - withdraw_1: 0.3–0.55 → {"change":"new_task","limit":{"kind":"unclear"}}; 0.6–0.99 → {"change":"new_task","limit":{"kind":"withdraw","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"new_task","limit":{"kind":"unclear"}}
+  - replace_1: 0.3–0.55 → {"change":"new_task","limit":{"kind":"unclear"}}; 0.6–0.99 → {"change":"new_task","limit":{"kind":"replace","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"new_task","limit":{"kind":"unclear"}}
+  - once_1: 0.3–0.55 → {"change":"new_task","limit":{"kind":"unclear"}}; 0.6–0.99 → {"change":"new_task","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"new_task","limit":{"kind":"unclear"}}
+- `limit` (choice), the others low:
+  - none: 0.3–0.99 → {"change":"none","limit":{"kind":"none"}}; without p → {"change":"none","limit":{"kind":"none"}}
+  - add: 0.3–0.55 → {"change":"none","limit":{"kind":"unclear"}}; 0.6–0.99 → {"change":"none","limit":{"kind":"add"}}; without p → {"change":"none","limit":{"kind":"unclear"}}
+  - unclear: 0.3–0.99 → {"change":"none","limit":{"kind":"unclear"}}; without p → {"change":"none","limit":{"kind":"unclear"}}
+  - withdraw_1: 0.3–0.55 → {"change":"none","limit":{"kind":"unclear"}}; 0.6–0.99 → {"change":"none","limit":{"kind":"withdraw","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"none","limit":{"kind":"unclear"}}
+  - replace_1: 0.3–0.55 → {"change":"none","limit":{"kind":"unclear"}}; 0.6–0.99 → {"change":"none","limit":{"kind":"replace","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"none","limit":{"kind":"unclear"}}
+  - once_1: 0.3–0.55 → {"change":"none","limit":{"kind":"unclear"}}; 0.6–0.99 → {"change":"none","limit":{"kind":"allow_once","id":"2d9baa509693181ccbeb9dfbea6b4ba4e5a0949f9866ea6779d5a7968f7a1a58"}}; without p → {"change":"none","limit":{"kind":"unclear"}}
+- no answer: {"change":"none","limit":{"kind":"none"}} (fallback)
+- the judge failed: {"change":"none","limit":{"kind":"none"}} (fallback)
 
 ## tool.admission v2
 
@@ -629,16 +647,28 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: "unsure" (fallback)
 - the judge failed: "unsure" (fallback)
 
-## tool.constraint v1
+## tool.constraint v5
 
-- `constraint_0` (boolean), the others high:
-  - p(true): 0.01–0.75 → {"broken":[1]}; 0.8–0.99 → {"broken":[0,1]}
-- `constraint_0` (boolean), the others low:
-  - p(true): 0.01–0.75 → {"broken":[]}; 0.8–0.99 → {"broken":[0]}
-- `constraint_1` (boolean), the others high:
-  - p(true): 0.01–0.75 → {"broken":[0]}; 0.8–0.99 → {"broken":[0,1]}
-- `constraint_1` (boolean), the others low:
-  - p(true): 0.01–0.75 → {"broken":[]}; 0.8–0.99 → {"broken":[1]}
+- `constraint_0` (choice), the others high:
+  - violates: 0.3–0.75 → {"broken":[1],"matchesOnce":true}; 0.8–0.99 → {"broken":[0,1],"matchesOnce":true}; without p → {"broken":[1],"matchesOnce":true}
+  - compatible: 0.3–0.99 → {"broken":[1],"matchesOnce":true}; without p → {"broken":[1],"matchesOnce":true}
+  - unclear: 0.3–0.99 → {"broken":[1],"matchesOnce":true}; without p → {"broken":[1],"matchesOnce":true}
+- `constraint_0` (choice), the others low:
+  - violates: 0.3–0.75 → {"broken":[]}; 0.8–0.99 → {"broken":[0]}; without p → {"broken":[]}
+  - compatible: 0.3–0.99 → {"broken":[]}; without p → {"broken":[]}
+  - unclear: 0.3–0.99 → {"broken":[]}; without p → {"broken":[]}
+- `constraint_1` (choice), the others high:
+  - violates: 0.3–0.75 → {"broken":[0],"matchesOnce":true}; 0.8–0.99 → {"broken":[0,1],"matchesOnce":true}; without p → {"broken":[0],"matchesOnce":true}
+  - compatible: 0.3–0.99 → {"broken":[0],"matchesOnce":true}; without p → {"broken":[0],"matchesOnce":true}
+  - unclear: 0.3–0.99 → {"broken":[0],"matchesOnce":true}; without p → {"broken":[0],"matchesOnce":true}
+- `constraint_1` (choice), the others low:
+  - violates: 0.3–0.75 → {"broken":[]}; 0.8–0.99 → {"broken":[1]}; without p → {"broken":[]}
+  - compatible: 0.3–0.99 → {"broken":[]}; without p → {"broken":[]}
+  - unclear: 0.3–0.99 → {"broken":[]}; without p → {"broken":[]}
+- `permission_once` (boolean), the others high:
+  - p(true): 0.01–0.75 → {"broken":[0,1]}; 0.8–0.99 → {"broken":[0,1],"matchesOnce":true}
+- `permission_once` (boolean), the others low:
+  - p(true): 0.01–0.75 → {"broken":[]}; 0.8–0.99 → {"broken":[],"matchesOnce":true}
 - no answer: {"broken":[]}
 - the judge failed: {"broken":[]} (fallback)
 

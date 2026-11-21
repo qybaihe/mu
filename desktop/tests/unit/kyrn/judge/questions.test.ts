@@ -71,8 +71,13 @@ describe.each(SUPPORTED_LANGUAGES)('the judge answer words in %s', (language) =>
       const questions = JUDGE_QUESTIONS[specId];
       const where = `${language} ${stage}`;
       expect(Object.keys(said.questions).toSorted(), where).toEqual(questions.map(questionKey).toSorted());
-      const answers = new Set(questions.flatMap((question) => (question.type === 'choice' ? question.answers : [])));
+      const choices = questions.filter((question) => question.type === 'choice');
+      const numbered = new Set(choices.flatMap((question) => question.numberedAnswers ?? []));
+      const answers = new Set([...choices.flatMap((question) => question.answers), ...numbered]);
       expect(Object.keys(said.answers ?? {}).toSorted(), where).toEqual([...answers].toSorted());
+      for (const [id, text] of Object.entries(said.answers ?? {})) {
+        expect(text.includes('{{number}}'), `${where} ${id}`).toBe(numbered.has(id));
+      }
       const scores = questions.filter((question) => question.type === 'score');
       expect(Object.keys(said.levels ?? {}).toSorted(), where).toEqual(scores.map(questionKey).toSorted());
 

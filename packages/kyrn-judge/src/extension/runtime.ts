@@ -215,6 +215,10 @@ export class KyrnRuntime {
 	lastActivityAt = Date.now();
 	/** The task frame as the frame feature keeps it. Undefined while that feature is off: the stand-in answers then. */
 	frameState: FrameState | undefined;
+	/** The frame feature's one-call permission for the constraint gate. Never restored from a session. */
+	framePermissionOnce?: { readonly id: string; readonly userMessage: string; readonly turn: number };
+	/** The latest input event's context: two mid-run messages can have the same turn number. */
+	framePermissionInput?: ExtensionContext;
 	/**
 	 * Where mu keeps its own state, `<agent dir>/mu`. Undefined when whoever embeds mu owns the setup (tests, an
 	 * injected provider or config): nothing is written to the user's folder then.
@@ -276,7 +280,7 @@ export class KyrnRuntime {
 	 * Whoever keeps the task frame sets this. It hears of a message the moment its turn is counted,
 	 * so the frame's judge runs alongside preflight's instead of after its wait.
 	 */
-	onTurnBegin?: (userMessage: string) => void;
+	onTurnBegin?: (userMessage: string, goalEntryId?: string) => void;
 	/**
 	 * Set by the permissions feature: the mode this conversation runs in. Undefined while that feature is
 	 * off, and then the guard alone looks at risky commands, as before there were modes.
@@ -382,6 +386,11 @@ export class KyrnRuntime {
 			origin: () => ({ turn: this.userTurns, frame: this.frameState?.frame?.version ?? 0 }),
 		});
 		for (const [specId, tiers] of Object.entries(config.routes)) this.route(specId, tiers);
+		// Interjection may handle a mid-run input before the frame sees it. Expire even grants still being judged.
+		pi.on("input", (_event, ctx) => {
+			this.framePermissionInput = ctx;
+			this.framePermissionOnce = undefined;
+		});
 		pi.on("session_shutdown", () => {
 			void this.judgeHttp?.close().catch(() => {});
 			this.judgeHttp = undefined;
@@ -573,14 +582,15 @@ export class KyrnRuntime {
 		return featureOptions(this.config, feature, defaults);
 	}
 
-	beginTurn(userMessage: string): void {
+	beginTurn(userMessage: string, goalEntryId?: string): void {
+		this.framePermissionOnce = undefined;
 		this.userTurns++;
 		const words = userWords(userMessage);
 		if (!this.firstUserMessage) this.firstUserMessage = words;
 		this.turn = emptyTurn(words);
 		try {
 			// The frame keeps the raw text: it matches the message by it once pi has stored it.
-			this.onTurnBegin?.(userMessage);
+			this.onTurnBegin?.(userMessage, goalEntryId);
 		} catch {
 			// The frame is bookkeeping: a turn starts without it.
 		}

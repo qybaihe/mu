@@ -975,6 +975,7 @@
   },
   "commands": {
     "frame": "A definição da tarefa: objetivo, suas restrições rígidas e onde você as disse, subobjetivo, critérios de aceite",
+    "frame_with_remove": "Mostrar a definição da tarefa e os IDs de suas restrições; /frame remove <id> remove uma restrição",
     "remember": "Guardar uma lição para as próximas conversas deste projeto: /remember <o que fazer>",
     "lessons": "As lições deste projeto: /lessons lista id · tipo · recuperada/seguida · lição, /lessons all inclui as que valem em todo lugar e as aposentadas",
     "forget": "Aposentar uma lição para que não seja mais recuperada: /forget <início do id> (os ids estão em /lessons)",

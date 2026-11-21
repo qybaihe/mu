@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "任務類型",
+        "change": "對任務的改變",
+        "limit": "對約束的改變",
         "gear": "任務檔位",
         "thinking": "思考強度",
         "agent": "建議角色",
@@ -489,6 +491,10 @@
         "correction": "糾正",
         "subgoal": "新子目標",
         "unclear": "說不準",
+        "add": "新增約束",
+        "withdraw": "解除約束",
+        "allow_once": "允許一次例外",
+        "replace": "替換約束",
         "hold": "暫緩",
         "no_answer": "未及時得到回答",
         "aborted": "已取消",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "對任務的改變"
+            "change": "對任務的改變",
+            "limit": "對約束的改變"
           },
           "answers": {
             "new_task": "新任務",
             "constraint": "為工作加了一條規則",
             "correction": "目前做法不對",
             "subgoal": "同一任務的下一步",
-            "none": "沒有改變"
+            "none": "沒有改變",
+            "add": "新增約束",
+            "unclear": "說不準",
+            "withdraw": "解除約束 {{number}}",
+            "once": "允許對約束 {{number}} 破例一次",
+            "replace": "替換約束 {{number}}"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "違反約束 {{number}}"
+            "constraint": "此呼叫是否違反約束 {{number}}？",
+            "permission_once": "你是否明確允許過這次特定呼叫，且僅限一次？"
+          },
+          "answers": {
+            "violates": "直接違反",
+            "compatible": "沒有直接違反",
+            "unclear": "說不準"
           }
         },
         "capabilities": {

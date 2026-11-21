@@ -375,6 +375,8 @@
       },
       "fields": {
         "turnType": "任务类型",
+        "change": "对任务的改变",
+        "limit": "对约束的改变",
         "gear": "任务档位",
         "thinking": "思考强度",
         "agent": "建议角色",
@@ -489,6 +491,10 @@
         "correction": "纠正",
         "subgoal": "新子目标",
         "unclear": "说不准",
+        "add": "添加约束",
+        "withdraw": "解除约束",
+        "allow_once": "允许一次例外",
+        "replace": "替换约束",
         "hold": "暂缓",
         "no_answer": "未及时得到回答",
         "aborted": "已取消",
@@ -828,19 +834,31 @@
         },
         "taskFrame": {
           "questions": {
-            "change": "对任务的改变"
+            "change": "对任务的改变",
+            "limit": "对约束的改变"
           },
           "answers": {
             "new_task": "新任务",
             "constraint": "给工作加了一条规则",
             "correction": "当前做法不对",
             "subgoal": "同一任务的下一步",
-            "none": "没有改变"
+            "none": "没有改变",
+            "add": "添加约束",
+            "unclear": "说不准",
+            "withdraw": "解除约束 {{number}}",
+            "once": "允许对约束 {{number}} 破例一次",
+            "replace": "替换约束 {{number}}"
           }
         },
         "constraint": {
           "questions": {
-            "constraint": "违反约束 {{number}}"
+            "constraint": "此调用是否违反约束 {{number}}？",
+            "permission_once": "你是否明确允许过这次具体调用，仅限一次？"
+          },
+          "answers": {
+            "violates": "直接违反",
+            "compatible": "没有直接违反",
+            "unclear": "说不准"
           }
         },
         "capabilities": {

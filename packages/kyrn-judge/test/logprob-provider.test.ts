@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseConfig } from "../src/config.ts";
+import { taskFrame } from "../src/decisions/task-frame.ts";
 import { LogprobJudgeProvider, labelDistribution, renderLabeledPrompt } from "../src/providers/logprob.ts";
 import { buildJudge } from "../src/registry.ts";
 import type { Questions } from "../src/types.ts";
@@ -84,6 +85,28 @@ describe("labelDistribution", () => {
 });
 
 describe("LogprobJudgeProvider", () => {
+	it("can select the last of eight frame rules for a one-call permission", async () => {
+		const input = {
+			userMessage: "Approve one use of the last rule.",
+			frame: { goal: "Review the docs" },
+			activeConstraints: Array.from({ length: 8 }, (_, i) => ({
+				text: `Ask before editing document ${i}.`,
+				source: { turn: 1 },
+			})),
+			recentTurns: [],
+		};
+		const provider = new LogprobJudgeProvider({
+			baseUrl: "http://example.invalid",
+			model: "test",
+			keyName: "K",
+			apiKey: () => "test",
+			fetch: fakeFetch(() => [{ token: "a", logprob: 0 }]),
+		});
+		const { limit } = taskFrame.questionsFor?.(input) ?? taskFrame.questions;
+		const response = await provider.evaluate({ state: taskFrame.buildState(input), questions: { limit } });
+		expect(response.answers.limit).toMatchObject({ type: "choice", choice: "once_8" });
+	});
+
 	it("asks one question per request and reads each answer off the first token", async () => {
 		const captured: CapturedRequest[] = [];
 		const provider = new LogprobJudgeProvider({

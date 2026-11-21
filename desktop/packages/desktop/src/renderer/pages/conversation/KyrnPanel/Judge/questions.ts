@@ -3,8 +3,8 @@ import type { DECISIONS } from './activity';
 /**
  * One question a decision point asks the judge, as the ledger records its answer. The words are in
  * `common.kyrn.judgeView.answerWords.<stage>`: `questions.<key>` names the question, `answers.<answer>` says each answer
- * a choice offers (shared by the choices of one decision point, which never give one answer two meanings), and
- * `levels.<key>.<n>` says each step of a score.
+ * a choice offers (shared by the choices of one decision point). Numbered choices use `answers.<prefix>` with a
+ * number. `levels.<key>.<n>` says each step of a score.
  */
 export type JudgeQuestion = {
   /** The question id; for a question asked once per item, the id before the item's number (`skill_`, `k`). */
@@ -16,8 +16,14 @@ export type JudgeQuestion = {
 } & (
   | { type: 'boolean' }
   | { type: 'score'; levels: number }
-  /** `open`: the judge may also answer with something named at run time (an element, a role, an item), shown as recorded. */
-  | { type: 'choice'; answers: readonly string[]; open?: true }
+  | {
+      type: 'choice';
+      answers: readonly string[];
+      /** Choice prefixes for options ending in a 1-based item number, such as `withdraw_2`. */
+      numberedAnswers?: readonly string[];
+      /** Other choices may name something at run time (an element or role), shown as recorded. */
+      open?: true;
+    }
 );
 
 const ADMISSION_KINDS = ['error', 'result', 'progress', 'warning', 'passing', 'other'] as const;
@@ -163,9 +169,20 @@ export const JUDGE_QUESTIONS: Record<keyof typeof DECISIONS, readonly JudgeQuest
   ],
   'output.drift': [{ id: 'rule_', key: 'rule', from: 0, type: 'boolean' }],
   'task.frame': [
+    // v1 also used `constraint` as a work change and had no separate `limit` question.
     { id: 'change', type: 'choice', answers: ['new_task', 'constraint', 'correction', 'subgoal', 'none'] },
+    {
+      id: 'limit',
+      type: 'choice',
+      answers: ['none', 'add', 'unclear'],
+      numberedAnswers: ['withdraw', 'replace', 'once'],
+    },
   ],
-  'tool.constraint': [{ id: 'constraint_', key: 'constraint', from: 0, type: 'boolean' }],
+  'tool.constraint': [
+    // v1 asked the same question as a boolean. The recorded answer type controls its rendering.
+    { id: 'constraint_', key: 'constraint', from: 0, type: 'choice', answers: ['violates', 'compatible', 'unclear'] },
+    { id: 'permission_once', type: 'boolean' },
+  ],
   'capability.disclosure': [{ id: 'capability_', key: 'capability', from: 0, type: 'boolean' }],
   'diagnostics.delivery': [
     { id: 'more_edits_coming', type: 'boolean' },

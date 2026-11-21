@@ -1,6 +1,11 @@
+const FRAME_WITH_REMOVE = [
+  'Show the task frame and its constraint IDs; /frame remove <id> removes one constraint',
+  '显示任务帧；/frame remove <id> 移除指定的硬约束',
+];
+
 /**
  * mu's slash commands, by name, with the words mu-agent gives each one in English and in Chinese (pi's
- * `get_commands`, with MU_LANG en or zh), then any earlier English wording an older mu may still send. `llama` and
+ * `get_commands`, with MU_LANG en or zh), then any earlier wording an older mu may still send. `llama` and
  * `mcp` are pi's own commands, in English only. `clear` and `new` are not in the menu (`process/agent/kyrn/commands.ts`).
  *
  * pi gives a command no code to translate by, and mu has wording in those two languages only: a reader of the app in
@@ -13,6 +18,7 @@ export const MU_COMMAND_WORDS: ReadonlyMap<string, readonly string[]> = new Map(
   [
     'frame',
     [
+      ...FRAME_WITH_REMOVE,
       'Show the task frame: the goal, your constraints with their source, the current subgoal and the acceptance criteria',
       '任务帧：目标、你的硬约束（原话加出处）、当前子目标、验收条件',
       'The task frame: goal, your constraints (with where you stated them), current subgoal and acceptance criteria',
@@ -246,7 +252,9 @@ export function commandDescription(
   command: { readonly name: string; readonly description: string },
   t: Translate
 ): string {
-  return MU_COMMAND_WORDS.get(command.name)?.includes(command.description)
-    ? t(`mu.commands.${command.name}`, { defaultValue: command.description })
-    : command.description;
+  if (!MU_COMMAND_WORDS.get(command.name)?.includes(command.description)) return command.description;
+  // Don't advertise removal to users connected to a harness that only shows the frame.
+  const key =
+    command.name === 'frame' && FRAME_WITH_REMOVE.includes(command.description) ? 'frame_with_remove' : command.name;
+  return t(`mu.commands.${key}`, { defaultValue: command.description });
 }

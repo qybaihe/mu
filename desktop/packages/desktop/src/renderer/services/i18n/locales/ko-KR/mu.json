@@ -975,6 +975,7 @@
   },
   "commands": {
     "frame": "작업 프레임: 목표, 사용자가 정한 필수 제약과 그 출처, 현재 하위 목표, 완료 기준",
+    "frame_with_remove": "작업 프레임과 제약 조건 ID를 표시합니다. /frame remove <id>로 제약 조건 하나를 제거합니다",
     "remember": "이 프로젝트에 교훈을 저장해 다음 대화부터 사용합니다: /remember <해야 할 일>",
     "lessons": "이 프로젝트의 교훈: /lessons는 id · 종류 · 참조/따른 횟수 · 교훈을 나열하고, /lessons all은 모든 곳에 적용되는 교훈과 사용 중지된 교훈도 함께 보여 줍니다",
     "forget": "교훈을 사용 중지해 더 이상 참조하지 않게 합니다: /forget <id 앞부분> (id는 /lessons에서 확인)",

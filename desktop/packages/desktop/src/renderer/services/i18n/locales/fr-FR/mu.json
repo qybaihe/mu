@@ -975,6 +975,7 @@
   },
   "commands": {
     "frame": "Le cadre de la tâche : objectif, vos contraintes strictes et où vous les avez posées, sous-objectif, critères d’acceptation",
+    "frame_with_remove": "Afficher le cadre de la tâche et les identifiants de ses contraintes ; /frame remove <id> retire une contrainte",
     "remember": "Enregistrer une leçon pour les prochaines conversations de ce projet : /remember <ce qu’il faut faire>",
     "lessons": "Les leçons de ce projet : /lessons liste id · type · rappelée/suivie · leçon, /lessons all ajoute celles valables partout et celles retirées",
     "forget": "Retirer une leçon pour qu’elle ne soit plus rappelée : /forget <début de l’id> (les id sont dans /lessons)",

@@ -4,8 +4,9 @@ import type { Answer } from "./types.ts";
 /**
  * What a judge said against what was true, as `[said, was]` pairs with `said` rising. For a yes/no question: the
  * probability it gave, and the share of such answers that were yes when they were measured. For a choice: the
- * probability of the option it picked, and the share of such picks that were right. Between two points the reading
- * follows the straight line; before the first and after the last it stays at theirs, since nothing was measured there.
+ * picked option's probability (or confidence if no probability was given), and the share of such picks that were
+ * right. Between two points the reading follows the straight line; before the first and after the last it stays at
+ * theirs, since nothing was measured there.
  */
 export type Curve = readonly (readonly [said: number, was: number])[];
 
@@ -51,17 +52,25 @@ export function curveOf(
 }
 
 /**
- * An answer as `curve` reads it: a yes/no answer's probability, or that of a choice's picked option. What the judge
- * said stays on the answer as `said`. A score is a place on a rubric, not a probability, and is left as it is.
+ * An answer as `curve` reads it: a yes/no answer's probability, or a choice's picked probability (falling back to
+ * confidence). What the judge said stays on the answer as `said`. A score is a place on a rubric, not a probability,
+ * and is left as it is.
  */
 export function readThrough(answer: Answer, curve: Curve): Answer {
 	if (answer.type === "boolean") {
 		return { ...answer, probability: readingAt(curve, answer.probability), said: answer.probability };
 	}
 	if (answer.type !== "choice") return answer;
-	const said = answer.probabilities?.[answer.choice];
-	if (said === undefined) return answer;
-	return { ...answer, probabilities: { ...answer.probabilities, [answer.choice]: readingAt(curve, said) }, said };
+	const probability = answer.probabilities?.[answer.choice];
+	if (probability !== undefined) {
+		return {
+			...answer,
+			probabilities: { ...answer.probabilities, [answer.choice]: readingAt(curve, probability) },
+			said: probability,
+		};
+	}
+	const said = answer.confidence;
+	return said === undefined ? answer : { ...answer, confidence: readingAt(curve, said), said };
 }
 
 function readingAt(curve: Curve, said: number): number {
