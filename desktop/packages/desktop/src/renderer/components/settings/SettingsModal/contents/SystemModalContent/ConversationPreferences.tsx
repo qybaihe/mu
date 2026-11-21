@@ -14,13 +14,14 @@ import {
   setClientBusinessSetting,
 } from '@/renderer/services/clientBusinessSettings';
 import MuSelect from '@/renderer/components/base/MuSelect';
+import { inspectionBridge } from '@/common/chat/team/inspection/inspectionBridge';
 import {
   DEFAULT_TEXT_PREVIEW_LIMIT_MB,
   MAX_TEXT_PREVIEW_LIMIT_MB,
   MIN_TEXT_PREVIEW_LIMIT_MB,
   normalizeTextPreviewLimitMb,
 } from '@/renderer/utils/file/previewPayload';
-import { InputNumber, Message, Switch } from '@arco-design/web-react';
+import { Button, InputNumber, Message, Switch } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PreferenceRow from './PreferenceRow';
@@ -52,6 +53,11 @@ const ConversationPreferences: React.FC = () => {
   // (secrets stay in the provider store), undefined = the feature is off.
   const { data: providers } = useProvidersQuery();
   const [quickDecisionModel, setQuickDecisionModel] = useState<{ providerId: string; useModel: string } | undefined>();
+  // The resident inspection's two schedules, both default-on: only an explicit
+  // stored `false` is off, so "on" writes nothing back (remove = default).
+  const [inspectionFriction, setInspectionFriction] = useState(true);
+  const [inspectionWaste, setInspectionWaste] = useState(true);
+  const [inspectionRunning, setInspectionRunning] = useState(false);
 
   useEffect(() => {
     setSaveUploadToWorkspace(configService.get('upload.saveToWorkspace') ?? false);
@@ -92,6 +98,8 @@ const ConversationPreferences: React.FC = () => {
             useModel: storedQuickDecisionModel.use_model,
           });
         }
+        setInspectionFriction((await getClientBusinessSetting('tools.inspectionFrictionEnabled')) !== false);
+        setInspectionWaste((await getClientBusinessSetting('tools.inspectionWasteEnabled')) !== false);
       } catch {
         // Keep the in-memory defaults when backend settings are unavailable.
       }
@@ -217,6 +225,54 @@ const ConversationPreferences: React.FC = () => {
     [quickDecisionModel]
   );
 
+  // One toggle per schedule; both write `false` when off and REMOVE the key
+  // when re-enabled, so "on" stays the storage default a fresh install has.
+  const handleInspectionFrictionChange = useCallback(
+    (checked: boolean) => {
+      setInspectionFriction(checked);
+      const write = checked
+        ? removeClientBusinessSetting('tools.inspectionFrictionEnabled')
+        : setClientBusinessSetting('tools.inspectionFrictionEnabled', false);
+      write.catch(() => {
+        setInspectionFriction(!checked);
+        Message.error(t('inspection.settings.updateFailed'));
+      });
+    },
+    [t]
+  );
+  const handleInspectionWasteChange = useCallback(
+    (checked: boolean) => {
+      setInspectionWaste(checked);
+      const write = checked
+        ? removeClientBusinessSetting('tools.inspectionWasteEnabled')
+        : setClientBusinessSetting('tools.inspectionWasteEnabled', false);
+      write.catch(() => {
+        setInspectionWaste(!checked);
+        Message.error(t('inspection.settings.updateFailed'));
+      });
+    },
+    [t]
+  );
+
+  // The manual run: rolling 24h, both schedules, report overwritten — the
+  // settings row is also the E2E entry point into the whole pipeline.
+  const handleInspectionRunNow = useCallback(async () => {
+    if (inspectionRunning) return;
+    setInspectionRunning(true);
+    try {
+      const result = await inspectionBridge.runNow.invoke();
+      if (result.ok && result.reportPath) {
+        Message.success(t('inspection.settings.runNowOk', { path: result.reportPath }));
+      } else {
+        Message.error(t('inspection.settings.runNowFailed'));
+      }
+    } catch {
+      Message.error(t('inspection.settings.runNowFailed'));
+    } finally {
+      setInspectionRunning(false);
+    }
+  }, [inspectionRunning, t]);
+
   const preferenceItems = [
     {
       key: 'promptTimeout',
@@ -305,6 +361,51 @@ const ConversationPreferences: React.FC = () => {
       ),
     },
   ];
+
+  // The inspection rows: two schedule switches plus the manual run button.
+  preferenceItems.push(
+    {
+      key: 'inspectionFriction',
+      label: t('inspection.settings.frictionLabel'),
+      description: t('inspection.settings.frictionHint'),
+      component: (
+        <Switch
+          size='small'
+          checked={inspectionFriction}
+          onChange={handleInspectionFrictionChange}
+          data-testid='inspection-friction-switch'
+        />
+      ),
+    },
+    {
+      key: 'inspectionWaste',
+      label: t('inspection.settings.wasteLabel'),
+      description: t('inspection.settings.wasteHint'),
+      component: (
+        <Switch
+          size='small'
+          checked={inspectionWaste}
+          onChange={handleInspectionWasteChange}
+          data-testid='inspection-waste-switch'
+        />
+      ),
+    },
+    {
+      key: 'inspectionRunNow',
+      label: t('inspection.settings.runNowLabel'),
+      description: t('inspection.settings.runNowHint'),
+      component: (
+        <Button
+          size='mini'
+          loading={inspectionRunning}
+          onClick={() => void handleInspectionRunNow()}
+          data-testid='inspection-run-now'
+        >
+          {t('inspection.settings.runNow')}
+        </Button>
+      ),
+    }
+  );
 
   return (
     <div className='settings-list'>

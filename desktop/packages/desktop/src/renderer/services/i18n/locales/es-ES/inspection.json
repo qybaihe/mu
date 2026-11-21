@@ -1,0 +1,20 @@
+{
+  "badge": "Inspección residente",
+  "notice": {
+    "line": "Informe de inspección generado ({{date}}), texto completo: {{path}}",
+    "frictionRow": "{{name}}: {{errors}} errores / {{interrupts}} interrupciones",
+    "wasteSummary": "Auditoría de desperdicio: {{idleTurns}} turnos ociosos / {{repeatedFailures}} fallos repetidos / {{lowOutputSessions}} sesiones de baja producción"
+  },
+  "settings": {
+    "frictionLabel": "Inspección residente - escaneo de fricción",
+    "frictionHint": "Every weekday at 09:00, scans yesterday's position and team sessions for errors and user interrupts, writes a report and notifies the supervisor",
+    "wasteLabel": "Inspección residente - auditoría de desperdicio",
+    "wasteHint": "Every Monday at 09:00, audits the past 7 days for idle turns, repeated failures and low-output sessions",
+    "runNowLabel": "Ejecutar una inspección ahora",
+    "runNowHint": "Manually scans the past 24 hours and writes a report (does not affect the schedule)",
+    "runNow": "Ejecutar ahora",
+    "runNowOk": "Inspection done, report written to {{path}}",
+    "runNowFailed": "Inspection run failed, please retry",
+    "updateFailed": "Failed to save the setting"
+  }
+}

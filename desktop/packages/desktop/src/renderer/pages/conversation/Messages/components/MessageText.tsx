@@ -17,7 +17,7 @@ import { mediaPathsOf } from './messageTextMedia';
 import { formatDateTime, formatTime } from '@/renderer/services/i18n/format';
 import { iconColors } from '@/renderer/styles/colors';
 import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
-import { Copy, Download, Link, Stamp, Undo } from '@icon-park/react';
+import { Copy, Download, Health, Link, Stamp, Undo } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +37,7 @@ import { isForkEnabled } from '@/common/chat/forkConversation';
 import { useForkConversation } from '@/renderer/hooks/chat/useForkConversation';
 import ForkBranchIcon from '@renderer/components/base/ForkBranchIcon';
 import { parseTeamReceiptNotice, type TeamReceiptPayload } from '@renderer/hooks/system/notification/teamReceiptCore';
+import { parseInspectionNotice, type InspectionNoticePayload } from '@/common/chat/team/inspection/inspectionCore';
 
 /**
  * Format a timestamp for message display, in the app language: the time today ("09:05", "09:05 AM"), the date and
@@ -69,6 +70,21 @@ type TeamContextResetNotice = {
   kind: 'context_reset';
   member_name: string;
   runtime_status: 'ready' | 'failed';
+};
+
+/** The inspection receipt badge: the same pill shape as the receipt badge. */
+const MessageInspectionBadge: React.FC<{ payload: InspectionNoticePayload }> = ({ payload }) => {
+  const { t, i18n } = useTranslation();
+  return (
+    <div
+      className='inline-flex items-center gap-4px mb-4px px-12px py-2px rounded-full text-2 bg-fill-2'
+      style={{ color: 'var(--color-bg-6)' }}
+    >
+      <Health strokeWidth={4} theme='outline' size={13} fill={iconColors.secondary} className='flex items-center' />
+      <span>{t('inspection.badge')}</span>
+      <span>{formatTime(payload.at, i18n.language, { hour: '2-digit', minute: '2-digit' })}</span>
+    </div>
+  );
 };
 
 /** The receipt badge: the same shape as the cron badge — one pill naming what sent this row. */
@@ -183,6 +199,28 @@ const MessageText: React.FC<{
   // A supervisor receipt arrives as a user message whose body is the marker payload;
   // parse it here so the raw JSON never renders and the text localizes per view.
   const teamReceipt = useMemo(() => (isUserMessage ? parseTeamReceiptNotice(text) : null), [isUserMessage, text]);
+  // The inspection receipt arrives the same way: marker + JSON as a user
+  // message into the supervisor conversation, rendered localized.
+  const inspectionNotice = useMemo(() => (isUserMessage ? parseInspectionNotice(text) : null), [isUserMessage, text]);
+  const inspectionText = useMemo(() => {
+    if (!inspectionNotice) return null;
+    const lines = [t('inspection.notice.line', { date: inspectionNotice.date, path: inspectionNotice.path })];
+    for (const row of inspectionNotice.friction) {
+      lines.push(
+        t('inspection.notice.frictionRow', { name: row.name, errors: row.errors, interrupts: row.interrupts })
+      );
+    }
+    if (inspectionNotice.waste) {
+      lines.push(
+        t('inspection.notice.wasteSummary', {
+          idleTurns: inspectionNotice.waste.idleTurns,
+          repeatedFailures: inspectionNotice.waste.repeatedFailures,
+          lowOutputSessions: inspectionNotice.waste.lowOutputSessions,
+        })
+      );
+    }
+    return lines.join('\n');
+  }, [inspectionNotice, t]);
   const receiptText = useMemo(
     () =>
       teamReceipt
@@ -206,12 +244,13 @@ const MessageText: React.FC<{
           : 'team.systemNotice.contextResetRuntimeFailed',
         { memberName: contextResetNotice.member_name }
       )
-    : (receiptText ?? visibleText);
+    : (inspectionText ?? receiptText ?? visibleText);
   const { data, json } = useFormatContent(renderedText);
   // Mid-stream an opened code fence has no close yet; without one the block would read as raw backticks until it
   // arrives, then jump. Only the Markdown path needs it — a user message and a JSON payload are shown as they are.
   const markdown = useMemo(() => (typeof data === 'string' ? closeOpenFence(data) : data), [data]);
-  const shouldRenderPlainText = isUserMessage || Boolean(contextResetNotice) || Boolean(teamReceipt);
+  const shouldRenderPlainText =
+    isUserMessage || Boolean(contextResetNotice) || Boolean(teamReceipt) || Boolean(inspectionNotice);
   const conversationContext = useConversationContextSafe();
   // A native conversation has no backend conversation around it: its project folder comes with its list.
   const run = useMessageListRun();
@@ -338,6 +377,7 @@ const MessageText: React.FC<{
       <div className={classNames('min-w-0 flex flex-col group', isUserMessage ? 'items-end' : 'items-start')}>
         {cronMeta && <MessageCronBadge meta={cronMeta} />}
         {teamReceipt && <MessageReceiptBadge payload={teamReceipt} />}
+        {inspectionNotice && <MessageInspectionBadge payload={inspectionNotice} />}
         {isTeammateMessage && displaySenderName && (
           <div className='flex items-center gap-6px mb-4px'>
             <TeammateMessageAvatar

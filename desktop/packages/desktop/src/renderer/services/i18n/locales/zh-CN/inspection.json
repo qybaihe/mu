@@ -1,0 +1,20 @@
+{
+  "badge": "常驻巡检",
+  "notice": {
+    "line": "巡检报告已生成（{{date}}），全文：{{path}}",
+    "frictionRow": "{{name}}：报错 {{errors}} 次 / 被打断 {{interrupts}} 次",
+    "wasteSummary": "浪费审计：空转 {{idleTurns}} 轮 / 重复失败 {{repeatedFailures}} 组 / 低产出会话 {{lowOutputSessions}} 个"
+  },
+  "settings": {
+    "frictionLabel": "常驻巡检·摩擦扫描",
+    "frictionHint": "工作日每天 09:00 扫描昨日各岗位与团队会话的报错与用户中断，生成巡检报告并通知主管",
+    "wasteLabel": "常驻巡检·浪费审计",
+    "wasteHint": "每周一 09:00 审计过去 7 天的空转轮次、重复失败与低产出会话",
+    "runNowLabel": "立即巡检一次",
+    "runNowHint": "手动扫描过去 24 小时并生成报告（不影响定时计划）",
+    "runNow": "立即运行",
+    "runNowOk": "巡检完成，报告已写入 {{path}}",
+    "runNowFailed": "巡检运行失败，请重试",
+    "updateFailed": "设置保存失败"
+  }
+}

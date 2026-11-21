@@ -22,6 +22,7 @@ import positions from './positions.json';
 import supervisor from './supervisor.json';
 import monitor from './monitor.json';
 import quickDecision from './quickDecision.json';
+import inspection from './inspection.json';
 
 export default {
   common,
@@ -47,4 +48,5 @@ export default {
   supervisor,
   monitor,
   quickDecision,
+  inspection,
 };

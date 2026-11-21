@@ -17,11 +17,20 @@ export type ImageGenerationModelSetting = TProviderWithModel & {
  */
 export type QuickDecisionModelSetting = TProviderWithModel;
 
+/**
+ * The resident inspection's two schedules. Both default ON: undefined means
+ * "never configured", only an explicit `false` (the settings switch) turns a
+ * schedule off — the switch reads/writes booleans and never stores `true`.
+ */
+export type InspectionToggleSetting = boolean | undefined;
+
 export type ClientBusinessSettingMap = {
   'google.config': GoogleClientSetting;
   'mcp.config': IMcpServer[] | undefined;
   'tools.imageGenerationModel': ImageGenerationModelSetting | undefined;
   'tools.quickDecisionModel': QuickDecisionModelSetting | undefined;
+  'tools.inspectionFrictionEnabled': InspectionToggleSetting;
+  'tools.inspectionWasteEnabled': InspectionToggleSetting;
   'acp.promptTimeout': number | undefined;
   'acp.agentIdleTimeout': number | undefined;
   /**

@@ -38,6 +38,7 @@
     "mu",
     "positions",
     "supervisor",
-    "quickDecision"
+    "quickDecision",
+    "inspection"
   ]
 }

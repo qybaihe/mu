@@ -1,0 +1,20 @@
+{
+  "badge": "상시 점검",
+  "notice": {
+    "line": "점검 리포트가 생성되었습니다({{date}}), 전문: {{path}}",
+    "frictionRow": "{{name}}: 오류 {{errors}}건 / 중단 {{interrupts}}회",
+    "wasteSummary": "낭비 감사: 공회전 {{idleTurns}}회 / 반복 실패 {{repeatedFailures}}건 / 저생산 세션 {{lowOutputSessions}}개"
+  },
+  "settings": {
+    "frictionLabel": "상시 점검·마찰 스캔",
+    "frictionHint": "평일 매일 09:00 어제의 포지션·팀 세션 오류와 중단을 스캔해 리포트를 생성하고 관리자에게 통지",
+    "wasteLabel": "상시 점검·낭비 감사",
+    "wasteHint": "매주 월요일 09:00 지난 7일간의 공회전·반복 실패·저생산 세션을 감사",
+    "runNowLabel": "지금 점검 실행",
+    "runNowHint": "최근 24시간을 수동 스캔해 리포트 생성(정기 일정에는 영향 없음)",
+    "runNow": "지금 실행",
+    "runNowOk": "점검 완료, 리포트가 {{path}}에 기록되었습니다",
+    "runNowFailed": "점검 실행 실패, 다시 시도하세요",
+    "updateFailed": "설정 저장 실패"
+  }
+}

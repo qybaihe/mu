@@ -1,0 +1,20 @@
+{
+  "badge": "常駐点検",
+  "notice": {
+    "line": "点検レポートを生成しました（{{date}}）、全文：{{path}}",
+    "frictionRow": "{{name}}：エラー {{errors}} 件 / 中断 {{interrupts}} 回",
+    "wasteSummary": "無駄監査：空転 {{idleTurns}} 回 / 繰り返し失敗 {{repeatedFailures}} 件 / 低産出セッション {{lowOutputSessions}} 件"
+  },
+  "settings": {
+    "frictionLabel": "常駐点検・摩擦スキャン",
+    "frictionHint": "平日毎日 09:00 に前日の各ポジション・チーム会話のエラーと中断をスキャンし、レポートを生成して主管に通知",
+    "wasteLabel": "常駐点検・無駄監査",
+    "wasteHint": "毎週月曜 09:00 に過去 7 日間の空転・繰り返し失敗・低産出セッションを監査",
+    "runNowLabel": "今すぐ点検を実行",
+    "runNowHint": "過去 24 時間を手動スキャンしてレポートを生成（定時計画には影響しません）",
+    "runNow": "今すぐ実行",
+    "runNowOk": "点検完了、レポートを {{path}} に書き込みました",
+    "runNowFailed": "点検の実行に失敗しました。再試行してください",
+    "updateFailed": "設定の保存に失敗しました"
+  }
+}

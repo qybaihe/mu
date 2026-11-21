@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IMessageText } from '@/common/chat/chatLib';
 import { ipcBridge } from '@/common';
 import { buildReceiptContent } from '@renderer/hooks/system/notification/teamReceiptCore';
+import { buildInspectionNotice } from '@/common/chat/team/inspection/inspectionCore';
 import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
 import { MessageListRunProvider } from '@/renderer/pages/conversation/Messages/hooks';
 import MessageText, {
@@ -163,6 +164,7 @@ vi.mock('@icon-park/react', () => ({
   Copy: () => <span data-testid='copy-icon' />,
   Undo: () => <span data-testid='undo-icon' />,
   Stamp: () => <span data-testid='stamp-icon' />,
+  Health: () => <span data-testid='health-icon' />,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -954,5 +956,43 @@ describe('MessageText supervisor receipts', () => {
 
     expect(screen.queryByText('team.receipt.badge')).not.toBeInTheDocument();
     expect(screen.getByTestId('message-text-content')).toHaveTextContent('[[MU_TEAM_RECEIPT]]not json');
+  });
+});
+
+describe('MessageText inspection receipts', () => {
+  const inspectionMessage = (content: string): IMessageText => ({
+    id: 'inspection-1',
+    msg_id: 'inspection-1',
+    conversation_id: 'conv-1',
+    type: 'text',
+    position: 'right',
+    createdAt: Date.now(),
+    content: { content },
+  });
+
+  it('renders an inspection receipt through i18n with a badge, hiding the marker payload', () => {
+    const content = buildInspectionNotice({
+      v: 1,
+      kinds: ['friction', 'waste'],
+      date: '2026-11-22',
+      path: 'C:/data/positions/_shared/inspections/2026-11-22.md',
+      friction: [{ name: '货代 2', errors: 2, interrupts: 1 }],
+      waste: { idleTurns: 3, repeatedFailures: 1, lowOutputSessions: 1 },
+      at: Date.now(),
+    });
+    render(<MessageText message={inspectionMessage(content)} />);
+
+    expect(screen.getByText('inspection.badge')).toBeInTheDocument();
+    expect(screen.getByTestId('message-text-content')).toHaveTextContent('inspection.notice.line');
+    expect(screen.getByTestId('message-text-content')).toHaveTextContent('inspection.notice.frictionRow');
+    expect(screen.getByTestId('message-text-content')).toHaveTextContent('inspection.notice.wasteSummary');
+    expect(screen.queryByText(content)).not.toBeInTheDocument();
+  });
+
+  it('a malformed inspection body stays ordinary user text with no badge', () => {
+    render(<MessageText message={inspectionMessage('[[MU_INSPECTION]]not json')} />);
+
+    expect(screen.queryByText('inspection.badge')).not.toBeInTheDocument();
+    expect(screen.getByTestId('message-text-content')).toHaveTextContent('[[MU_INSPECTION]]not json');
   });
 });

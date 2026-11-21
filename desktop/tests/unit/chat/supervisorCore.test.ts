@@ -375,6 +375,11 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('[[MU_DISPATCH_HINT]]');
     expect(content).toContain('必须剥离这一行');
     expect(content).toContain('忽略提示，按规则 0 自行全名册匹配');
+    // Rule 10: an inspection receipt — read the report, digest top problems in one line, no dispatch.
+    expect(content).toContain('规则 10');
+    expect(content).toContain('[[MU_INSPECTION]]');
+    expect(content).toContain('提炼');
+    expect(content).toContain('不建队、不派活、不跑任何脚本、不写任何文件');
   });
 
   it('teaches the requirement-coverage flow: list the task requirements first, map each to a duty, show the mapping in the proposal', () => {

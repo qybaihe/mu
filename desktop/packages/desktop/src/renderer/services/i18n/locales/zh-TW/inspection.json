@@ -1,0 +1,20 @@
+{
+  "badge": "常駐巡檢",
+  "notice": {
+    "line": "巡檢報告已產生（{{date}}），全文：{{path}}",
+    "frictionRow": "{{name}}：報錯 {{errors}} 次 / 被打斷 {{interrupts}} 次",
+    "wasteSummary": "浪費稽核：空轉 {{idleTurns}} 輪 / 重複失敗 {{repeatedFailures}} 組 / 低產出會話 {{lowOutputSessions}} 個"
+  },
+  "settings": {
+    "frictionLabel": "常駐巡檢·摩擦掃描",
+    "frictionHint": "工作日每天 09:00 掃描昨日各崗位與團隊會話的報錯與使用者中斷，產生巡檢報告並通知主管",
+    "wasteLabel": "常駐巡檢·浪費稽核",
+    "wasteHint": "每週一 09:00 稽核過去 7 天的空轉輪次、重複失敗與低產出會話",
+    "runNowLabel": "立即巡檢一次",
+    "runNowHint": "手動掃描過去 24 小時並產生報告（不影響定時計畫）",
+    "runNow": "立即執行",
+    "runNowOk": "巡檢完成，報告已寫入 {{path}}",
+    "runNowFailed": "巡檢執行失敗，請重試",
+    "updateFailed": "設定儲存失敗"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "badge": "Постійна інспекція",
+  "notice": {
+    "line": "Inspection report generated ({{date}}), full text: {{path}}",
+    "frictionRow": "{{name}}: {{errors}} errors / {{interrupts}} interrupts",
+    "wasteSummary": "Waste audit: {{idleTurns}} idle turns / {{repeatedFailures}} repeated failures / {{lowOutputSessions}} low-output sessions"
+  },
+  "settings": {
+    "frictionLabel": "Постійна інспекція — сканування терть",
+    "frictionHint": "Every weekday at 09:00, scans yesterday's position and team sessions for errors and user interrupts, writes a report and notifies the supervisor",
+    "wasteLabel": "Постійна інспекція — аудит витрат",
+    "wasteHint": "Every Monday at 09:00, audits the past 7 days for idle turns, repeated failures and low-output sessions",
+    "runNowLabel": "Запустити інспекцію зараз",
+    "runNowHint": "Manually scans the past 24 hours and writes a report (does not affect the schedule)",
+    "runNow": "Запустити",
+    "runNowOk": "Inspection done, report written to {{path}}",
+    "runNowFailed": "Inspection run failed, please retry",
+    "updateFailed": "Failed to save the setting"
+  }
+}
