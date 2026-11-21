@@ -88,7 +88,13 @@ const work = (slotId: string, state: ITeamSlotWork['state'], queued = 0): ITeamS
   team_run_id: null,
 });
 
-const task = (id: string, owner: string | undefined, status: string, updatedAt: number, blockedBy: string[] = []): ITeamTaskItem => ({
+const task = (
+  id: string,
+  owner: string | undefined,
+  status: string,
+  updatedAt: number,
+  blockedBy: string[] = []
+): ITeamTaskItem => ({
   id,
   team_id: 't1',
   subject: `任务-${id}`,
@@ -219,6 +225,7 @@ describe('teamCardsOf', () => {
       tasksByTeam: new Map(),
       slotWork: new Map([['t1', new Map([['s-2', work('s-2', 'queued')]])]]),
       now: 0,
+      verifiedTaskIds: new Set(),
     });
     expect(wall.active[0].members.map((member) => member.kind)).toEqual(['idle', 'queued']);
     expect(wall.active[0].running).toBe(true);
@@ -241,8 +248,9 @@ describe('teamCardsOf', () => {
       ]),
       slotWork: new Map(),
       now: 0,
+      verifiedTaskIds: new Set(),
     });
-    expect(wall.active[0].counts).toEqual({ todo: 2, inProgress: 1, done: 1, unclaimed: 0 });
+    expect(wall.active[0].counts).toEqual({ todo: 2, inProgress: 1, done: 1, unclaimed: 0, verified: 0 });
   });
 
   it('unclaimed counts ownerless open unblocked tasks; a blocked ownerless one does not advertise', () => {
@@ -265,8 +273,31 @@ describe('teamCardsOf', () => {
       ]),
       slotWork: new Map(),
       now: 0,
+      verifiedTaskIds: new Set(),
     });
-    expect(wall.active[0].counts).toEqual({ todo: 3, inProgress: 2, done: 1, unclaimed: 1 });
+    expect(wall.active[0].counts).toEqual({ todo: 3, inProgress: 2, done: 1, unclaimed: 1, verified: 0 });
+  });
+
+  it('verified counts the done tasks whose claims survived the file check (batch L ②)', () => {
+    const teamA = team('t1', [assistant('s-1', '货代', 'leader')]);
+    const wall = teamCardsOf({
+      roster: [rosterEntry(teamA, false)],
+      tasksByTeam: new Map([
+        [
+          't1',
+          [
+            task('ok-1', 's-1', 'done', 1),
+            task('ok-2', 's-1', 'completed', 2),
+            task('shaky', 's-1', 'done', 3), // done but unproven — counted done, not verified
+            task('open', 's-1', 'in_progress', 4),
+          ],
+        ],
+      ]),
+      slotWork: new Map(),
+      now: 0,
+      verifiedTaskIds: new Set(['ok-1', 'ok-2', 'open']), // open in the set never counts: only done tasks do
+    });
+    expect(wall.active[0].counts).toEqual({ todo: 0, inProgress: 1, done: 3, unclaimed: 0, verified: 2 });
   });
 
   it('the wall splits retired from active, a running team first', () => {
@@ -278,6 +309,7 @@ describe('teamCardsOf', () => {
       tasksByTeam: new Map(),
       slotWork: new Map([['t2', new Map([['s-2', work('s-2', 'running')]])]]),
       now: 0,
+      verifiedTaskIds: new Set(),
     });
     expect(wall.active.map((card) => card.entry.team.id)).toEqual(['t2', 't1']);
     expect(wall.retired.map((card) => card.entry.team.id)).toEqual(['t3']);
@@ -293,7 +325,13 @@ describe('teamCardsOf', () => {
       false,
       42
     );
-    const wall = teamCardsOf({ roster: [live, deleted], tasksByTeam: new Map(), slotWork: new Map(), now: 0 });
+    const wall = teamCardsOf({
+      roster: [live, deleted],
+      tasksByTeam: new Map(),
+      slotWork: new Map(),
+      now: 0,
+      verifiedTaskIds: new Set(),
+    });
     expect(wall.active.map((card) => card.entry.team.id)).toEqual(['t1']);
     expect(wall.retired).toEqual([]);
     expect(wall.deleted.map((card) => card.entry.team.id)).toEqual(['t2']);
@@ -302,7 +340,13 @@ describe('teamCardsOf', () => {
 
   it('carries the lifecycle: a permanent team keeps its card active with its configured ttlDays on the entry', () => {
     const forever = rosterEntry(team('t1', [assistant('s-1', '货代', 'leader')]), false, Date.now() + 3 * DAY, 3, true);
-    const wall = teamCardsOf({ roster: [forever], tasksByTeam: new Map(), slotWork: new Map(), now: 0 });
+    const wall = teamCardsOf({
+      roster: [forever],
+      tasksByTeam: new Map(),
+      slotWork: new Map(),
+      now: 0,
+      verifiedTaskIds: new Set(),
+    });
     expect(wall.active[0].permanent).toBe(true);
     expect(wall.active[0].entry.ttlDays).toBe(3);
     expect(wall.active[0].entry.permanent).toBe(true);
@@ -348,6 +392,7 @@ describe('badge and slot naming', () => {
       tasksByTeam: new Map(),
       slotWork: new Map([['t1', new Map([['s-1', work('s-1', 'running')]])]]),
       now: 0,
+      verifiedTaskIds: new Set(),
     });
     expect(monitorActiveCount(cards, wall.active)).toBe(1);
   });

@@ -14,7 +14,7 @@
  * with tasks for the progress bars. Everything is IO wiring; the card
  * shapes are `monitorCore`'s.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import type { SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCore';
 import {
@@ -26,6 +26,10 @@ import { teamRosterEntries } from '@renderer/pages/team/core/teamIdentity';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { monitorActiveCount, positionCardsOf, teamCardsOf, type PositionCard, type TeamWall } from './monitorCore';
 import { useSlotWorkIndex } from './slotWorkStore';
+import {
+  subscribeTaskVerifications,
+  taskVerificationSnapshot,
+} from '@renderer/pages/team/core/notes/taskVerificationNotes';
 
 export type MonitorOverview = {
   positionCards: readonly PositionCard[];
@@ -86,6 +90,17 @@ export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
 
   const teams = roster.teams;
   const rosterEntries = useMemo(() => teamRosterEntries(teams, index, now), [teams, index, now]);
+  // The verified slice of every team's done count, live from the badge store.
+  const verifications = useSyncExternalStore(
+    subscribeTaskVerifications,
+    taskVerificationSnapshot,
+    taskVerificationSnapshot
+  );
+  const verifiedTaskIds = useMemo(
+    () =>
+      new Set([...verifications.values()].filter((entry) => entry.state === 'verified').map((entry) => entry.taskId)),
+    [verifications]
+  );
   // The wall mirrors the roster as it stands: a deleted position's file sits
   // in the quarantine, so the roster (and with it the wall) already lost it.
   const positionCards = useMemo(
@@ -110,8 +125,8 @@ export const useMonitorOverview = (withTasks: boolean): MonitorOverview => {
     ]
   );
   const teamWall = useMemo(
-    () => teamCardsOf({ roster: rosterEntries, tasksByTeam: workbench.tasksByTeam, slotWork, now }),
-    [rosterEntries, workbench.tasksByTeam, slotWork, now]
+    () => teamCardsOf({ roster: rosterEntries, tasksByTeam: workbench.tasksByTeam, slotWork, now, verifiedTaskIds }),
+    [rosterEntries, workbench.tasksByTeam, slotWork, now, verifiedTaskIds]
   );
 
   return {

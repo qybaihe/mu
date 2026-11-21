@@ -12,7 +12,7 @@
  * sits instead of adding a new row. A finished task stays a single quiet
  * line; only the reader opening it says more.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@arco-design/web-react';
 import { Link, Right } from '@icon-park/react';
@@ -25,10 +25,27 @@ import {
   terminalKindOf,
   type TaskBoardColumn,
 } from '@renderer/pages/team/core/teamDataCore';
+import {
+  subscribeTaskVerifications,
+  taskVerificationSnapshot,
+  type TaskVerificationEntry,
+} from '@renderer/pages/team/core/notes/taskVerificationNotes';
 import styles from './TeamTaskCard.module.css';
 
 /** Tasks the reader opened, by task id — an update re-renders the card, not the reader's choice. */
 const openTaskIds = new Set<string>();
+
+/** The task's verification verdict, live from the badge store (undefined = never checked). */
+const useTaskVerificationEntry = (taskId: string): TaskVerificationEntry | undefined =>
+  useSyncExternalStore<TaskVerificationEntry | undefined>(
+    subscribeTaskVerifications,
+    () => taskVerificationSnapshot().get(taskId),
+    () => undefined
+  );
+
+/** The done task's badge line: what the check saw, for the hover title. */
+const verificationTitleKey = (entry: TaskVerificationEntry): string =>
+  entry.state === 'verified' ? 'team.taskVerification.verifiedTitle' : 'team.taskVerification.pendingTitle';
 
 const PILL_CLASS: Record<TaskBoardColumn, string> = {
   todo: styles.pillTodo,
@@ -84,6 +101,7 @@ const TeamTaskCard: React.FC<{
   const [open, setOpen] = useState(() => openTaskIds.has(task.id));
   const column = effectiveTaskColumn(task, tasks);
   const terminal = terminalKindOf(task);
+  const verification = useTaskVerificationEntry(task.id);
   const claimable = isClaimableTask(task, tasks);
   const claimBlocked = !task.owner && column === 'blocked';
   const ownerName = task.owner ? nameOfSlot(task.owner, members) || task.owner : undefined;
@@ -135,6 +153,26 @@ const TeamTaskCard: React.FC<{
         >
           {t(pillLabelKey(column, terminal, claimable))}
         </span>
+        {/* A done task carries the system's own verdict beside the pill: ✅
+            when every claimed output file exists, ⚠ while the claim is
+            unproven (never checked, nothing checkable, or a missing file).
+            Cancelled/failed tasks carry no verdict — they never claimed
+            completion. */}
+        {terminal === 'done' ? (
+          <span
+            data-testid='task-verification-badge'
+            data-state={verification?.state ?? 'pending'}
+            title={t(verification ? verificationTitleKey(verification) : 'team.taskVerification.pendingTitle', {
+              count: verification?.verifiedCount ?? 0,
+            })}
+            className={`${styles.pill} ${
+              (verification?.state ?? 'pending') === 'verified' ? styles.pillVerified : styles.pillUnverified
+            }`}
+          >
+            {verification?.state === 'verified' ? '✅' : '⚠'}{' '}
+            {t(`team.taskVerification.${verification?.state ?? 'pending'}`)}
+          </span>
+        ) : null}
         {hasDetails ? (
           <Right theme='outline' size='12' className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`} />
         ) : null}

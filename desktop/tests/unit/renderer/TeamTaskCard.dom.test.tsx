@@ -10,6 +10,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ITeamTaskItem, TeamAssistant } from '@/common/types/team/teamTypes';
 import TeamTaskCard from '@/renderer/pages/conversation/Messages/components/TeamTaskCard';
+import { clearTaskVerifications, recordTaskVerification } from '@renderer/pages/team/core/notes/taskVerificationNotes';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -56,6 +57,7 @@ const renderCard = (overrides: Partial<ITeamTaskItem> = {}, tasks: ITeamTaskItem
 describe('TeamTaskCard', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    clearTaskVerifications();
   });
 
   it('renders the compact single line: subject, status pill, owner avatar alt', () => {
@@ -163,5 +165,46 @@ describe('TeamTaskCard', () => {
     expect(card).toHaveTextContent('team.taskCard.status.blocked');
     await userEvent.click(screen.getByTestId('team-task-card-header'));
     expect(screen.getByTestId('task-claim-blocked')).toHaveTextContent('team.taskCard.blockedClaim');
+  });
+
+  it('a done task without a verdict carries the ⚠ pending badge (batch L ②)', () => {
+    renderCard({ id: 't-done-unchecked', status: 'completed' });
+    const badge = screen.getByTestId('task-verification-badge');
+    expect(badge.getAttribute('data-state')).toBe('pending');
+    expect(badge).toHaveTextContent('team.taskVerification.pending');
+  });
+
+  it('the badge follows the store: ✅ verified once the file check passed, ⚠ again when a re-done task fails it', async () => {
+    renderCard({ id: 't-badge', status: 'completed' });
+    const badge = screen.getByTestId('task-verification-badge');
+    expect(badge.getAttribute('data-state')).toBe('pending');
+    recordTaskVerification({
+      taskId: 't-badge',
+      teamId: 'team-1',
+      state: 'verified',
+      checkedAt: 1,
+      pathCount: 2,
+      verifiedCount: 2,
+    });
+    const verified = await screen.findByTestId('task-verification-badge');
+    expect(verified.getAttribute('data-state')).toBe('verified');
+    expect(verified).toHaveTextContent('✅');
+    expect(verified).toHaveTextContent('team.taskVerification.verified');
+    // A task re-done past the last check re-verifies: back to ⚠ until the new check lands.
+    recordTaskVerification({
+      taskId: 't-badge',
+      teamId: 'team-1',
+      state: 'pending',
+      checkedAt: 2,
+      pathCount: 2,
+      verifiedCount: 1,
+    });
+    const pending = await screen.findByTestId('task-verification-badge');
+    expect(pending.getAttribute('data-state')).toBe('pending');
+  });
+
+  it('a cancelled task never claimed completion: no badge at all', () => {
+    renderCard({ id: 't-cancelled', status: 'cancelled' });
+    expect(screen.queryByTestId('task-verification-badge')).toBeNull();
   });
 });

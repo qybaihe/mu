@@ -70,7 +70,7 @@ describe('planDispatchSeed', () => {
 
 describe('the v2-v4 sections: gating, claiming, ownership, wrap-up ledger and dedup gate', () => {
   it('binds every member, not just the lead, and no longer tells teammates to ignore the file', () => {
-    expect(TEAM_DISPATCH_RULES_VERSION).toBe(5);
+    expect(TEAM_DISPATCH_RULES_VERSION).toBe(6);
     expect(TEAM_DISPATCH_RULES_BODY).not.toContain('Teammate 读到时忽略本文件');
     expect(TEAM_DISPATCH_RULES_BODY).toContain(
       '「依赖门控与受阻任务」「待领任务与空闲主动认领」「完成自回查与收尾落账」「新项目/新岗位去重」各节约束全体成员'
@@ -109,6 +109,14 @@ describe('the v2-v4 sections: gating, claiming, ownership, wrap-up ledger and de
     expect(TEAM_DISPATCH_RULES_BODY).toContain('**产出存在**');
     expect(TEAM_DISPATCH_RULES_BODY).toContain('任何一个不存在 → 不标 completed');
     expect(TEAM_DISPATCH_RULES_BODY).toContain('**下游解除**');
+  });
+
+  it('v6 rides the self-check with a verdict line the report must carry (batch L ②)', () => {
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('**回报附核验结果（必带）**');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('自回查：N/M 产出路径已核验存在');
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('自回查：无产出路径，无需核验');
+    // The system re-checks the same standard and marks the card — the rule says so.
+    expect(TEAM_DISPATCH_RULES_BODY).toContain('标「待验证」');
   });
 
   it('teaches the member ledger: project-root HANDOFF.md, team-workspace fallback, new-project archive', () => {

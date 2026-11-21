@@ -370,6 +370,11 @@ const TeamWallCard: React.FC<{
           ) : null}
           <span>{t('monitor.teams.inProgress', { count: card.counts.inProgress })}</span>
           <span>{t('monitor.teams.done', { count: card.counts.done })}</span>
+          {card.counts.verified > 0 ? (
+            <span className='text-[rgb(var(--success-6))]' data-testid={`monitor-team-${entry.team.id}-verified`}>
+              {t('monitor.teams.verified', { count: card.counts.verified })}
+            </span>
+          ) : null}
           <span className='flex-1' />
           <RelativeTime ts={entry.team.updated_at} now={now} />
         </div>

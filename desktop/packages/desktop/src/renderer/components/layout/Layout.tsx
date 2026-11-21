@@ -40,6 +40,7 @@ import { useDesktopTurnNotification } from '@renderer/hooks/system/notification/
 import { useSupervisorTeamReceipt } from '@renderer/hooks/system/notification/useSupervisorTeamReceipt';
 import { useContextSteward } from '@renderer/hooks/system/notification/useContextSteward';
 import { useTeamChangedFilesNotes } from '@renderer/pages/team/hooks/useTeamChangedFilesNotes';
+import { useTaskVerification } from '@renderer/pages/team/hooks/useTaskVerification';
 import { useTeamRunNotification } from '@renderer/hooks/system/notification/useTeamRunNotification';
 import { useNativeAttention } from '@renderer/pages/native/hooks/useNativeAttention';
 import { useAppBadge } from '@renderer/hooks/system/notification/useAppBadge';
@@ -156,6 +157,7 @@ const Layout: React.FC<{
   useTeamRunNotification();
   useSupervisorTeamReceipt();
   useTeamChangedFilesNotes();
+  useTaskVerification();
   useContextSteward();
   useNativeAttention();
   useAppBadge();

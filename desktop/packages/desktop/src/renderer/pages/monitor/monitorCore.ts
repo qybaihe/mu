@@ -131,7 +131,13 @@ export type TeamMemberDot = {
   isLead: boolean;
 };
 
-export type TeamProgressCounts = { todo: number; inProgress: number; done: number; unclaimed: number };
+export type TeamProgressCounts = {
+  todo: number;
+  inProgress: number;
+  done: number;
+  unclaimed: number;
+  verified: number;
+};
 
 export type TeamCard = {
   entry: TeamRosterEntry;
@@ -158,15 +164,22 @@ export const memberDotOf = (work: ITeamSlotWork | undefined): MemberDotKind => {
  *  still waiting to move, so it counts with the backlog (`todo`). The
  *  `unclaimed` count is the claimable 「待领」 slice of the backlog — ownerless,
  *  open and not held back by an open dependency (a blocked ownerless task is
- *  nobody's to take yet, so it does not advertise as waiting for a claimer). */
-const progressCountsOf = (tasks: readonly ITeamTaskItem[] | undefined): TeamProgressCounts => {
-  const counts = { todo: 0, inProgress: 0, done: 0, unclaimed: 0 };
+ *  nobody's to take yet, so it does not advertise as waiting for a claimer).
+ *  `verified` counts the done tasks whose claimed output survived the
+ *  system's file check (taskVerificationNotes); `undefined` counts as none. */
+const progressCountsOf = (
+  tasks: readonly ITeamTaskItem[] | undefined,
+  verifiedTaskIds: ReadonlySet<string>
+): TeamProgressCounts => {
+  const counts = { todo: 0, inProgress: 0, done: 0, unclaimed: 0, verified: 0 };
   const list = tasks ?? [];
   for (const task of list) {
     const column = effectiveTaskColumn(task, list);
     if (column === 'in_progress') counts.inProgress += 1;
-    else if (column === 'done') counts.done += 1;
-    else counts.todo += 1;
+    else if (column === 'done') {
+      counts.done += 1;
+      if (verifiedTaskIds.has(task.id)) counts.verified += 1;
+    } else counts.todo += 1;
     if (!task.owner && column === 'todo') counts.unclaimed += 1;
   }
   return counts;
@@ -184,6 +197,8 @@ export type TeamWallInputs = {
   tasksByTeam: ReadonlyMap<string, readonly ITeamTaskItem[]>;
   slotWork: SlotWorkIndex;
   now: number;
+  /** Task ids whose done claims survived the file check, across every team. */
+  verifiedTaskIds: ReadonlySet<string>;
 };
 
 export type TeamWall = { active: TeamCard[]; retired: TeamCard[]; deleted: TeamCard[] };
@@ -206,7 +221,7 @@ export const teamCardsOf = (inputs: TeamWallInputs): TeamWall => {
       entry,
       members,
       running: members.some((member) => member.kind !== 'idle'),
-      counts: progressCountsOf(inputs.tasksByTeam.get(entry.team.id)),
+      counts: progressCountsOf(inputs.tasksByTeam.get(entry.team.id), inputs.verifiedTaskIds),
       ttlDays: ttlDaysOf(entry.expiresAt, inputs.now),
       permanent: entry.permanent,
     };

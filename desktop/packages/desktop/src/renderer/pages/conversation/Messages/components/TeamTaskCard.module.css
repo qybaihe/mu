@@ -108,6 +108,20 @@
   color: rgb(var(--success-6));
 }
 
+/* The verified badge: the system's own check passed — every claimed output file exists. */
+.pillVerified {
+  background: rgb(var(--success-1));
+  color: rgb(var(--success-6));
+  border: 1px solid rgb(var(--success-6));
+}
+
+/* The unverified badge: a done claim without proof — nothing checkable, or a missing file. */
+.pillUnverified {
+  background: rgb(var(--warning-1));
+  color: rgb(var(--warning-6));
+  border: 1px dashed rgb(var(--warning-6));
+}
+
 .chevron {
   flex: none;
   color: var(--color-text-3);

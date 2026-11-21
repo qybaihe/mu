@@ -27,7 +27,7 @@
  */
 
 /** The seeded block's version. Raise it to replace older blocks on open. */
-export const TEAM_DISPATCH_RULES_VERSION = 5;
+export const TEAM_DISPATCH_RULES_VERSION = 6;
 
 /** Closes the app-managed block. */
 export const TEAM_DISPATCH_RULES_END_MARKER = '<!-- /mu-team-dispatch -->';
@@ -90,6 +90,7 @@ export const TEAM_DISPATCH_RULES_BODY = `# 团队 Lead 自动分派守则（Team
 
 1. **产出存在**：任务描述或你承诺产出的每个文件路径，逐个验证真实存在（ls / fileRefs 检查）；任何一个不存在 → 不标 completed（status 留在 in_progress 或改 review），\`team_send_message\` 向 lead 报具体缺了什么，等指示。
 2. **下游解除**：\`team_task_list\` 查有没有任务的 \`blocks\` 含本任务（下游任务）；有 → 在回报里提醒一句「任务 Y 已解除受阻，可派/可领」。
+3. **回报附核验结果（必带）**：自回查通过、标记 completed 后，回报 lead 时必须附一行核验结果：\`自回查：N/M 产出路径已核验存在\`（M=本任务声明的产出路径总数，N=逐个验证真实存在的数量）；无任何产出路径时如实写 \`自回查：无产出路径，无需核验\`。禁止宣称「全部通过」而实际未逐个验证。桌面版会按同一标准复核你的产出文件，不符的任务卡会标「待验证」。
 
 自回查通过、标记 completed 后，Teammate 回报 lead 之前，必须把本任务产生的经验/教训/可复用资产落账，不许只留在对话里：
 
