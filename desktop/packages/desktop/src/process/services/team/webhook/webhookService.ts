@@ -293,8 +293,8 @@ const productionDeps = (): WebhookDeps => ({
  * assistant and its resolved default model carry the conversation.
  */
 async function createPositionConversation(position: PositionInfo): Promise<string | undefined> {
-  const assistants = await httpRequest<Array<Record<string, unknown>>>('GET', '/api/assistants').catch(() => []);
-  const enabled = (assistants ?? []).find((assistant) => assistant.enabled !== false);
+  const assistants = await httpRequest<Array<Record<string, unknown>>>('GET', '/api/assistants').catch((): Array<Record<string, unknown>> => []);
+  const enabled = (assistants ?? []).find((assistant): boolean => assistant.enabled !== false);
   const assistantId = typeof enabled?.id === 'string' ? enabled.id : undefined;
   if (!assistantId) return undefined;
 
@@ -312,8 +312,8 @@ async function createPositionConversation(position: PositionInfo): Promise<strin
   }
 
   const workspace = await ensurePositionWorkspace(position.name).then(
-    (answer) => answer.workspace,
-    () => undefined
+    (answer): string | undefined => answer.workspace,
+    (): undefined => undefined
   );
   if (!workspace) return undefined;
 
@@ -339,7 +339,7 @@ async function ensureToken(): Promise<string> {
   const existing = read?.[KEY_TOKEN];
   if (typeof existing === 'string' && /^[a-f0-9]{48,64}$/.test(existing)) return existing;
   const token = randomBytes(24).toString('hex');
-  await httpRequest('PUT', '/api/settings/client', { [KEY_TOKEN]: token }).catch(() => undefined);
+  await httpRequest('PUT', '/api/settings/client', { [KEY_TOKEN]: token }).catch((): undefined => undefined);
   return token;
 }
 
