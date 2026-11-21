@@ -8,7 +8,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ensurePositionWorkspaceIn, safeFolderName, scanPositionLibrary } from '@process/services/team/positions';
+import {
+  ensurePositionWorkspaceIn,
+  ensureUserPortraitIn,
+  readUserPortraitIn,
+  safeFolderName,
+  scanPositionLibrary,
+  userPortraitFileOf,
+} from '@process/services/team/positions';
 
 /**
  * The main process's position service (process/services/team/positions/): the
@@ -128,6 +135,31 @@ describe('ensurePositionWorkspaceIn', () => {
     const dataDir = temp();
     const answer = await ensurePositionWorkspaceIn('video lab:pro', { libraryDir: library, dataDir });
     expect(answer.workspace).toBe(join(dataDir, 'positions', 'video-lab-pro'));
+  });
+
+  it('seeds the shared user portrait skeleton on first ensure and never touches it afterwards', async () => {
+    const { library, dataDir } = setup();
+    expect(await ensureUserPortraitIn(dataDir)).toBe(true);
+    const skeleton = readFileSync(userPortraitFileOf(dataDir), 'utf8');
+    expect(skeleton).toContain('# 用户画像');
+    // The content is the user's: a filled portrait survives every later ensure.
+    writeFileSync(userPortraitFileOf(dataDir), '# 用户画像\n\n- 称呼：老林\n', 'utf8');
+    expect(await ensureUserPortraitIn(dataDir)).toBe(false);
+    expect(readFileSync(userPortraitFileOf(dataDir), 'utf8')).toBe('# 用户画像\n\n- 称呼：老林\n');
+    expect(await readUserPortraitIn(dataDir)).toBe('# 用户画像\n\n- 称呼：老林\n');
+  });
+
+  it('embeds the user portrait in the gate once it exists, and rewrites the gate when the portrait changes', async () => {
+    const { library, dataDir } = setup();
+    const first = await ensurePositionWorkspaceIn('forwarder', { libraryDir: library, dataDir });
+    // The ensure seeded the skeleton, so the gate already carries it.
+    const seeded = readFileSync(join(first.workspace, 'AGENTS.override.md'), 'utf8');
+    expect(seeded).toContain('## 用户画像');
+    writeFileSync(userPortraitFileOf(dataDir), '# 用户画像\n\n- 称呼：老林\n', 'utf8');
+    await expect(ensurePositionWorkspaceIn('forwarder', { libraryDir: library, dataDir })).resolves.toMatchObject({
+      changed: true,
+    });
+    expect(readFileSync(join(first.workspace, 'AGENTS.override.md'), 'utf8')).toContain('- 称呼：老林');
   });
 });
 

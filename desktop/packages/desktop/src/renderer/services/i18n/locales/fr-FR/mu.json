@@ -1301,5 +1301,16 @@
     },
     "showAll": "Tout afficher ({{count}})",
     "showFewer": "Afficher moins"
+  },
+  "userPortrait": {
+    "title": "Profil utilisateur",
+    "help": "Faits durables vous concernant (_shared/USER.md), partagés par chaque poste et le superviseur ; le texte entier est injecté dans chaque règle de session. N’y mettez jamais de secrets.",
+    "edit": "Modifier",
+    "loading": "Lecture…",
+    "placeholder": "Faits durables : comment vous appeler, vos horaires, vos goûts de livraison ; supprimez les sections inutilisées.",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "saved": "Profil enregistré ; les règles se rafraîchissent ensuite",
+    "saveFailed": "Échec de l’enregistrement ; réessayez"
   }
 }

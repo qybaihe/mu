@@ -12,14 +12,21 @@
  */
 import { supervisorBridge } from '@/common/chat/team/supervisor/supervisorBridge';
 import { kyrnFailure, type KyrnResult } from '@/common/kyrn/errors';
+import { SHARED_TEAMS_FOLDER } from '@/common/chat/team/supervisor/supervisorCore';
+import { join } from 'node:path';
+import { getPlatformServices } from '@/common/platform';
+import { ensurePositionWorkspace, listPositions } from '@process/services/team/positions';
+import { watchUserPortrait } from './userPortraitWatch';
 import {
   cleanupOrphanTeamWorkspaces,
   ensureSupervisorWorkspace,
   ensureSupervisorWorkspaceWithCatalog,
   listSupervisorTeams,
   purgeDueDeletedTeams,
+  readUserPortrait,
   registerSupervisorTeam,
   restoreSupervisorTeam,
+  saveUserPortrait,
   setTeamLifecycle,
   softDeleteSupervisorTeam,
 } from './supervisorService';
@@ -38,6 +45,9 @@ export {
   restoreSupervisorTeam,
   restoreSupervisorTeamIn,
   reuseSupervisorTeamIn,
+  readUserPortrait,
+  saveUserPortrait,
+  saveUserPortraitIn,
   setTeamLifecycle,
   setTeamLifecycleIn,
   softDeleteSupervisorTeam,
@@ -85,12 +95,34 @@ export function initSupervisorBridge(): void {
   supervisorBridge.restoreTeam.provider((params) =>
     result(() => restoreSupervisorTeam(params).then((teams) => ({ teams })))
   );
+  supervisorBridge.userPortrait.provider(() => result(() => readUserPortrait().then((portrait) => ({ portrait }))));
+  supervisorBridge.saveUserPortrait.provider(({ content }) =>
+    result(() => saveUserPortrait(content).then((): Promise<void> => undefined))
+  );
   // The startup pass: the canonical rewrite (retiring expired teams), then
   // the delete reconcile (backend DELETE for grace-expired soft deletes),
-  // then the orphan-workspace sweep (grace-expired folders no row explains).
+  // then the orphan-workspace sweep (grace-expired folders no row explains),
+  // and the shared-folder watch whose settled USER.md changes rebuild every
+  // gate that embeds the portrait (open conversations reload through their
+  // own gate watch).
   void ensureSupervisorWorkspaceWithCatalog()
     .then(() => purgeDueDeletedTeams())
     .then(() => cleanupOrphanTeamWorkspaces())
+    .then(() => {
+      const dataDir = getPlatformServices().paths.getDataDir();
+      watchUserPortrait(join(dataDir, 'positions', SHARED_TEAMS_FOLDER), () => {
+        void (async () => {
+          await ensureSupervisorWorkspace();
+          for (const position of await listPositions()) {
+            await ensurePositionWorkspace(position.name).catch((error) => {
+              console.warn('[supervisor] position gate refresh failed', position.name, error);
+            });
+          }
+        })().catch((error) => {
+          console.warn('[supervisor] user-portrait gate refresh failed', error);
+        });
+      });
+    })
     .catch((error) => {
       console.warn('[supervisor] startup reconciliation failed', error);
     });

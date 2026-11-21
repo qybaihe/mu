@@ -20,6 +20,9 @@
  *   send --team X (--file F | --message M)  deliver a task to the team and refresh
  *                                           its lifecycle (the team's own ttlDays;
  *                                           permanent teams never expire)
+ *   lesson --position a --text "..."        append one lesson line to the shared
+ *                                           ledger ../_shared/LESSONS.md (the wrap-up
+ *                                           gate's double write: date|position|one line)
  *
  * The dispatch block: the app injects the canonical team-dispatch rules block
  * (common/chat/teamDispatch/dispatchRules.ts, single source of truth) into the
@@ -56,6 +59,14 @@ const MAX_TTL_DAYS = 365;
 const TEAMS_FILE = path.resolve(__dirname, '..', '_shared', 'TEAMS.md');
 /** The lock file guarding TEAMS.md read-modify-write cycles: same policy as the desktop's teamsFileLock.ts (O_EXCL create, stale takeover) — this script and the desktop are separate processes mutating one file. */
 const TEAMS_LOCK_FILE = `${TEAMS_FILE}.lock`;
+/** The shared lessons ledger the wrap-up gate's `lesson` subcommand appends to: one line per recorded lesson, same folder as the teams index. */
+const LESSONS_FILE = path.resolve(__dirname, '..', '_shared', 'LESSONS.md');
+/** Same lock policy as TEAMS.md, on its own file: two positions may wrap up at once. */
+const LESSONS_LOCK_FILE = `${LESSONS_FILE}.lock`;
+/** Marks the ledger as app-managed prose (not a parsed table): a hand edit is fine, nothing parses it. */
+const LESSONS_MARKER = '<!-- mu-desktop lessons v1 -->';
+/** A lesson is one line; a longer text is cut, newlines fold to spaces. */
+const LESSON_TEXT_CAP = 500;
 /** A lock file older than this holds nothing: its writer died, so a waiter takes it over. */
 const LOCK_STALE_MS = 5000;
 const TEAMS_MARKER = '<!-- mu-supervisor-teams v1 -->';
@@ -269,33 +280,33 @@ function writeTeams(teams) {
 const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
 /**
- * Runs `work` holding the index lock: O_EXCL create, so exactly one holder;
- * a held lock older than LOCK_STALE_MS is a dead writer's leftover and is
+ * Runs `work` holding the lock file `lockFile`: O_EXCL create, so exactly one
+ * holder; a held lock older than LOCK_STALE_MS is a dead writer's leftover and is
  * taken over (unlinked only when a second stat still shows the same stale
  * mtime, never a fresh lock another waiter just won); the winner unlinks in
  * `finally`. Holders hold for milliseconds (read, splice, write), so waiting
  * is a short poll.
  */
-function withTeamsLock(work) {
-  fs.mkdirSync(path.dirname(TEAMS_LOCK_FILE), { recursive: true });
+function withFileLock(lockFile, work) {
+  fs.mkdirSync(path.dirname(lockFile), { recursive: true });
   for (;;) {
     try {
-      fs.closeSync(fs.openSync(TEAMS_LOCK_FILE, 'wx'));
+      fs.closeSync(fs.openSync(lockFile, 'wx'));
       break;
     } catch (error) {
       if (error.code !== 'EEXIST') throw error;
     }
     let held;
     try {
-      held = fs.statSync(TEAMS_LOCK_FILE);
+      held = fs.statSync(lockFile);
     } catch (error) {
       if (error.code === 'ENOENT') continue;
       throw error;
     }
     if (Date.now() - held.mtimeMs > LOCK_STALE_MS) {
       try {
-        const again = fs.statSync(TEAMS_LOCK_FILE);
-        if (again.mtimeMs === held.mtimeMs) fs.unlinkSync(TEAMS_LOCK_FILE);
+        const again = fs.statSync(lockFile);
+        if (again.mtimeMs === held.mtimeMs) fs.unlinkSync(lockFile);
       } catch (error) {
         if (error.code !== 'ENOENT') throw error;
       }
@@ -307,10 +318,13 @@ function withTeamsLock(work) {
     return work();
   } finally {
     try {
-      fs.unlinkSync(TEAMS_LOCK_FILE);
+      fs.unlinkSync(lockFile);
     } catch {}
   }
 }
+
+/** The teams index's own lock: every TEAMS.md read-modify-write cycle. */
+const withTeamsLock = (work) => withFileLock(TEAMS_LOCK_FILE, work);
 
 async function api(method, apiPath, body) {
   let response;
@@ -530,7 +544,59 @@ async function cmdSend(args) {
   );
 }
 
-const COMMANDS = { list: cmdList, match: cmdMatch, add: cmdAdd, send: cmdSend };
+/** One position's spelling as the ledger's middle cell: any of the three roster spellings (id, display name, display(id)) settles on the id. */
+function lessonPositionOf(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+  const { aliases } = positionAliases();
+  const stripped = /^(.*)\([A-Za-z0-9._-]+\)$/.exec(trimmed);
+  return aliases.get(trimmed) || (stripped && aliases.get(stripped[1])) || trimmed;
+}
+
+/** A local `YYYY-MM-DD` (the ledger's first cell): lessons are read by humans in their own timezone. */
+const localDate = () => {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+};
+
+async function cmdLesson(args) {
+  const position = lessonPositionOf(args.position);
+  if (!position) fail('--position is required (the position id, or its display name)');
+  // One line: whitespace runs (line breaks a model may send) fold to spaces, then the cap.
+  const text = String(args.text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, LESSON_TEXT_CAP);
+  if (!text) fail('--text is required (the lesson, one line)');
+  const date = localDate();
+  // The append is a locked read-modify-write, like every ledger write: two
+  // positions wrapping up at once both land. Temp-then-rename keeps readers
+  // (the supervisor's memory check) off a torn file.
+  withFileLock(LESSONS_LOCK_FILE, () => {
+    let existing = '';
+    try {
+      existing = fs.readFileSync(LESSONS_FILE, 'utf8');
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+    const lines = existing ? existing.split(/\r?\n/) : [];
+    // The heading rides the first line in: an empty ledger gains it, an
+    // existing one keeps whatever its writer left.
+    const head =
+      lines.length === 0 ? [LESSONS_MARKER, '# 岗位教训总账（各岗收尾经 teams.cjs lesson 追加，勿手改）', ''] : [];
+    while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+    const next = `${[...lines, ...head, `${date} | ${position} | ${text}`].join('\n')}\n`;
+    fs.mkdirSync(path.dirname(LESSONS_FILE), { recursive: true });
+    const temp = `${LESSONS_FILE}.write`;
+    fs.writeFileSync(temp, next, 'utf8');
+    fs.renameSync(temp, LESSONS_FILE);
+  });
+  console.log(`LESSON_ADDED date=${date} position=${position}`);
+}
+
+const COMMANDS = { list: cmdList, match: cmdMatch, add: cmdAdd, send: cmdSend, lesson: cmdLesson };
 
 (async () => {
   const [command, ...rest] = process.argv.slice(2);

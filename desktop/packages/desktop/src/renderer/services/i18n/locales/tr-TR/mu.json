@@ -1301,5 +1301,16 @@
     },
     "showAll": "Tümünü göster ({{count}})",
     "showFewer": "Daha az göster"
+  },
+  "userPortrait": {
+    "title": "Kullanıcı profili",
+    "help": "Her pozisyon ve süpervizörün paylaştığı uzun süreli bilgileriniz (_shared/USER.md); tam metin her oturum kapisine enjekte edilir. Buraya asla gizli bilgi koymayın.",
+    "edit": "Düzenle",
+    "loading": "Okunuyor…",
+    "placeholder": "Uzun süreli bilgiler: size nasıl hitap edilmeli, çalışma saatleri, teslim tercihi; kullanmadığınız bölümleri silin.",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "saved": "Profil kaydedildi; kapiler kısa süre içinde yenilenir",
+    "saveFailed": "Kaydetme başarısız; tekrar deneyin"
   }
 }

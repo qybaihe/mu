@@ -494,6 +494,75 @@ describe('teams.cjs against a stub backend', () => {
   });
 });
 
+describe('teams.cjs lesson: the shared lessons ledger', () => {
+  const lessonsFile = join(dataDir, 'positions', '_shared', 'LESSONS.md');
+  const lessonLock = `${lessonsFile}.lock`;
+
+  it('creates the ledger on the first lesson and appends: marker, heading, one line per lesson', async () => {
+    const first = await run(['lesson', '--position', 'forwarder', '--text', '别再手写 npm install，会改写 lockfile']);
+    expect(first.status).toBe(0);
+    expect(first.out).toContain('LESSON_ADDED');
+    let ledger = readFileSync(lessonsFile, 'utf8');
+    expect(ledger).toContain('<!-- mu-desktop lessons v1 -->');
+    expect(ledger).toContain('# 岗位教训总账');
+    expect(ledger).toMatch(/\d{4}-\d{2}-\d{2} \| forwarder \| 别再手写 npm install，会改写 lockfile/);
+    await run(['lesson', '--position', 'worker', '--text', '第二条']);
+    ledger = readFileSync(lessonsFile, 'utf8');
+    expect(ledger.indexOf('别再手写 npm install')).toBeLessThan(ledger.indexOf('第二条'));
+    expect(ledger.split('\n').filter((line) => line.includes(' | '))).toHaveLength(2);
+  });
+
+  it('folds a multiline lesson to one line and caps it at 500 characters', async () => {
+    const noisy = `第一行\n第二行\t缩进 ${'长'.repeat(600)}`;
+    const answer = await run(['lesson', '--position', 'forwarder', '--text', noisy]);
+    expect(answer.status).toBe(0);
+    const last = readFileSync(lessonsFile, 'utf8')
+      .split('\n')
+      .filter((line) => line.includes(' | '))
+      .at(-1)!;
+    expect(last.includes('\n')).toBe(false);
+    expect(last).toContain('第一行 第二行 缩进');
+    expect(last.split(' | ')[2]).toHaveLength(500); // the text cell carries the cap, not a byte more
+  });
+
+  it('settles any roster spelling on the id: a display name lands as the id', async () => {
+    const library = join(dataDir, 'library-alias');
+    mkdirSync(library, { recursive: true });
+    writeFileSync(
+      join(library, 'forwarder.md'),
+      '---\nname: forwarder\ndisplay_name: 货代\ndescription: 货代岗\n---\n\n正文',
+      'utf8'
+    );
+    const answer = await runAt(script, ['lesson', '--position', '货代', '--text', '显示名也要能落数'], {
+      MU_POSITION_LIBRARY: library,
+    });
+    expect(answer.status).toBe(0);
+    expect(answer.out).toContain('position=forwarder');
+    expect(readFileSync(lessonsFile, 'utf8')).toContain('| forwarder | 显示名也要能落数');
+  });
+
+  it('refuses a lesson without text, leaving the ledger untouched', async () => {
+    const before = existsSync(lessonsFile) ? readFileSync(lessonsFile, 'utf8') : '';
+    const answer = await run(['lesson', '--position', 'forwarder']);
+    expect(answer.status).toBe(1);
+    expect(answer.err).toContain('ERROR');
+    expect(existsSync(lessonsFile) ? readFileSync(lessonsFile, 'utf8') : '').toBe(before);
+  });
+
+  it('waits for a live ledger lock instead of barging in, and releases it after', async () => {
+    mkdirSync(join(dataDir, 'positions', '_shared'), { recursive: true });
+    writeFileSync(lessonLock, '', 'utf8'); // a live holder
+    const pending = run(['lesson', '--position', 'forwarder', '--text', '排队也要落账']);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(existsSync(lessonsFile) ? readFileSync(lessonsFile, 'utf8') : '').not.toContain('排队也要落账');
+    rmSync(lessonLock, { force: true }); // the holder leaves
+    const answer = await pending;
+    expect(answer.status).toBe(0);
+    expect(readFileSync(lessonsFile, 'utf8')).toContain('| forwarder | 排队也要落账');
+    expect(existsSync(lessonLock)).toBe(false);
+  });
+});
+
 describe('teams.cjs under the TEAMS.md write lock', () => {
   const lockFile = `${teamsFile}.lock`;
 

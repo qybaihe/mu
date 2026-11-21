@@ -1301,5 +1301,16 @@
     },
     "showAll": "Mostrar todas ({{count}})",
     "showFewer": "Mostrar menos"
+  },
+  "userPortrait": {
+    "title": "Perfil do usuário",
+    "help": "Fatos duradouros sobre você (_shared/USER.md) compartilhados por cada posição e o supervisor; o texto completo é injetado em cada gate de sessão. Nunca coloque segredos aqui.",
+    "edit": "Editar",
+    "loading": "Lendo…",
+    "placeholder": "Fatos duradouros: como te chamar, horários, preferências de entrega; apague seções sem uso.",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "saved": "Perfil salvo; os gates serão atualizados em seguida",
+    "saveFailed": "Falha ao salvar; tente de novo"
   }
 }

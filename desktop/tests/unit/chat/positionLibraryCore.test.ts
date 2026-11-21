@@ -151,6 +151,24 @@ describe('buildPositionOverrideContent', () => {
     expect(content.indexOf('任务收尾回落')).toBeLessThan(content.indexOf('## 全岗名册'));
   });
 
+  it('teaches the lesson double write: the wrap-up ledger also lands in the shared LESSONS.md by the locked script', () => {
+    const content = buildPositionOverrideContent(roster[0], roster);
+    expect(content).toContain('node teams.cjs lesson --position forwarder');
+    expect(content).toContain('LESSONS.md');
+    expect(content).toContain('写锁');
+    // The script failure must not swallow the wrap-up: the ERROR rides along.
+    expect(content).toContain('不阻塞回报');
+  });
+
+  it('carries the user portrait as the closing section, after the roster — and nothing when there is none', () => {
+    const withPortrait = buildPositionOverrideContent(roster[0], roster, '# 用户画像\n\n- 称呼：老林\n');
+    expect(withPortrait).toContain('## 用户画像');
+    expect(withPortrait).toContain('- 称呼：老林');
+    expect(withPortrait.indexOf('## 全岗名册')).toBeLessThan(withPortrait.indexOf('## 用户画像'));
+    const bare = buildPositionOverrideContent(roster[0], roster);
+    expect(bare).not.toContain('## 用户画像');
+  });
+
   it('names this position in the gate, so a refusal can point elsewhere precisely', () => {
     const content = buildPositionOverrideContent(roster[1], roster);
     expect(content).toContain('不属于本岗（视频实验室');

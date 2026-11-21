@@ -26,6 +26,7 @@
  * reverse rules — a task that trips a taboo stops even when it belongs to
  * the position — plus one universal fallback every position carries.
  */
+import { userPortraitSectionLines } from '@/common/chat/team/positions/userPortraitCore';
 
 /** One position of the user's position library, as the roster shows it. */
 export type PositionInfo = {
@@ -149,8 +150,15 @@ export const positionLabel = (position: Pick<PositionInfo, 'name' | 'displayName
 /** The roster line for one position: labeled name plus description, the gate's reference. */
 const rosterLine = (position: PositionInfo): string => `- ${positionLabel(position)} — ${position.description}`;
 
-/** The paragraph every position conversation opens with: who this bot is, and the gate. */
-export function buildPositionOverrideContent(position: PositionInfo, roster: readonly PositionInfo[]): string {
+/** The paragraph every position conversation opens with: who this bot is, and
+ *  the gate. The user portrait (positions/_shared/USER.md) rides along as
+ *  the closing section — the user's long-lived facts every task reads
+ *  against. */
+export function buildPositionOverrideContent(
+  position: PositionInfo,
+  roster: readonly PositionInfo[],
+  userPortrait: string | undefined = undefined
+): string {
   const antiJobLines = antiJobGateLines(position);
   const lines = [
     '<!-- mu-desktop position workspace (generated). This file is rewritten by the app; edits are lost. -->',
@@ -180,7 +188,9 @@ export function buildPositionOverrideContent(position: PositionInfo, roster: rea
     '',
     '## 任务收尾回落（硬规则）',
     '任务完成、向用户回报结果之前，必须把本任务产生的经验/教训/可复用资产落账，不许只留在对话里：',
-    '1. 本岗说明书含「项目根」→ 把一条记录**追加**写入该项目根的 `HANDOFF.md`（文件不存在则创建）。格式：一行标题 `## <YYYY-MM-DD> · <任务一句话>`，随后 2-5 行要点，末行 `LESSON: <一句可复用教训或坑>`（确实无可提炼时写 `LESSON: 无`）。**只追加，禁止删改该文件既有内容**。',
+    '1. 本岗说明书含「项目根」→ 把一条记录**追加**写入该项目根的 `HANDOFF.md`（文件不存在则创建）。格式：一行标题 `## <YYYY-MM-DD> · <任务一句话>`，随后 2-5 行要点，末行 `LESSON: <一句可复用教训或坑>`（确实无可提炼时写 `LESSON: 无`）。**只追加，禁止删改该文件既有内容**。末行 LESSON 不是「无」时，同回合再运行一次 `node teams.cjs lesson --position <本岗英文id> --text "<LESSON 同一句话>"`（例：node teams.cjs lesson --position ' +
+      position.name +
+      ' --text "..."；脚本会带写锁把这一句追加到 ../_shared/LESSONS.md 岗位体系教训总账）；脚本输出 `ERROR` 不阻塞回报，把 ERROR 原样附在回报末尾即可。',
     '2. 本岗无「项目根」→ 落账到本次任务的工作目录（产出所在目录）的 `HANDOFF.md`（同格式）；任务没有明确工作目录时，在回报中说明不落账的原因。',
     '3. 可复用技术资产（脚本/报告/样张等文件）放项目约定目录：项目已有 `tmp/`、`docs/` 等结构则随项目结构；否则在项目根建 `tmp/` 存放，不散落。',
     '',
@@ -195,6 +205,7 @@ export function buildPositionOverrideContent(position: PositionInfo, roster: rea
     '',
     '名册仅用于归属判定、转交建议与新建去重：只读、不得自行创建新岗位，也不得在本会话中改写任何岗位库文件。',
     '',
+    ...userPortraitSectionLines(userPortrait),
   ];
   return lines.join('\n');
 }

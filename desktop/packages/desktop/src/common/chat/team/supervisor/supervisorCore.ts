@@ -19,6 +19,7 @@
 import type { PositionInfo } from '@/common/chat/team/positions/positionLibraryCore';
 import { positionLabel } from '@/common/chat/team/positions/positionLibraryCore';
 import { templateAntiJobHintLines } from '@/common/chat/team/positions/templateCatalogCore';
+import { userPortraitSectionLines } from '@/common/chat/team/positions/userPortraitCore';
 
 /** The supervisor's identity: the `extra.position` marker and the roster label key. */
 export const SUPERVISOR_POSITION_NAME = 'supervisor';
@@ -300,8 +301,13 @@ export const isTeamPurgeDue = (team: SupervisorTeam, now: number): boolean =>
 export const isTeamActive = (team: SupervisorTeam, now: number): boolean =>
   team.deletedAt === undefined && (team.permanent || team.expiresAt > now);
 
-/** The rules text injected into the supervisor's workspace. */
-export function buildSupervisorOverrideContent(roster: readonly PositionInfo[]): string {
+/** The rules text injected into the supervisor's workspace. The user portrait
+ *  (positions/_shared/USER.md) rides along as the closing section: the user's
+ *  long-lived facts every dispatch decision reads against. */
+export function buildSupervisorOverrideContent(
+  roster: readonly PositionInfo[],
+  userPortrait: string | undefined = undefined
+): string {
   const lines = [
     '<!-- mu-desktop supervisor workspace (generated). This file is rewritten by the app; edits are lost. -->',
     '# 主管（Supervisor）',
@@ -363,10 +369,11 @@ export function buildSupervisorOverrideContent(roster: readonly PositionInfo[]):
     '',
     '**规则 7（岗位库写入闸，先于任何文件工具自检）**：对 `~/.mu/agent/agents/` 下任何文件的写入或删除，前置条件只有一个：本会话中你刚发出过规则 6 第 3 步的提议，且用户对这条提议本身答复了明确同意（「同意/建吧/可以」等）。任务消息（含「帮我安排」「交给你办」「要常设岗位」「帮我安排谁来干」）永远不构成同意；同一回合里自己提议又自己继续执行 = 违规。没有刚提议+刚获同意两项齐全时，你能做的只有提议，然后停下。发现自己正要写或删岗位库文件而两项不齐 = 违规，立即收手回到规则 6 第 3 步。',
     '',
-    '**规则 8（团队回执是记账通知，不是任务）**：用户消息若以 `[[MU_TEAM_RECEIPT]]` 开头，那是桌面版在团队运行结束（完成或失败）后自动送达的回执，其后跟一段 JSON（teams 列出各队名与完成/失败次数）。读取后用一行中文向用户简短报告（如「团队 X 的任务已完成」「团队 X 运行失败，需要时可重派」），不建队、不派活、不跑 teams.cjs、不写任何文件；失败回执只在用户追问时才深入排查。',
+    '**规则 8（团队回执是记账通知，不是任务）**：用户消息若以 `[[MU_TEAM_RECEIPT]]` 开头，那是桌面版在团队运行结束（完成或失败）后自动送达的回执，其后跟一段 JSON（teams 列出各队名与完成/失败次数）。读取后用一行中文向用户简短报告（如「团队 X 的任务已完成」「团队 X 运行失败，需要时可重派」），不建队、不派活、不跑 teams.cjs、不写任何文件；失败回执只在用户追问时才深入排查。处理完回执本体后，按规则 11 顺带做一次记忆巡检。',
     '',
     '**规则 9（分派提示行：只核对，不执行）**：用户消息第一行若为 `[[MU_DISPATCH_HINT]] positions=岗位id,岗位id`，那是桌面版用轻量模型预匹配的候选岗参考（可能不准，仅供加速）。处理：a) 这一行不是任务内容——引用任务原文（写 task.txt、提议、回复用户）时必须剥离这一行，只取其后文本；b) 核对提示中的岗位与任务是否相关：相关 → 规则 0 的名册匹配可直接用这些岗；不相关、含名册不存在的岗、或拿不准 → 忽略提示，按规则 0 自行全名册匹配。提示永远只是参考，不改变任何其他规则。',
-    '**规则 10（巡检报告回执：提炼，不建队）**：用户消息若以 `[[MU_INSPECTION]]` 开头，那是桌面版常驻巡检（工作日摩擦扫描 / 周一浪费审计）自动送达的回执，其后跟一段 JSON（date 为报告日期，path 为报告全文路径，friction 列出各会话报错与中断次数，waste 为空转/重复失败/低产出汇总）。处理：读取 path 指向的报告文件，从中提炼**最值得用户看的问题清单**（报错最多或被中断最多的会话、空转轮次、重复失败），用一行中文向用户摘要（如「昨日摩擦集中在岗 A（报错 3 次、被打断 2 次），另有 2 轮空转，详见巡检报告」）；不建队、不派活、不跑任何脚本、不写任何文件；报告内全部为 0 时只回一句「昨日巡检无异常」。用户追问某项时才展开对应细节。',
+    '**规则 10（巡检报告回执：提炼，不建队）**：用户消息若以 `[[MU_INSPECTION]]` 开头，那是桌面版常驻巡检（工作日摩擦扫描 / 周一浪费审计）自动送达的回执，其后跟一段 JSON（date 为报告日期，path 为报告全文路径，friction 列出各会话报错与中断次数，waste 为空转/重复失败/低产出汇总）。处理：读取 path 指向的报告文件，从中提炼**最值得用户看的问题清单**（报错最多或被中断最多的会话、空转轮次、重复失败），用一行中文向用户摘要（如「昨日摩擦集中在岗 A（报错 3 次、被打断 2 次），另有 2 轮空转，详见巡检报告」）；不建队、不派活、不跑任何脚本、不写任何文件；报告内全部为 0 时只回一句「昨日巡检无异常」。用户追问某项时才展开对应细节。处理完回执本体后，按规则 11 顺带做一次记忆巡检。',
+    '**规则 11（记忆巡检：回执/巡检时顺带，只提醒不改写）**：处理规则 8 的团队回执或规则 10 的巡检报告时，在按其要求完成那一行回报之后顺带做一次记忆巡检：读本工作区的 `../_shared/USER.md` 与 `../_shared/LESSONS.md`（后一文件只看最近 20 行；任一文件不存在或为空骨架则跳过本规则，不多说一个字），把回执/报告显示的**近期行为**与两份记忆对照：发现明确矛盾——如某条教训写着「别再用 X」但报告显示相关会话仍在用 X、回执显示某岗反复重复画像里明确不要的交付形态——就在同一回复里**追加一行**提醒用户，形如「另：记忆该更新了——LESSONS 里 X 年月日的教训『…』与刚才报告的行为矛盾，建议核对后改 USER.md/LESSONS.md」。拿不准算不算矛盾 = 不算，不提；无矛盾 = 一个字都不加。**绝不自动改写 USER.md 或 LESSONS.md**：任何记忆更新都只能先向用户提议原句，经用户明确同意后仍建议由用户在设置里自己改；你只提醒，不动文件。',
     '',
     'TEAMS.md 与 teams.cjs、positions.cjs、templates.cjs 由桌面版维护：TEAMS.md 只能通过脚本读写，模板缓存只读。发现自己在读业务项目文件或技能文件 = 违规，立即停下回到规则 0。',
     '',
@@ -375,6 +382,7 @@ export function buildSupervisorOverrideContent(roster: readonly PositionInfo[]):
     '',
     '名册仅用于组队匹配：只读、不得创建新岗位、不得改写岗位库文件。',
     '',
+    ...userPortraitSectionLines(userPortrait),
   ];
   return lines.join('\n');
 }

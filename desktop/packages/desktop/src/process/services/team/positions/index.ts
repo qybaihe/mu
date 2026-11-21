@@ -31,16 +31,19 @@ export {
   createPositionIn,
   ensurePositionWorkspace,
   ensurePositionWorkspaceIn,
+  ensureUserPortraitIn,
   listPositions,
   listTrashedPositions,
   purgeDueTrashedPositions,
   purgeDueTrashedPositionsIn,
+  readUserPortraitIn,
   restoreTrashedPosition,
   restoreTrashedPositionIn,
   safeFolderName,
   scanPositionLibrary,
   trashPosition,
   trashPositionIn,
+  userPortraitFileOf,
 } from './positionService';
 
 // Always answer IPC, including failure: the generic bridge otherwise only logs exceptions.

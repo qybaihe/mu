@@ -1301,5 +1301,16 @@
     },
     "showAll": "Mostrar todas ({{count}})",
     "showFewer": "Mostrar menos"
+  },
+  "userPortrait": {
+    "title": "Perfil de usuario",
+    "help": "Datos duraderos sobre ti (_shared/USER.md) compartidos por cada puesto y el supervisor; el texto completo se inyecta en cada compuerta de sesión. Nunca pongas secretos aquí.",
+    "edit": "Editar",
+    "loading": "Leyendo…",
+    "placeholder": "Datos duraderos: cómo dirigirme a ti, horarios, preferencias de entrega; borra las secciones que no uses.",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "saved": "Perfil guardado; las compuertas se actualizan a continuación",
+    "saveFailed": "Error al guardar; inténtalo de nuevo"
   }
 }

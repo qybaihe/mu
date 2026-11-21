@@ -380,6 +380,23 @@ describe('buildSupervisorOverrideContent', () => {
     expect(content).toContain('[[MU_INSPECTION]]');
     expect(content).toContain('提炼');
     expect(content).toContain('不建队、不派活、不跑任何脚本、不写任何文件');
+    // Rule 11: the memory check rides the receipts — compare behavior against the portrait and
+    // the lessons ledger, remind in one line, never rewrite.
+    expect(content).toContain('规则 11');
+    expect(content).toContain('../_shared/USER.md');
+    expect(content).toContain('../_shared/LESSONS.md');
+    expect(content).toContain('只提醒，不动文件');
+    expect(content).toContain('绝不自动改写');
+    expect(content).toContain('记忆该更新了');
+  });
+
+  it('carries the user portrait as the closing section — and nothing when there is none', () => {
+    const withPortrait = buildSupervisorOverrideContent(roster, '# 用户画像\n\n- 称呼：老林\n');
+    expect(withPortrait).toContain('## 用户画像');
+    expect(withPortrait).toContain('- 称呼：老林');
+    expect(withPortrait.indexOf('## 全岗名册')).toBeLessThan(withPortrait.indexOf('## 用户画像'));
+    const bare = buildSupervisorOverrideContent(roster);
+    expect(bare).not.toContain('## 用户画像');
   });
 
   it('teaches the requirement-coverage flow: list the task requirements first, map each to a duty, show the mapping in the proposal', () => {

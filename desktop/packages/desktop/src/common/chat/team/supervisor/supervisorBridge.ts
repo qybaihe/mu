@@ -40,6 +40,12 @@ export type SupervisorSoftDeleteTeamParams = { teamId: string };
 /** Restores one soft-deleted team (back on every surface, fresh lifecycle lease). */
 export type SupervisorRestoreTeamParams = { teamId: string };
 
+/** The shared user portrait as the settings editor reads it: the file's whole text, undefined before the first ensure wrote it. */
+export type UserPortraitResult = { portrait: string | undefined };
+
+/** Saves the shared user portrait whole: what the settings editor's save sends. */
+export type SaveUserPortraitParams = { content: string };
+
 export const supervisorBridge = {
   /** Prepares (and refreshes) the supervisor workspace: rules, script, teams index. */
   ensure: bridge.buildProvider<KyrnResult<SupervisorWorkspaceResult>, void>('supervisor.ensure'),
@@ -65,4 +71,8 @@ export const supervisorBridge = {
   restoreTeam: bridge.buildProvider<KyrnResult<SupervisorTeamsResult>, SupervisorRestoreTeamParams>(
     'supervisor.restoreTeam'
   ),
+  /** Reads the shared user portrait (`_shared/USER.md`) the settings editor shows. */
+  userPortrait: bridge.buildProvider<KyrnResult<UserPortraitResult>, void>('supervisor.user-portrait'),
+  /** Saves the shared user portrait; the gates that embed it rebuild right after (the folder watch). */
+  saveUserPortrait: bridge.buildProvider<KyrnResult<void>, SaveUserPortraitParams>('supervisor.save-user-portrait'),
 };

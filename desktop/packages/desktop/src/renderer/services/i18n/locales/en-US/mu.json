@@ -1307,5 +1307,16 @@
     },
     "showAll": "Show all ({{count}})",
     "showFewer": "Show fewer"
+  },
+  "userPortrait": {
+    "title": "User portrait",
+    "help": "Long-lived facts about you (_shared/USER.md) shared by every position and the supervisor; the full text is injected into each session gate. Never put secrets here.",
+    "edit": "Edit",
+    "loading": "Reading…",
+    "placeholder": "Long-lived facts: how to address you, working hours, delivery tastes; delete sections you do not use.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Portrait saved; the position gates refresh next",
+    "saveFailed": "Save failed; try again"
   }
 }

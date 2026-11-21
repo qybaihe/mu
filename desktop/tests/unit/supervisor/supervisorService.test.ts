@@ -15,6 +15,7 @@ import {
   registerSupervisorTeamIn,
   restoreSupervisorTeamIn,
   reuseSupervisorTeamIn,
+  saveUserPortraitIn,
   setTeamLifecycleIn,
   softDeleteSupervisorTeamIn,
 } from '@process/services/team/supervisor';
@@ -101,6 +102,28 @@ describe('ensureSupervisorWorkspaceIn', () => {
     await ensureSupervisorWorkspaceIn({ libraryDir: library, dataDir });
     const again = await ensureSupervisorWorkspaceIn({ libraryDir: library, dataDir });
     expect(again.changed).toBe(false);
+  });
+
+  it('embeds the seeded user portrait in the rules, and rewrites when the portrait changes', async () => {
+    const { library, dataDir, workspace } = setup();
+    await ensureSupervisorWorkspaceIn({ libraryDir: library, dataDir });
+    const seeded = readFileSync(join(workspace, 'AGENTS.override.md'), 'utf8');
+    // The ensure seeds the shared skeleton, so the rules already carry the portrait section.
+    expect(seeded).toContain('## 用户画像');
+    const portraitFile = join(dataDir, 'positions', '_shared', 'USER.md');
+    writeFileSync(portraitFile, '# 用户画像\n\n- 称呼：老林\n', 'utf8');
+    const { changed } = await ensureSupervisorWorkspaceIn({ libraryDir: library, dataDir });
+    expect(changed).toBe(true);
+    expect(readFileSync(join(workspace, 'AGENTS.override.md'), 'utf8')).toContain('- 称呼：老林');
+  });
+
+  it('saves the portrait whole and atomically: the settings editor save lands as one rename', async () => {
+    const { dataDir } = setup();
+    await saveUserPortraitIn(dataDir, '# 用户画像\n\n- 称呼：老林\n');
+    const saved = readFileSync(join(dataDir, 'positions', '_shared', 'USER.md'), 'utf8');
+    expect(saved).toBe('# 用户画像\n\n- 称呼：老林\n');
+    // No torn-write leftovers beside the file.
+    expect(existsSync(join(dataDir, 'positions', '_shared', 'USER.md.write'))).toBe(false);
   });
 
   it('rewrites the rules when the roster changes', async () => {

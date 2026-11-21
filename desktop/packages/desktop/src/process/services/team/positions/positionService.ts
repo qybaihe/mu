@@ -39,6 +39,8 @@ import {
   parsePositionDocument,
   type PositionInfo,
 } from '@/common/chat/team/positions/positionLibraryCore';
+import { SHARED_TEAMS_FOLDER } from '@/common/chat/team/supervisor/supervisorCore';
+import { USER_PORTRAIT_FILE_NAME, buildUserPortraitSkeleton } from '@/common/chat/team/positions/userPortraitCore';
 import {
   POSITION_TRASH_FOLDER,
   TRASH_MANIFEST_NAME,
@@ -56,6 +58,38 @@ const GATE_FILE_NAME = 'AGENTS.override.md';
 
 /** The team maintenance script the position's gate rules reference (on-demand team forming). */
 const TEAMS_SCRIPT_NAME = 'teams.cjs';
+
+/** The user portrait in the shared folder (`positions/_shared/USER.md`): the one file every gate embeds. */
+export const userPortraitFileOf = (dataDir: string): string =>
+  join(dataDir, 'positions', SHARED_TEAMS_FOLDER, USER_PORTRAIT_FILE_NAME);
+
+/**
+ * Writes the portrait skeleton once, on the first ensure that runs: the
+ * content is the user's to fill (the settings editor or a hand edit), so an
+ * existing file is never touched. Whether the skeleton was written.
+ */
+export async function ensureUserPortraitIn(dataDir: string): Promise<boolean> {
+  const file = userPortraitFileOf(dataDir);
+  try {
+    await readFile(file, 'utf8');
+    return false;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+  await mkdir(join(dataDir, 'positions', SHARED_TEAMS_FOLDER), { recursive: true });
+  await writeFile(file, buildUserPortraitSkeleton(), 'utf8');
+  return true;
+}
+
+/** The portrait as the gates embed it; undefined when the file is absent. */
+export async function readUserPortraitIn(dataDir: string): Promise<string | undefined> {
+  try {
+    return await readFile(userPortraitFileOf(dataDir), 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    return undefined;
+  }
+}
 
 /**
  * Folder names stay filesystem-safe even for a position name with odd
@@ -131,10 +165,12 @@ export async function ensurePositionWorkspaceIn(
 
   const workspace = join(options.dataDir, 'positions', safeFolderName(name));
   await mkdir(workspace, { recursive: true });
+  await ensureUserPortraitIn(options.dataDir);
+  const userPortrait = await readUserPortraitIn(options.dataDir);
 
   let changed = false;
   const file = join(workspace, GATE_FILE_NAME);
-  const next = `${buildPositionOverrideContent(position, positions)}\n`;
+  const next = `${buildPositionOverrideContent(position, positions, userPortrait)}\n`;
   let existing: string | undefined;
   try {
     existing = await readFile(file, 'utf8');

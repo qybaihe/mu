@@ -17,7 +17,7 @@
  * teams whose TTL passed while nobody looked.
  */
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { getPlatformServices } from '@/common/platform';
 import { httpRequest } from '@/common/adapter/httpBridge';
 import { withTeamsIndexLock, writeFileAtomic } from './teamsFileLock';
@@ -48,7 +48,13 @@ import {
   parseTeamsFile,
   type SupervisorTeam,
 } from '@/common/chat/team/supervisor/supervisorCore';
-import { POSITION_LIBRARY_DIR, scanPositionLibrary } from '@process/services/team/positions/positionService';
+import {
+  POSITION_LIBRARY_DIR,
+  scanPositionLibrary,
+  ensureUserPortraitIn,
+  readUserPortraitIn,
+  userPortraitFileOf,
+} from '@process/services/team/positions/positionService';
 
 /** The injected rules file: pi's first-priority context file of the workspace. */
 const RULES_FILE_NAME = 'AGENTS.override.md';
@@ -83,10 +89,12 @@ export async function ensureSupervisorWorkspaceIn(
   const roster = await scanPositionLibrary(options.libraryDir);
   const workspace = join(options.dataDir, 'positions', SUPERVISOR_FOLDER);
   await mkdir(workspace, { recursive: true });
+  await ensureUserPortraitIn(options.dataDir);
+  const userPortrait = await readUserPortraitIn(options.dataDir);
 
   let content;
   let changed = false;
-  content = `${buildSupervisorOverrideContent(roster)}\n`;
+  content = `${buildSupervisorOverrideContent(roster, userPortrait)}\n`;
   changed = (await writeIfChanged(join(workspace, RULES_FILE_NAME), content)) || changed;
   changed = (await writeIfChanged(join(workspace, TEAMS_SCRIPT_NAME), shippedTeamsScript)) || changed;
   changed = (await writeIfChanged(join(workspace, POSITIONS_SCRIPT_NAME), positionsScriptSource)) || changed;
@@ -137,6 +145,27 @@ export const ensureSupervisorWorkspace = (): Promise<{ workspace: string; change
     libraryDir: POSITION_LIBRARY_DIR,
     dataDir: getPlatformServices().paths.getDataDir(),
   });
+
+/** Reads the user portrait under the app data dir; the settings editor's load. */
+export const readUserPortrait = (): Promise<string | undefined> =>
+  readUserPortraitIn(getPlatformServices().paths.getDataDir());
+
+/**
+ * Saves the user portrait whole into `dataDir` (temp-then-rename, so a
+ * reader never sees half a file): the content is the user's, and the app's
+ * only writer path is this one. The landing file is what the shared-folder
+ * watch notices, so the gates that embed the portrait rebuild right after —
+ * the save needs no refresh of its own.
+ */
+export async function saveUserPortraitIn(dataDir: string, content: string): Promise<void> {
+  const file = userPortraitFileOf(dataDir);
+  await mkdir(dirname(file), { recursive: true });
+  await writeFileAtomic(file, content);
+}
+
+/** Saves the user portrait under the app data dir (the settings editor's save). */
+export const saveUserPortrait = (content: string): Promise<void> =>
+  saveUserPortraitIn(getPlatformServices().paths.getDataDir(), content);
 
 /** The app-level ensure, plus the one-time template-catalog fetch: the
  *  workspace's `templates.cjs` (rule 6's draft reference) reads the cache

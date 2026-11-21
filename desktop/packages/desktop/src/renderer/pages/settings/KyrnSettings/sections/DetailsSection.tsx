@@ -19,6 +19,7 @@ import { areaRows } from '../draft';
 import { shownMode } from '../fields/mode';
 import { ModifiedMark } from '../fields/Row';
 import ContextRows from './ContextRows';
+import UserPortraitRow from './UserPortraitRow';
 import { ELSEWHERE, isModified, ownOptions, setFeature, stateOf, type Change } from './FeaturesSection';
 import SectionShell from './SectionShell';
 import styles from './sections.module.css';
@@ -137,6 +138,7 @@ export default function DetailsSection({
   return (
     <SectionShell id={`details-${area}`} title={t(`mu.pages.details.${area}`)}>
       {area === 'context' ? <ContextRows settings={settings} base={base} onChange={onChange} /> : null}
+      {area === 'team' ? <UserPortraitRow /> : null}
       {!manifest ? <Alert type='warning' content={t('mu.harness.tooOld')} /> : null}
       {manifest && !rows.length ? <div className={styles.empty}>{t('mu.features.none')}</div> : null}
       {rows.length ? (

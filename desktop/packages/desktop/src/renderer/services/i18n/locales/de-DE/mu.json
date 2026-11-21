@@ -1301,5 +1301,16 @@
     },
     "showAll": "Alle anzeigen ({{count}})",
     "showFewer": "Weniger anzeigen"
+  },
+  "userPortrait": {
+    "title": "Benutzerprofil",
+    "help": "Langlebige Fakten über Sie (_shared/USER.md), von jeder Position und dem Supervisor geteilt; der volle Text wird in jedes Sitzungs-Gate eingebettet. Niemals Geheimnisse hier ablegen.",
+    "edit": "Bearbeiten",
+    "loading": "Wird gelesen…",
+    "placeholder": "Langlebige Fakten: Anrede, Arbeitszeiten, Liefervorlieben; ungenutzte Abschnitte löschen.",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "saved": "Profil gespeichert; die Gates aktualisieren sich alsbald",
+    "saveFailed": "Speichern fehlgeschlagen; erneut versuchen"
   }
 }
