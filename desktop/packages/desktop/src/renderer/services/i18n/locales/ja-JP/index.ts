@@ -23,6 +23,7 @@ import supervisor from './supervisor.json';
 import monitor from './monitor.json';
 import quickDecision from './quickDecision.json';
 import inspection from './inspection.json';
+import contextSteward from './contextSteward.json';
 
 export default {
   common,
@@ -49,4 +50,5 @@ export default {
   monitor,
   quickDecision,
   inspection,
+  contextSteward,
 };

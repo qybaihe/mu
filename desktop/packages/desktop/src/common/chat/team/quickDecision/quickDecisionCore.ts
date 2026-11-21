@@ -34,8 +34,13 @@ export const DECISION_INPUT_LIMIT = 2000;
 /** How many active teams the prompt lists; the reuse answer must pick among the recent ones. */
 const DECISION_TEAMS_LIMIT = 12;
 
-/** The four decision kinds: reuse (A), off-domain (B), group-chat routing (C), dispatch hint (D). */
-export type QuickDecisionKind = 'supervisor-reuse' | 'position-domain' | 'team-route' | 'dispatch-hint';
+/** The five decision kinds: reuse (A), off-domain (B), group-chat routing (C), dispatch hint (D), context steward (E). */
+export type QuickDecisionKind =
+  | 'supervisor-reuse'
+  | 'position-domain'
+  | 'team-route'
+  | 'dispatch-hint'
+  | 'context-steward';
 
 /** Point A's answer: reuse one active team, or hand the task to the full supervisor flow. */
 export type SupervisorReuseDecision =
@@ -59,6 +64,9 @@ export type TeamRouteDecision =
 export type DispatchHintDecision =
   | { action: 'hint'; positions: string[]; reason: string; confidence: number }
   | { action: 'none'; reason: string };
+
+/** Point E's answer, as the engine may state it. Doubt never resolves here — the steward applies its own lossless fallback. */
+export type ContextStewardDecision = { action: 'compact' | 'switch' | 'none'; reason: string };
 
 /** Either kind's decisive verdict — the only answers worth caching. */
 export type QuickDecisionVerdict =
@@ -230,6 +238,15 @@ export function parseDispatchHintDecision(raw: string, roster: readonly Position
   return { action: 'hint', positions: onRoster, reason, confidence };
 }
 
+/** Point E's answer from the model's raw output, or undefined when nothing usable was said — the CALLER owns the conservative direction (switch where allowed, compact where not), because eligibility is a steward fact the engine cannot see. */
+export function parseContextStewardDecision(raw: string): ContextStewardDecision | undefined {
+  const parsed = extractDecisionJson(raw);
+  if (parsed === undefined) return undefined;
+  if (parsed.action !== 'compact' && parsed.action !== 'switch' && parsed.action !== 'none') return undefined;
+  const reason = typeof parsed.reason === 'string' && parsed.reason.trim() ? parsed.reason.trim().slice(0, 120) : '';
+  return { action: parsed.action, reason };
+}
+
 /** The active teams a reuse may pick from, most recently used first, capped. */
 export const activeTeamsForDecision = (teams: readonly SupervisorTeam[], now: number): SupervisorTeam[] =>
   teams
@@ -359,6 +376,54 @@ export function buildTeamRoutePrompt(options: { message: string; members: readon
     '只输出一行 JSON，二选一：',
     '{"action":"direct","slotId":"<成员slotId>","reason":"<15字内理由>","confidence":0.95}',
     '{"action":"full","reason":"<15字内理由>","confidence":0.9}',
+  ].join('\n');
+  return { system: JSON_DISCIPLINE, user };
+}
+
+/**
+ * Point E's prompt: one long-lived session past its check line, and the one
+ * question — compact in place (lossy) or switch to a fresh part (lossless).
+ * Mid-work prefers the switch (a summary of half-finished work loses the
+ * thread); settled work and chatter compact; every compaction already taken
+ * makes the next summary weaker, tilting toward switch.
+ */
+export function buildContextStewardPrompt(options: {
+  goal: string;
+  percent: number;
+  tokens: number;
+  contextWindow: number;
+  checkLine: number;
+  compactions: number;
+  midWorkHint: 'mid-work' | 'settled' | 'unclear';
+  lastExcerpt: string;
+}): { system: string; user: string } {
+  const excerpt = options.lastExcerpt.replace(/\s+/g, ' ').trim().slice(-300);
+  const percentText = Number.isFinite(options.percent) ? `${Math.round(options.percent * 100)}%` : '未知';
+  const user = [
+    `会话「${taskExcerpt(options.goal)}」的上下文已过检查线，需要原地压缩（compact）或换新会话分卷（switch）二选一。`,
+    '',
+    `会话目标：${taskExcerpt(options.goal)}`,
+    `上下文占用：${percentText}（${options.tokens} / ${options.contextWindow} tokens，检查线 ${options.checkLine}）`,
+    `本会话已被管家压缩过 ${options.compactions} 次`,
+    `最近一轮状态：${
+      options.midWorkHint === 'mid-work'
+        ? '任务进行中（上一轮是工作产出，非收尾）'
+        : options.midWorkHint === 'settled'
+          ? '工作已收尾或闲聊'
+          : '不明确'
+    }`,
+    excerpt ? `最近回复摘录：${excerpt}` : '（无回复摘录）',
+    '',
+    '判定规则：',
+    '1. 任务进行中、上下文里有未完成的承诺或待办 → switch（无损：旧会话全量留档，新会话干净开局）。',
+    '2. 工作已收尾、闲聊、或会话只承载零散问答 → compact（原地压缩，保留摘要继续用）。',
+    '3. 已压缩次数越多越倾向 switch（摘要的摘要损失更大）。',
+    '4. 拿不准 → switch。',
+    '',
+    '只输出一行 JSON，三选一：',
+    '{"action":"compact","reason":"<15字内理由>"}',
+    '{"action":"switch","reason":"<15字内理由>"}',
+    '{"action":"none","reason":"<15字内理由>"}',
   ].join('\n');
   return { system: JSON_DISCIPLINE, user };
 }

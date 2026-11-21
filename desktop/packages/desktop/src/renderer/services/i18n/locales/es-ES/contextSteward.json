@@ -1,0 +1,27 @@
+{
+  "contextSteward": {
+    "settings": {
+      "label": "Mayordomo de contexto",
+      "hint": "Vigila sesiones largas de posiciones/supervisor/equipos; pasada la línea de control compacta en el sitio o cambia a una parte nueva",
+      "updateFailed": "No se pudo actualizar el ajuste del mayordomo de contexto"
+    },
+    "compact": {
+      "title": "Mayordomo de contexto: compactado",
+      "body": "Sesión compactada en el sitio. Motivo: {reason}"
+    },
+    "switch": {
+      "title": "Mayordomo de contexto: cambiado a la parte {part}",
+      "body": "La sesión pasó a la parte nueva «{target}». Motivo: {reason}"
+    },
+    "continuation": {
+      "title": "Mayordomo de contexto: la parte {part} continúa aquí",
+      "body": "Esta parte continúa desde «{source}»; la anterior queda archivada y consultable."
+    },
+    "details": {
+      "trigger": "Base",
+      "tokens": "Contexto",
+      "part": "Parte {part}",
+      "reason": "Motivo"
+    }
+  }
+}

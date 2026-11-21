@@ -39,6 +39,7 @@
     "positions",
     "supervisor",
     "quickDecision",
-    "inspection"
+    "inspection",
+    "contextSteward"
   ]
 }

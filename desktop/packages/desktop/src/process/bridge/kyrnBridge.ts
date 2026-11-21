@@ -72,6 +72,11 @@ const { conversation: conversationOf, session: sessionOf } = conversationSession
   (conversationId, agentId) => sessionBinding(getDataPath(), conversationId, agentId)
 );
 
+/** The mu session behind an app conversation ('' when mu does not run it), for services that read a session's telemetry. */
+export const muSessionOf = (conversationId: string): Promise<string> => sessionOf(conversationId);
+/** The adapter's telemetry store (`<mu home>/acp-sessions`), for services that read activity events. */
+export const muActivityStore = (): string => join(muHome(), 'acp-sessions');
+
 export function initKyrnBridge(): void {
   const desktopRoot = process.env.KYRN_DESKTOP_ROOT || process.cwd();
   // KYRN_ROOT / MU_ROOT, the copy the packaged app carries, a checkout beside this one, or mu-agent from npm. A

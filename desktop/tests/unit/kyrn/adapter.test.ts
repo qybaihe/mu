@@ -51,6 +51,8 @@ type FixtureOptions = {
   mode?: string;
   /** mu understands `/permissions <id> --here` and says so (`conversationSwitch`). */
   here?: boolean;
+  /** pi refuses the compact command with this error (the steward's no-op path). */
+  compactError?: string;
   /** What pi's `get_commands` answers. */
   commands?: JsonRecord[];
   /** What pi's `get_available_models` answers; unset: a fixture model and the judge's gateway model. */
@@ -184,6 +186,9 @@ function fixture(options: FixtureOptions = {}) {
               emit({ type: 'agent_start' });
               finish = () => emit({ type: 'agent_settled' });
               return {};
+            case 'compact':
+              if (options.compactError) throw new Error(options.compactError);
+              return {};
             case 'abort':
               finish();
               return {};
@@ -275,6 +280,43 @@ describe('KYRN ACP bridge', () => {
       expect(snapshots.some((e) => (e.payload.usage as JsonRecord).tokens === 32000)).toBe(true);
       expect(snapshots.at(-1)?.payload.usage).toMatchObject({ tokens: null, contextWindow: 128000 });
       expect(snapshots.at(-1)?.payload.sessionTokens).toMatchObject({ cacheRead: 800, input: 100 });
+    } finally {
+      f.cleanup();
+    }
+  });
+  it('answers the context steward\u2019s compact marker with pi\u2019s own compact command, never a model turn', async () => {
+    const f = fixture();
+    try {
+      const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
+      const answer = await f.agent.prompt({
+        sessionId,
+        prompt: [{ type: 'text', text: '[[MU_STEWARD_COMPACT]]' }],
+      });
+      expect(answer).toEqual({ stopReason: 'end_turn' });
+      const sent = f.commands.filter((c) => c.type === 'compact');
+      expect(sent).toHaveLength(1); // The marker is the one command the steward asks for.
+      expect(f.commands.some((c) => c.type === 'prompt')).toBe(false); // No text reaches the model.
+      // A second marker while one runs never aborts the running turn.
+      const first = f.agent.prompt({ sessionId, prompt: [{ type: 'text', text: '[[MU_STEWARD_COMPACT]]' }] });
+      await expect(
+        f.agent.prompt({ sessionId, prompt: [{ type: 'text', text: '[[MU_STEWARD_COMPACT]]' }] })
+      ).rejects.toThrow('A mu turn is already running');
+      await first;
+      expect(f.commands.filter((c) => c.type === 'compact')).toHaveLength(2);
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  it('reads a compaction pi refused as a completed no-op, not a failed turn', async () => {
+    const f = fixture({ compactError: 'Nothing to compact (session too small)' });
+    try {
+      const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
+      const answer = await f.agent.prompt({
+        sessionId,
+        prompt: [{ type: 'text', text: '[[MU_STEWARD_COMPACT]]' }],
+      });
+      expect(answer).toEqual({ stopReason: 'end_turn' }); // A refusal kills no adapter process.
     } finally {
       f.cleanup();
     }

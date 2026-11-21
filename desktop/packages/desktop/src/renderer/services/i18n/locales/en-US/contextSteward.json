@@ -1,0 +1,27 @@
+{
+  "contextSteward": {
+    "settings": {
+      "label": "Context steward",
+      "hint": "Watch long position/supervisor/team sessions; past the check line, compact in place or switch to a fresh part",
+      "updateFailed": "Failed to update the context steward setting"
+    },
+    "compact": {
+      "title": "Context steward: compacted",
+      "body": "Compacted the session in place. Reason: {reason}"
+    },
+    "switch": {
+      "title": "Context steward: switched to part {part}",
+      "body": "Handed the session over to a new part “{target}”. Reason: {reason}"
+    },
+    "continuation": {
+      "title": "Context steward: part {part} continues here",
+      "body": "This part continues from “{source}”; the earlier part stays archived and readable."
+    },
+    "details": {
+      "trigger": "Basis",
+      "tokens": "Context",
+      "part": "Part {part}",
+      "reason": "Reason"
+    }
+  }
+}

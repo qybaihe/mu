@@ -1,0 +1,27 @@
+{
+  "contextSteward": {
+    "settings": {
+      "label": "Kontext-Verwalter",
+      "hint": "Beobachtet lange Positions-/Supervisor-/Team-Sitzungen; jenseits der Prüflinie wird vor Ort verdichtet oder auf einen neuen Teil gewechselt",
+      "updateFailed": "Einstellung des Kontext-Verwalters konnte nicht aktualisiert werden"
+    },
+    "compact": {
+      "title": "Kontext-Verwalter: vor Ort verdichtet",
+      "body": "Sitzung vor Ort verdichtet. Grund: {reason}"
+    },
+    "switch": {
+      "title": "Kontext-Verwalter: auf Teil {part} gewechselt",
+      "body": "Sitzung an den neuen Teil „{target}“ übergeben. Grund: {reason}"
+    },
+    "continuation": {
+      "title": "Kontext-Verwalter: Teil {part} läuft hier weiter",
+      "body": "Dieser Teil läuft ab „{source}“ weiter; der frühere Teil bleibt archiviert und lesbar."
+    },
+    "details": {
+      "trigger": "Grundlage",
+      "tokens": "Kontext",
+      "part": "Teil {part}",
+      "reason": "Grund"
+    }
+  }
+}

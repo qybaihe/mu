@@ -93,6 +93,7 @@ vi.mock('@renderer/hooks/system/useDeepLink', () => ({ useDeepLink: () => {} }))
 vi.mock('@renderer/hooks/system/notification/useNotificationClick', () => ({ useNotificationClick: () => {} }));
 vi.mock('@renderer/hooks/system/notification/useAppBadge', () => ({ useAppBadge: () => {} }));
 vi.mock('@renderer/hooks/system/notification/useSupervisorTeamReceipt', () => ({ useSupervisorTeamReceipt: () => {} }));
+vi.mock('@renderer/hooks/system/notification/useContextSteward', () => ({ useContextSteward: () => {} }));
 vi.mock('@renderer/pages/team/hooks/useTeamChangedFilesNotes', () => ({ useTeamChangedFilesNotes: () => {} }));
 vi.mock('@renderer/hooks/system/useKeepAwakeWhileRunning', () => ({ useKeepAwakeWhileRunning: () => {} }));
 vi.mock('@renderer/hooks/file/useDirectorySelection', () => ({

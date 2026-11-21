@@ -24,6 +24,21 @@ export type QuickDecisionModelSetting = TProviderWithModel;
  */
 export type InspectionToggleSetting = boolean | undefined;
 
+/**
+ * The context steward's master switch: undefined = ON (a fresh install runs
+ * it), only an explicit `false` turns it off — the same never-store-`true`
+ * shape as the inspection toggles.
+ */
+export type ContextStewardToggleSetting = boolean | undefined;
+
+/**
+ * The steward's check-line ratio override (0 < r ≤ 1). Undefined = the
+ * built-in 0.8 default. A test/E2E knob rather than a user setting: the
+ * ratio's why lives with the constants in contextStewardCore, and a value a
+ * user could not reason about is not one to expose.
+ */
+export type ContextStewardRatioSetting = number | undefined;
+
 export type ClientBusinessSettingMap = {
   'google.config': GoogleClientSetting;
   'mcp.config': IMcpServer[] | undefined;
@@ -31,6 +46,8 @@ export type ClientBusinessSettingMap = {
   'tools.quickDecisionModel': QuickDecisionModelSetting | undefined;
   'tools.inspectionFrictionEnabled': InspectionToggleSetting;
   'tools.inspectionWasteEnabled': InspectionToggleSetting;
+  'tools.contextStewardEnabled': ContextStewardToggleSetting;
+  'tools.contextStewardCheckRatio': ContextStewardRatioSetting;
   'acp.promptTimeout': number | undefined;
   'acp.agentIdleTimeout': number | undefined;
   /**

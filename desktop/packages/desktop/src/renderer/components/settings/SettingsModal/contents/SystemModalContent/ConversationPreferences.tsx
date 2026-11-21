@@ -57,6 +57,7 @@ const ConversationPreferences: React.FC = () => {
   // stored `false` is off, so "on" writes nothing back (remove = default).
   const [inspectionFriction, setInspectionFriction] = useState(true);
   const [inspectionWaste, setInspectionWaste] = useState(true);
+  const [contextSteward, setContextSteward] = useState(true);
   const [inspectionRunning, setInspectionRunning] = useState(false);
 
   useEffect(() => {
@@ -100,6 +101,7 @@ const ConversationPreferences: React.FC = () => {
         }
         setInspectionFriction((await getClientBusinessSetting('tools.inspectionFrictionEnabled')) !== false);
         setInspectionWaste((await getClientBusinessSetting('tools.inspectionWasteEnabled')) !== false);
+        setContextSteward((await getClientBusinessSetting('tools.contextStewardEnabled')) !== false);
       } catch {
         // Keep the in-memory defaults when backend settings are unavailable.
       }
@@ -254,6 +256,22 @@ const ConversationPreferences: React.FC = () => {
     [t]
   );
 
+  // The context steward's master switch, the same never-store-`true` shape:
+  // re-enabling REMOVES the key, so "on" stays what a fresh install runs.
+  const handleContextStewardChange = useCallback(
+    (checked: boolean) => {
+      setContextSteward(checked);
+      const write = checked
+        ? removeClientBusinessSetting('tools.contextStewardEnabled')
+        : setClientBusinessSetting('tools.contextStewardEnabled', false);
+      write.catch(() => {
+        setContextSteward(!checked);
+        Message.error(t('contextSteward.settings.updateFailed'));
+      });
+    },
+    [t]
+  );
+
   // The manual run: rolling 24h, both schedules, report overwritten — the
   // settings row is also the E2E entry point into the whole pipeline.
   const handleInspectionRunNow = useCallback(async () => {
@@ -387,6 +405,19 @@ const ConversationPreferences: React.FC = () => {
           checked={inspectionWaste}
           onChange={handleInspectionWasteChange}
           data-testid='inspection-waste-switch'
+        />
+      ),
+    },
+    {
+      key: 'contextSteward',
+      label: t('contextSteward.settings.label'),
+      description: t('contextSteward.settings.hint'),
+      component: (
+        <Switch
+          size='small'
+          checked={contextSteward}
+          onChange={handleContextStewardChange}
+          data-testid='context-steward-switch'
         />
       ),
     },

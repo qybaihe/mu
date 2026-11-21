@@ -1,0 +1,27 @@
+{
+  "contextSteward": {
+    "settings": {
+      "label": "Bağlam kâhyası",
+      "hint": "Uzun pozisyon/süpervizör/takip oturumlarını izler; kontrol çizgisini geçince yerinde sıkıştırır ya da yeni parçaya geçirir",
+      "updateFailed": "Bağlam kâhyası ayarı güncellenemedi"
+    },
+    "compact": {
+      "title": "Bağlam kâhyası: yerinde sıkıştırıldı",
+      "body": "Oturum yerinde sıkıştırıldı. Gerekçe: {reason}"
+    },
+    "switch": {
+      "title": "Bağlam kâhyası: {part}. parçaya geçildi",
+      "body": "Oturum yeni parçaya ('{target}') devredildi. Gerekçe: {reason}"
+    },
+    "continuation": {
+      "title": "Bağlam kâhyası: {part}. parça buradan sürüyor",
+      "body": "Bu parça '{source}' oturumundan sürüyor; önceki parça arşivde ve okunabilir."
+    },
+    "details": {
+      "trigger": "Gerekçe",
+      "tokens": "Bağlam",
+      "part": "{part}. parça",
+      "reason": "Neden"
+    }
+  }
+}

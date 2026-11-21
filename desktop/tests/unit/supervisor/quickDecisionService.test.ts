@@ -17,6 +17,7 @@ import {
   dispatchHintIn,
   type QuickDecisionCounters,
   type QuickDecisionDeps,
+  contextStewardDecisionIn,
 } from '@process/services/team/quickDecision';
 import { reuseSupervisorTeamIn } from '@process/services/team/supervisor';
 
@@ -531,5 +532,53 @@ describe('dispatchHintIn', () => {
     const second = await dispatchHintIn(deps, cache, counters, { input: '做宣传视频' });
     expect(second).toEqual({ action: 'none', reason: 'roster-changed' });
     expect(cache.size).toBe(0);
+  });
+});
+
+describe('contextStewardDecisionIn — point E, the one question the steward asks', () => {
+  const ask = (deps: QuickDecisionDeps) =>
+    contextStewardDecisionIn(
+      deps,
+      { shortCircuits: 0, fallbacks: 0, savedTurns: 0 },
+      {
+        goal: '货代',
+        percent: 0.8,
+        tokens: 160000,
+        contextWindow: 200000,
+        checkLine: 146892,
+        compactions: 0,
+        midWorkHint: 'unclear',
+        lastExcerpt: '正在查 CNS 客户名单',
+      }
+    );
+
+  it('answers unanswered when no model is configured — the steward owns the lossless fallback', async () => {
+    const deps = baseDeps({ readSetting: async () => undefined });
+    const answer = await ask(deps);
+    expect(answer).toEqual({ answered: false, reason: 'no-model-configured' });
+    expect(deps.calls.complete).toBe(0);
+  });
+
+  it('answers unanswered on timeout and on a model error', async () => {
+    const timeout = await ask(baseDeps({ complete: async () => Promise.reject(new Error('quick-decision-timeout')) }));
+    expect(timeout).toEqual({ answered: false, reason: 'timeout' });
+    const error = await ask(baseDeps({ complete: async () => Promise.reject(new Error('boom')) }));
+    expect(error).toEqual({ answered: false, reason: 'model-error' });
+  });
+
+  it('answers unanswered when nothing usable was said', async () => {
+    const answer = await ask(baseDeps({ complete: async () => '我认为应该换一个新会话继续' }));
+    expect(answer).toEqual({ answered: false, reason: 'malformed-answer' });
+  });
+
+  it('carries each stated action through, never cached, whatever the confidence', async () => {
+    for (const raw of [
+      '{"action":"compact","reason":"已收尾"}',
+      '{"action":"switch","reason":"任务进行中","confidence":0.42}',
+      '{"action":"none"}',
+    ]) {
+      const answer = await ask(baseDeps({ complete: async () => raw }));
+      expect(answer.answered).toBe(true);
+    }
   });
 });

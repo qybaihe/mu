@@ -26,7 +26,11 @@ export {
   routeTeamMessageIn,
   dispatchHintFor,
   dispatchHintIn,
+  contextStewardDecision,
+  contextStewardDecisionIn,
   resetQuickDecisionStateForTest,
+  type ContextStewardAskParams,
+  type ContextStewardEngineResult,
   type QuickDecisionCounters,
   type QuickDecisionDeps,
 } from './quickDecisionService';

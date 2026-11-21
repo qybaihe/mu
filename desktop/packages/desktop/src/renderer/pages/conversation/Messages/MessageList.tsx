@@ -69,11 +69,13 @@ import {
   type TeamTaskRow,
 } from './teamTaskEvents';
 import { useQuickDecisionNotes, type QuickDecisionNote } from '@renderer/pages/team/core/notes/quickDecisionNotes';
+import { useContextStewardNotes, type ContextStewardNote } from '@renderer/pages/team/core/notes/contextStewardNotes';
 import {
   useTeamChangedFileNotes,
   type TeamChangedFilesNote,
 } from '@renderer/pages/team/core/notes/teamChangedFileNotes';
 import QuickDecisionNoteRow from '@renderer/pages/team/components/QuickDecisionNoteRow';
+import ContextStewardRow from '@renderer/pages/team/components/ContextStewardRow';
 import TeamChangedFilesRow from '@renderer/pages/team/components/TeamChangedFilesRow';
 import { dependencyEdgesOf } from '@renderer/pages/team/core/teamDataCore';
 import { useTeamTaskEvents } from './useTeamTaskEvents';
@@ -114,7 +116,8 @@ type IProcessedItem =
   | IThoughtHistoryVO
   | TeamTaskRow
   | QuickDecisionRow
-  | TeamChangedFilesRowItem;
+  | TeamChangedFilesRowItem
+  | ContextStewardRowItem;
 
 /** One ⚡ short-circuit receipt, merged like a teammate row: nothing went through the model, so no backend message exists. */
 type QuickDecisionRow = { type: 'quick_decision'; id: string; note: QuickDecisionNote; created_at: number };
@@ -125,6 +128,8 @@ type TeamChangedFilesRowItem = {
   note: TeamChangedFilesNote;
   created_at: number;
 };
+/** One ⚡ steward action, merged like a ⚡ receipt: compact was hidden plumbing and a switch is another conversation, so no backend row exists. */
+type ContextStewardRowItem = { type: 'context_steward'; id: string; note: ContextStewardNote; created_at: number };
 
 type CompactAcpToolCallContent = IMessageAcpToolCall['content'] & {
   _compact?: {
@@ -239,6 +244,7 @@ const FileChangesRow = React.memo(MessageFileChanges);
 const TeamTaskCardRow = React.memo(TeamTaskCard);
 const QuickDecisionNoteRowMemo = React.memo(QuickDecisionNoteRow);
 const TeamChangedFilesRowMemo = React.memo(TeamChangedFilesRow);
+const ContextStewardRowMemo = React.memo(ContextStewardRow);
 
 const sameRefs = (a: readonly unknown[], b: readonly unknown[]): boolean =>
   a.length === b.length && a.every((item, index) => item === b[index]);
@@ -625,6 +631,7 @@ const MessageList: React.FC<{
   // sends never became backend messages, so the notes are the only trace.
   const quickDecisionNotes = useQuickDecisionNotes(conversationId);
   const teamChangedFileNotes = useTeamChangedFileNotes(conversationId);
+  const contextStewardNotes = useContextStewardNotes(conversationId);
   const { t } = useTranslation();
   const location = useLocation();
   const locationState = (location.state || {}) as ConversationLocationState;
@@ -899,6 +906,14 @@ const MessageList: React.FC<{
           note,
           created_at: note.createdAt,
         })),
+        // The ⚡ steward's actions merge the same way: sorted by when the
+        // steward acted, not appended — the conversation may have moved on.
+        ...contextStewardNotes.map<ContextStewardRowItem>((note) => ({
+          type: 'context_steward',
+          id: note.id,
+          note,
+          created_at: note.createdAt,
+        })),
       ].toSorted((a, b) => getProcessedItemCreatedAt(a) - getProcessedItemCreatedAt(b))
     );
     // Team task cards merge in after the reuse pass: their objects come from
@@ -915,6 +930,7 @@ const MessageList: React.FC<{
     openThoughtIds,
     quickDecisionNotes,
     teamChangedFileNotes,
+    contextStewardNotes,
     teamTaskEvents?.mailbox,
     teamTaskEvents?.members,
     teamTaskEvents?.tasks,
@@ -1153,7 +1169,8 @@ const MessageList: React.FC<{
           (item as { type?: string }).type === 'artifact' ||
           (item as { type?: string }).type === 'team_task' ||
           (item as { type?: string }).type === 'quick_decision' ||
-          (item as { type?: string }).type === 'team_changed_files'
+          (item as { type?: string }).type === 'team_changed_files' ||
+          (item as { type?: string }).type === 'context_steward'
         ) {
           return false;
         }
@@ -1291,6 +1308,19 @@ const MessageList: React.FC<{
           style={highlighted ? highlightStyle : undefined}
         >
           <TeamChangedFilesRowMemo note={item.note} />
+        </div>
+      );
+    }
+    if ('type' in item && item.type === 'context_steward') {
+      return (
+        <div
+          key={item.id}
+          id={`message-${item.id}`}
+          data-testid='context-steward-row-wrapper'
+          className={`${rowWidthClass} min-w-0 message-item px-8px ${topMarginClass} context_steward`}
+          style={highlighted ? highlightStyle : undefined}
+        >
+          <ContextStewardRowMemo note={item.note} />
         </div>
       );
     }

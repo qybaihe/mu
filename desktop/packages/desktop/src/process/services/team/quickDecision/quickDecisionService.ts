@@ -30,12 +30,14 @@ import {
   QUICK_DECISION_CACHE_TTL_MS,
   QUICK_DECISION_TIMEOUT_MS,
   activeTeamsForDecision,
+  buildContextStewardPrompt,
   buildDispatchHintPrompt,
   buildPositionDomainPrompt,
   buildSupervisorReusePrompt,
   buildTeamRoutePrompt,
   decisionCacheKey,
   isCacheEntryFresh,
+  parseContextStewardDecision,
   parseDispatchHintDecision,
   parsePositionDomainDecision,
   parseSupervisorReuseDecision,
@@ -656,9 +658,59 @@ export async function dispatchHintIn(
   return hintResult(verdict, false);
 }
 
+/** Point E's ask: what the steward passes the engine — the live token state of one session, never a task text. */
+export type ContextStewardAskParams = Parameters<typeof buildContextStewardPrompt>[0];
+
+/** Point E's answer: the engine's own words when it decided, or why it could not. No conservative direction here — eligibility (may this conversation switch?) is a steward fact the engine cannot see. */
+export type ContextStewardEngineResult =
+  | { answered: true; action: 'compact' | 'switch' | 'none'; reason: string; model: string; durationMs: number }
+  | { answered: false; reason: string };
+
+/**
+ * Point E: one steward question — compact or switch — under the same 2s
+ * ceiling as every other quick decision. NEVER cached: the answer is a
+ * function of the session's live token count, which the cache key cannot
+ * carry meaningfully, and a stale verdict would be worse than no verdict.
+ * The caller owns the lossless fallback for every unanswered shape.
+ */
+export async function contextStewardDecisionIn(
+  deps: QuickDecisionDeps,
+  counters: QuickDecisionCounters,
+  params: ContextStewardAskParams
+): Promise<ContextStewardEngineResult> {
+  const model = await resolveModel(deps);
+  if (!model) return { answered: false, reason: 'no-model-configured' };
+  const startedAt = deps.now();
+  const ask = await askModel(deps, counters, model, 'context-steward', buildContextStewardPrompt(params), startedAt);
+  if (ask.ok === false) return { answered: false, reason: ask.reason };
+  const verdict = parseContextStewardDecision(ask.raw);
+  if (verdict === undefined) {
+    counters.fallbacks += 1;
+    logDecision(deps, counters, {
+      action: 'full',
+      kind: 'context-steward',
+      cached: false,
+      extra: `malformed-answer model=${model.use_model}`,
+    });
+    return { answered: false, reason: 'malformed-answer' };
+  }
+  counters.shortCircuits += 1;
+  logDecision(deps, counters, {
+    action: verdict.action,
+    kind: 'context-steward',
+    cached: false,
+    extra: `conversation=「${params.goal.slice(0, 40)}» model=${model.use_model} duration=${deps.now() - startedAt}ms`,
+  });
+  return { answered: true, ...verdict, model: model.use_model, durationMs: deps.now() - startedAt };
+}
+
 /** The bridge entries for points C and D. */
 export const routeTeamMessage = (params: { input: string; teamId: string }): Promise<QuickDecisionRouteTeamResult> =>
   routeTeamMessageIn(prodDeps(), state.cache, state.counters, params);
 
 export const dispatchHintFor = (params: { input: string }): Promise<QuickDecisionHintResult> =>
   dispatchHintIn(prodDeps(), state.cache, state.counters, params);
+
+/** Point E's bridge entry: the steward's one question, asked only when a session stands at its line. */
+export const contextStewardDecision = (params: ContextStewardAskParams): Promise<ContextStewardEngineResult> =>
+  contextStewardDecisionIn(prodDeps(), state.counters, params);

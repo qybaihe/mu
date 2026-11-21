@@ -10,6 +10,7 @@ import type { SupervisorTeam } from '@/common/chat/team/supervisor/supervisorCor
 import {
   QUICK_DECISION_MIN_CONFIDENCE,
   activeTeamsForDecision,
+  buildContextStewardPrompt,
   buildDispatchHintPrompt,
   buildPositionDomainPrompt,
   buildSupervisorReusePrompt,
@@ -18,6 +19,7 @@ import {
   extractDecisionJson,
   isCacheEntryFresh,
   normalizeDecisionInput,
+  parseContextStewardDecision,
   parseDispatchHintDecision,
   parsePositionDomainDecision,
   parseSupervisorReuseDecision,
@@ -340,5 +342,56 @@ describe('cache keys keep the kinds apart', () => {
     expect(decisionCacheKey('team-route', 'team:t1', text)).not.toBe(
       decisionCacheKey('position-domain', 'team:t1', text)
     );
+  });
+});
+
+describe('parseContextStewardDecision', () => {
+  it('takes each action with its reason, capped', () => {
+    expect(parseContextStewardDecision('{"action":"compact","reason":"已收尾"}')).toEqual({
+      action: 'compact',
+      reason: '已收尾',
+    });
+    expect(parseContextStewardDecision('```json\n{"action":"switch","reason":"任务进行中"}\n```')).toEqual({
+      action: 'switch',
+      reason: '任务进行中',
+    });
+    expect(parseContextStewardDecision('{"action":"none"}')).toEqual({ action: 'none', reason: '' });
+    const long = 'x'.repeat(300);
+    expect(parseContextStewardDecision(`{"action":"compact","reason":"${long}"}`).reason.length).toBe(120);
+  });
+
+  it('answers undefined on every unusable shape — doubt is the CALLER\u2019s lossless fallback, never a guess here', () => {
+    expect(parseContextStewardDecision('我不想输出 JSON')).toBeUndefined();
+    expect(parseContextStewardDecision('{"action":"summarize"}')).toBeUndefined();
+    expect(parseContextStewardDecision('{"reason":"no action"}')).toBeUndefined();
+    expect(parseContextStewardDecision('[]')).toBeUndefined();
+    // Confidence is accepted but never required: the steward\u2019s bar is the line, not a number.
+    expect(parseContextStewardDecision('{"action":"compact","confidence":0.4}')).toEqual({
+      action: 'compact',
+      reason: '',
+    });
+  });
+});
+
+describe('buildContextStewardPrompt', () => {
+  it('carries the goal, the live numbers, the compaction history and the mid-work preference', () => {
+    const prompt = buildContextStewardPrompt({
+      goal: '货代',
+      percent: 0.8,
+      tokens: 160000,
+      contextWindow: 200000,
+      checkLine: 146892,
+      compactions: 2,
+      midWorkHint: 'mid-work',
+      lastExcerpt: '正在查 CNS 客户名单，稍后回报。',
+    });
+    expect(prompt.user).toContain('货代');
+    expect(prompt.user).toContain('80%');
+    expect(prompt.user).toContain('160000 / 200000');
+    expect(prompt.user).toContain('146892');
+    expect(prompt.user).toContain('压缩过 2 次');
+    expect(prompt.user).toContain('任务进行中');
+    expect(prompt.user).toContain('CNS 客户名单');
+    expect(prompt.user).toContain('{"action":"switch"');
   });
 });

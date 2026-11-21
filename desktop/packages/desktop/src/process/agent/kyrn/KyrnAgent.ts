@@ -23,12 +23,14 @@ import { readFile, realpath } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { PiRpc, array, asRecord, text, type JsonRecord, type RpcPort } from './piRpc.ts';
+import { log } from './errorLog.ts';
 import { mapEvent, messageText, messageThinking } from './events.ts';
 import { isConversationId, readImportRecord, writeImportRecord, type ImportRecord } from './importChats.ts';
 import { muEnv, muHome } from './naming.ts';
 import { Telemetry } from './telemetry.ts';
 import { slashCommands } from './commands.ts';
 import { GATE_FILE_NAME, watchGate, type GateReload } from './gateReload.ts';
+import { STEWARD_COMPACT_MESSAGE } from '../../../common/chat/team/contextSteward/contextStewardCore.ts';
 import { enabledModels, supportedThinkingLevels, UNOFFERED_PROVIDER_IDS } from '../../../common/kyrn/models.ts';
 import {
   answerIndex,
@@ -874,6 +876,29 @@ export class KyrnAgent implements Agent {
   }
   async prompt(params: PromptRequest): Promise<PromptResponse> {
     if (this.session(params.sessionId).busy) throw new Error(MU_TURN_ERRORS.turnRunning);
+    // The context steward's compact: the whole prompt is the marker (see contextStewardCore). pi's `/compact` is a
+    // TUI command and would reach the model as text, so the adapter answers the marker itself with pi's compact RPC.
+    if (
+      params.prompt.length === 1 &&
+      params.prompt[0].type === 'text' &&
+      params.prompt[0].text === STEWARD_COMPACT_MESSAGE
+    ) {
+      const session = await this.live(params.sessionId);
+      if (session.busy) throw new Error(MU_TURN_ERRORS.turnRunning); // Never abort a running turn for a compaction.
+      session.busy = true;
+      try {
+        // A compaction pi refuses ("Nothing to compact", a summarizer failure) is a no-op, not a failed turn: a failed
+        // ACP turn makes the backend end the adapter process, and a steward no-op never justifies that. The refusal is
+        // logged; the steward re-opens the question once the session has grown past its hysteresis again.
+        await session.rpc.send({ type: 'compact' }).catch((error: unknown) => {
+          log(`[mu] context steward compaction did not run: ${String(error)}\n`);
+        });
+        await this.state(params.sessionId);
+        return { stopReason: 'end_turn' };
+      } finally {
+        session.busy = false;
+      }
+    }
     const images: { type: 'image'; data: string; mimeType: string }[] = [];
     const parts = params.prompt.map((block) => {
       if (block.type === 'text') return block.text;
