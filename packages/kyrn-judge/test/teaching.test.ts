@@ -1,13 +1,13 @@
-import { fauxAssistantMessage } from "@earendil-works/pi-ai";
 import type { FauxResponseFactory } from "@earendil-works/pi-ai";
+import { fauxAssistantMessage } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
-import type { Answer, JudgeRequest } from "../src/types.ts";
-import { MockJudgeProvider } from "../src/providers/mock.ts";
+import { parseTeachingCard, TEACHING_PROMPT } from "../src/extension/features/teaching.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
-import { parseTeachingCard, TEACHING_PROMPT } from "../src/extension/features/teaching.ts";
+import { MockJudgeProvider } from "../src/providers/mock.ts";
+import type { Answer, JudgeRequest } from "../src/types.ts";
 
 const picked = (choice: string, probability: number): Answer => ({
 	type: "choice",
@@ -28,13 +28,19 @@ function judge(): MockJudgeProvider {
 	});
 }
 
-const CARD = JSON.stringify({ why: "The cache invalidates on the store's writes: two owners would race.", ruledOut: ["Inside the store", "Per-caller caches"], kind: "arch_weighing" });
+const CARD = JSON.stringify({
+	why: "The cache invalidates on the store's writes: two owners would race.",
+	ruledOut: ["Inside the store", "Per-caller caches"],
+	kind: "arch_weighing",
+});
 
 /** One step: the writer's card when the writer is asking, else the agent's next reply. */
-const step = (reply: string): FauxResponseFactory => (context) =>
-	JSON.stringify(context.messages).includes("judged moment of a coding session")
-		? fauxAssistantMessage(CARD)
-		: fauxAssistantMessage(reply);
+const step =
+	(reply: string): FauxResponseFactory =>
+	(context) =>
+		JSON.stringify(context.messages).includes("judged moment of a coding session")
+			? fauxAssistantMessage(CARD)
+			: fauxAssistantMessage(reply);
 
 const teachingEvents = (events: KyrnPresentationEvent[]) => events.filter((event) => event.kind === "turn.teaching");
 
@@ -68,10 +74,7 @@ describe("the teaching card of a turn", () => {
 			],
 		});
 		harnesses.push(harness);
-		harness.setResponses([
-			...replies.map(step),
-			...Array.from({ length: 4 }, () => step("unused")),
-		]);
+		harness.setResponses([...replies.map(step), ...Array.from({ length: 4 }, () => step("unused"))]);
 		return { harness, events };
 	}
 
@@ -118,11 +121,9 @@ describe("the teaching card of a turn", () => {
 	});
 
 	it("shows nothing when the picked option is not sharp enough", async () => {
-		const { harness, events } = await start(
-			judge(),
-			["The flag that does the reverse: I switched it off."],
-			{ writer: "faux/faux-1" },
-		);
+		const { harness, events } = await start(judge(), ["The flag that does the reverse: I switched it off."], {
+			writer: "faux/faux-1",
+		});
 		await harness.session.prompt("Why is the build still failing?");
 		await harness.session.prompt("Anything else?");
 		expect(teachingEvents(events)).toHaveLength(0);
@@ -133,7 +134,11 @@ describe("parsing the writer's card", () => {
 	it("keeps the card when the writer answers in shape, and at most two ruled-out options", () => {
 		expect(
 			parseTeachingCard(
-				JSON.stringify({ why: "So later runs skip the bad path.", ruledOut: ["a", "b", "c"], kind: "product_tradeoff" }),
+				JSON.stringify({
+					why: "So later runs skip the bad path.",
+					ruledOut: ["a", "b", "c"],
+					kind: "product_tradeoff",
+				}),
 				"product_tradeoff",
 			),
 		).toEqual({ kind: "product_tradeoff", why: "So later runs skip the bad path.", ruledOut: ["a", "b"] });

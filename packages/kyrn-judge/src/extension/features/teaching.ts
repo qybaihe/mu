@@ -1,5 +1,5 @@
 import type { AgentEndEvent, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { turnTeaching, type TeachingKind } from "../../decisions/teaching.ts";
+import { type TeachingKind, turnTeaching } from "../../decisions/teaching.ts";
 import { turnDigest } from "../../memory/phrasing.ts";
 import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
 import { describeCall } from "./admission.ts";
@@ -33,7 +33,9 @@ export function parseTeachingCard(reply: string, kind: TeachingKind): TeachingCa
 		if (typeof parsed.why !== "string" || !parsed.why.trim()) return undefined;
 		if (parsed.kind !== undefined && parsed.kind !== kind) return undefined;
 		const ruledOut = Array.isArray(parsed.ruledOut)
-			? parsed.ruledOut.filter((item): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 2)
+			? parsed.ruledOut
+					.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+					.slice(0, 2)
 			: [];
 		return { kind, why: clip(parsed.why.trim(), 200), ruledOut };
 	} catch {

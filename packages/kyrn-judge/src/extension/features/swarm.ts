@@ -29,6 +29,7 @@ import { describeRecord } from "../../swarm/patches.ts";
 
 /** Resolves to `<package>/skills/bot-positions/SKILL.md` from both `src/` and `dist/`. */
 export const POSITIONS_SKILL_PATH = fileURLToPath(new URL("../../../skills/bot-positions/SKILL.md", import.meta.url));
+
 import {
 	activeRuns,
 	type BeeObserver,

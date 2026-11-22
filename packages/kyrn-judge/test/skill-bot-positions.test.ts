@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadSkillsFromDir } from "../../coding-agent/src/core/skills.ts";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
-import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { POSITIONS_SKILL_PATH } from "../src/extension/features/swarm.ts";
+import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 
 /** Resolves to `<package>/skills/bot-positions/` from the test's own place, as the features do for their skills. */

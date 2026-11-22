@@ -31,6 +31,7 @@ import { skillDisclosure } from "../../src/decisions/skill-disclosure.ts";
 import { swarmPatch } from "../../src/decisions/swarm-patch.ts";
 import { swarmRouting } from "../../src/decisions/swarm-routing.ts";
 import { taskFrame } from "../../src/decisions/task-frame.ts";
+import { turnTeaching } from "../../src/decisions/teaching.ts";
 import { toolAdmission, toolAdmissionBatch } from "../../src/decisions/tool-admission.ts";
 import { toolApproval } from "../../src/decisions/tool-approval.ts";
 import { toolConstraint } from "../../src/decisions/tool-constraint.ts";
@@ -39,7 +40,6 @@ import { toolInjection, toolInjectionBatch } from "../../src/decisions/tool-inje
 import { toolRisk } from "../../src/decisions/tool-risk.ts";
 import { turnCompletion } from "../../src/decisions/turn-completion.ts";
 import { turnContinue } from "../../src/decisions/turn-continue.ts";
-import { turnTeaching } from "../../src/decisions/teaching.ts";
 import { turnDrift } from "../../src/decisions/turn-drift.ts";
 import { turnRewind } from "../../src/decisions/turn-rewind.ts";
 import type { JsonValue, Questions } from "../../src/types.ts";
