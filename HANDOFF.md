@@ -1,5 +1,8 @@
 # mu 仓库交接（从全局 HANDOFF 分流 2026-11-15）
 
+## 2026-11-22 · 收编：建岗规范 skill 进仓（bot-positions）
+- 个人建岗规范已去个人化收编为内置 skill：`packages/kyrn-judge/skills/bot-positions/SKILL.md` + 内容门禁测试 `packages/kyrn-judge/test/skill-bot-positions.test.ts`（3 测：合法 pi skill/机制钩子齐全/无私人路径——linus、盘符路径、TOOL-ROUTING、~/.agents、总台等入禁词表）。桌面端经 builtinDir 自动加载（未入 BUILTIN_FEATURES 门即默认常载，disclosure 按相关性过滤）；CLI 不自动加载打包 skill（mu-browser 同理由 feature 显式挂，bot-positions 无 feature 归属，如需 CLI 覆盖是后续待办）。注意：用户个人 `~/.agents/skills/bot-positions` 与内置同名，listSkills 先到先得会遮内置版。验证：定向 vitest 3/3 过；根 check 两预存障碍与本改动无关（biome 卡 .mu-dev/rakazo-src/biome.jsonc 外部配置；tsc 4 错全在 packages/ai 模型目录漂移）。源件 `C:/Users/linus/.agents/skills/bot-positions/SKILL.md` 未动。
+
 ## 2026-11-22 · 立项：顺带私教三案（只出方案，未动生产代码）
 - 三案方案文档 `tmp/side-tutor-plans.md`：①hint 收窄+折起教学卡（判据放 kyrn-judge 内核新决策点 turn.teaching，宿主只渲染，L）②手账（WorkPanel 新 journal tab，数据=lessons.jsonl 全量+positions/_shared/LESSONS.md 新读取器，纯视图零新存储，M）③10秒快测（quizCore+主进程 quizService 走 quickDecision provider 通道出题、MCQ 确定性判卷键不出主进程、进度 localStorage quiz-progress-v1 镜像 task-verification-v1 不碰内核 status，M）；关键架构澄清：mu-engine 补丁体制与三案无关（判读在内核层）。
 
