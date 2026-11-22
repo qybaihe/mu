@@ -1,0 +1,98 @@
+/* The journal tab: the lessons tab's own black and white, hairlines between rows, nothing tinted. */
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  color: var(--text-primary);
+}
+
+.error {
+  margin: 10px 0 0;
+}
+
+.quiet {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.heading {
+  margin: 0;
+  padding: 8px 0 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 0;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.row + .row {
+  border-top: 1px solid var(--border-light, var(--border-base));
+}
+
+/* Where an entry came from and where it holds: small outlined chips before the words. */
+.mark {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.kind {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 16px;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.when {
+  flex: none;
+  color: var(--bg-6);
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fold:global(.arco-btn) {
+  align-self: flex-start;
+  margin: 4px 0;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}

@@ -3,6 +3,7 @@ import type { McpServerInput, MuMcpServers, MuSkills } from './capabilities';
 import type { ClmServerState } from './clm';
 import { KyrnError, type KyrnResult } from './errors';
 import type { ImportedHistory, ImportList, ImportOutcome } from './importChats';
+import type { JournalView } from './journal';
 import type { LessonChange, LessonsView } from './lessons';
 import type { LoginEnable, LoginState, LoginStatus, SignOutSwitch, SubscriptionProvider } from './login';
 import type { ModelRequest, ModelsState, MudeAction, MudeState } from './mude';
@@ -40,6 +41,11 @@ export const kyrnBridge = {
   lessons: bridge.buildProvider<KyrnResult<LessonsView>, { conversationId: string }>('kyrn.lessons'),
   /** A new text or the retirement of one lesson, appended to the file as a line; answers with the lessons after it. */
   lessonsChange: bridge.buildProvider<KyrnResult<LessonsView>, LessonChange>('kyrn.lessons.change'),
+  /**
+   * The journal: every lesson of every project beside the positions' ledger, one newest-first view
+   * (common/kyrn/journal.ts). Read-only; nothing the journal writes anywhere.
+   */
+  journal: bridge.buildProvider<KyrnResult<JournalView>, void>('kyrn.journal.view'),
   /**
    * Claude Code, Codex and ZCode conversations on this computer (common/kyrn/importChats.ts); with `cwd`, only that project's.
    * Each says whether a conversation holds it already: with `native`, the mu session made from it.

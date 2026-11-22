@@ -1484,6 +1484,18 @@
       "judgeReady": "{{judge}} hazır",
       "judgeOff": "Hakem kapalı",
       "title": "mu ne üzerinde çalışsın?"
+    },
+    "journalView": {
+      "recent": "Son",
+      "expand": "Daha eskileri göster ({{n}})",
+      "collapse": "Daha az göster",
+      "cap": "En yeni {{shown}} / {{total}} gösteriliyor",
+      "empty": "Henüz öğrenilen bir şey yok",
+      "loadFailed": "Günlük okunamadı",
+      "sources": {
+        "lessons": "Ders",
+        "positions": "Pozisyon"
+      }
     }
   },
   "menu": {
@@ -1568,7 +1580,8 @@
       "files": "Dosyalar",
       "preview": "Önizleme",
       "source": "Kaynak",
-      "browser": "Tarayıcı"
+      "browser": "Tarayıcı",
+      "journal": "Günlük"
     },
     "close": "Çalışma panelini kapat",
     "resize": "Çalışma panelinin genişliğini değiştir",

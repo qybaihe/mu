@@ -1484,6 +1484,18 @@
       "judgeReady": "{{judge}} 준비 완료",
       "judgeOff": "판정이 꺼져 있습니다",
       "title": "mu에게 무엇을 맡길까요?"
+    },
+    "journalView": {
+      "recent": "최근",
+      "expand": "이전 항목 보기({{n}}개)",
+      "collapse": "접기",
+      "cap": "최신 {{shown}}개만 표시 (총 {{total}}개)",
+      "empty": "아직 기록된 배움이 없습니다",
+      "loadFailed": "저널을 읽을 수 없습니다",
+      "sources": {
+        "lessons": "교훈",
+        "positions": "포지션"
+      }
     }
   },
   "menu": {
@@ -1568,7 +1580,8 @@
       "files": "파일",
       "preview": "미리보기",
       "source": "소스",
-      "browser": "브라우저"
+      "browser": "브라우저",
+      "journal": "저널"
     },
     "close": "작업 패널 닫기",
     "resize": "작업 패널 너비 조절",

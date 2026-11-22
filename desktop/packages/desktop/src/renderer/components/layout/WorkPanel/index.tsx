@@ -147,7 +147,7 @@ function PreviewBody() {
   );
 }
 
-const KERNEL_TABS: readonly KernelTab[] = ['board', 'judge', 'hive', 'lessons'];
+const KERNEL_TABS: readonly KernelTab[] = ['board', 'judge', 'hive', 'lessons', 'journal'];
 
 /**
  * The conversation page's right side: one docked panel whose tabs hold the kernel's view of the conversation (the

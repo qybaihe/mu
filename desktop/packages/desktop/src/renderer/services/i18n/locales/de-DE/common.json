@@ -1484,6 +1484,18 @@
       "judgeReady": "{{judge}} ist bereit",
       "judgeOff": "Urteile sind aus",
       "title": "Woran soll mu arbeiten?"
+    },
+    "journalView": {
+      "recent": "Neueste",
+      "expand": "Ältere anzeigen ({{n}})",
+      "collapse": "Weniger anzeigen",
+      "cap": "Zeigt die neuesten {{shown}} von {{total}}",
+      "empty": "Noch nichts gelernt",
+      "loadFailed": "Das Journal konnte nicht gelesen werden",
+      "sources": {
+        "lessons": "Lehre",
+        "positions": "Position"
+      }
     }
   },
   "menu": {
@@ -1568,7 +1580,8 @@
       "files": "Dateien",
       "preview": "Vorschau",
       "source": "Code",
-      "browser": "Browser"
+      "browser": "Browser",
+      "journal": "Journal"
     },
     "close": "Arbeitspanel schließen",
     "resize": "Breite des Arbeitspanels ändern",

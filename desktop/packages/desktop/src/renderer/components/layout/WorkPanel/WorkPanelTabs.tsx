@@ -11,6 +11,7 @@ import {
   Down,
   FolderOpen,
   More,
+  Notebook,
   PreviewOpen,
   ViewGridDetail,
 } from '@icon-park/react';
@@ -36,6 +37,7 @@ const TAB_ICONS: Record<WorkPanelTab, typeof Bee> = {
   judge: JudgeIcon,
   hive: Bee,
   lessons: BachelorCap,
+  journal: Notebook,
   files: FolderOpen,
   preview: PreviewOpen,
   source: Code,

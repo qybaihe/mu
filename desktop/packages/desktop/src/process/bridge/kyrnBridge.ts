@@ -27,7 +27,8 @@ import {
   removeMcpServer,
   switchMcpServer,
 } from '../agent/kyrn/capabilities/mcp';
-import { LessonsStore, lessonsProject, type LessonsProject } from '../agent/kyrn/lessons';
+import { LessonsStore, lessonsPath, lessonsProject, type LessonsProject } from '../agent/kyrn/lessons';
+import { JournalStore, lessonsLedgerFile } from '../agent/kyrn/journal';
 import { findFiles, folderScripts, listFolder, openFolder, readFolder } from '../agent/kyrn/folderFiles';
 import { gitRunner } from '../services/folderGit/runGit';
 import { activityPage, modelLevels } from '../agent/kyrn/telemetry';
@@ -254,6 +255,9 @@ export function initKyrnBridge(): void {
   kyrnFolderBridge.lessonsChange.provider(({ cwd, ...change }) =>
     result(() => lessons.change(folderProject(cwd), change))
   );
+  // The journal reads both files whole — no conversation, no project: the person's own record, not a project's.
+  const journal = new JournalStore(lessonsPath(agentDir), lessonsLedgerFile(getDataPath()));
+  kyrnBridge.journal.provider(() => result(() => journal.view()));
   kyrnFolderBridge.files.provider(({ cwd, path }) => result(() => listFolder(readFolder(cwd), path)));
   kyrnFolderBridge.find.provider(({ cwd }) => result(() => findFiles(readFolder(cwd), gitRunner())));
   kyrnFolderBridge.scripts.provider(({ cwd }) => result(() => folderScripts(readFolder(cwd))));

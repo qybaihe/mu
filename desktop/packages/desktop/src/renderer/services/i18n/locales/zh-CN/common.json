@@ -1484,6 +1484,18 @@
       "judgeReady": "{{judge}} 已就绪",
       "judgeOff": "判定已关闭",
       "title": "让 mu 做点什么？"
+    },
+    "journalView": {
+      "recent": "最近",
+      "expand": "展开更早（{{n}} 条）",
+      "collapse": "收起",
+      "cap": "仅显示最近 {{shown}} 条，共 {{total}} 条",
+      "empty": "还没有记下的经验",
+      "loadFailed": "手账读取失败",
+      "sources": {
+        "lessons": "经验",
+        "positions": "岗位"
+      }
     }
   },
   "menu": {
@@ -1568,7 +1580,8 @@
       "files": "文件",
       "preview": "预览",
       "source": "源码",
-      "browser": "浏览器"
+      "browser": "浏览器",
+      "journal": "手账"
     },
     "close": "关闭工作面板",
     "resize": "调整工作面板宽度",

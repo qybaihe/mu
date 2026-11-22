@@ -1484,6 +1484,18 @@
       "judgeReady": "{{judge}} の準備ができました",
       "judgeOff": "判定はオフです",
       "title": "mu に何を任せますか？"
+    },
+    "journalView": {
+      "recent": "最近",
+      "expand": "過去の記録を表示（{{n}}件）",
+      "collapse": "閉じる",
+      "cap": "最新{{shown}}件のみ表示（全{{total}}件）",
+      "empty": "まだ記録された学びはありません",
+      "loadFailed": "手帳を読み込めませんでした",
+      "sources": {
+        "lessons": "教訓",
+        "positions": "役割"
+      }
     }
   },
   "menu": {
@@ -1568,7 +1580,8 @@
       "files": "ファイル",
       "preview": "プレビュー",
       "source": "ソース",
-      "browser": "ブラウザ"
+      "browser": "ブラウザ",
+      "journal": "手帳"
     },
     "close": "作業パネルを閉じる",
     "resize": "作業パネルの幅を変更",

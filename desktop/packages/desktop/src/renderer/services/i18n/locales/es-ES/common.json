@@ -1484,6 +1484,18 @@
       "judgeReady": "{{judge}} está listo",
       "judgeOff": "Juez desactivado",
       "title": "¿En qué debe trabajar mu?"
+    },
+    "journalView": {
+      "recent": "Recientes",
+      "expand": "Mostrar anteriores ({{n}})",
+      "collapse": "Mostrar menos",
+      "cap": "Mostrando las {{shown}} más recientes de {{total}}",
+      "empty": "Nada aprendido todavía",
+      "loadFailed": "No se pudo leer el diario",
+      "sources": {
+        "lessons": "Lección",
+        "positions": "Puesto"
+      }
     }
   },
   "menu": {
@@ -1568,7 +1580,8 @@
       "files": "Archivos",
       "preview": "Vista previa",
       "source": "Código",
-      "browser": "Navegador"
+      "browser": "Navegador",
+      "journal": "Diario"
     },
     "close": "Cerrar el panel de trabajo",
     "resize": "Cambiar el ancho del panel de trabajo",

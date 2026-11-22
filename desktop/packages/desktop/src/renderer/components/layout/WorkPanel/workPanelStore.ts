@@ -16,12 +16,23 @@ import { useCallback, useSyncExternalStore } from 'react';
  */
 
 /**
- * The panel's tabs, in the order the strip shows them: the kernel's views of the conversation, the project's
- * workspace, then the browser. 文件, 预览 and 源码 are one workspace (文件 and 源码 share one explorer, and both open
+ * The panel's tabs, in the order the strip shows them: the kernel's views of the conversation — the lessons it has
+ * learned for the project, then the journal, the person's own record across every project — the project's workspace,
+ * then the browser. 文件, 预览 and 源码 are one workspace (文件 and 源码 share one explorer, and both open
  * what they show in 预览), so 浏览器, the one tab about the web rather than the project, comes after them; appended
  * at the end, it also leaves every older tab where the person already finds it.
  */
-export const WORK_PANEL_TABS = ['board', 'judge', 'hive', 'lessons', 'files', 'preview', 'source', 'browser'] as const;
+export const WORK_PANEL_TABS = [
+  'board',
+  'judge',
+  'hive',
+  'lessons',
+  'journal',
+  'files',
+  'preview',
+  'source',
+  'browser',
+] as const;
 export type WorkPanelTab = (typeof WORK_PANEL_TABS)[number];
 
 /** The tabs every conversation needs. The others join the strip once the conversation uses them (WorkPanelTabs). */

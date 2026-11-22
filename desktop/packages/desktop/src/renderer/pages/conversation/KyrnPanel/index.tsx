@@ -7,6 +7,7 @@ import Board from './Board';
 import GaugeRow from './Board/GaugeRow';
 import HiveRows from './Hive/HiveRows';
 import JudgeLog from './Judge';
+import JournalTab from './Journal';
 import LessonsTab from './Lessons';
 import type { HiveFocusRequest } from './focus';
 import { ErrorNotice } from './text';
@@ -84,7 +85,7 @@ export function useKyrnActivity(conversationId: string | null): KyrnActivity {
   return read.conversationId === conversationId ? read : STARTING;
 }
 
-export type KernelTab = 'board' | 'judge' | 'hive' | 'lessons';
+export type KernelTab = 'board' | 'judge' | 'hive' | 'lessons' | 'journal';
 
 /**
  * One kernel tab of the work panel. It waits, quietly, for the conversation's record to arrive, so what was already
@@ -137,6 +138,16 @@ export function KernelBody({
           ) : (
             loading
           )}
+        </div>
+      </div>
+    );
+  // The journal is the person's own record, not the conversation's: it needs nothing from the activity, so it shows
+  // while the record is still on its way — its own read, its own errors.
+  if (tab === 'journal')
+    return (
+      <div className='h-full min-h-0 overflow-y-auto'>
+        <div className='px-12px pt-10px pb-16px'>
+          <JournalTab conversationId={conversationId} events={activity.events} visible={visible} />
         </div>
       </div>
     );

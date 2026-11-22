@@ -1484,6 +1484,18 @@
       "judgeReady": "{{judge}} est prêt",
       "judgeOff": "Jugement désactivé",
       "title": "Sur quoi mu doit-il travailler ?"
+    },
+    "journalView": {
+      "recent": "Récents",
+      "expand": "Afficher les anciens ({{n}})",
+      "collapse": "Réduire",
+      "cap": "Les {{shown}} plus récents sur {{total}} affichés",
+      "empty": "Rien d'appris pour l'instant",
+      "loadFailed": "Impossible de lire le journal",
+      "sources": {
+        "lessons": "Leçon",
+        "positions": "Poste"
+      }
     }
   },
   "menu": {
@@ -1568,7 +1580,8 @@
       "files": "Fichiers",
       "preview": "Aperçu",
       "source": "Source",
-      "browser": "Navigateur"
+      "browser": "Navigateur",
+      "journal": "Journal"
     },
     "close": "Fermer le panneau de travail",
     "resize": "Redimensionner le panneau de travail",

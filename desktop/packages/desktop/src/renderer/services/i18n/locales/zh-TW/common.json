@@ -1484,6 +1484,18 @@
       "judgeReady": "{{judge}} 已就緒",
       "judgeOff": "判定已關閉",
       "title": "讓 mu 做點什麼？"
+    },
+    "journalView": {
+      "recent": "最近",
+      "expand": "展開更早（{{n}} 條）",
+      "collapse": "收起",
+      "cap": "僅顯示最近 {{shown}} 條，共 {{total}} 條",
+      "empty": "還沒有記下的經驗",
+      "loadFailed": "手帳讀取失敗",
+      "sources": {
+        "lessons": "經驗",
+        "positions": "崗位"
+      }
     }
   },
   "menu": {
@@ -1568,7 +1580,8 @@
       "files": "檔案",
       "preview": "預覽",
       "source": "原始碼",
-      "browser": "瀏覽器"
+      "browser": "瀏覽器",
+      "journal": "手帳"
     },
     "close": "關閉工作面板",
     "resize": "調整工作面板寬度",

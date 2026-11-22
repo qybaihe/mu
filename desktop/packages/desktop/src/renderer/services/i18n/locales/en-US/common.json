@@ -1484,6 +1484,18 @@
       "judgeReady": "{{judge}} is ready",
       "judgeOff": "Judging is off",
       "title": "What should mu work on?"
+    },
+    "journalView": {
+      "recent": "Recent",
+      "expand": "Show earlier ({{n}})",
+      "collapse": "Show less",
+      "cap": "Showing the newest {{shown}} of {{total}}",
+      "empty": "Nothing learned yet",
+      "loadFailed": "The journal could not be read",
+      "sources": {
+        "lessons": "Lesson",
+        "positions": "Position"
+      }
     }
   },
   "menu": {
@@ -1568,7 +1580,8 @@
       "files": "Files",
       "preview": "Preview",
       "source": "Source",
-      "browser": "Browser"
+      "browser": "Browser",
+      "journal": "Journal"
     },
     "close": "Close the work panel",
     "resize": "Resize the work panel",
