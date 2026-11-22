@@ -771,7 +771,8 @@ async function cmdModel(args) {
   const diffFrom = String(args['diff-from'] || '').trim();
   if (!name) fail('--team is required');
   if (!agent) fail('--agent is required (a member name, or lead)');
-  if (Boolean(model) === Boolean(diffFrom)) fail('exactly one of --model <provider/model> or --diff-from <member|lead>');
+  if (Boolean(model) === Boolean(diffFrom))
+    fail('exactly one of --model <provider/model> or --diff-from <member|lead>');
   const team = findTeam(
     readTeams().filter((t) => !isDeleted(t)),
     name
@@ -863,7 +864,15 @@ async function cmdLesson(args) {
   console.log(`LESSON_ADDED date=${date} position=${position}`);
 }
 
-const COMMANDS = { list: cmdList, match: cmdMatch, add: cmdAdd, send: cmdSend, think: cmdThink, model: cmdModel, lesson: cmdLesson };
+const COMMANDS = {
+  list: cmdList,
+  match: cmdMatch,
+  add: cmdAdd,
+  send: cmdSend,
+  think: cmdThink,
+  model: cmdModel,
+  lesson: cmdLesson,
+};
 
 (async () => {
   const [command, ...rest] = process.argv.slice(2);
