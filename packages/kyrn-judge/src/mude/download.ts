@@ -311,7 +311,7 @@ async function fetchOnce(
 ): Promise<boolean> {
 	const checkpointBytes = options.checkpointBytes ?? CHECKPOINT_BYTES;
 	let have = resumeFrom(part, file.size, checkpointBytes);
-	if (have === file.size) {
+	if (have === file.size && existsSync(part)) {
 		// Whole and on the disk already; a part longer than the file loses what is past its end.
 		if (sizeOf(part) > file.size) truncateSync(part, file.size);
 		return true;
