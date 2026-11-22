@@ -1496,6 +1496,21 @@
         "lessons": "Ders",
         "positions": "Pozisyon"
       }
+    },
+    "quizView": {
+      "action": "Hızlı sınav",
+      "passed": "Sınandı",
+      "title": "10 saniyelik sınav",
+      "loading": "Soru yazılıyor…",
+      "submit": "Gönder",
+      "again": "Tekrar dene",
+      "correct": "Doğru",
+      "wrong": "Yanlış",
+      "sourceLabel": "Geçerli durum",
+      "noModel": "Hızlı karar modeli yapılandırılmamış (Ayarlar → Hızlı karar modeli); sınav için gerekli",
+      "thin": "Bu ders iyi bir soru için yeterli değil — atlandı",
+      "failed": "Soru yazılamadı; sonra tekrar deneyin",
+      "stale": "Bu ders değişti — yenisini deneyin"
     }
   },
   "menu": {

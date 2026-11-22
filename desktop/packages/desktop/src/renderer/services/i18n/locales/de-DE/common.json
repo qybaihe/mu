@@ -1496,6 +1496,21 @@
         "lessons": "Lehre",
         "positions": "Position"
       }
+    },
+    "quizView": {
+      "action": "Schnelltest",
+      "passed": "Getestet",
+      "title": "10-Sekunden-Test",
+      "loading": "Frage wird geschrieben…",
+      "submit": "Absenden",
+      "again": "Nochmal",
+      "correct": "Richtig",
+      "wrong": "Falsch",
+      "sourceLabel": "Wann es gilt",
+      "noModel": "Kein Schnellentscheidungsmodell eingerichtet (Einstellungen → Schnellentscheidungsmodell) — ohne das gibt es keine Frage",
+      "thin": "Diese Lehre ist zu dünn für eine gute Frage — übersprungen",
+      "failed": "Frage ließ sich nicht schreiben; später erneut versuchen",
+      "stale": "Diese Lehre hat sich geändert — die neue testen"
     }
   },
   "menu": {

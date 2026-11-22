@@ -1496,6 +1496,21 @@
         "lessons": "Lesson",
         "positions": "Position"
       }
+    },
+    "quizView": {
+      "action": "Quick quiz",
+      "passed": "Tested",
+      "title": "10-second quiz",
+      "loading": "Writing the question…",
+      "submit": "Submit",
+      "again": "Try again",
+      "correct": "Right",
+      "wrong": "Wrong",
+      "sourceLabel": "Where it applies",
+      "noModel": "No quick-decision model configured (Settings → Quick decision model); the quiz needs one",
+      "thin": "This lesson is too thin for a good question — skipped",
+      "failed": "Could not write the question; try again later",
+      "stale": "This lesson changed since — quiz the new one"
     }
   },
   "menu": {

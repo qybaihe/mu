@@ -11,12 +11,17 @@ import JournalTab from '@/renderer/pages/conversation/KyrnPanel/Journal';
 type Answer = { ok: true; data: JournalView } | { ok: false; error: string };
 
 const read = vi.hoisted(() => vi.fn<() => Promise<Answer>>());
+const quizState = vi.hoisted(() => vi.fn<() => Promise<{ ok: true; data: { model?: string } }>>());
 vi.mock('@/common/kyrn/bridge', () => ({
-  kyrnBridge: { journal: { invoke: read } },
+  kyrnBridge: { journal: { invoke: read }, quizState: { invoke: quizState } },
   unwrap: (result: Answer) => {
     if (result.ok === false) throw new Error(result.error);
     return result.data;
   },
+}));
+// The quiz's modal brings the theme context with it; the tab's rows need none of it.
+vi.mock('@/renderer/hooks/context/ThemeContext', () => ({
+  useThemeContext: () => ({ theme: 'light', fontScale: 1 }),
 }));
 
 const copy = common.kyrn.journalView;
@@ -54,6 +59,8 @@ const fold = () => screen.getByTestId('mu-journal-earlier-toggle');
 
 beforeEach(() => {
   read.mockReset();
+  quizState.mockReset();
+  quizState.mockResolvedValue({ ok: true, data: {} });
 });
 afterEach(() => cleanup());
 

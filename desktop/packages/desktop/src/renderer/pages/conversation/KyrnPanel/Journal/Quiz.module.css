@@ -1,0 +1,106 @@
+/* The quiz's own surface: the modal card a question lives in, and the little mark a pass leaves on the row. */
+
+/* The row's quiz corner: button and pass mark sit at the row's end, before the date. */
+.launch:global(.arco-btn) {
+  flex: none;
+  padding: 0 4px;
+  color: var(--text-secondary);
+}
+
+.passed {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid var(--success);
+  border-radius: 4px;
+  color: var(--success);
+  font-size: 11px;
+  line-height: 16px;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+/* The modal card: the question, the four options, the verdict. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 2px 0;
+}
+
+.stem {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 22px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* One option as a verdict shows it: the right one green, the one picked wrong red. */
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-light, var(--border-base));
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.optionRight {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.optionWrong {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.right {
+  color: var(--success);
+}
+
+.wrong {
+  color: var(--danger);
+}
+
+.quiet {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.source {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 2px solid var(--border-base);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  word-break: break-word;
+}
+
+.row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

@@ -305,7 +305,7 @@ describe('the work panel', () => {
     expect(strip()).toEqual(['Board', 'Judge', 'Files']);
     expect(screen.getByRole('tablist')).toHaveAccessibleName(common.workPanel.tabsLabel);
     fireEvent.click(screen.getByTestId('work-panel-more'));
-    expect(moreTabs()).toEqual(['hive', 'lessons', 'preview', 'source', 'browser']);
+    expect(moreTabs()).toEqual(['hive', 'lessons', 'journal', 'preview', 'source', 'browser']);
 
     // Opened from there, a tab joins the strip in its order, and stays once the person moves on.
     fireEvent.click(moreTab('source'));

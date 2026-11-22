@@ -1496,6 +1496,21 @@
         "lessons": "经验",
         "positions": "岗位"
       }
+    },
+    "quizView": {
+      "action": "快测",
+      "passed": "已测过",
+      "title": "10 秒快测",
+      "loading": "出题中…",
+      "submit": "提交",
+      "again": "再测一次",
+      "correct": "答对了",
+      "wrong": "答错了",
+      "sourceLabel": "出处",
+      "noModel": "还没有配置快速决策模型（设置 → 快速决策模型），无法出题",
+      "thin": "这条经验还不够出一道好题，先不测",
+      "failed": "出题失败，稍后再试",
+      "stale": "这条经验已经改过，重新测一次吧"
     }
   },
   "menu": {

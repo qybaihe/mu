@@ -115,10 +115,10 @@ describe('the work panel tab strip', () => {
     }
     expect(tabs().map((tab) => tab.getAttribute('aria-label'))).toEqual(labels);
     expect(screen.getByRole('tab', { selected: true })).toHaveAccessibleName(common.workPanel.tabs.judge);
-    // Eight icons fit where the labels did not, even in the narrowest panel (228px for the tabs): nothing is left
-    // out of view.
-    expect(WORK_PANEL_TABS).toHaveLength(8);
-    expect(WORK_PANEL_TABS.length * ICON_PX).toBeLessThanOrEqual(228);
+    // Nine icons (the journal among them) need 234px — past the narrowest panel's 228px for the tabs — so the strip
+    // scrolls rather than drops a tab: every tab stays reachable, none is taken out of view by the overflow.
+    expect(WORK_PANEL_TABS).toHaveLength(9);
+    expect(WORK_PANEL_TABS.length * ICON_PX).toBeGreaterThan(228);
   });
 
   it('names an icon in a tooltip on hover', async () => {
@@ -191,7 +191,7 @@ describe('the tabs a conversation uses', () => {
     const more = screen.getByTestId('work-panel-more');
     expect(more).toHaveTextContent(common.more);
     fireEvent.click(more);
-    expect(moreTabs()).toEqual(['hive', 'lessons', 'preview', 'source', 'browser']);
+    expect(moreTabs()).toEqual(['hive', 'lessons', 'journal', 'preview', 'source', 'browser']);
     fireEvent.click(moreTab('source'));
     expect(onSelect).toHaveBeenCalledWith('source');
   });
@@ -200,7 +200,7 @@ describe('the tabs a conversation uses', () => {
     show([], { used: ['browser', 'hive'] });
     expect(shown()).toEqual(['board', 'judge', 'hive', 'files', 'browser']);
     fireEvent.click(screen.getByTestId('work-panel-more'));
-    expect(moreTabs()).toEqual(['lessons', 'preview', 'source']);
+    expect(moreTabs()).toEqual(['lessons', 'journal', 'preview', 'source']);
   });
 
   it('brings a tab with news into the strip, dot and all', () => {
@@ -215,7 +215,7 @@ describe('the tabs a conversation uses', () => {
   });
 
   it('leaves out 更多 once every tab is in the strip', () => {
-    show([], { used: ['hive', 'lessons', 'preview', 'source', 'browser'] });
+    show([], { used: ['hive', 'lessons', 'journal', 'preview', 'source', 'browser'] });
     expect(shown()).toEqual([...WORK_PANEL_TABS]);
     expect(screen.queryByTestId('work-panel-more')).not.toBeInTheDocument();
   });

@@ -36,7 +36,7 @@ const used = (conversationId: string) => renderHook(() => useWorkPanelUsed(conve
 
 describe('what the work panel remembers', () => {
   it('shows the kernel tabs, then the project workspace, then the browser', () => {
-    expect(WORK_PANEL_TABS).toEqual(['board', 'judge', 'hive', 'lessons', 'files', 'preview', 'source', 'browser']);
+    expect(WORK_PANEL_TABS).toEqual(['board', 'judge', 'hive', 'lessons', 'journal', 'files', 'preview', 'source', 'browser']);
   });
 
   it('starts closed on the board, 360px wide', () => {

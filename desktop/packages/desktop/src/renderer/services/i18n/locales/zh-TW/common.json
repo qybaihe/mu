@@ -1496,6 +1496,21 @@
         "lessons": "經驗",
         "positions": "崗位"
       }
+    },
+    "quizView": {
+      "action": "快測",
+      "passed": "已測過",
+      "title": "10 秒快測",
+      "loading": "出題中…",
+      "submit": "提交",
+      "again": "再測一次",
+      "correct": "答對了",
+      "wrong": "答錯了",
+      "sourceLabel": "出處",
+      "noModel": "還沒有設定快速決策模型（設定 → 快速決策模型），無法出題",
+      "thin": "這條經驗還不夠出一道好題，先不測",
+      "failed": "出題失敗，稍後再試",
+      "stale": "這條經驗已經改過，重新測一次吧"
     }
   },
   "menu": {

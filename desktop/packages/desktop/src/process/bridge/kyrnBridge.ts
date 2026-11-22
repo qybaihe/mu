@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { app, net, shell } from 'electron';
-import { kyrnBridge } from '../../common/kyrn/bridge';import { KyrnError, kyrnFailure, type KyrnResult } from '../../common/kyrn/errors';
+import { kyrnBridge } from '../../common/kyrn/bridge';
+import { KyrnError, kyrnFailure, type KyrnResult } from '../../common/kyrn/errors';
 import { kyrnFolderBridge } from '../../common/kyrn/folderBridge';
 import { isSubscriptionProvider } from '../../common/kyrn/login';
 import { isMudeInstalled } from '../../common/kyrn/mude';
@@ -28,6 +29,7 @@ import {
 } from '../agent/kyrn/capabilities/mcp';
 import { LessonsStore, lessonsPath, lessonsProject, type LessonsProject } from '../agent/kyrn/lessons';
 import { JournalStore, lessonsLedgerFile } from '../agent/kyrn/journal';
+import { QuizService, quizModelStateIn, quizProdDeps } from '../agent/kyrn/quiz';
 import { findFiles, folderScripts, listFolder, openFolder, readFolder } from '../agent/kyrn/folderFiles';
 import { gitRunner } from '../services/folderGit/runGit';
 import { activityPage, modelLevels } from '../agent/kyrn/telemetry';
@@ -257,8 +259,16 @@ export function initKyrnBridge(): void {
   );
   // The journal reads both files whole — no conversation, no project: the person's own record, not a project's.
   // The ledger sits where the supervisor puts it: the profile's data dir (userData), beside its positions workspaces.
-  const journal = new JournalStore(lessonsPath(agentDir), lessonsLedgerFile(getPlatformServices().paths.getDataDir()));
+  const lessonsFile = lessonsPath(agentDir);
+  const ledgerFile = lessonsLedgerFile(getPlatformServices().paths.getDataDir());
+  const journal = new JournalStore(lessonsFile, ledgerFile);
   kyrnBridge.journal.provider(() => result(() => journal.view()));
+  // The journal's quiz: same two files, one shared question cache. The answer key stays in this process — the bridge
+  // carries the question without it, and the graded verdict back.
+  const quiz = new QuizService({ lessonsFile, ledgerFile }, quizProdDeps());
+  kyrnBridge.quizState.provider(() => result(() => quizModelStateIn(quizProdDeps())));
+  kyrnBridge.quizQuestion.provider(({ entryId }) => result(() => quiz.ask(entryId)));
+  kyrnBridge.quizAnswer.provider(({ entryId, hash, choice }) => result(() => quiz.answer(entryId, hash, choice)));
   kyrnFolderBridge.files.provider(({ cwd, path }) => result(() => listFolder(readFolder(cwd), path)));
   kyrnFolderBridge.find.provider(({ cwd }) => result(() => findFiles(readFolder(cwd), gitRunner())));
   kyrnFolderBridge.scripts.provider(({ cwd }) => result(() => folderScripts(readFolder(cwd))));

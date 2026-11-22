@@ -108,8 +108,11 @@ const logDecision = (
   );
 };
 
-/** A resolved decision model: the live provider with the setting's model. */
-const resolveModel = async (deps: QuickDecisionDeps): Promise<TProviderWithModel | undefined> => {
+/** The least a caller must give to resolve the decision model: the setting reader and the live provider list. */
+export type DecisionModelDeps = Pick<QuickDecisionDeps, 'readSetting' | 'listProviders'>;
+
+/** The configured decision model, resolved against the live providers: undefined (either step) = the feature is off, not broken. */
+export const resolveQuickDecisionModel = async (deps: DecisionModelDeps): Promise<TProviderWithModel | undefined> => {
   let setting: QuickDecisionModelSetting | undefined;
   try {
     setting = await deps.readSetting();
@@ -136,7 +139,7 @@ export async function routeQuickDecisionIn(
   counters: QuickDecisionCounters,
   params: QuickDecisionRouteParams
 ): Promise<QuickDecisionRouteResult> {
-  const model = await resolveModel(deps);
+  const model = await resolveQuickDecisionModel(deps);
   if (!model) return { action: 'full', reason: 'no-model-configured' };
 
   const input = params.input.trim();
@@ -370,7 +373,8 @@ async function askModel(
  * within `timeoutMs`. The AbortController still cancels an OpenAI-family
  * request in flight; the race covers every other adapter.
  */
-const completeUnderCeiling = async (
+/** One model call under its own ceiling (the race the adapters' abort gaps leave); shared by every cheap-model caller. */
+export const completeUnderCeiling = async (
   provider: TProviderWithModel,
   messages: Array<{ role: 'system' | 'user'; content: string }>,
   timeoutMs: number
@@ -458,7 +462,7 @@ export async function routeTeamMessageIn(
   counters: QuickDecisionCounters,
   params: { input: string; teamId: string }
 ): Promise<QuickDecisionRouteTeamResult> {
-  const model = await resolveModel(deps);
+  const model = await resolveQuickDecisionModel(deps);
   if (!model) return { action: 'full', reason: 'no-model-configured' };
   const input = params.input.trim();
   if (!input) return { action: 'full', reason: 'empty-input' };
@@ -587,7 +591,7 @@ export async function dispatchHintIn(
   counters: QuickDecisionCounters,
   params: { input: string }
 ): Promise<QuickDecisionHintResult> {
-  const model = await resolveModel(deps);
+  const model = await resolveQuickDecisionModel(deps);
   if (!model) return { action: 'none', reason: 'no-model-configured' };
   const input = params.input.trim();
   if (!input) return { action: 'none', reason: 'empty-input' };
@@ -685,7 +689,7 @@ export async function contextStewardDecisionIn(
   counters: QuickDecisionCounters,
   params: ContextStewardAskParams
 ): Promise<ContextStewardEngineResult> {
-  const model = await resolveModel(deps);
+  const model = await resolveQuickDecisionModel(deps);
   if (!model) return { answered: false, reason: 'no-model-configured' };
   const startedAt = deps.now();
   const ask = await askModel(deps, counters, model, 'context-steward', buildContextStewardPrompt(params), startedAt);
@@ -735,7 +739,7 @@ export async function thinkingLevelIn(
   counters: QuickDecisionCounters,
   params: { input: string }
 ): Promise<QuickDecisionThinkingResult> {
-  const model = await resolveModel(deps);
+  const model = await resolveQuickDecisionModel(deps);
   if (!model) return { action: 'keep', reason: 'no-model-configured' };
   const input = params.input.trim();
   if (!input) return { action: 'keep', reason: 'empty-input' };

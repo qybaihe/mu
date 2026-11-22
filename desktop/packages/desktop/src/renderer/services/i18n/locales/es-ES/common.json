@@ -1496,6 +1496,21 @@
         "lessons": "Lección",
         "positions": "Puesto"
       }
+    },
+    "quizView": {
+      "action": "Test rápido",
+      "passed": "Probado",
+      "title": "Test de 10 segundos",
+      "loading": "Escribiendo la pregunta…",
+      "submit": "Enviar",
+      "again": "Otra vez",
+      "correct": "Correcto",
+      "wrong": "Incorrecto",
+      "sourceLabel": "Cuándo aplica",
+      "noModel": "Sin modelo de decisión rápida configurado (Ajustes → Modelo de decisión rápida); el test necesita uno",
+      "thin": "Esta lección es demasiado breve para una buena pregunta — omitida",
+      "failed": "No se pudo escribir la pregunta; prueba más tarde",
+      "stale": "Esta lección cambió — prueba la nueva"
     }
   },
   "menu": {

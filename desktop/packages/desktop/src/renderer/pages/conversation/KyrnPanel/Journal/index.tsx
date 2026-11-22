@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
+import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import type { JournalEntry } from '@/common/kyrn/journal';
 import type { Activity } from '@/common/kyrn/types';
 import { noteWorkPanelSignature } from '@/renderer/components/layout/WorkPanel/workPanelStore';
 import { memoryEvents } from '../Lessons/model';
 import { ErrorNotice } from '../text';
+import EntryQuiz from './Quiz';
 import { useJournal } from './useJournal';
 import styles from './Journal.module.css';
 
@@ -53,6 +55,22 @@ export default function JournalTab({
   );
   const { view, error, loading } = useJournal(signature, visible);
   const [open, setOpen] = useState(false);
+  // The quiz's model, asked once per mount: the buttons disable on it (no model = no quiz, said up front, not on click).
+  const [quizModel, setQuizModel] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    let disposed = false;
+    void (async () => {
+      try {
+        const state = unwrap(await kyrnBridge.quizState.invoke());
+        if (!disposed && typeof state.model === 'string') setQuizModel(state.model);
+      } catch {
+        // An unreadable state reads as no model: the buttons stay disabled, the guidance stays true.
+      }
+    })();
+    return () => {
+      disposed = true;
+    };
+  }, []);
   const entries = view?.entries ?? NONE;
   const recent = entries.slice(0, RECENT);
   const earlier = entries.slice(RECENT);
@@ -82,7 +100,7 @@ export default function JournalTab({
           </h3>
           <ol className={styles.rows}>
             {recent.map((entry) => (
-              <Entry key={entry.id} entry={entry} />
+              <Entry key={entry.id} entry={entry} quizModel={quizModel} />
             ))}
           </ol>
           {earlier.length ? (
@@ -100,7 +118,7 @@ export default function JournalTab({
               {open ? (
                 <ol className={styles.rows} data-testid='mu-journal-earlier'>
                   {earlier.map((entry) => (
-                    <Entry key={entry.id} entry={entry} />
+                    <Entry key={entry.id} entry={entry} quizModel={quizModel} />
                   ))}
                 </ol>
               ) : null}
@@ -117,8 +135,8 @@ export default function JournalTab({
   );
 }
 
-/** One entry, one line: where it came from, where it holds, the words, when. */
-function Entry({ entry }: { entry: JournalEntry }) {
+/** One entry, one line: where it came from, where it holds, the words, when — and the quiz that asks if they stuck. */
+function Entry({ entry, quizModel }: { entry: JournalEntry; quizModel?: string }) {
   const { t } = useTranslation();
   const scope = scopeOf(entry);
   return (
@@ -133,6 +151,7 @@ function Entry({ entry }: { entry: JournalEntry }) {
       <span className={styles.text} dir='auto' title={entry.text}>
         {entry.text}
       </span>
+      <EntryQuiz entry={entry} model={quizModel} />
       <span className={styles.when}>{entry.at.slice(0, 10)}</span>
     </li>
   );

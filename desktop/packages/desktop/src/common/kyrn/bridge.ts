@@ -4,6 +4,7 @@ import type { ClmServerState } from './clm';
 import { KyrnError, type KyrnResult } from './errors';
 import type { ImportedHistory, ImportList, ImportOutcome } from './importChats';
 import type { JournalView } from './journal';
+import type { QuizAnswerResult, QuizAskResult } from '../chat/journal/quizCore';
 import type { LessonChange, LessonsView } from './lessons';
 import type { LoginEnable, LoginState, LoginStatus, SignOutSwitch, SubscriptionProvider } from './login';
 import type { ModelRequest, ModelsState, MudeAction, MudeState } from './mude';
@@ -46,6 +47,14 @@ export const kyrnBridge = {
    * (common/kyrn/journal.ts). Read-only; nothing the journal writes anywhere.
    */
   journal: bridge.buildProvider<KyrnResult<JournalView>, void>('kyrn.journal.view'),
+  /** Whether the journal's quiz can ask: the model it would use, or none. */
+  quizState: bridge.buildProvider<KyrnResult<{ model?: string }>, void>('kyrn.quiz.state'),
+  /** One entry's quiz: the question without its answer key, or why there is none (common/chat/journal/quizCore.ts). */
+  quizQuestion: bridge.buildProvider<KyrnResult<QuizAskResult>, { entryId: string }>('kyrn.quiz.question'),
+  /** One answer, graded in the main process; the key crosses only as this verdict. */
+  quizAnswer: bridge.buildProvider<KyrnResult<QuizAnswerResult>, { entryId: string; hash: string; choice: number }>(
+    'kyrn.quiz.answer'
+  ),
   /**
    * Claude Code, Codex and ZCode conversations on this computer (common/kyrn/importChats.ts); with `cwd`, only that project's.
    * Each says whether a conversation holds it already: with `native`, the mu session made from it.

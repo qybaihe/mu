@@ -1496,6 +1496,21 @@
         "lessons": "Lição",
         "positions": "Posição"
       }
+    },
+    "quizView": {
+      "action": "Quiz rápido",
+      "passed": "Testado",
+      "title": "Quiz de 10 segundos",
+      "loading": "Escrevendo a pergunta…",
+      "submit": "Enviar",
+      "again": "Tentar de novo",
+      "correct": "Certo",
+      "wrong": "Errado",
+      "sourceLabel": "Quando se aplica",
+      "noModel": "Nenhum modelo de decisão rápida configurado (Configurações → Modelo de decisão rápida); o quiz precisa de um",
+      "thin": "Esta lição é rasa demais para uma boa pergunta — ignorada",
+      "failed": "Não foi possível escrever a pergunta; tente mais tarde",
+      "stale": "Esta lição mudou — faça a nova"
     }
   },
   "menu": {
