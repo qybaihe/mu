@@ -9,8 +9,11 @@ import type {
   NativeStatusEvent,
 } from '@/common/kyrn/nativeBridge';
 import {
+  earlierOf,
   emptyView,
   reduce,
+  windowedView,
+  WINDOW_BUDGET,
   type NativeView,
   type PiCommand,
   type PiRecord,
@@ -20,8 +23,10 @@ import type { NativeClient } from '@/renderer/pages/native/utils/nativeClient';
 
 /**
  * An in-memory native host for the screens' tests: it holds each conversation's view as the main process would
- * (every record folded with the same reducer, numbered), answers `open` with it, and pushes records, statuses and
- * changes to whoever listens. What a command answers is up to the test (`answer`), and every call is kept (`calls`).
+ * (every record folded with the same reducer, numbered), answers `open` with it — its messages windowed as the
+ * bridge windows them (`windowBudget`, the real budget by default) — and answers `earlier` with the page before,
+ * from the whole view it holds. It pushes records, statuses and changes to whoever listens. What a command answers
+ * is up to the test (`answer`), and every call is kept (`calls`).
  */
 
 type Hosted = {
@@ -41,6 +46,7 @@ type Call = {
   cwd?: string;
   permissions?: string;
   name?: string;
+  before?: string;
 };
 
 export type FakeHost = {
@@ -93,7 +99,7 @@ const listen =
 const unknown = (id: string) =>
   ({ ok: false, kind: 'unknown-conversation', message: `No conversation ${id}` }) as const;
 
-export function createFakeHost(): FakeHost {
+export function createFakeHost(windowBudget: number = WINDOW_BUDGET): FakeHost {
   const hosted = new Map<string, Hosted>();
   const calls: Call[] = [];
   const records = new Set<(event: NativeRecordEvent) => void>();
@@ -141,10 +147,16 @@ export function createFakeHost(): FakeHost {
           conversation: found.conversation,
           status: found.status,
           seq: found.seq,
-          view: found.view,
+          view: windowedView(found.view, windowBudget),
           ...(found.session ? { session: found.session } : {}),
         },
       };
+    },
+    earlier: async (id, before) => {
+      calls.push({ method: 'earlier', id, before });
+      const found = hosted.get(id);
+      if (!found) return unknown(id);
+      return { ok: true, data: earlierOf(found.view, before, windowBudget) };
     },
     request: async (id, command) => {
       calls.push({ method: 'request', id, command });

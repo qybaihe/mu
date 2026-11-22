@@ -2,6 +2,7 @@ import type {
   NativeAttentionEvent,
   NativeChangedEvent,
   NativeConversation,
+  NativeEarlier,
   NativeRecordEvent,
   NativeReplacedEvent,
   NativeSnapshot,
@@ -42,6 +43,8 @@ export type NativeConversationsApi = {
   /** `permissions`: the permission mode its mu starts in (MU_PERMISSIONS), mu's default when left out. */
   create(input: { cwd: string; permissions?: string }): Promise<NativeConversation>;
   open(id: string): Promise<NativeSnapshot>;
+  /** The page of messages before the one a windowed view starts at (Conversation.earlier). */
+  earlier(id: string, before: string): Promise<NativeEarlier>;
   request(id: string, command: PiCommand): Promise<unknown>;
   respond(id: string, dialogId: string, answer: DialogAnswer): Promise<void>;
   close(id: string): Promise<void>;

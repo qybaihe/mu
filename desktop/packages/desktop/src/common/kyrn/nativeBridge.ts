@@ -17,7 +17,15 @@
  * change what is here incompatibly. No Node APIs: the renderer imports it.
  */
 import { bridge } from '../platform/bridge';
-import type { DialogAnswer, NativeView, PiCommand, PiRecord, SessionSettings } from '../utils/nativeHost';
+import type {
+  DialogAnswer,
+  NativeView,
+  PiCommand,
+  PiRecord,
+  SessionSettings,
+  ViewMessage,
+  ViewWindow,
+} from '../utils/nativeHost';
 
 /**
  * Why a call failed. The first eleven are the native host manager's own kinds (`NativeHostErrorKind`,
@@ -104,6 +112,10 @@ export type NativeSnapshot = {
   status: NativeHostStatus;
   /** Every record up to and including this one is folded into `view`. */
   seq: number;
+  /**
+   * The view as of `seq`, its messages windowed to what fits the crossing when the whole conversation would not
+   * (windowing.ts): `view.window` says what was left out, and `earlier` brings the pages before it back.
+   */
   view: NativeView;
   /**
    * Only for a view read from the session file (no host runs): the model, thinking level and permission mode its
@@ -112,6 +124,9 @@ export type NativeSnapshot = {
    */
   session?: SessionSettings;
 };
+
+/** What `earlier` answers: one page of the messages a windowed view left out, and the window a view holding them would have. */
+export type NativeEarlier = { messages: ViewMessage[]; window: ViewWindow };
 
 /**
  * What the main process pushes.
@@ -170,6 +185,12 @@ export const nativeBridge = {
    * is read from its session file (no host starts to show history). `seq` is 0 for a view read from a file.
    */
   open: bridge.buildProvider<NativeResult<NativeSnapshot>, { id: string }>('mu.native.open'),
+  /**
+   * One page of the messages before the one a windowed view starts at (`before`, its first message's id), oldest
+   * first, with the window a view holding them would have. An anchor the conversation's view no longer has (it moved
+   * on to another session) answers with no messages: the next `replaced` says where the view starts then.
+   */
+  earlier: bridge.buildProvider<NativeResult<NativeEarlier>, { id: string; before: string }>('mu.native.earlier'),
   /**
    * Sends a command to pi and answers with its response data (`get_state`, `set_model`, `prompt`, `steer`,
    * `follow_up`, `abort`, `get_commands`, ...). A `prompt` resolves when pi accepted it; the turn's end is the

@@ -147,6 +147,8 @@ export type NativeConversationApi = {
   /** A dialog whose time ran out: pi took its default, and says nothing of it. */
   expire: (dialogId: string) => void;
   request: (command: PiCommand) => Promise<NativeResult<unknown>>;
+  /** Brings in the page of messages before the view's first, when the view is windowed (`view.window`). */
+  loadEarlier: () => Promise<void>;
   /** Forgets the last failed command, once the person has read it. */
   clearFailure: () => void;
   /** Names the conversation (the main process: pi's `set_session_name`, or the file); the new title comes as a change. */
@@ -408,6 +410,28 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
     [client, fail]
   );
 
+  // One page of the messages before the view's first, prepended once it comes: the view the page builds is what the
+  // conversation would have opened with had the window reached further back. A view replaced while the page was on
+  // its way (another session, a rebuild) is not prepended to: its epoch and first message no longer match.
+  const fetchingEarlier = useRef(false);
+  const loadEarlier = useCallback(async (): Promise<void> => {
+    const now = latest.current;
+    const first = now.view.messages[0]?.id;
+    if (!first || fetchingEarlier.current) return;
+    fetchingEarlier.current = true;
+    try {
+      const result = await client.earlier(now.id, first);
+      if (result.ok)
+        commit((old) => {
+          if (old.epoch !== now.epoch || old.view.messages[0]?.id !== first || !result.ok) return old;
+          const view = { ...old.view, messages: [...result.data.messages, ...old.view.messages] };
+          return { ...old, view: result.data.messages.length > 0 ? { ...view, window: result.data.window } : view };
+        });
+    } finally {
+      fetchingEarlier.current = false;
+    }
+  }, [client, commit]);
+
   /**
    * Sends one message: the prompt (a steer while a run goes), after the commands that set the conversation up, if any.
    * The message shows at once (`outgoing`) and stops being on its way once pi took it.
@@ -588,7 +612,20 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
   const rename = useCallback((name: string) => client.rename(latest.current.id, name), [client]);
 
   return useMemo(
-    () => ({ ...state, key, retry, send, takeBackWaiting, abort, respond, expire, request, clearFailure, rename }),
-    [state, key, retry, send, takeBackWaiting, abort, respond, expire, request, clearFailure, rename]
+    () => ({
+      ...state,
+      key,
+      retry,
+      send,
+      takeBackWaiting,
+      abort,
+      respond,
+      expire,
+      request,
+      loadEarlier,
+      clearFailure,
+      rename,
+    }),
+    [state, key, retry, send, takeBackWaiting, abort, respond, expire, request, loadEarlier, clearFailure, rename]
   );
 }

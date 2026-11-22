@@ -298,4 +298,46 @@ describe('a long conversation on the native page', () => {
     expect(shown()).toHaveLength(ROW_WINDOW);
     expect(shown().at(-1)).toBe('answer 1149');
   });
+
+  it('brings the messages of a windowed view in as the reader reaches the top of what it holds', async () => {
+    // The view crosses windowed (utils/rowWindow.ts's bigger sibling in the main process): a budget that holds the
+    // last two turns, four rows, of a conversation of twenty.
+    const whole = viewOfTurns(20);
+    const budget = whole.messages
+      .slice(-4)
+      .reduce((total, message) => total + JSON.stringify(message).length, 0);
+    const host = createFakeHost(budget);
+    host.add({ id: 'c1' }, whole);
+    page(host.client);
+    await opened();
+    expect(shown()).toEqual(['question 18', 'answer 18', 'question 19', 'answer 19']);
+
+    // Each reach of the top brings one page of two turns, drawn above what the reader is looking at.
+    for (const [count, first] of [
+      [8, 'question 16'],
+      [12, 'question 14'],
+      [16, 'question 12'],
+    ] as const) {
+      reachTop();
+      // oxlint-disable-next-line no-await-in-loop -- one page at a time, as the reader asks for them
+      await waitFor(() => expect(shown()).toHaveLength(count));
+      expect(shown()[0]).toBe(first);
+      expect(shown().at(-1)).toBe('answer 19');
+    }
+    const pages = host.calls.filter((call) => call.method === 'earlier').length;
+    expect(pages).toBe(3);
+
+    // The rest comes the same way, until the whole conversation is held and no page is left to ask for.
+    for (let page = 0; page < 6; page++) {
+      reachTop();
+      // oxlint-disable-next-line no-await-in-loop -- the reader keeps paging to the start
+      await act(async () => {});
+    }
+    await waitFor(() => expect(shown()[0]).toBe('question 0'));
+    expect(shown()).toHaveLength(40);
+    expect(host.calls.filter((call) => call.method === 'earlier').length).toBe(9);
+    reachTop();
+    await act(async () => {});
+    expect(host.calls.filter((call) => call.method === 'earlier')).toHaveLength(9);
+  });
 });

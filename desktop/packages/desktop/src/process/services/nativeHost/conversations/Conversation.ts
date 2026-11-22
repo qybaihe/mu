@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { appendFile, open, stat } from 'node:fs/promises';
 import type { SwitchedModel } from '../../../../common/kyrn/login.ts';
 import { enabledModels } from '../../../../common/kyrn/models.ts';
-import type { NativeConversation, NativeHostStatus, NativeSnapshot } from '../../../../common/kyrn/nativeBridge.ts';
+import type { NativeConversation, NativeEarlier, NativeHostStatus, NativeSnapshot } from '../../../../common/kyrn/nativeBridge.ts';
 import { readPresentation } from '../../../../common/utils/nativeHost/presentation.ts';
 import {
   asList,
@@ -21,6 +21,7 @@ import {
 import { fromEntries, reduce } from '../../../../common/utils/nativeHost/reducer.ts';
 import type { SessionSettings } from '../../../../common/utils/nativeHost/settings.ts';
 import { emptyView, isJobLive, type NativeView } from '../../../../common/utils/nativeHost/view.ts';
+import { earlierOf } from '../../../../common/utils/nativeHost/windowing.ts';
 import { NativeHostError, type NativeHostState } from '../NativeHost.ts';
 import type { SessionRead, SessionViewRead } from '../sessions/readSession.ts';
 import type { StoredSession } from '../sessions/SessionStore.ts';
@@ -348,6 +349,15 @@ export class Conversation {
       view,
       ...(Object.keys(session).length > 0 ? { session } : {}),
     };
+  }
+
+  /**
+   * The page of messages before the one `before` names (a windowed view's first), from the host's whole view when one
+   * is ready, else the session file's: reading history starts no host, as `snapshot` does not.
+   */
+  async earlier(before: string): Promise<NativeEarlier> {
+    const view = this.host && this.ready ? this.view : await this.fileView();
+    return earlierOf(view, before);
   }
 
   /** Sends a command to pi, starting the host first when none runs. */

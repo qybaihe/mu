@@ -129,16 +129,30 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
   // A step up shows the rows before the window; the list asks when the reader reaches its top, one step at a time.
   // Kept stable via a ref so streaming updates to `rows` do not recreate `loadEarlier` and `run` on every token delta,
   // which would invalidate `MessageListRunContext` and force every memoised `MessageItem` to re-render.
-  const windowStateRef = useRef({ epoch, rows, start });
-  windowStateRef.current = { epoch, rows, start };
+  //
+  // The rows before are in the view until the view itself is windowed (a conversation too large to cross whole,
+  // utils/rowWindow.ts's bigger sibling in the main process): past the last of them the step asks the main process for
+  // the page of messages before, whose rows reach the list in a render of their own.
+  const dropped = view.window?.dropped ?? 0;
+  const windowStateRef = useRef({ epoch, rows, start, dropped });
+  windowStateRef.current = { epoch, rows, start, dropped };
+  const fetchEarlier = useRef(conversation.loadEarlier);
+  fetchEarlier.current = conversation.loadEarlier;
   const loadEarlier = useCallback((): boolean => {
-    const { epoch: currentEpoch, rows: currentRows, start: currentStart } = windowStateRef.current;
-    if (currentStart <= 0) return false;
-    setPin({ epoch: currentEpoch, id: currentRows[windowStart(currentRows, ROW_WINDOW, currentStart)].id });
-    return true;
+    const { epoch: currentEpoch, rows: currentRows, start: currentStart, dropped: currentDropped } =
+      windowStateRef.current;
+    if (currentStart > 0) {
+      setPin({ epoch: currentEpoch, id: currentRows[windowStart(currentRows, ROW_WINDOW, currentStart)].id });
+      return true;
+    }
+    if (currentDropped > 0) {
+      void fetchEarlier.current();
+      return true;
+    }
+    return false;
   }, []);
   const setPagination = useUpdateMessagePaginationState();
-  const hasEarlier = start > 0;
+  const hasEarlier = start > 0 || dropped > 0;
   useLayoutEffect(() => {
     setPagination({ hasMoreBefore: hasEarlier, hasMoreAfter: false, isLoadingBefore: false, isLoadingAnchor: false });
   }, [hasEarlier, setPagination]);

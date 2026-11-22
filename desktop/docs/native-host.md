@@ -314,9 +314,13 @@ mu command switches into one anyway, the other conversation's host ends.
 
 ### Limits
 
-- A view over 48 MB as JSON is not sent: `open` answers `failed` ("too large to show"). The IPC adapter drops any
-  message over 50 MB (`common/adapter/main.ts`), which would leave the call unanswered. A `replaced` that large is
-  dropped by the adapter (the renderer keeps its copy). A 50 MB session of tool output gives a 48 MB view.
+- A view's messages are windowed before they cross: `open` and `replaced` carry the last messages within 2 MB as
+  JSON (`windowing.ts`), with `view.window` saying how many were left out, and `earlier` brings the pages before them
+  back, a budget at a time. The whole view is still folded in the main process; only the crossing is windowed.
+- What the window does not trim — a single message over the budget (kept alone), the judgments, the activity — can
+  still grow past the limit: a view over 48 MB as JSON is not sent, and `open` answers `failed` ("too large to
+  show"). The IPC adapter drops any message over 50 MB (`common/adapter/main.ts`), which would leave the call
+  unanswered. A `replaced` that large is dropped by the adapter (the renderer keeps its copy).
 - `fromEntries` runs in the main process and is quadratic in the number of messages (each message copies the list):
   see below.
 

@@ -10,6 +10,7 @@ import {
   type NativeAttentionEvent,
   type NativeChangedEvent,
   type NativeConversation,
+  type NativeEarlier,
   type NativeRecordEvent,
   type NativeReplacedEvent,
   type NativeResult,
@@ -25,6 +26,8 @@ export type NativeClient = {
   /** A new conversation in `cwd`; `permissions` is the mode its mu starts in (mu's own default when left out). */
   create: (cwd: string, permissions?: string) => Promise<NativeResult<NativeConversation>>;
   open: (id: string) => Promise<NativeResult<NativeSnapshot>>;
+  /** The page of messages before the one a windowed view starts at (`mu.native.earlier`). */
+  earlier: (id: string, before: string) => Promise<NativeResult<NativeEarlier>>;
   request: (id: string, command: PiCommand) => Promise<NativeResult<unknown>>;
   respond: (id: string, dialogId: string, answer: DialogAnswer) => Promise<NativeResult<void>>;
   close: (id: string) => Promise<NativeResult<void>>;
@@ -57,6 +60,7 @@ export const bridgeClient: NativeClient = {
   list: () => nativeBridge.list.invoke(),
   create: (cwd, permissions) => nativeBridge.create.invoke(permissions ? { cwd, permissions } : { cwd }),
   open: (id) => nativeBridge.open.invoke({ id }),
+  earlier: (id, before) => nativeBridge.earlier.invoke({ id, before }),
   request: (id, command) => nativeBridge.request.invoke({ id, command }),
   respond: (id, dialogId, answer) => nativeBridge.respond.invoke({ id, dialogId, answer }),
   close: (id) => nativeBridge.close.invoke({ id }),

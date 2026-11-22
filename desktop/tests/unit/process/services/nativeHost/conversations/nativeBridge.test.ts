@@ -8,6 +8,7 @@ import {
 } from '../../../../../../packages/desktop/src/common/kyrn/nativeBridge.ts';
 import { bridge } from '../../../../../../packages/desktop/src/common/platform/bridge.ts';
 import { emptyView } from '../../../../../../packages/desktop/src/common/utils/nativeHost/view.ts';
+import { windowedView } from '../../../../../../packages/desktop/src/common/utils/nativeHost/windowing.ts';
 import {
   bridgeEvents,
   initNativeBridge,
@@ -75,6 +76,7 @@ function conversations(patch: Partial<NativeConversationsApi> = {}): NativeConve
       seq: 0,
       view: emptyView(),
     })),
+    earlier: vi.fn(async () => ({ messages: [], window: { dropped: 0, total: 0 } })),
     request: vi.fn(async () => ({ sessionId: 'session-1' })),
     respond: vi.fn(async () => undefined),
     close: vi.fn(async () => undefined),
@@ -271,6 +273,42 @@ describe('the native conversation bridge in the main process', () => {
     });
   });
 
+  it('windows a view whose messages do not all fit, and answers the pages before what it sent', async () => {
+    const small = { id: 'm1', role: 'custom' as const, customType: 'x', text: 'x'.repeat(100) };
+    const large = { id: 'm2', role: 'custom' as const, customType: 'x', text: 'x'.repeat(3 * 1024 * 1024) };
+    const view = { ...emptyView(), messages: [small, large] };
+    const api = conversations({
+      open: vi.fn(async () => ({
+        conversation: CONVERSATION,
+        status: { phase: 'idle' as const },
+        seq: 0,
+        view,
+      })),
+      earlier: vi.fn(async () => ({ messages: [small], window: { dropped: 0, total: 2 } })),
+    });
+    registerNativeBridge(api);
+
+    const opened = await nativeBridge.open.invoke({ id: 'session-1' });
+    expect(opened).toMatchObject({
+      ok: true,
+      data: { view: { messages: [large], window: { dropped: 1, total: 2 } } },
+    });
+
+    await expect(nativeBridge.earlier.invoke({ id: 'session-1', before: 'm2' })).resolves.toEqual({
+      ok: true,
+      data: { messages: [small], window: { dropped: 0, total: 2 } },
+    });
+    expect(api.earlier).toHaveBeenCalledWith('session-1', 'm2');
+  });
+
+  it('refuses an earlier page without a conversation or a message to come before', async () => {
+    const api = conversations();
+    registerNativeBridge(api);
+    await expect(nativeBridge.earlier.invoke({ id: 'session-1' })).resolves.toEqual(refused('Invalid message id'));
+    await expect(nativeBridge.earlier.invoke({ id: '', before: 'm2' })).resolves.toEqual(refused('Invalid conversation'));
+    expect(api.earlier).not.toHaveBeenCalled();
+  });
+
   it('maps every manager kind onto the renderer’s kind of the same name', () => {
     for (const kind of [
       'off',
@@ -381,5 +419,22 @@ export function prepareLaunch() {}
     expect(status).toHaveBeenCalledWith({ id: 'session-1', status: { phase: 'running' } });
     expect(replaced).toHaveBeenCalledWith({ id: 'session-1', seq: 1, view: emptyView(), conversation: CONVERSATION });
     expect(changed).toHaveBeenCalledWith({ removed: 'session-1' });
+  });
+
+  it('windows a replaced view before it crosses, as it windows an opened one', () => {
+    const replaced = vi.fn();
+    const stop = nativeBridge.replaced.on(replaced);
+    const small = { id: 'm1', role: 'custom' as const, customType: 'x', text: 'x'.repeat(100) };
+    const large = { id: 'm2', role: 'custom' as const, customType: 'x', text: 'x'.repeat(3 * 1024 * 1024) };
+    const view = { ...emptyView(), messages: [small, large] };
+    bridgeEvents.replaced({ id: 'session-1', seq: 3, view, conversation: CONVERSATION });
+    stop();
+    expect(replaced).toHaveBeenCalledWith({
+      id: 'session-1',
+      seq: 3,
+      view: windowedView(view),
+      conversation: CONVERSATION,
+    });
+    expect(replaced.mock.calls[0][0].view.messages).toHaveLength(1);
   });
 });

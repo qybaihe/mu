@@ -517,4 +517,72 @@ describe('a reply streamed into the view', () => {
       globalThis.cancelAnimationFrame = realCancel;
     }
   });
+
+  it('brings the pages of a windowed view in before its first message, until the whole conversation is there', async () => {
+    const turns = Array.from({ length: 4 }, (_, index) => [
+      ended(user(`question ${index}`, index * 2 + 1)),
+      ended(reply([text(`answer ${index}`)]), { timestamp: index * 2 + 2 }),
+    ]).flat();
+    const whole = reduceAll(turns);
+    const sizeOf = (...messages: typeof whole.messages): number =>
+      messages.reduce((total, message) => total + JSON.stringify(message).length, 0);
+    // A budget that holds the last two messages: the window opens on them, and each page brings two more.
+    const host = createFakeHost(sizeOf(whole.messages[6], whole.messages[7]));
+    host.add({ id: 'c1' }, whole);
+    const { result } = mount(host);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.view.messages.map((message) => message.id)).toEqual(['m7', 'm8']);
+    expect(result.current.view.window).toEqual({ dropped: 6, total: 8 });
+
+    await act(async () => {
+      await result.current.loadEarlier();
+    });
+    expect(result.current.view.messages.map((message) => message.id)).toEqual(['m5', 'm6', 'm7', 'm8']);
+    expect(result.current.view.window).toEqual({ dropped: 4, total: 8 });
+
+    // Two more pages bring the whole conversation; the window is gone once nothing is left out.
+    await act(async () => {
+      await result.current.loadEarlier();
+      await result.current.loadEarlier();
+    });
+    expect(result.current.view.messages).toEqual(whole.messages);
+    expect(result.current.view.window).toEqual({ dropped: 0, total: 8 });
+  });
+
+  it('drops a page a replaced view outran: it belongs to a view no longer on screen', async () => {
+    const turns = Array.from({ length: 4 }, (_, index) => [
+      ended(user(`question ${index}`, index * 2 + 1)),
+      ended(reply([text(`answer ${index}`)]), { timestamp: index * 2 + 2 }),
+    ]).flat();
+    const whole = reduceAll(turns);
+    const sizeOf = (...messages: typeof whole.messages): number =>
+      messages.reduce((total, message) => total + JSON.stringify(message).length, 0);
+    const host = createFakeHost(sizeOf(whole.messages[6], whole.messages[7]));
+    host.add({ id: 'c1' }, whole);
+    // The page is answered only when the test says, as a slow crossing would be.
+    const gate: { go?: () => void } = {};
+    const crossed = new Promise<void>((resolve) => {
+      gate.go = resolve;
+    });
+    const client: NativeClient = {
+      ...host.client,
+      earlier: async (id, before) => {
+        const answer = await host.client.earlier(id, before);
+        await crossed;
+        return answer;
+      },
+    };
+    const { result } = mount(host, 'c1', client);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const held = result.current.view.messages.map((message) => message.id);
+    const bringing = act(async () => {
+      await result.current.loadEarlier();
+    });
+    // The view is replaced while the page is on its way: the page belongs to the view that was.
+    act(() => host.replace('c1', reduceAll([ended(user('fresh start', 1))])));
+    gate.go?.();
+    await bringing;
+    expect(result.current.view.messages.map((message) => message.id)).toEqual(['m1']);
+    expect(held).toEqual(['m7', 'm8']);
+  });
 });

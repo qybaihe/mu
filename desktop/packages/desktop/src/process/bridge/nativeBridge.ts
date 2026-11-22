@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { SwitchedModel } from '../../common/kyrn/login';
 import { nativeBridge, type NativeFailure, type NativeResult } from '../../common/kyrn/nativeBridge';
 import type { DialogAnswer, PiCommand, PiCommandType } from '../../common/utils/nativeHost/records';
+import { windowedView } from '../../common/utils/nativeHost/windowing.ts';
 import { muHome } from '../agent/kyrn/naming';
 import { isNativeHostEnabled, nativeHostReady, startNativeHost } from '../services/nativeHost';
 import { NativeHostError } from '../services/nativeHost/NativeHost';
@@ -46,7 +47,8 @@ const OFF: NativeFailure = {
 
 /**
  * The largest answer sent to the renderer. The IPC adapter drops a message over 50 MB (common/adapter/main.ts), and
- * the call would then never be answered; a view that large (a session of about 50 MB of tool output) fails instead.
+ * the call would then never be answered; a view's messages are windowed before this (windowing.ts), so this catches
+ * only what no window can hold: a single huge message, or the judgments and activity the window does not trim.
  */
 const LARGEST_ANSWER = 48 * 1024 * 1024;
 
@@ -183,6 +185,7 @@ export function registerNativeBridge(
     nativeBridge.list.provider(() => OFF);
     nativeBridge.create.provider(() => OFF);
     nativeBridge.open.provider(() => OFF);
+    nativeBridge.earlier.provider(() => OFF);
     nativeBridge.request.provider(() => OFF);
     nativeBridge.respond.provider(() => OFF);
     nativeBridge.close.provider(() => OFF);
@@ -192,9 +195,14 @@ export function registerNativeBridge(
   }
   nativeBridge.list.provider(() => answer(() => conversations.list()));
   nativeBridge.create.provider((input) => answer(() => conversations.create(readCreate(input))));
-  nativeBridge.open.provider(async (input) =>
-    sendable(await answer(() => conversations.open(readId(params(input).id, 'conversation'))))
-  );
+  nativeBridge.open.provider(async (input) => {
+    const opened = await answer(() => conversations.open(readId(params(input).id, 'conversation')));
+    return sendable(opened.ok ? { ok: true, data: { ...opened.data, view: windowedView(opened.data.view) } } : opened);
+  });
+  nativeBridge.earlier.provider(async (input) => {
+    const { id, before } = params(input);
+    return sendable(await answer(() => conversations.earlier(readId(id, 'conversation'), readId(before, 'message id'))));
+  });
   nativeBridge.request.provider((input) =>
     answer(() => {
       const { id, command } = params(input);
@@ -221,7 +229,7 @@ export function registerNativeBridge(
 export const bridgeEvents: ConversationEvents = {
   records: (event) => nativeBridge.records.emit(event),
   status: (event) => nativeBridge.status.emit(event),
-  replaced: (event) => nativeBridge.replaced.emit(event),
+  replaced: (event) => nativeBridge.replaced.emit({ ...event, view: windowedView(event.view) }),
   changed: (event) => nativeBridge.changed.emit(event),
   attention: (event) => nativeBridge.attention.emit(event),
 };

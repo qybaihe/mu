@@ -105,6 +105,13 @@ export type ViewCompaction = { id: string; role: 'compaction'; tokensBefore: num
 export type ViewMessage = ViewUserMessage | ViewAssistantMessage | ViewCustomMessage | ViewCompaction;
 
 /**
+ * The messages this view leaves out, from the head of the conversation (windowing.ts): `dropped` of `total` are not
+ * in `messages`, and the ones before come a page at a time (`mu.native.earlier`). Present only when some are left
+ * out: a view the app did not window carries every message and no `window`.
+ */
+export type ViewWindow = { dropped: number; total: number };
+
+/**
  * What the person answered to the permission question a judgment sent them to (a `kyrn.outcome` entry of kind
  * `permission`): allowed once, for the session, not allowed, the question closed, or nobody there to ask (`none`, and
  * the call was refused).
@@ -359,6 +366,8 @@ export type ViewBoard = { at: number; payload: JsonObject };
 
 export type NativeView = {
   messages: ViewMessage[];
+  /** Which messages a windowed view leaves out (windowing.ts); absent when it carries them all. */
+  window?: ViewWindow;
   status: TurnStatus;
   /** Why the last run failed, when `status` is `error`. */
   error?: string;

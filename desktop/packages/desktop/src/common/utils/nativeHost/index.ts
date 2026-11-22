@@ -8,4 +8,5 @@ export * from './records.ts';
 export * from './reducer.ts';
 export * from './settings.ts';
 export * from './view.ts';
+export * from './windowing.ts';
 export * from './words.ts';

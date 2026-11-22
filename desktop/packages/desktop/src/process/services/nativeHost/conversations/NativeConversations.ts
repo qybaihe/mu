@@ -3,7 +3,7 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { SwitchedModel } from '../../../../common/kyrn/login.ts';
-import type { NativeConversation, NativeSnapshot } from '../../../../common/kyrn/nativeBridge.ts';
+import type { NativeConversation, NativeEarlier, NativeSnapshot } from '../../../../common/kyrn/nativeBridge.ts';
 import type { DialogAnswer, PiCommand } from '../../../../common/utils/nativeHost/records.ts';
 import { NativeHostError } from '../NativeHost.ts';
 import { boundFile } from '../sessions/acpBindings.ts';
@@ -169,6 +169,10 @@ export class NativeConversations implements NativeConversationsApi {
 
   async open(id: string): Promise<NativeSnapshot> {
     return (await this.find(id)).snapshot();
+  }
+
+  async earlier(id: string, before: string): Promise<NativeEarlier> {
+    return (await this.find(id)).earlier(before);
   }
 
   async request(id: string, command: PiCommand): Promise<unknown> {

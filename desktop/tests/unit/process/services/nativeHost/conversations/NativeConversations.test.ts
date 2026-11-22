@@ -267,6 +267,25 @@ describe('native conversations', () => {
     await expect(w.conversations.list()).resolves.toEqual([expect.objectContaining({ id: draft.id })]);
   });
 
+  it('answers the page of messages before the one a windowed view starts at, reading no host into it', async () => {
+    const w = world();
+    const entries: unknown[] = [header('cli', w.project, 1)];
+    for (let turn = 0; turn < 6; turn++) {
+      entries.push(user(`u${turn + 1}`, turn === 0 ? null : `a${turn}`, `question ${turn}`, turn * 2 + 2));
+      entries.push(assistant(`a${turn + 1}`, `u${turn + 1}`, `answer ${turn}`, turn * 2 + 3));
+    }
+    writeSession(join(w.sessionsDir, '--project--', '2026_cli.jsonl'), entries);
+    await w.conversations.open('cli');
+    const whole = (await w.conversations.open('cli')).view;
+    expect(whole.messages.map((message) => message.id)).toHaveLength(12);
+    const page = await w.conversations.earlier('cli', 'm7');
+    expect(page.messages).toEqual(whole.messages.slice(0, 6));
+    expect(page.window).toEqual({ dropped: 0, total: 12 });
+    // An anchor this view does not have answers with no messages.
+    expect(await w.conversations.earlier('cli', 'm99')).toEqual({ messages: [], window: { dropped: 12, total: 12 } });
+    expect(w.pi.hosts).toHaveLength(0);
+  });
+
   it('starts an ended conversation again on the next command, resuming its file with its history', async () => {
     const w = world();
     const draft = await w.conversations.create({ cwd: w.project });
