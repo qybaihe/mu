@@ -1,4 +1,5 @@
-import { execFileSync, spawn } from "node:child_process";
+import { type ChildProcess, execFileSync, spawn } from "node:child_process";
+import { once } from "node:events";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { totalmem } from "node:os";
@@ -153,23 +154,23 @@ export async function startServer(paths: MudePaths, options: StartOptions): Prom
 	mkdirSync(paths.root, { recursive: true });
 	// The previous run's log goes, so that an error below is this run's.
 	rmSync(paths.log, { force: true });
+	const args = [
+		join(paths.model, "d3_server_mac.py"),
+		"--model",
+		paths.model,
+		"--host",
+		"127.0.0.1",
+		"--port",
+		String(options.port),
+		"--name",
+		options.name ?? MUDE_MODEL,
+		"--verify",
+		"fast",
+	];
 	const log = openSync(paths.log, "a", 0o600);
-	const child = spawn(
-		paths.python,
-		[
-			join(paths.model, "d3_server_mac.py"),
-			"--model",
-			paths.model,
-			"--host",
-			"127.0.0.1",
-			"--port",
-			String(options.port),
-			"--name",
-			options.name ?? MUDE_MODEL,
-			"--verify",
-			"fast",
-		],
-		{
+	let child: ChildProcess;
+	try {
+		child = spawn(paths.python, args, {
 			cwd: paths.model,
 			detached: true,
 			stdio: ["ignore", log, log],
@@ -184,9 +185,12 @@ export async function startServer(paths: MudePaths, options: StartOptions): Prom
 				TRANSFORMERS_OFFLINE: "1",
 				PYTHONUNBUFFERED: "1",
 			},
-		},
-	);
-	closeSync(log);
+		});
+		// A failed spawn emits an error asynchronously, even when the command does not wait for /health.
+		await once(child, "spawn");
+	} finally {
+		closeSync(log);
+	}
 	const pid = child.pid;
 	if (!pid) throw new Error("mude's server could not be started");
 	child.unref();
