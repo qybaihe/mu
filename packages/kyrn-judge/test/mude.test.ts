@@ -127,6 +127,14 @@ describe("downloading mude", () => {
 		expect(requests).toEqual([]);
 	});
 
+	it("downloads and verifies a zero-byte Git file on a fresh install", async () => {
+		const empty = { path: "empty.txt", size: 0, gitSha1: createHash("sha1").update("blob 0\0").digest("hex") };
+		const download = options({ files: [empty], fetch: async () => new Response("") });
+		await downloadFiles(download);
+		expect(readFileSync(join(dir, empty.path))).toHaveLength(0);
+		expect(missingFiles(dir, [empty])).toEqual([]);
+	});
+
 	it("goes on from the bytes an interrupted download left on the disk", async () => {
 		writeFileSync(join(dir, "a.txt.part"), contents["a.txt"].slice(0, 5000));
 		writeFileSync(join(dir, "a.txt.part.saved"), "4096\n");
@@ -309,6 +317,17 @@ describe.skipIf(process.platform === "win32")("mude's server", () => {
 			});
 		});
 	const quick = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, Math.min(ms, 50)));
+
+	it.each([true, false])("reports a broken Python interpreter without creating a PID (wait: %s)", async (wait) => {
+		const paths = mudePaths(join(dir, "home"));
+		mkdirSync(paths.model, { recursive: true });
+		mkdirSync(dirname(paths.python), { recursive: true });
+		// The file exists but its interpreter is gone, as can happen after moving a Python installation.
+		writeFileSync(paths.python, `#!${join(dir, "missing-python")}\n`, { mode: 0o755 });
+		const port = await freePort();
+		await expect(startServer(paths, { port, key: "k", wait })).rejects.toMatchObject({ code: "ENOENT" });
+		expect(existsSync(paths.pid)).toBe(false);
+	});
 
 	it("stops a server it started when its start is stopped, and leaves one that was running", async () => {
 		const paths = mudePaths(join(dir, "home"));
