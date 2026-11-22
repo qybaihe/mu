@@ -318,6 +318,17 @@ describe.skipIf(process.platform === "win32")("mude's server", () => {
 		});
 	const quick = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, Math.min(ms, 50)));
 
+	it.each([true, false])("reports a broken Python interpreter without creating a PID (wait: %s)", async (wait) => {
+		const paths = mudePaths(join(dir, "home"));
+		mkdirSync(paths.model, { recursive: true });
+		mkdirSync(dirname(paths.python), { recursive: true });
+		// The file exists but its interpreter is gone, as can happen after moving a Python installation.
+		writeFileSync(paths.python, `#!${join(dir, "missing-python")}\n`, { mode: 0o755 });
+		const port = await freePort();
+		await expect(startServer(paths, { port, key: "k", wait })).rejects.toMatchObject({ code: "ENOENT" });
+		expect(existsSync(paths.pid)).toBe(false);
+	});
+
 	it("stops a server it started when its start is stopped, and leaves one that was running", async () => {
 		const paths = mudePaths(join(dir, "home"));
 		mkdirSync(paths.model, { recursive: true });
