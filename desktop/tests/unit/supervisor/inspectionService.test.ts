@@ -102,7 +102,11 @@ describe('fetchRowsThrough', () => {
     const { deps } = makeDeps({
       pages: {
         c1: [
-          { items: [row(T0 - 100, { id: 'a' }), row(T0 - 200, { id: 'b' })], newest_cursor: 'p1', has_more_before: true },
+          {
+            items: [row(T0 - 100, { id: 'a' }), row(T0 - 200, { id: 'b' })],
+            newest_cursor: 'p1',
+            has_more_before: true,
+          },
           // The next page re-serves row b (cursor overlap) plus one older row.
           { items: [row(T0 - 200, { id: 'b' }), row(T0 - 300, { id: 'c' })], has_more_before: false },
         ],

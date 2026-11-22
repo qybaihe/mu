@@ -40,5 +40,7 @@
     "supervisor",
     "quickDecision",
     "inspection",
-    "contextSteward", "webhook"]
+    "contextSteward",
+    "webhook"
+  ]
 }

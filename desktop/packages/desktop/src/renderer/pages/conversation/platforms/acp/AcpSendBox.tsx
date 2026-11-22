@@ -410,17 +410,15 @@ const AcpSendBox: React.FC<{
                 ]);
                 if (found) {
                   offered = found.options.map((choice) => choice.value);
-                  option =
-                    option ??
-                    {
-                      id: found.id,
-                      currentValue: found.current_value ?? '',
-                      options: found.options.map((choice) => ({
-                        value: choice.value,
-                        label: choice.label ?? choice.name ?? choice.value,
-                      })),
-                      category: 'thought_level',
-                    };
+                  option = option ?? {
+                    id: found.id,
+                    currentValue: found.current_value ?? '',
+                    options: found.options.map((choice) => ({
+                      value: choice.value,
+                      label: choice.label ?? choice.name ?? choice.value,
+                    })),
+                    category: 'thought_level',
+                  };
                 }
               } catch {
                 // No options, no switch: the send keeps the current level.

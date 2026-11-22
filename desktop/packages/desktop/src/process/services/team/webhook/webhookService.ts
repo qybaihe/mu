@@ -293,7 +293,9 @@ const productionDeps = (): WebhookDeps => ({
  * assistant and its resolved default model carry the conversation.
  */
 async function createPositionConversation(position: PositionInfo): Promise<string | undefined> {
-  const assistants = await httpRequest<Array<Record<string, unknown>>>('GET', '/api/assistants').catch((): Array<Record<string, unknown>> => []);
+  const assistants = await httpRequest<Array<Record<string, unknown>>>('GET', '/api/assistants').catch(
+    (): Array<Record<string, unknown>> => []
+  );
   const enabled = (assistants ?? []).find((assistant): boolean => assistant.enabled !== false);
   const assistantId = typeof enabled?.id === 'string' ? enabled.id : undefined;
   if (!assistantId) return undefined;

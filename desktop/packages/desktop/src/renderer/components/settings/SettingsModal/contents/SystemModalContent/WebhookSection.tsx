@@ -18,7 +18,11 @@ import { Button, Message, Switch } from '@arco-design/web-react';
 import { Copy } from '@icon-park/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getClientBusinessSetting, removeClientBusinessSetting, setClientBusinessSetting } from '@/renderer/services/clientBusinessSettings';
+import {
+  getClientBusinessSetting,
+  removeClientBusinessSetting,
+  setClientBusinessSetting,
+} from '@/renderer/services/clientBusinessSettings';
 import MuSelect from '@/renderer/components/base/MuSelect';
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import PreferenceRow from './PreferenceRow';
