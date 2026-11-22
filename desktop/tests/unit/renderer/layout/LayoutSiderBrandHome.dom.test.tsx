@@ -62,7 +62,23 @@ vi.mock('@/common', () => ({
         },
       },
     },
+    auth: { currentUser: { invoke: async () => undefined } },
     task: { stopAll: { invoke: () => Promise.resolve({ success: false }) } },
+    team: {
+      created: { on: () => () => {} },
+      get: { invoke: async () => undefined },
+      getRunState: { invoke: async () => undefined },
+      list: { invoke: async () => [] },
+      listChanged: { on: () => () => {} },
+      removed: { on: () => () => {} },
+      runAccepted: { on: () => () => {} },
+      runCancelled: { on: () => () => {} },
+      runCompleted: { on: () => () => {} },
+      runFailed: { on: () => () => {} },
+      runStarted: { on: () => () => {} },
+      runUpdated: { on: () => () => {} },
+      slotWorkChanged: { on: () => () => {} },
+    },
     update: {
       open: {
         on: (callback: (event: { source: 'menu' | 'tray' }) => void) => {
@@ -84,6 +100,7 @@ vi.mock('@/common', () => ({
         },
       },
     },
+    realtime: { reconnected: { on: () => () => {} } },
   },
 }));
 
