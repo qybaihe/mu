@@ -127,6 +127,14 @@ describe("downloading mude", () => {
 		expect(requests).toEqual([]);
 	});
 
+	it("downloads and verifies a zero-byte Git file on a fresh install", async () => {
+		const empty = { path: "empty.txt", size: 0, gitSha1: createHash("sha1").update("blob 0\0").digest("hex") };
+		const download = options({ files: [empty], fetch: async () => new Response("") });
+		await downloadFiles(download);
+		expect(readFileSync(join(dir, empty.path))).toHaveLength(0);
+		expect(missingFiles(dir, [empty])).toEqual([]);
+	});
+
 	it("goes on from the bytes an interrupted download left on the disk", async () => {
 		writeFileSync(join(dir, "a.txt.part"), contents["a.txt"].slice(0, 5000));
 		writeFileSync(join(dir, "a.txt.part.saved"), "4096\n");
