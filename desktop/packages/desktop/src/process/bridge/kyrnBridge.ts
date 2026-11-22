@@ -2,8 +2,7 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { app, net, shell } from 'electron';
-import { kyrnBridge } from '../../common/kyrn/bridge';
-import { KyrnError, kyrnFailure, type KyrnResult } from '../../common/kyrn/errors';
+import { kyrnBridge } from '../../common/kyrn/bridge';import { KyrnError, kyrnFailure, type KyrnResult } from '../../common/kyrn/errors';
 import { kyrnFolderBridge } from '../../common/kyrn/folderBridge';
 import { isSubscriptionProvider } from '../../common/kyrn/login';
 import { isMudeInstalled } from '../../common/kyrn/mude';
@@ -38,6 +37,7 @@ import { muAgentDir, muHome } from '../agent/kyrn/naming';
 import { asRecord, text } from '../agent/kyrn/piRpc';
 import { sessionBinding } from '../agent/kyrn/sessionBinding';
 import { conversationSessions } from '../agent/kyrn/conversationSession';
+import { getPlatformServices } from '../../common/platform';
 import { getDataPath } from '../utils/utils';
 import { leaveInNativeConversations } from './nativeBridge';
 
@@ -256,7 +256,8 @@ export function initKyrnBridge(): void {
     result(() => lessons.change(folderProject(cwd), change))
   );
   // The journal reads both files whole — no conversation, no project: the person's own record, not a project's.
-  const journal = new JournalStore(lessonsPath(agentDir), lessonsLedgerFile(getDataPath()));
+  // The ledger sits where the supervisor puts it: the profile's data dir (userData), beside its positions workspaces.
+  const journal = new JournalStore(lessonsPath(agentDir), lessonsLedgerFile(getPlatformServices().paths.getDataDir()));
   kyrnBridge.journal.provider(() => result(() => journal.view()));
   kyrnFolderBridge.files.provider(({ cwd, path }) => result(() => listFolder(readFolder(cwd), path)));
   kyrnFolderBridge.find.provider(({ cwd }) => result(() => findFiles(readFolder(cwd), gitRunner())));
