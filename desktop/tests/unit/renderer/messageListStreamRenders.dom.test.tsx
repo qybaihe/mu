@@ -91,6 +91,19 @@ vi.mock('@/renderer/pages/conversation/Messages/MessageFileChanges', () => ({
 }));
 vi.mock('@arco-design/web-react', () => ({
   Image: { PreviewGroup: ({ children }: PropsWithChildren) => <>{children}</> },
+  Dropdown: ({ children, droplist }: { children?: React.ReactNode; droplist?: React.ReactNode }) => (
+    <>
+      {children}
+      {droplist}
+    </>
+  ),
+  Menu: (() => {
+    // oxlint-disable-next-line unicorn/consistent-function-scoping -- the vi.mock factory must stay self-contained (hoisting forbids outer refs)
+    const MenuMock = ({ children }: PropsWithChildren) => <>{children}</>;
+    MenuMock.Item = ({ children }: PropsWithChildren) => <>{children}</>;
+    return MenuMock;
+  })(),
+  Message: { success: () => {}, error: () => {} },
 }));
 vi.mock('@icon-park/react', () => ({ Down: () => <span>down</span> }));
 
