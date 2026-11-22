@@ -92,15 +92,27 @@ describe('openPositionConversation', () => {
     vi.restoreAllMocks();
   });
 
-  it('reuses the position’s existing conversation: navigate only, nothing created', async () => {
+  it('reuses the position’s existing conversation: refreshes the gate, navigates, creates nothing', async () => {
     const navigate = vi.fn();
     await openPositionConversation(
       position,
       deps({ conversations: conversationsWith({ position: 'forwarder' }), navigate })
     );
-    expect(invokeEnsure).not.toHaveBeenCalled();
+    expect(invokeEnsure).toHaveBeenCalledTimes(1); // the md may have changed since the first open
     expect(invokeCreate).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith('/conversation/existing');
+  });
+
+  it('still navigates to the reused conversation when the gate refresh fails', async () => {
+    const navigate = vi.fn();
+    invokeEnsure.mockRejectedValueOnce(new Error('boom'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await openPositionConversation(
+      position,
+      deps({ conversations: conversationsWith({ position: 'forwarder' }), navigate })
+    );
+    expect(navigate).toHaveBeenCalledWith('/conversation/existing');
+    expect(warn).toHaveBeenCalled();
   });
 
   it('creates on first open: workspace prepared before the conversation, then navigate', async () => {

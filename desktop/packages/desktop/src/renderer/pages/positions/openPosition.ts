@@ -89,6 +89,16 @@ export const openPositionConversation = async (
 ): Promise<void> => {
   const existing = findPositionConversationId(deps.conversations, position.name);
   if (existing) {
+    // The gate follows the position md on every open, not just the first —
+    // an edited approval tier must reach the workspace without deleting the
+    // conversation. The ensure is a cheap writeIfChanged, and a rewritten
+    // AGENTS.override.md hot-reloads into the live session. Best-effort: a
+    // failed refresh never blocks the navigation.
+    try {
+      await positionBridge.ensureWorkspace.invoke({ name: position.name });
+    } catch (error) {
+      console.warn('[positions] refreshing the workspace gate failed for', position.name, error);
+    }
     deps.navigate(`/conversation/${existing}`);
     return;
   }
