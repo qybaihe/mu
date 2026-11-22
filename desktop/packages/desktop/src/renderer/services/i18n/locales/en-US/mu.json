@@ -1318,5 +1318,19 @@
     "cancel": "Cancel",
     "saved": "Portrait saved; the position gates refresh next",
     "saveFailed": "Save failed; try again"
+  },
+  "teaching": {
+    "open": "what was ruled out",
+    "ruledOut": "Ruled out: ",
+    "folded": {
+      "product_tradeoff": "Product trade-off · why it went that way",
+      "arch_weighing": "Architecture · why it went that way",
+      "counterintuitive_pitfall": "Counterintuitive pitfall · why it went that way"
+    },
+    "kinds": {
+      "product_tradeoff": "product trade-off",
+      "arch_weighing": "architectural weighing",
+      "counterintuitive_pitfall": "counterintuitive pitfall"
+    }
   }
 }

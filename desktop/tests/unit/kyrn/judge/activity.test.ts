@@ -603,6 +603,7 @@ describe('Judge cards: what the view can translate', () => {
       'tool.injection',
       'turn.continue',
       'judge.items',
+      'turn.teaching',
     ];
     expect(harness.map(stageOf)).not.toContain('other');
     expect(new Set(harness.map(stageOf)).size).toBe(harness.length);

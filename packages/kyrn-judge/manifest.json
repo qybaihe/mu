@@ -1211,6 +1211,42 @@
 			}
 		},
 		{
+			"id": "turn.teaching",
+			"group": "turn",
+			"feature": "teaching",
+			"title": {
+				"zh": "顺带私教",
+				"en": "Turn teaching",
+				"zh-TW": "順帶私教",
+				"ja-JP": "ターンの解説",
+				"ko-KR": "턴 해설",
+				"de-DE": "Lehrkarte zum Durchgang",
+				"fr-FR": "Carte pédagogique du tour",
+				"es-ES": "Tarjeta didáctica del turno",
+				"pt-BR": "Cartão de aprendizado do turno",
+				"ru-RU": "Обучающая карточка хода",
+				"uk-UA": "Навчальна картка ходу",
+				"tr-TR": "Turun öğretici kartı",
+				"fa-IR": "کارت آموزشی نوبت"
+			},
+			"summary": {
+				"zh": "一轮结束时判断这一轮的枢纽是不是一个值得讲的取舍（产品取舍、架构权衡、反直觉的坑）：是就让写作模型把「为什么这么选、排除了什么」写成一张折起的小卡给你看；不进模型的上下文。普普通通的一轮什么都不出。默认影子：只记录，不显示，直到真例说明判定可靠。",
+				"en": "When a turn ends, judges whether its pivot was worth explaining — a product trade-off, an architectural weighing or a counterintuitive pitfall. If it was, the writer model phrases why the answer went that way, and what it ruled out, as a folded card for you; the model is never given it. An ordinary turn shows nothing. Ships in shadow: recorded, not shown, until real turns say the verdicts are right.",
+				"zh-TW": "一輪結束時判斷這一輪的樞紐是不是一個值得講的取捨（產品取捨、架構權衡、反直覺的坑）：是就讓寫作模型把「為什麼這麼選、排除了什麼」寫成一張折起的小卡給你看；不進模型的上下文。普通的一輪什麼都不出。預設影子：只記錄，不顯示，直到真例說明判定可靠。",
+				"ja-JP": "ターンの終わりに、その転換点（製品のトレードオフ、アーキテクチャの天秤かけ、直感に反する罠）が説明に値するかを判定します。値すれば、ライターモデルが「なぜそう選び、何を除外したか」を折りたたみカードにしてあなたにだけ見せます。モデルのコンテキストには入りません。平凡なターンには何も出ません。既定はシャドウ：実際のターンで判定の確かさが示されるまで記録のみです。",
+				"ko-KR": "턴이 끝날 때 그 턴의 고비(제품 트레이드오프, 구조 저울질, 직관에 반하는 함정)가 설명할 만한 것인지 판정합니다. 맞다면 라이터 모델이 \"왜 이렇게 골랐고 무엇을 배제했는지\"를 접힌 카드로 당신에게 보여줍니다. 모델의 컨텍스트에는 들어가지 않습니다. 평범한 턴에는 아무것도 뜨지 않습니다. 기본값은 섀도: 실제 턴으로 판정이 믿을 만함이 확인될 때까지 기록만 합니다.",
+				"de-DE": "Am Ende eines Durchlaufs wird geprüft, ob sein Wendepunkt erklärenswert war (Produktabwägung, Architekturabwägung, kontraintuitive Falle). Wenn ja, formuliert das Writer-Modell „warum so entschieden und was verworfen wurde“ als zugeklappte Karte nur für dich; in den Kontext des Modells gelangt sie nie. Ein gewöhnlicher Durchgang zeigt nichts. Standardmäßig Schatten: nur aufgezeichnet, nicht gezeigt, bis echte Durchläufe die Urteile bestätigen.",
+				"fr-FR": "À la fin d’un tour, juge si son pivot méritait une explication (arbitrage produit, pondération d’architecture, piège contre-intuitif). Si oui, le modèle rédacteur formule « pourquoi ce choix et qu’a-t-on écarté » en une carte repliée, pour vous seul ; le contexte du modèle ne la reçoit jamais. Un tour ordinaire n’affiche rien. Livré en shadow : enregistré sans affichage, jusqu’à ce que des tours réels prouvent le verdict.",
+				"es-ES": "Al terminar un turno, juzga si su punto clave merecía explicación (compromiso de producto, ponderación de arquitectura, trampa contraintuitiva). Si es así, el modelo redactor redacta «por qué se eligió así y qué se descartó» en una tarjeta plegada solo para ti; nunca entra en el contexto del modelo. Un turno corriente no muestra nada. Se envía en shadow: solo se registra, sin mostrarse, hasta que turnos reales avalen el veredicto.",
+				"pt-BR": "No fim de um turno, julga se seu ponto-chave merecia explicação (trade-off de produto, ponderação de arquitetura, armadilha contraintuitiva). Se sim, o modelo redator escreve “por que escolheu assim e o que descartou” num cartão dobrado só para você; ele nunca entra no contexto do modelo. Um turno comum não mostra nada. Envia em shadow: só registra, sem exibir, até turnos reais comprovarem o veredito.",
+				"ru-RU": "В конце хода проверяет, стоил ли его переломный момент объяснения (продуктовый компромисс, архитектурное взвешивание, неочевидная ловушка). Если да, модель-писатель формулирует «почему выбрали так и что отвергли» в свёрнутой карточке — только для вас; в контекст модели она не попадает. Обычный ход ничего не показывает. Поставляется в shadow: только запись, без показа, пока реальные ходы не подтвердят вердикты.",
+				"uk-UA": "Наприкінці ходу перевіряє, чи вартий його переломний момент пояснення (продуктовий компроміс, архітектурне зважування, неочевідна пастка). Якщо так, модель-письменник формулює «чому обрали так і що відкинули» у згорнутій картці — лише для вас; у контекст моделі вона не потрапляє. Звичайний хід нічого не показує. Поставляється в shadow: лише запис, без показу, доки справжні ходи не підтвердять вироки.",
+				"tr-TR": "Bir turun sonunda, dönüm noktasının (ürün ödünü, mimari tartı, sezgiye ters tuzak) açıklamaya değer olup olmadığına karar verir. Değerse, yazar model “neden böyle seçildi ve neler elendi”ni katlanmış bir kart olarak yalnızca size yazar; modelin bağlamına asla girmez. Sıradan bir tur hiçbir şey göstermez. Shadow ile gelir: gerçek turlar hükmü doğrulayana dek yalnızca kaydedilir, gösterilmez.",
+				"fa-IR": "در پایان یک نوبت بررسی می‌کند که نقطهٔ چرخش آن (مصالحهٔ محصول، سنجش معماری، تلهٔ خلاف شهود) ارزش توضیح دارد یا نه. اگر دارد، مدل نویسنده «چرا این‌گونه انتخاب شد و چه چیزهایی کنار گذاشته شد» را به‌صورت کارتی تاشده تنها برای شما می‌نویسد؛ هرگز به بافت مدل نمی‌رسد. نوبت عادی چیزی نشان نمی‌دهد. به‌صورت شادو ارائه می‌شود: تا وقتی نوبت‌های واقعی درستی حکم را ثابت کنند، فقط ثبت می‌شود."
+			},
+			"defaultMode": "shadow"
+		},
+		{
 			"id": "review.triage",
 			"group": "tools",
 			"feature": "packs",
@@ -7581,6 +7617,41 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "teaching",
+			"title": {
+				"zh": "顺带私教卡片",
+				"en": "Teaching cards",
+				"zh-TW": "順帶私教卡片",
+				"ja-JP": "解説カード",
+				"ko-KR": "티칭 카드",
+				"de-DE": "Lehrkarten",
+				"fr-FR": "Cartes pédagogiques",
+				"es-ES": "Tarjetas didácticas",
+				"pt-BR": "Cartões de aprendizado",
+				"ru-RU": "Обучающие карточки",
+				"uk-UA": "Навчальні картки",
+				"tr-TR": "Öğretici kartlar",
+				"fa-IR": "کارت‌های آموزشی"
+			},
+			"summary": {
+				"zh": "值得讲的取舍轮末尾出一张折起的教学卡。",
+				"en": "A folded teaching card at the end of the turns that were worth explaining.",
+				"zh-TW": "值得講的取捨輪末尾出現一張折起的教學卡。",
+				"ja-JP": "説明する価値のある取捨のターンの終わりに、折りたたみ解説カードを出します。",
+				"ko-KR": "설명할 만한 트레이드오프 턴의 끝에 접힌 티칭 카드를 띄웁니다.",
+				"de-DE": "Am Ende eines erklärenswerten Abwägungsdurchgangs eine zugeklappte Lehrkarte.",
+				"fr-FR": "Une carte pédagogique repliée à la fin des tours qui méritaient une explication.",
+				"es-ES": "Una tarjeta didáctica plegada al final de los turnos que merecían explicación.",
+				"pt-BR": "Um cartão de aprendizado dobrado no fim dos turnos que mereciam explicação.",
+				"ru-RU": "Свёрнутая обучающая карточка в конце ходов, которые стоило объяснить.",
+				"uk-UA": "Згорнута навчальна картка наприкінці ходів, які варто було пояснити.",
+				"tr-TR": "Açıklamaya değer turların sonunda katlanmış bir öğretici kart.",
+				"fa-IR": "کارت آموزشیِ تاشده در پایان نوبت‌هایی که ارزش توضیح داشتند."
+			},
+			"defaultEnabled": true,
+			"options": []
 		},
 		{
 			"name": "continuation",

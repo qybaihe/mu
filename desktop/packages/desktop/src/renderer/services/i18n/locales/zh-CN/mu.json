@@ -1318,5 +1318,19 @@
     "cancel": "取消",
     "saved": "用户画像已保存，岗位守则将随后刷新",
     "saveFailed": "保存失败，请重试"
+  },
+  "teaching": {
+    "open": "展开看排除了什么",
+    "ruledOut": "排除了：",
+    "folded": {
+      "product_tradeoff": "产品取舍 · 为什么这么选",
+      "arch_weighing": "架构权衡 · 为什么这么选",
+      "counterintuitive_pitfall": "反直觉的坑 · 为什么这么选"
+    },
+    "kinds": {
+      "product_tradeoff": "产品取舍",
+      "arch_weighing": "架构权衡",
+      "counterintuitive_pitfall": "反直觉的坑"
+    }
   }
 }

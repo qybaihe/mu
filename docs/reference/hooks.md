@@ -7,7 +7,7 @@ order of the table in `packages/kyrn-judge/src/extension/kyrn-judge.ts`, and pi 
 order they were registered, except that `tool_call` handlers registered as final run after all the others. So
 the order under each event is the order its handlers run in. `kernel` is what mu registers around the features.
 
-The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `evolve`, `snapshot`, `preload`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `plan`, `permissions`, `admission`, `forgetting`, `recall`, `askUser`, `present`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `featureOffers`, `recovery`.
+The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `evolve`, `snapshot`, `preload`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `plan`, `permissions`, `admission`, `forgetting`, `recall`, `askUser`, `present`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `teaching`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `featureOffers`, `recovery`.
 
 ## Events
 
@@ -28,7 +28,8 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 13. `completion`
 14. `continuation`
 15. `board`
-16. `checkpoint`
+16. `teaching`
+17. `checkpoint`
 
 ### `agent_settled`
 
@@ -128,10 +129,11 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 ### `resources_discover`
 
-1. `browser`
-2. `inherit`
-3. `packs`
-4. `kernel`
+1. `swarm`
+2. `browser`
+3. `inherit`
+4. `packs`
+5. `kernel`
 
 ### `session_before_compact`
 
@@ -239,8 +241,9 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 9. `monitor`
 10. `lsp`
 11. `completion`
-12. `inherit`
-13. `mcp`
+12. `teaching`
+13. `inherit`
+14. `mcp`
 
 ### `turn_end`
 

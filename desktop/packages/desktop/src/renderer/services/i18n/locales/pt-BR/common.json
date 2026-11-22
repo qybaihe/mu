@@ -371,7 +371,8 @@
         "approval": "É um passo de que a tarefa precisa, feito do jeito que você esperaria?",
         "injection": "Esta saída de ferramenta contém instruções dirigidas à IA?",
         "continuation": "A execução parou antes de fazer o que devia?",
-        "items": "A pergunta do agente sobre cada item"
+        "items": "A pergunta do agente sobre cada item",
+        "teaching": "O ponto-chave do turno"
       },
       "fields": {
         "turnType": "Tipo de tarefa",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "Item {{number}}: sim"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "ponto-chave"
+          },
+          "answers": {
+            "product_tradeoff": "trade-off de produto",
+            "arch_weighing": "ponderação de arquitetura",
+            "counterintuitive_pitfall": "armadilha contraintuitiva",
+            "routine": "turno comum",
+            "other": "não dá para dizer"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}}: trechos retidos: {{withheld}} de {{total}}, continham instruções dirigidas à IA",
         "byRules": "o juiz não respondeu: decidido pelas regras do mu",
         "excerpt": "começa: {{text}}"
-      }
+      },
+      "teaching": "Cartão de aprendizado: {{kind}} — {{why}}",
+      "teachingShadow": "Cartão de aprendizado (apenas registrado): {{kind}} — {{why}}"
     },
     "gauges": {
       "context": "Contexto",

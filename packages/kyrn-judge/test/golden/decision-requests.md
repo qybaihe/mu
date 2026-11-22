@@ -1412,6 +1412,32 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 }
 ```
 
+## turn.teaching v1
+
+```json
+{
+	"state": {
+		"turn_digest": "user: Should the cache live in the store or beside it?\nstep: read packages/store/src/index.ts -> ok\nassistant: Beside it: the store is one concept with one owner, and a cache that invalidates on its writes is another. I put it in packages/store/src/cache.ts."
+	},
+	"questions": {
+		"pivot": {
+			"type": "choice",
+			"instructions": "Judging by `turn_digest`, what was the pivot of this turn: the point where a reader without this experience would have made the worse call?",
+			"criteria": {
+				"product_tradeoff": "The answer chose between product options the user could have wanted: scope, simplicity against completeness, breaking users, cost",
+				"arch_weighing": "The answer weighed ways to build it: a library against hand-rolled code, where a layer goes, coupling, what the codebase already has",
+				"counterintuitive_pitfall": "The work hit a trap whose safe path is the opposite of what it looks like: the fix that is not the fix, the flag that does the reverse",
+				"routine": "Ordinary work or an ordinary answer; nothing a reader would get wrong",
+				"other": "Cannot tell"
+			}
+		}
+	},
+	"capabilities": {
+		"pivot": "relate"
+	}
+}
+```
+
 ## turn.drift v2
 
 ```json

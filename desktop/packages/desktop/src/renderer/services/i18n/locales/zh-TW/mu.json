@@ -1318,5 +1318,19 @@
     "cancel": "取消",
     "saved": "使用者畫像已儲存，崗位守則將隨後重新整理",
     "saveFailed": "儲存失敗，請重試"
+  },
+  "teaching": {
+    "open": "展開看排除了什麼",
+    "ruledOut": "排除了：",
+    "folded": {
+      "product_tradeoff": "產品取捨 · 為什麼這麼選",
+      "arch_weighing": "架構權衡 · 為什麼這麼選",
+      "counterintuitive_pitfall": "反直覺的坑 · 為什麼這麼選"
+    },
+    "kinds": {
+      "product_tradeoff": "產品取捨",
+      "arch_weighing": "架構權衡",
+      "counterintuitive_pitfall": "反直覺的坑"
+    }
   }
 }

@@ -1312,5 +1312,19 @@
     "cancel": "Cancelar",
     "saved": "Perfil guardado; las compuertas se actualizan a continuación",
     "saveFailed": "Error al guardar; inténtalo de nuevo"
+  },
+  "teaching": {
+    "open": "ver qué se descartó",
+    "ruledOut": "Descartado: ",
+    "folded": {
+      "product_tradeoff": "Compromiso de producto · por qué fue así",
+      "arch_weighing": "Arquitectura · por qué fue así",
+      "counterintuitive_pitfall": "Trampa contraintuitiva · por qué fue así"
+    },
+    "kinds": {
+      "product_tradeoff": "compromiso de producto",
+      "arch_weighing": "ponderación de arquitectura",
+      "counterintuitive_pitfall": "trampa contraintuitiva"
+    }
   }
 }

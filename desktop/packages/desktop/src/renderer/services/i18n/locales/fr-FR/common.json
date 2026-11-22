@@ -371,7 +371,8 @@
         "approval": "Est-ce une étape dont la tâche a besoin, faite comme vous l’attendriez ?",
         "injection": "Cette sortie d'outil contient-elle des instructions adressées à l'IA ?",
         "continuation": "L'exécution s'est-elle arrêtée avant de faire ce qu'elle devait ?",
-        "items": "La question de l'agent sur chaque élément"
+        "items": "La question de l'agent sur chaque élément",
+        "teaching": "Le pivot du tour"
       },
       "fields": {
         "turnType": "Type de tâche",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "Élément {{number}} : oui"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "le pivot"
+          },
+          "answers": {
+            "product_tradeoff": "arbitrage produit",
+            "arch_weighing": "pondération d'architecture",
+            "counterintuitive_pitfall": "piège contre-intuitif",
+            "routine": "un tour ordinaire",
+            "other": "indécidable"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}} : passages retenus : {{withheld}} sur {{total}}, ils contenaient des instructions adressées à l'IA",
         "byRules": "le juge n'a pas répondu : décidé selon les règles de mu",
         "excerpt": "commence : {{text}}"
-      }
+      },
+      "teaching": "Carte pédagogique : {{kind}} — {{why}}",
+      "teachingShadow": "Carte pédagogique (enregistrée seulement) : {{kind}} — {{why}}"
     },
     "gauges": {
       "context": "Contexte",

@@ -371,7 +371,8 @@
         "approval": "這一步是任務需要、也是你會預期的做法嗎？",
         "injection": "這段工具輸出裡有沒有衝著 AI 來的指令？",
         "continuation": "這一輪是不是該做的沒做完就停了？",
-        "items": "代理就每一項提出的問題"
+        "items": "代理就每一項提出的問題",
+        "teaching": "這一輪的樞紐"
       },
       "fields": {
         "turnType": "任務類型",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "第 {{number}} 項：是"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "樞紐"
+          },
+          "answers": {
+            "product_tradeoff": "產品取捨",
+            "arch_weighing": "架構權衡",
+            "counterintuitive_pitfall": "反直覺的坑",
+            "routine": "普通一輪",
+            "other": "說不準"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}}：{{total}} 段中攔下 {{withheld}} 段，裡面有衝著 AI 來的指令",
         "byRules": "判定器沒有回答：按 mu 的規則判斷",
         "excerpt": "開頭：{{text}}"
-      }
+      },
+      "teaching": "教學卡：{{kind}} — {{why}}",
+      "teachingShadow": "教學卡（僅記錄）：{{kind}} — {{why}}"
     },
     "gauges": {
       "context": "上下文",

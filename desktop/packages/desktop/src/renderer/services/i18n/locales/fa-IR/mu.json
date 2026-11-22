@@ -1312,5 +1312,19 @@
     "cancel": "لغو",
     "saved": "نمایه ذخیره شد؛ گیت‌ها به‌زودی به‌روز می‌شوند",
     "saveFailed": "ذخیره ناموفق بود؛ دوباره تلاش کنید"
+  },
+  "teaching": {
+    "open": "چه چیزهایی کنار گذاشته شد",
+    "ruledOut": "کنار گذاشته شد: ",
+    "folded": {
+      "product_tradeoff": "مصالحهٔ محصول · چرا این‌طور",
+      "arch_weighing": "معماری · چرا این‌طور",
+      "counterintuitive_pitfall": "تلهٔ خلاف شهود · چرا این‌طور"
+    },
+    "kinds": {
+      "product_tradeoff": "مصالحهٔ محصول",
+      "arch_weighing": "سنجش معماری",
+      "counterintuitive_pitfall": "تلهٔ خلاف شهود"
+    }
   }
 }

@@ -122,3 +122,14 @@ export function judgeLine(message: TMessage): JudgeLine | undefined {
   }
   return { stage: 'classified', turnType, state, byRule: verdict.by === 'rule', judge, ...hintsOf(verdict) };
 }
+
+/**
+ * The turn a `jev:` row belongs to, as `runtime:turn` — the same key a teaching card names. The judge lines of the
+ * turns without a card fold into the kernel bar; this says which turns those are.
+ */
+export function jevTurn(message: TMessage): string | undefined {
+  if (message.type !== 'acp_tool_call') return undefined;
+  const update = record(message.content?.update);
+  const id = str(update.tool_call_id) || str(update.toolCallId);
+  return PREFLIGHT_ID.test(id) ? id.slice('jev:'.length) : undefined;
+}

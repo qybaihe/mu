@@ -421,6 +421,16 @@ const DESCRIBED: HarnessManifest = {
 			},
 		},
 		{
+			id: "turn.teaching",
+			group: "turn",
+			feature: "teaching",
+			title: { zh: "顺带私教", en: "Turn teaching" },
+			summary: {
+				zh: "一轮结束时判断这一轮的枢纽是不是一个值得讲的取舍（产品取舍、架构权衡、反直觉的坑）：是就让写作模型把「为什么这么选、排除了什么」写成一张折起的小卡给你看；不进模型的上下文。普普通通的一轮什么都不出。默认影子：只记录，不显示，直到真例说明判定可靠。",
+				en: "When a turn ends, judges whether its pivot was worth explaining — a product trade-off, an architectural weighing or a counterintuitive pitfall. If it was, the writer model phrases why the answer went that way, and what it ruled out, as a folded card for you; the model is never given it. An ordinary turn shows nothing. Ships in shadow: recorded, not shown, until real turns say the verdicts are right.",
+			},
+		},
+		{
 			id: "review.triage",
 			group: "tools",
 			feature: "packs",
@@ -2222,6 +2232,16 @@ const DESCRIBED: HarnessManifest = {
 					},
 				},
 			],
+		},
+		{
+			name: "teaching",
+			title: { zh: "顺带私教卡片", en: "Teaching cards" },
+			summary: {
+				zh: "值得讲的取舍轮末尾出一张折起的教学卡。",
+				en: "A folded teaching card at the end of the turns that were worth explaining.",
+			},
+			defaultEnabled: true,
+			options: [],
 		},
 		{
 			name: "continuation",

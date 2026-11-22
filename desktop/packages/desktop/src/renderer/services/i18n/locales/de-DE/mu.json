@@ -1312,5 +1312,19 @@
     "cancel": "Abbrechen",
     "saved": "Profil gespeichert; die Gates aktualisieren sich alsbald",
     "saveFailed": "Speichern fehlgeschlagen; erneut versuchen"
+  },
+  "teaching": {
+    "open": "was verworfen wurde",
+    "ruledOut": "Verworfen: ",
+    "folded": {
+      "product_tradeoff": "Produktabwägung · warum es so lief",
+      "arch_weighing": "Architektur · warum es so lief",
+      "counterintuitive_pitfall": "Kontraintuitive Falle · warum es so lief"
+    },
+    "kinds": {
+      "product_tradeoff": "Produktabwägung",
+      "arch_weighing": "Architekturabwägung",
+      "counterintuitive_pitfall": "kontraintuitive Falle"
+    }
   }
 }

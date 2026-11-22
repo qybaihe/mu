@@ -1312,5 +1312,19 @@
     "cancel": "İptal",
     "saved": "Profil kaydedildi; kapiler kısa süre içinde yenilenir",
     "saveFailed": "Kaydetme başarısız; tekrar deneyin"
+  },
+  "teaching": {
+    "open": "nelerin elendiğine bak",
+    "ruledOut": "Elendi: ",
+    "folded": {
+      "product_tradeoff": "Ürün ödünü · neden böyle",
+      "arch_weighing": "Mimari · neden böyle",
+      "counterintuitive_pitfall": "Sezgiye ters tuzak · neden böyle"
+    },
+    "kinds": {
+      "product_tradeoff": "ürün ödünü",
+      "arch_weighing": "mimari tartı",
+      "counterintuitive_pitfall": "sezgiye ters tuzak"
+    }
   }
 }

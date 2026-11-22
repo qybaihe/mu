@@ -53,6 +53,40 @@ describe("KYRN events in the app's native cards", () => {
       })
     ).toEqual([]);
   });
+  it('writes an applied teaching card as a line of the conversation, and nothing for a shadow one', () => {
+    const frame = (payload: object) =>
+      mapEvent({
+        type: 'extension_ui_request',
+        method: 'setStatus',
+        statusKey: 'kyrn.presentation.v1',
+        statusText: JSON.stringify({
+          runtimeId: 'r',
+          turnId: 4,
+          kind: 'turn.teaching',
+          payload,
+        }),
+      });
+    const card = frame({
+      kind: 'arch_weighing',
+      why: 'The cache invalidates on the store writes.',
+      ruledOut: ['Inside the store'],
+      state: 'applied',
+    })[0];
+    expect(card).toMatchObject({
+      sessionUpdate: 'tool_call',
+      title: 'mu: why it went that way',
+      status: 'completed',
+      rawInput: {
+        teaching: 'arch_weighing',
+        why: 'The cache invalidates on the store writes.',
+        turn: 'r:4',
+        ruledOut: ['Inside the store'],
+      },
+    });
+    expect(typeof card.toolCallId === 'string' && card.toolCallId.startsWith('mu:teaching:')).toBe(true);
+    // The card is only for the record until the decision point is turned on: no line, the reply reads as without it.
+    expect(frame({ kind: 'arch_weighing', why: '…', state: 'shadow' })).toEqual([]);
+  });
   it('preserves intermediate hive results and failed tool status', () => {
     expect(
       mapEvent({

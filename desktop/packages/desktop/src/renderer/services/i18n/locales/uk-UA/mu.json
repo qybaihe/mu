@@ -1328,5 +1328,19 @@
     "cancel": "Скасувати",
     "saved": "Профіль збережено; гейти оновляться далі",
     "saveFailed": "Не вдалося зберегти; спробуйте ще раз"
+  },
+  "teaching": {
+    "open": "що було відкинуто",
+    "ruledOut": "Відкинуто: ",
+    "folded": {
+      "product_tradeoff": "Продуктовий компроміс · чому так",
+      "arch_weighing": "Архітектура · чому так",
+      "counterintuitive_pitfall": "Неочевидна пастка · чому так"
+    },
+    "kinds": {
+      "product_tradeoff": "продуктовий компроміс",
+      "arch_weighing": "архітектурне зважування",
+      "counterintuitive_pitfall": "неочевидна пастка"
+    }
   }
 }

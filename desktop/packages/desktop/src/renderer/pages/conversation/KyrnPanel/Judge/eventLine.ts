@@ -463,6 +463,18 @@ const judgeNoticeLine = (t: TFunction, payload: Record<string, unknown>): string
   return [t(`${KEY}.judgeNotice.${words}`, { judge })];
 };
 
+/** The teaching card of a turn: its kind, and the writer's why. A card that was only recorded says so. */
+const teachingLine = (t: TFunction, payload: Record<string, unknown>): string | undefined => {
+  const kind = str(payload.kind);
+  const why = str(payload.why);
+  if (!kind || !why) return undefined;
+  const named = t(`mu.teaching.kinds.${kind}`);
+  return t(str(payload.state) === 'shadow' ? `${KEY}.teachingShadow` : `${KEY}.teaching`, {
+    kind: named,
+    why,
+  });
+};
+
 // ── entry ───────────────────────────────────────────────────────────────────
 
 /**
@@ -506,6 +518,8 @@ export function eventLines(
       return injectionLines(t, payload);
     case 'judge.notice':
       return judgeNoticeLine(t, payload);
+    case 'turn.teaching':
+      return lines(teachingLine(t, payload));
     default:
       return undefined;
   }

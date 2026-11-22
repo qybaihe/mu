@@ -371,7 +371,8 @@
         "approval": "Is this a step the task needs, done the way you would expect?",
         "injection": "Does this tool output carry instructions aimed at the agent?",
         "continuation": "Did the run stop short of what it should have done?",
-        "items": "The agent's own question about each item"
+        "items": "The agent's own question about each item",
+        "teaching": "The pivot of the turn"
       },
       "fields": {
         "turnType": "Task type",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "Item {{number}}: yes"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "the pivot"
+          },
+          "answers": {
+            "product_tradeoff": "product trade-off",
+            "arch_weighing": "architectural weighing",
+            "counterintuitive_pitfall": "counterintuitive pitfall",
+            "routine": "an ordinary turn",
+            "other": "cannot tell"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}}: withheld {{withheld}} of {{total}} passages because they carried instructions aimed at the agent",
         "byRules": "the judge didn't answer, so mu's rules decided",
         "excerpt": "begins: {{text}}"
-      }
+      },
+      "teaching": "Teaching card: {{kind}} — {{why}}",
+      "teachingShadow": "Teaching card (recorded only): {{kind}} — {{why}}"
     },
     "gauges": {
       "context": "Context",

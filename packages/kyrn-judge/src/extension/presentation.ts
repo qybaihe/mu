@@ -44,6 +44,7 @@ export interface KyrnPresentationEvent {
 		| "rewind.proposed"
 		| "rewind.done"
 		| "rewind.undone"
+		| "turn.teaching"
 		| "ttsr.interrupted"
 		| "browser.run"
 		| "browser.step"

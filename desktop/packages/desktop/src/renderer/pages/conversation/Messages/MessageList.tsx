@@ -28,8 +28,10 @@ import MessagePermission from './components/MessagePermission';
 import MessageAcpTerminalOutput from '@renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput';
 import MessageAcpToolCall from '@renderer/pages/conversation/Messages/acp/MessageAcpToolCall';
 import MessageJudgeLine from '@renderer/pages/conversation/Messages/acp/MessageJudgeLine';
-import { judgeLine } from '@renderer/pages/conversation/Messages/acp/judgeLine';
+import { judgeLine, jevTurn } from '@renderer/pages/conversation/Messages/acp/judgeLine';
+import { teachingCard } from '@renderer/pages/conversation/Messages/acp/teachingCard';
 import MessageMuNotice from '@renderer/pages/conversation/Messages/acp/MessageMuNotice';
+import MessageTeachingCard from '@renderer/pages/conversation/Messages/acp/MessageTeachingCard';
 import MessageDeliverables, { deliverables } from '@renderer/pages/conversation/Messages/acp/MessageDeliverables';
 import { muNotice } from '@renderer/pages/conversation/Messages/acp/muNotice';
 import { questionsBeforeCalls } from './permissionOrder';
@@ -547,6 +549,8 @@ const MessageItem: React.FC<{
         case 'ask':
           return <MessageQuestion message={message}></MessageQuestion>;
         case 'acp_tool_call': {
+          const card = teachingCard(message);
+          if (card) return <MessageTeachingCard card={card} />;
           const verdict = judgeLine(message);
           if (verdict) return <MessageJudgeLine line={verdict} />;
           const notice = muNotice(message);
@@ -739,6 +743,14 @@ const MessageList: React.FC<{
     let diffsSources: TMessage[] = [];
     let toolList: Array<IMessageToolGroup | IMessageAcpToolCall | IMessageToolCall> = [];
     let toolSourceMessageIds: string[] = [];
+    // The turns a teaching card was shown for, by `runtime:turn`: a card arrives at a turn's end, so the set is
+    // gathered first — only those turns keep their judge line, the rest folds into the kernel bar's pulse.
+    const taughtTurns = new Set<string>();
+    for (const message of list) {
+      if (message.type !== 'acp_tool_call') continue;
+      const turn = teachingCard(message)?.turn;
+      if (turn) taughtTurns.add(turn);
+    }
 
     const pushFileDiffChanges = (changes: FileChangeInfo, source: TMessage, created_at: number) => {
       if (!diffsChanges.length) {
@@ -843,12 +855,17 @@ const MessageList: React.FC<{
         continue;
       }
       if (message.type === 'acp_tool_call') {
+        const card = teachingCard(message);
         const verdict = judgeLine(message);
         // A classification switched off or skipped says nothing; a missing judge is said at its first message only.
         if (verdict?.stage === 'quiet' || (verdict?.stage === 'noJudge' && saidNoJudge)) continue;
         if (verdict?.stage === 'noJudge') saidNoJudge = true;
-        // The judge's class for the message and the bridge's notices are lines of their own, not calls in the tool box.
-        if (hasRenderableAcpDiff(message) || verdict || muNotice(message) || deliverables(message)) {
+        // The judge's class for a turn without a teaching card folds into the kernel bar's pulse, one less row of
+        // every-turn noise; the turn a card was shown for keeps its line (what was being classified).
+        if (verdict && verdict.stage !== 'noJudge' && !taughtTurns.has(jevTurn(message) ?? '')) continue;
+        // The judge's class for the message, the bridge's notices and the teaching card are lines of their own, not
+        // calls in the tool box.
+        if (hasRenderableAcpDiff(message) || verdict || card || muNotice(message) || deliverables(message)) {
           pushStandaloneMessage(message);
           continue;
         }

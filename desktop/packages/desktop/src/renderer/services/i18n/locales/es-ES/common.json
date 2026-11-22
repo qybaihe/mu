@@ -371,7 +371,8 @@
         "approval": "¿Es un paso que la tarea necesita, hecho como lo esperarías?",
         "injection": "¿Contiene esta salida de herramienta instrucciones dirigidas a la IA?",
         "continuation": "¿Se detuvo la ejecución antes de hacer lo que debía?",
-        "items": "La pregunta del agente sobre cada elemento"
+        "items": "La pregunta del agente sobre cada elemento",
+        "teaching": "El punto clave del turno"
       },
       "fields": {
         "turnType": "Tipo de tarea",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "Elemento {{number}}: sí"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "punto clave"
+          },
+          "answers": {
+            "product_tradeoff": "compromiso de producto",
+            "arch_weighing": "ponderación de arquitectura",
+            "counterintuitive_pitfall": "trampa contraintuitiva",
+            "routine": "turno corriente",
+            "other": "no se puede decir"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}}: fragmentos retenidos: {{withheld}} de {{total}}, contenían instrucciones dirigidas a la IA",
         "byRules": "el juez no respondió: decidido con las reglas de mu",
         "excerpt": "empieza: {{text}}"
-      }
+      },
+      "teaching": "Tarjeta didáctica: {{kind}} — {{why}}",
+      "teachingShadow": "Tarjeta didáctica (solo registrada): {{kind}} — {{why}}"
     },
     "gauges": {
       "context": "Contexto",

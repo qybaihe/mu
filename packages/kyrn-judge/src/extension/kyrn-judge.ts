@@ -78,6 +78,7 @@ import { registerSnapshot } from "./features/snapshot.ts";
 import { registerSwarm, type SwarmRunner } from "./features/swarm.ts";
 import { registerSwarmChild } from "./features/swarm-child.ts";
 import { registerTools } from "./features/tools.ts";
+import { registerTeaching } from "./features/teaching.ts";
 import { registerTtsr } from "./features/ttsr.ts";
 import { registerUnattendedDrift } from "./features/unattended.ts";
 import { registerWarming } from "./features/warming.ts";
@@ -173,6 +174,7 @@ export type FeatureName =
 	| "plan"
 	| "featureOffers"
 	| "interrupted"
+	| "teaching"
 	| "prefix"
 	| "evolve"
 	| "snapshot"
@@ -317,6 +319,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["continuation", registerContinuation],
 		// Reads the frame and the steps; says nothing to the model, so its place among the others does not matter.
 		["board", (shared) => registerBoard(shared, roots)],
+		// Reads the same turns as memory, only to present a card to the person; never says anything to the model.
+		["teaching", registerTeaching],
 		// After the guard and the monitor: a blocked call needs no checkpoint, and the monitor's trouble is what the rewind hears.
 		["checkpoint", (shared) => registerCheckpoint(shared, roots, options.checkpoint)],
 		["notify", registerNotify],

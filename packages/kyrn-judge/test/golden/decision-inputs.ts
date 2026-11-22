@@ -39,6 +39,7 @@ import { toolInjection, toolInjectionBatch } from "../../src/decisions/tool-inje
 import { toolRisk } from "../../src/decisions/tool-risk.ts";
 import { turnCompletion } from "../../src/decisions/turn-completion.ts";
 import { turnContinue } from "../../src/decisions/turn-continue.ts";
+import { turnTeaching } from "../../src/decisions/teaching.ts";
 import { turnDrift } from "../../src/decisions/turn-drift.ts";
 import { turnRewind } from "../../src/decisions/turn-rewind.ts";
 import type { JsonValue, Questions } from "../../src/types.ts";
@@ -402,6 +403,10 @@ export const GOLDEN_CASES: readonly GoldenCase[] = [
 	golden(turnContinue, {
 		userMessage: "The parseDuration test fails for 1h30m, can you fix it?",
 		finalMessage: "I found the bug: the regex stops after the first unit. Let me run the tests next.",
+	}),
+	golden(turnTeaching, {
+		turnDigest:
+			"user: Should the cache live in the store or beside it?\nstep: read packages/store/src/index.ts -> ok\nassistant: Beside it: the store is one concept with one owner, and a cache that invalidates on its writes is another. I put it in packages/store/src/cache.ts.",
 	}),
 	golden(turnDrift, {
 		goal: GOAL,

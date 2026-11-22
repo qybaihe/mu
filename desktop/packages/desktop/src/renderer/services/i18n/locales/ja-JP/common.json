@@ -371,7 +371,8 @@
         "approval": "これはタスクに必要な手順で、期待どおりのやり方か？",
         "injection": "このツール出力に AI に向けた指示は含まれているか？",
         "continuation": "やるべきことの手前で止まっていないか？",
-        "items": "エージェントが各項目について尋ねた質問"
+        "items": "エージェントが各項目について尋ねた質問",
+        "teaching": "このターンの転換点"
       },
       "fields": {
         "turnType": "タスクの種類",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "項目 {{number}}：はい"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "転換点"
+          },
+          "answers": {
+            "product_tradeoff": "製品のトレードオフ",
+            "arch_weighing": "アーキテクチャの天秤かけ",
+            "counterintuitive_pitfall": "直感に反する罠",
+            "routine": "いつもの作業",
+            "other": "判断できない"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}}：{{total}} 段落中 {{withheld}} 段落を差し止め（AI に向けた指示を含んでいました）",
         "byRules": "判定器が答えなかったため mu のルールで判断",
         "excerpt": "冒頭：{{text}}"
-      }
+      },
+      "teaching": "解説カード：{{kind}} — {{why}}",
+      "teachingShadow": "解説カード（記録のみ）：{{kind}} — {{why}}"
     },
     "gauges": {
       "context": "コンテキスト",

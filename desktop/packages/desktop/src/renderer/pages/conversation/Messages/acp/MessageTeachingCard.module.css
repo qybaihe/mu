@@ -1,0 +1,75 @@
+/* The teaching card of a turn: one folded quiet row that opens to the reason and the ruled-out options. Reuses the
+   judge line's metrics (12px/18px, muted colour) so the two read as one family of quiet kernel rows. */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 4px 0;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.row:focus-visible {
+  outline: 2px solid rgb(var(--primary-6));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.summary {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The folded row's way in, a link-like word; hidden once the card is open. */
+.open-word {
+  flex: none;
+  margin-inline-start: 4px;
+  padding: 0;
+  color: rgb(var(--primary-6));
+  white-space: nowrap;
+}
+
+/* What the card opens to: the writer's reason as its own words, then the options that were ruled out. */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 2px 0 6px;
+  padding: 8px 12px;
+  border-inline-start: 2px solid rgb(var(--primary-6));
+  background: var(--fill-1);
+  border-radius: 0 6px 6px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 19px;
+}
+
+.why {
+  margin: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.ruledOut {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  color: var(--text-tertiary);
+}
+
+.ruledOut .option {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}

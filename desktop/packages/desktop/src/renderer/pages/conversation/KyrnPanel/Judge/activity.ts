@@ -40,6 +40,7 @@ export const DECISIONS = {
   'tool.approval': 'approval',
   'tool.injection': 'injection',
   'turn.continue': 'continuation',
+  'turn.teaching': 'teaching',
   'judge.items': 'items',
 } as const;
 

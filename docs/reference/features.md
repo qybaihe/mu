@@ -387,6 +387,12 @@ On by default: yes. Decision points: `turn.completion`.
 | --- | --- | --- |
 | `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
 
+## teaching
+
+**Teaching cards.** A folded teaching card at the end of the turns that were worth explaining.
+
+On by default: yes. Decision points: `turn.teaching`.
+
 ## continuation
 
 **Continue after stopping short.** Sends the agent back to work when a run stops short of what it said it would do.

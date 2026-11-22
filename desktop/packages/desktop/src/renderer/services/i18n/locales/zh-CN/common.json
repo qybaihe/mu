@@ -371,7 +371,8 @@
         "approval": "这一步是任务需要、也是你会预期的做法吗？",
         "injection": "这段工具输出里有没有冲着 AI 来的指令？",
         "continuation": "这一轮是不是该做的没做完就停了？",
-        "items": "代理就每一项提出的问题"
+        "items": "代理就每一项提出的问题",
+        "teaching": "这一轮的枢纽"
       },
       "fields": {
         "turnType": "任务类型",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "第 {{number}} 项：是"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "枢纽"
+          },
+          "answers": {
+            "product_tradeoff": "产品取舍",
+            "arch_weighing": "架构权衡",
+            "counterintuitive_pitfall": "反直觉的坑",
+            "routine": "普通一轮",
+            "other": "说不准"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}}：{{total}} 段中拦下 {{withheld}} 段，里面有冲着 AI 来的指令",
         "byRules": "判定器没有回答：按 mu 的规则判断",
         "excerpt": "开头：{{text}}"
-      }
+      },
+      "teaching": "教学卡：{{kind}} — {{why}}",
+      "teachingShadow": "教学卡（仅记录）：{{kind}} — {{why}}"
     },
     "gauges": {
       "context": "上下文",

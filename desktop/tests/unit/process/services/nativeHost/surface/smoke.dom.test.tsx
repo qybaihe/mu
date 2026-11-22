@@ -129,7 +129,9 @@ describe('the native page, playing a recorded conversation', () => {
     ]);
     const verdicts = view.messages.filter((message) => message.role === 'user' && message.verdict).length;
     expect(verdicts).toBeGreaterThan(0);
-    expect(screen.getAllByTestId('mu-judge-line')).toHaveLength(verdicts);
+    // The classes of the turns without a teaching card fold into the kernel bar's pulse, so no row of their own is
+    // left here; the fold-and-expand behaviour itself is covered by judgeLine.dom.test.tsx.
+    expect(screen.queryAllByTestId('mu-judge-line')).toHaveLength(0);
     const notices = screen.getAllByTestId('mu-notice');
     expect(notices.map((notice) => notice.dataset.code)).toEqual(expect.arrayContaining(['checkpoint_off', 'stopped']));
     expect(screen.getByText(/Checkpoints are off in this conversation/)).toBeInTheDocument();

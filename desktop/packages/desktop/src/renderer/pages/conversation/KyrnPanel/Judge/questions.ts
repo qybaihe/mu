@@ -133,6 +133,13 @@ export const JUDGE_QUESTIONS: Record<keyof typeof DECISIONS, readonly JudgeQuest
     { id: 'requested', type: 'boolean' },
   ],
   'turn.drift': [{ id: 'course', type: 'choice', answers: ['on_track', 'detour', 'drift', 'loop', 'other'] }],
+  'turn.teaching': [
+    {
+      id: 'pivot',
+      type: 'choice',
+      answers: ['product_tradeoff', 'arch_weighing', 'counterintuitive_pitfall', 'routine', 'other'],
+    },
+  ],
   'turn.completion': [
     { id: 'claims_done', type: 'boolean' },
     { id: 'needs_check', type: 'boolean' },

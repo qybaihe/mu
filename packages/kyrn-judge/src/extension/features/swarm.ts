@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { getAgentDir, type Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
@@ -25,6 +26,9 @@ import {
 	SKILLS_HIDDEN_ENV,
 } from "../../swarm/brief.ts";
 import { describeRecord } from "../../swarm/patches.ts";
+
+/** Resolves to `<package>/skills/bot-positions/SKILL.md` from both `src/` and `dist/`. */
+export const POSITIONS_SKILL_PATH = fileURLToPath(new URL("../../../skills/bot-positions/SKILL.md", import.meta.url));
 import {
 	activeRuns,
 	type BeeObserver,
@@ -40,7 +44,7 @@ import { type BeeEvent, codedError } from "../../swarm/state.ts";
 import { renderSwarm, swarmText } from "../../swarm/view.ts";
 import { USAGE_ENTRY, type UsageEntry } from "../../usage.ts";
 import { type AgentDefinition, type AgentThinking, loadAgents, THINKING_LEVELS } from "../agents.ts";
-import { clip, type KyrnRuntime, userWords } from "../runtime.ts";
+import { clip, failOpen, type KyrnRuntime, userWords } from "../runtime.ts";
 import { Isolation, type IsolationOutcome, type Placement, patchesOf } from "./swarm-isolation.ts";
 
 /** A role the main model asked for by name is in `agent`. Left out, the judge picks one. */
@@ -519,6 +523,13 @@ function describeAgent(agent: AgentDefinition): string {
  * works: built-in roles, the session's own model, judge-picked thinking.
  */
 export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnRunner): void {
+	// The how-to of the position library travels with the dispatch that reads it: wherever this extension is loaded
+	// (the CLI and the TUI included, not only the desktop's builtin skills), the skill is too. The skills disclosure
+	// decision keeps it out of the turns that have nothing to do with positions.
+	runtime.pi.on(
+		"resources_discover",
+		failOpen(() => (existsSync(POSITIONS_SKILL_PATH) ? { skillPaths: [POSITIONS_SKILL_PATH] } : undefined)),
+	);
 	const options = runtime.options("swarm", {
 		enabled: true,
 		/** Cheapest to strongest. Empty means every sub-agent uses the session's current model. */

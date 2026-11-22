@@ -195,6 +195,9 @@ export const DEFAULT_CONFIG: KyrnConfig = {
 		// New, and unmeasured: it records which files it would have brought in, and the opening's own reads say what
 		// that was worth, until the numbers say it should act.
 		"context.preload": "shadow",
+		// New, and unmeasured: the card is phrased and presented (as `shadow`), and no client shows it as part of the
+		// reply, until real turns say the verdicts are right.
+		"turn.teaching": "shadow",
 	},
 	routes: {},
 	features: {},

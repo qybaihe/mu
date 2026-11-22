@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { SessionUpdate } from '@agentclientprotocol/sdk';
 import { array, asRecord, text, type JsonRecord } from './piRpc.ts';
 
@@ -70,6 +71,33 @@ export function mapEvent(event: JsonRecord): SessionUpdate[] {
       return [];
     }
     const payload = asRecord(frame.payload);
+    // The teaching card of a turn (the kernel's `turn.teaching`): why the answer went the way it went, and what it
+    // ruled out. Only an `applied` one becomes a line of the conversation — in shadow the card is for the judge panel,
+    // and the reply reads as it would without it. The id prefix is the reader's (`acp/teachingCard.ts`); the title is
+    // an English fallback for other clients.
+    if (frame.kind === 'turn.teaching' && text(payload.state) === 'applied') {
+      const kind = text(payload.kind);
+      const ruledOut = array(payload.ruledOut)
+        .map((item) => (typeof item === 'string' ? item : ''))
+        .filter(Boolean);
+      return [
+        {
+          sessionUpdate: 'tool_call',
+          toolCallId: `mu:teaching:${randomUUID()}`,
+          title: 'mu: why it went that way',
+          kind: 'think',
+          status: 'completed',
+          rawInput: {
+            teaching: kind || 'product_tradeoff',
+            why: text(payload.why),
+            // The turn the card belongs to, as the judge line's id names it (`runtime:turn`): only its own turn keeps a
+            // judge line when the rest fold into the kernel bar.
+            ...(frame.turnId !== undefined ? { turn: `${text(frame.runtimeId)}:${frame.turnId}` } : {}),
+            ...(ruledOut.length > 0 ? { ruledOut } : {}),
+          },
+        },
+      ];
+    }
     const id = `jev:${text(frame.runtimeId)}:${frame.turnId}`;
     // The titles are an English fallback for other clients. The desktop names the row in the reader's language from
     // `rawOutput.preflight` and the verdict's turn type, so a stored conversation follows a later language switch. The

@@ -371,7 +371,8 @@
         "approval": "작업에 필요한 단계이고, 예상한 방식대로 하는가?",
         "injection": "이 도구 출력에 AI를 겨냥한 지시가 들어 있는가?",
         "continuation": "해야 할 일을 하기 전에 멈췄는가?",
-        "items": "에이전트가 항목마다 던진 질문"
+        "items": "에이전트가 항목마다 던진 질문",
+        "teaching": "이 턴의 고비"
       },
       "fields": {
         "turnType": "작업 유형",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "항목 {{number}}: 예"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "고비"
+          },
+          "answers": {
+            "product_tradeoff": "제품 트레이드오프",
+            "arch_weighing": "구조 저울질",
+            "counterintuitive_pitfall": "직관에 반하는 함정",
+            "routine": "평범한 턴",
+            "other": "판단 못 함"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}}: 단락 {{total}}개 중 {{withheld}}개 보류 (AI를 겨냥한 지시가 들어 있었음)",
         "byRules": "판정기가 답하지 않아 mu의 규칙으로 판단함",
         "excerpt": "시작 부분: {{text}}"
-      }
+      },
+      "teaching": "티칭 카드: {{kind}} — {{why}}",
+      "teachingShadow": "티칭 카드(기록만): {{kind}} — {{why}}"
     },
     "gauges": {
       "context": "컨텍스트",

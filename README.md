@@ -34,7 +34,7 @@ Does this output matter? Is this command safe for the task? Is the work really d
 - **Commands approved on autopilot.** The agent asks before every step, so you click Allow without reading, or turn the prompts off. In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
 - **Runs that stop halfway.** "Next I'll run the tests," and the turn ends. The judge catches a run that stopped short, or a "done" that nothing verified, and sends the agent back to finish.
 
-Asking the main model each of these costs tokens and its attention, and fixed rules get them wrong too often. mu asks a **judge**: a small, fast model that answers one bounded question at a time, at 41 decision points in the agent loop. 34 of them act on their verdicts out of the box. Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab), and any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
+Asking the main model each of these costs tokens and its attention, and fixed rules get them wrong too often. mu asks a **judge**: a small, fast model that answers one bounded question at a time, at 42 decision points in the agent loop. 34 of them act on their verdicts out of the box. Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab), and any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
 
 mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: [mude 1.0](#mude-10-a-decision-model-optimized-for-coding), mu's own model, on your Mac; another decision model from Hugging Face; your own System One server; or any LLM.
 
@@ -52,14 +52,14 @@ mu setup            # connect a model
 mu                  # start a session in the current directory
 ```
 
-You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. Out of the box, 34 of the 41 decision points act on their verdicts, and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
+You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. Out of the box, 34 of the 42 decision points act on their verdicts, and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 
 ## How a turn works
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/turn-dark.svg">
-    <img src="docs/readme/turn-light.svg" width="880" alt="How a turn works: four stages, each with the decision points it asks the judge. A message arrives: input.preflight, task.frame, input.interjection, skills.disclosure, memory.recall. Before a tool runs, rules first: tool.risk, tool.constraint, tool.approval. What comes back, before the model sees it: tool.injection, tool.admission, context.forget, context.compact. The turn ends: turn.completion, turn.continue, turn.drift, memory.capture, cache.warming. The model loops over the middle two stages. Every stage asks the same judge, and every verdict goes to the ledger.">
+    <img src="docs/readme/turn-light.svg" width="880" alt="How a turn works: four stages, each with the decision points it asks the judge. A message arrives: input.preflight, task.frame, input.interjection, skills.disclosure, memory.recall. Before a tool runs, rules first: tool.risk, tool.constraint, tool.approval. What comes back, before the model sees it: tool.injection, tool.admission, context.forget, context.compact. The turn ends: turn.completion, turn.continue, turn.drift, turn.teaching, memory.capture, cache.warming. The model loops over the middle two stages. Every stage asks the same judge, and every verdict goes to the ledger.">
   </picture>
 </p>
 
@@ -128,7 +128,7 @@ The 41 points fall into five groups:
 </details>
 
 <details>
-<summary><b>Turn</b>: 8 decision points</summary>
+<summary><b>Turn</b>: 9 decision points</summary>
 
 | Decision point | Question | Effect |
 | --- | --- | --- |
@@ -136,6 +136,7 @@ The 41 points fall into five groups:
 | `turn.rewind` | The same failure, again and again: is this approach a dead end? | Back to a checkpoint |
 | `turn.completion` | The model says it's done: did anything verify that? | One nudge if not |
 | `turn.continue` | The run ends on "Let me run the tests next", or on a request for a go-ahead on work you already asked for: did it stop short? | It's sent back to work, at most twice per message, and never toward a step that's hard to undo |
+| `turn.teaching` | The turn ended: was its pivot worth explaining (a product trade-off, an architectural weighing, a counterintuitive pitfall)? | A folded card with why, and what was ruled out — never given to the model. Ships in shadow |
 | `output.drift` | While the model is writing: does the tail of its output cross your constraints? | Off by default; corrected mid-stream |
 | `goal.met` | In goal mode, when the main model gives no answer: is the condition met? | The fallback for `/goal` |
 | `board.read` | Where do things stand? Asked as multiple choice | Feeds the plain-language board |

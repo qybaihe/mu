@@ -371,7 +371,8 @@
         "approval": "Bu, görevin ihtiyaç duyduğu ve beklediğiniz şekilde yapılan bir adım mı?",
         "injection": "Bu araç çıktısı yapay zekâya yönelik talimatlar içeriyor mu?",
         "continuation": "Çalışma yapması gerekeni yapmadan mı durdu?",
-        "items": "Ajanın her öğe için sorduğu soru"
+        "items": "Ajanın her öğe için sorduğu soru",
+        "teaching": "Turun dönüm noktası"
       },
       "fields": {
         "turnType": "Görev türü",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "{{number}}. öğe: evet"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "dönüm noktası"
+          },
+          "answers": {
+            "product_tradeoff": "ürün ödünü",
+            "arch_weighing": "mimari tartı",
+            "counterintuitive_pitfall": "sezgiye ters tuzak",
+            "routine": "sıradan tur",
+            "other": "söylenemez"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}}: alıkonulan bölüm: {{total}} içinden {{withheld}}, yapay zekâya yönelik talimatlar içeriyordu",
         "byRules": "yargıç yanıt vermedi: mu'nun kurallarıyla karar verildi",
         "excerpt": "başlangıç: {{text}}"
-      }
+      },
+      "teaching": "Öğretici kart: {{kind}} — {{why}}",
+      "teachingShadow": "Öğretici kart (yalnızca kayıt): {{kind}} — {{why}}"
     },
     "gauges": {
       "context": "Bağlam",

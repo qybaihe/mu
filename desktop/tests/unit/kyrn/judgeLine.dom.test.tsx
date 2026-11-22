@@ -492,8 +492,28 @@ describe('in the conversation', () => {
       call('read-1', { title: 'read', kind: 'read' }),
     ];
     render(<MessageList />, { wrapper: ({ children }) => <Wrapper messages={messages}>{children}</Wrapper> });
-    expect(screen.getAllByTestId('mu-judge-line')).toHaveLength(1);
+    // The turn has no teaching card, so its class folds into the kernel bar's pulse.
+    expect(screen.queryByTestId('mu-judge-line')).not.toBeInTheDocument();
     expect(screen.getByTestId('tool-summary')).toHaveTextContent(/^bash-1,read-1$/);
+  });
+
+  it('keeps its line for the turn a teaching card was shown for, and folds the others', () => {
+    const messages: TMessage[] = [
+      preflight({ title: 'Jev · chat', rawOutput: { turnType: 'chat', state: 'applied' } }),
+      call('mu:teaching:1', {
+        sessionUpdate: 'tool_call',
+        title: 'mu: why it went that way',
+        raw_input: {
+          teaching: 'arch_weighing',
+          why: 'The cache invalidates on the store writes.',
+          turn: 'runtime-1:3',
+          ruledOut: ['Inside the store'],
+        },
+      }),
+    ];
+    render(<MessageList />, { wrapper: ({ children }) => <Wrapper messages={messages}>{children}</Wrapper> });
+    expect(screen.getAllByTestId('mu-judge-line')).toHaveLength(1);
+    expect(screen.getByTestId('mu-teaching-card')).toBeInTheDocument();
   });
 
   it('says once that there is no judge, not under every message, and nothing for a switched-off one', () => {
@@ -504,6 +524,12 @@ describe('in the conversation', () => {
       call('jev:runtime-1:2', { title: 'Jev · Default', rawOutput: refused }),
       call('jev:runtime-1:3', { title: 'Jev · Default', rawOutput: { ...refused, reasonCode: 'off' } }),
       call('jev:runtime-1:4', { title: 'Jev · Fallback', rawOutput: { preflight: 'fallback' } }),
+      // The turn of the fallback line got a card, so its line stays; the no-judge line is said whatever the turn.
+      call('mu:teaching:2', {
+        sessionUpdate: 'tool_call',
+        title: 'mu: why it went that way',
+        raw_input: { teaching: 'product_tradeoff', why: 'Scope first.', turn: 'runtime-1:4' },
+      }),
     ];
     render(<MessageList />, { wrapper: ({ children }) => <Wrapper messages={messages}>{children}</Wrapper> });
     expect(screen.getAllByTestId('mu-judge-line').map((line) => line.getAttribute('data-stage'))).toEqual([

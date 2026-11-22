@@ -1312,5 +1312,19 @@
     "cancel": "취소",
     "saved": "프로필이 저장되었습니다. 포지션 게이트가 곧 새로 고침됩니다",
     "saveFailed": "저장에 실패했습니다. 다시 시도하세요"
+  },
+  "teaching": {
+    "open": "무엇을 배제했는지 보기",
+    "ruledOut": "배제: ",
+    "folded": {
+      "product_tradeoff": "제품 트레이드오프 · 왜 이렇게 골랐나",
+      "arch_weighing": "구조 · 왜 이렇게 골랐나",
+      "counterintuitive_pitfall": "직관에 반하는 함정 · 왜 이렇게 골랐나"
+    },
+    "kinds": {
+      "product_tradeoff": "제품 트레이드오프",
+      "arch_weighing": "구조 저울질",
+      "counterintuitive_pitfall": "직관에 반하는 함정"
+    }
   }
 }

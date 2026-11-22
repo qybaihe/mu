@@ -1312,5 +1312,19 @@
     "cancel": "Annuler",
     "saved": "Profil enregistré ; les règles se rafraîchissent ensuite",
     "saveFailed": "Échec de l’enregistrement ; réessayez"
+  },
+  "teaching": {
+    "open": "voir ce qui a été écarté",
+    "ruledOut": "Écarté : ",
+    "folded": {
+      "product_tradeoff": "Arbitrage produit · pourquoi ce choix",
+      "arch_weighing": "Architecture · pourquoi ce choix",
+      "counterintuitive_pitfall": "Piège contre-intuitif · pourquoi ce choix"
+    },
+    "kinds": {
+      "product_tradeoff": "arbitrage produit",
+      "arch_weighing": "pondération d'architecture",
+      "counterintuitive_pitfall": "piège contre-intuitif"
+    }
   }
 }

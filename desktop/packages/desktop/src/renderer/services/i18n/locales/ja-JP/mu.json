@@ -1312,5 +1312,19 @@
     "cancel": "キャンセル",
     "saved": "プロフィールを保存しました。ポジションのゲートは間もなく更新されます",
     "saveFailed": "保存に失敗しました。再試行してください"
+  },
+  "teaching": {
+    "open": "除外したものを見る",
+    "ruledOut": "除外：",
+    "folded": {
+      "product_tradeoff": "製品のトレードオフ · なぜそう選んだか",
+      "arch_weighing": "アーキテクチャ · なぜそう選んだか",
+      "counterintuitive_pitfall": "直感に反する罠 · なぜそう選んだか"
+    },
+    "kinds": {
+      "product_tradeoff": "製品のトレードオフ",
+      "arch_weighing": "アーキテクチャの判断",
+      "counterintuitive_pitfall": "直感に反する罠"
+    }
   }
 }

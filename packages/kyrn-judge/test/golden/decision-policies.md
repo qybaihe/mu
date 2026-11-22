@@ -720,6 +720,17 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: "end" (fallback)
 - the judge failed: "end" (fallback)
 
+## turn.teaching v1
+
+- `pivot` (choice):
+  - product_tradeoff: 0.3–0.65 → "routine"; 0.7–0.99 → "product_tradeoff"; without p → "product_tradeoff"
+  - arch_weighing: 0.3–0.65 → "routine"; 0.7–0.99 → "arch_weighing"; without p → "arch_weighing"
+  - counterintuitive_pitfall: 0.3–0.65 → "routine"; 0.7–0.99 → "counterintuitive_pitfall"; without p → "counterintuitive_pitfall"
+  - routine: 0.3–0.99 → "routine"; without p → "routine"
+  - other: 0.3–0.99 → "routine"; without p → "routine"
+- no answer: "routine" (fallback)
+- the judge failed: "routine" (fallback)
+
 ## turn.drift v2
 
 - `course` (choice):

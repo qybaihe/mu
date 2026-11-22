@@ -371,7 +371,8 @@
         "approval": "Ist das ein Schritt, den die Aufgabe braucht, so ausgeführt, wie du es erwarten würdest?",
         "injection": "Enthält diese Werkzeugausgabe Anweisungen an die KI?",
         "continuation": "Hat der Lauf aufgehört, bevor er tat, was er sollte?",
-        "items": "Die Frage des Agenten zu jedem Eintrag"
+        "items": "Die Frage des Agenten zu jedem Eintrag",
+        "teaching": "Der Wendepunkt des Durchgangs"
       },
       "fields": {
         "turnType": "Aufgabentyp",
@@ -930,6 +931,18 @@
           "questions": {
             "item": "Eintrag {{number}}: ja"
           }
+        },
+        "teaching": {
+          "questions": {
+            "pivot": "Wendepunkt"
+          },
+          "answers": {
+            "product_tradeoff": "Produktabwägung",
+            "arch_weighing": "Architekturabwägung",
+            "counterintuitive_pitfall": "kontraintuitive Falle",
+            "routine": "Routine",
+            "other": "nicht zu sagen"
+          }
         }
       },
       "log": {
@@ -1448,7 +1461,9 @@
         "withheld": "{{tool}}: Abschnitte zurückgehalten: {{withheld}} von {{total}}, sie enthielten Anweisungen an die KI",
         "byRules": "der Richter hat nicht geantwortet: nach den Regeln von mu entschieden",
         "excerpt": "beginnt: {{text}}"
-      }
+      },
+      "teaching": "Lehrkarte: {{kind}} — {{why}}",
+      "teachingShadow": "Lehrkarte (nur aufgezeichnet): {{kind}} — {{why}}"
     },
     "gauges": {
       "context": "Kontext",

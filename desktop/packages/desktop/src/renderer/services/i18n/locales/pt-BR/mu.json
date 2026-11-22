@@ -1312,5 +1312,19 @@
     "cancel": "Cancelar",
     "saved": "Perfil salvo; os gates serão atualizados em seguida",
     "saveFailed": "Falha ao salvar; tente de novo"
+  },
+  "teaching": {
+    "open": "ver o que foi descartado",
+    "ruledOut": "Descartado: ",
+    "folded": {
+      "product_tradeoff": "Trade-off de produto · por que foi assim",
+      "arch_weighing": "Arquitetura · por que foi assim",
+      "counterintuitive_pitfall": "Armadilha contraintuitiva · por que foi assim"
+    },
+    "kinds": {
+      "product_tradeoff": "trade-off de produto",
+      "arch_weighing": "ponderação de arquitetura",
+      "counterintuitive_pitfall": "armadilha contraintuitiva"
+    }
   }
 }

@@ -6,57 +6,62 @@ hand; run the test with `-u`.
 
 ## a question, answered without tools, mu --print
 
-- 1 request to the judge, 1234 characters of state and questions
-- 1 decision, 1 of them inline (the agent waits for them)
+- 2 requests to the judge, 2145 characters of state and questions
+- 2 decisions, 1 of them inline (the agent waits for them)
 
 | decision | latency | judge answered | decided without it |
 |---|---|---|---|
 | `turn.continue` | inline | 1 | 0 |
+| `turn.teaching` | background | 0 | 1 |
 
 ## a question, answered without tools, interactive
 
-- 2 requests to the judge, 3006 characters of state and questions
-- 2 decisions, 2 of them inline (the agent waits for them)
+- 3 requests to the judge, 3917 characters of state and questions
+- 3 decisions, 2 of them inline (the agent waits for them)
 
 | decision | latency | judge answered | decided without it |
 |---|---|---|---|
 | `input.preflight` | inline | 1 | 0 |
 | `turn.continue` | inline | 1 | 0 |
+| `turn.teaching` | background | 0 | 1 |
 
 ## a look at two files, mu --print
 
-- 1 request to the judge, 1254 characters of state and questions
-- 1 decision, 1 of them inline (the agent waits for them)
+- 2 requests to the judge, 2250 characters of state and questions
+- 2 decisions, 1 of them inline (the agent waits for them)
 
 | decision | latency | judge answered | decided without it |
 |---|---|---|---|
 | `turn.continue` | inline | 1 | 0 |
+| `turn.teaching` | background | 0 | 1 |
 
 ## a look at two files, interactive
 
-- 2 requests to the judge, 3024 characters of state and questions
-- 2 decisions, 2 of them inline (the agent waits for them)
+- 3 requests to the judge, 4020 characters of state and questions
+- 3 decisions, 2 of them inline (the agent waits for them)
 
 | decision | latency | judge answered | decided without it |
 |---|---|---|---|
 | `input.preflight` | inline | 1 | 0 |
 | `turn.continue` | inline | 1 | 0 |
+| `turn.teaching` | background | 0 | 1 |
 
 ## a fix: test, edit, test again, mu --print
 
-- 4 requests to the judge, 3054 characters of state and questions
-- 4 decisions, 4 of them inline (the agent waits for them)
+- 5 requests to the judge, 4030 characters of state and questions
+- 5 decisions, 4 of them inline (the agent waits for them)
 
 | decision | latency | judge answered | decided without it |
 |---|---|---|---|
 | `tool.approval` | inline | 2 | 0 |
 | `turn.completion` | inline | 1 | 0 |
 | `turn.continue` | inline | 1 | 0 |
+| `turn.teaching` | background | 0 | 1 |
 
 ## a fix: test, edit, test again, interactive
 
-- 5 requests to the judge, 4843 characters of state and questions
-- 5 decisions, 5 of them inline (the agent waits for them)
+- 6 requests to the judge, 5819 characters of state and questions
+- 6 decisions, 5 of them inline (the agent waits for them)
 
 | decision | latency | judge answered | decided without it |
 |---|---|---|---|
@@ -64,3 +69,4 @@ hand; run the test with `-u`.
 | `tool.approval` | inline | 2 | 0 |
 | `turn.completion` | inline | 1 | 0 |
 | `turn.continue` | inline | 1 | 0 |
+| `turn.teaching` | background | 0 | 1 |

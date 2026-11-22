@@ -58,6 +58,10 @@ The launch codes:
 | `off_the_web` | `where` (the page's origin, or its scheme: `file:`) | a page sent the browser to … (this computer / the local network / …), where it goes only when asked to open it there; nothing of that page was read |
 | `error` | | the run threw; `reason` is the error message, and `errorCode` / `errorParams` say what it was when the error carries a code. None does today: a browser that will not start never gets this far (it is `state: "failed"` above) |
 
+## turn.teaching
+
+`{ kind, why, ruledOut, state }` — the teaching card of a turn (`turn.teaching`). `kind` is `product_tradeoff`, `arch_weighing` or `counterintuitive_pitfall`; `why` is the writer's one-line reason (≤120 chars, in the person's language), `ruledOut` up to two options that were considered and rejected. `state` is `applied` or `shadow`: a client that shows the card in the conversation shows it only on `applied`; in `shadow` the card is for the record (ledger and judge panel), and the reply is untouched. Nothing of this is ever given to the model.
+
 ## progress
 
 `{ step, code?, params? }`
