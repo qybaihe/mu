@@ -1,5 +1,8 @@
 # mu 仓库交接（从全局 HANDOFF 分流 2026-11-15）
 
+## 2026-11-22 · 立项：顺带私教三案（只出方案，未动生产代码）
+- 三案方案文档 `tmp/side-tutor-plans.md`：①hint 收窄+折起教学卡（判据放 kyrn-judge 内核新决策点 turn.teaching，宿主只渲染，L）②手账（WorkPanel 新 journal tab，数据=lessons.jsonl 全量+positions/_shared/LESSONS.md 新读取器，纯视图零新存储，M）③10秒快测（quizCore+主进程 quizService 走 quickDecision provider 通道出题、MCQ 确定性判卷键不出主进程、进度 localStorage quiz-progress-v1 镜像 task-verification-v1 不碰内核 status，M）；关键架构澄清：mu-engine 补丁体制与三案无关（判读在内核层）。
+
 ## 2026-11-22 上午 · 批 L 收官：四项拍板全部落地，清单 12/12 达标收官（用户授权「按你的建议来吧」）
 - **四项拍板结果（2026-11-22 上午用户对四待拍板项回复按建议执行）**：①verify-batchL.cjs 已收编 verify-toolbox：字节级 cp 进 `scripts/dsbot-port/`（cmp BYTE-IDENTICAL），README 补索引行（批L 三机制/前置/状态✅）；②LayoutSiderBrandHome 6 基线败测已修（commit 720076e0d，`@/common` mock 补全 team 全事件面+auth.currentUser+realtime.reconnected——teamWaitStore 订阅链同步注册九个 team `.on`，实测比 HANDOFF 预估的一行 team mock 多两层）；③oxfmt 预存漂移已收口（commit 7005fb9d1，对齐 3999dace4 风格：真 diff 6 文件=webhook 批源码 3+i18n-config+positionCreation/inspectionService 测，13 locale mu.json oxfmt 重写后字节级相同仅刷 stat 缓存；desktop/tmp/add-describe-i18n.cjs 按约定不动）；④「最终使用体验达标」判定**收官达标**：判定依据=verify-batchL 16/16 E2E 点通+tsc/oxlint 0 错+全量测试对基线零差（上轮证据）→ 验收清单 12/12 达标收官（口径=自动化 E2E+冒烟，后续用户实际使用发现问题随时重开）。
 - **基线销账（第 2 项附带）**：全量 vitest 8060 测 **68/11 → 62/10**（LayoutSiderBrandHome 19/19 全绿；cmp-fails.py WORSE none/BETTER 6，JSON C:/tmp/full-batchL-close.json）；**后续会话对照新基线 62 败/10 文件**（残余=messageText.dom/SiderEntries/useDesktopTurnNotification/kyrn 等预存债，见下方 302 行拆制）。desktop tsc 0 错/oxlint 0 err 837 warn（=基线波动）。
