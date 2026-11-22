@@ -25,6 +25,8 @@ import { useConversationAssistants } from '@renderer/pages/conversation/hooks/us
 import { usePositionRoster } from '@renderer/pages/positions/usePositionRoster';
 import { getConversationCreateErrorMessage } from '@renderer/pages/conversation/utils/conversationCreateError';
 import { selectableAssistants } from '@renderer/utils/model/assistantSelection';
+import { buildAgentRuntimeModelInfo } from '@renderer/utils/model/agentRuntimeCatalog';
+import { useManagedAgentRuntimeCatalog } from '@renderer/hooks/agent/useManagedAgents';
 import { ensureTeamDispatchSeeded } from '@renderer/pages/team/core/teamDispatchSeed';
 import RecipePanel, { type RecipeGroupPlan } from '@renderer/pages/team/createGroupChat/RecipePanel';
 import { applySlotThinkingLevels } from '@renderer/pages/team/createGroupChat/applySlotThinking';
@@ -58,14 +60,24 @@ const NewGroupChatModal: React.FC<NewGroupChatModalProps> = ({ open, onClose, on
   const { presetAssistants } = useConversationAssistants();
   // The mu slot every position becomes: the shared selectable order puts mu first;
   // team capability narrows it. The dialog never offers per-slot agent choice —
-  // the full-MU lineup is the rule. The kept assistant also names the models
-  // the per-seat model dropdowns offer (the agent's own configured list).
+  // the full-MU lineup is the rule. The kept assistant names the models the
+  // per-seat model dropdowns offer: the assistant's own configured list, and —
+  // when it carries none (the bare generated mu assistant does not) — the
+  // agent's runtime catalog models (available_models), same source as the
+  // guid page's selector.
+  const agentRuntimeCatalog = useManagedAgentRuntimeCatalog();
   const assistant = useMemo(
     () => selectableAssistants(presetAssistants.filter((a) => a.team_selectable))[0],
     [presetAssistants]
   );
   const assistantId = assistant?.id ?? '';
-  const offeredModels = assistant?.models ?? [];
+  const offeredModels = useMemo(() => {
+    if (assistant?.models?.length) return assistant.models;
+    const catalogAgent = assistant?.agent_id
+      ? agentRuntimeCatalog.find((agent) => agent.id === assistant.agent_id)
+      : undefined;
+    return (buildAgentRuntimeModelInfo(catalogAgent)?.available_models ?? []).map((model) => model.id);
+  }, [agentRuntimeCatalog, assistant]);
 
   const [form, setForm] = useState<GroupChatFormState>(initialGroupChatFormState);
   const [creating, setCreating] = useState(false);

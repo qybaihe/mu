@@ -17,7 +17,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TTeam } from '@/common/types/team/teamTypes';
 
 let positions: { name: string; displayName: string; description: string }[];
-let assistants: { id: string; name: string; team_selectable: boolean; models?: string[] }[];
+let assistants: { id: string; name: string; team_selectable: boolean; models?: string[]; agent_id?: string }[];
+// The runtime catalog useManagedAgentRuntimeCatalog reads (mocked: the guid
+// page's source for the mu agent's available_models).
+let agentRuntimeCatalog: { id: string; available_models?: unknown }[];
 let create: ReturnType<typeof vi.fn>;
 let conversationUpdate: ReturnType<typeof vi.fn>;
 let registerTeam: ReturnType<typeof vi.fn>;
@@ -42,6 +45,9 @@ vi.mock('@/renderer/pages/positions/usePositionRoster', () => ({
 }));
 vi.mock('@/renderer/pages/conversation/hooks/useConversationAssistants', () => ({
   useConversationAssistants: () => ({ presetAssistants: assistants, isLoading: false }),
+}));
+vi.mock('@/renderer/hooks/agent/useManagedAgents', () => ({
+  useManagedAgentRuntimeCatalog: () => agentRuntimeCatalog,
 }));
 vi.mock('@/renderer/pages/team/core/teamDispatchSeed', () => ({
   ensureTeamDispatchSeeded: vi.fn(async () => undefined),
@@ -98,6 +104,18 @@ describe('NewGroupChatModal', () => {
     ];
     assistants = [
       { id: 'bare:mu', name: 'mu', team_selectable: true, models: ['anthropic/claude-sonnet', 'openai/gpt-5'] },
+    ];
+    agentRuntimeCatalog = [
+      {
+        id: 'agent-mu',
+        available_models: {
+          current_model_id: 'zai-coding-cn/glm-5.3',
+          available_models: [
+            { id: 'zai-coding-cn/glm-5.3', label: 'GLM-5.3' },
+            { id: 'zai-coding-cn/glm-4.6v', label: 'GLM-4.6V' },
+          ],
+        },
+      },
     ];
     create = vi.fn(async () => teamOf('货代、评审'));
     conversationUpdate = vi.fn(async () => true);
@@ -210,5 +228,19 @@ describe('NewGroupChatModal', () => {
     await waitFor(() => expect(create).toHaveBeenCalled());
     await waitFor(() => expect(registerTeam).toHaveBeenCalled());
     expect(applyModels).not.toHaveBeenCalled();
+  });
+
+  it('offers the agent runtime catalog models when the assistant carries none (the bare mu case)', async () => {
+    assistants = [{ id: 'bare:mu', name: 'mu', team_selectable: true, agent_id: 'agent-mu' }];
+    render(<NewGroupChatModal open onClose={() => {}} onCreated={() => {}} />);
+    fireEvent.click(screen.getByTestId('new-group-chat-positions'));
+    fireEvent.click(await screen.findByText('货代'));
+    fireEvent.click(await screen.findByText('评审'));
+    // The seat dropdown offers the runtime catalog ids, not an empty default-only list.
+    fireEvent.click(screen.getByTestId('new-group-chat-model-1'));
+    fireEvent.click(await screen.findByText('zai-coding-cn/glm-4.6v'));
+    fireEvent.click(screen.getByTestId('new-group-chat-submit'));
+    await waitFor(() => expect(applyModels).toHaveBeenCalledTimes(1));
+    expect(applyModels.mock.calls[0][1]).toEqual(['', 'zai-coding-cn/glm-4.6v']);
   });
 });
