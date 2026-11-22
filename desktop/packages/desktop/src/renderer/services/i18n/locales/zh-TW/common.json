@@ -1533,6 +1533,7 @@
     "pasteAndMatchStyle": "貼上並符合樣式",
     "delete": "刪除",
     "selectAll": "全選",
+    "clearInput": "清空輸入框",
     "view": "檢視",
     "reload": "重新載入",
     "forceReload": "強制重新載入",

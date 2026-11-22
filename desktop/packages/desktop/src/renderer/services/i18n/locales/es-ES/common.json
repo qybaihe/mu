@@ -1533,6 +1533,7 @@
     "pasteAndMatchStyle": "Pegar y adaptar estilo",
     "delete": "Eliminar",
     "selectAll": "Seleccionar todo",
+    "clearInput": "Vaciar campo de entrada",
     "view": "Ver",
     "reload": "Recargar",
     "forceReload": "Forzar recarga",

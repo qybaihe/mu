@@ -1518,6 +1518,7 @@
     "pasteAndMatchStyle": "Coller et adapter le style",
     "delete": "Supprimer",
     "selectAll": "Tout sélectionner",
+    "clearInput": "Vider le champ de saisie",
     "view": "Affichage",
     "reload": "Recharger",
     "forceReload": "Forcer le rechargement",

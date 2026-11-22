@@ -339,28 +339,35 @@ vi.mock('@/renderer/utils/file/messageFiles', () => ({
 vi.mock('@/renderer/pages/conversation/platforms/acp/useAcpInitialMessage', () => ({
   useAcpInitialMessage: vi.fn(),
 }));
-vi.mock('@arco-design/web-react', () => ({
-  Message: {
-    success: vi.fn(),
-    error: vi.fn(),
-    warning: messageWarningMock,
-  },
-  Tag: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  Popover: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-  Button: ({
-    children,
-    onClick,
-    disabled,
-  }: {
-    children?: React.ReactNode;
-    onClick?: () => void;
-    disabled?: boolean;
-  }) => (
-    <button type='button' onClick={onClick} disabled={disabled}>
-      {children}
-    </button>
-  ),
-}));
+// Real Arco for everything except what jsdom cannot run (Message's ReactDOM.render) and the pieces the test
+// replaces with lighter stand-ins. Partial passthrough, so new Arco imports in the component tree do not break
+// this mock one by one (Tooltip arrived with the reply hover bar, Dropdown/Menu with the text context menu).
+vi.mock('@arco-design/web-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@arco-design/web-react')>();
+  return {
+    ...actual,
+    Message: {
+      success: vi.fn(),
+      error: vi.fn(),
+      warning: messageWarningMock,
+    },
+    Tag: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    Popover: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    Button: ({
+      children,
+      onClick,
+      disabled,
+    }: {
+      children?: React.ReactNode;
+      onClick?: () => void;
+      disabled?: boolean;
+    }) => (
+      <button type='button' onClick={onClick} disabled={disabled}>
+        {children}
+      </button>
+    ),
+  };
+});
 
 const makeMessageState = (): UseAcpMessageReturn => ({
   thought: { subject: '', description: '' },

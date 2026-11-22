@@ -14,6 +14,7 @@ import type {
 } from '@/common/chat/chatLib';
 import { hasRunningToolMessages } from '@/common/chat/normalizeToolCall';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
+import TextContextMenu from '@/renderer/components/chat/TextContextMenu';
 import { useConversationRuntimeView } from '@/renderer/pages/conversation/runtime/useConversationRuntimeView';
 import { getChatSurfaceWidthClass } from '@/renderer/pages/conversation/utils/chatSurfaceWidth';
 import { iconColors } from '@/renderer/styles/colors';
@@ -1374,73 +1375,75 @@ const MessageList: React.FC<{
   }
 
   return (
-    <div className='relative flex-1 h-full'>
-      {/* Use PreviewGroup to wrap all messages for cross-message image preview */}
-      <Image.PreviewGroup actionsLayout={IMAGE_PREVIEW_ACTIONS_LAYOUT}>
-        <ImagePreviewContext.Provider value={IN_PREVIEW_GROUP_VALUE}>
-          <div
-            ref={setScrollerRef}
-            data-testid='message-list-scroller'
-            // Break out of the parent's 20px horizontal padding so the scrollbar hugs the
-            // window edge, while re-applying that padding inside to keep message content inset.
-            className='message-list-scroller flex-1 h-full overflow-y-auto pb-10px box-border -mx-20px px-20px'
-            style={{ overflowAnchor: 'none' }}
-            onPointerDown={handleListPointerDown}
-            onScroll={handleMessageListScroll}
-            onWheel={handleListWheel}
-          >
+    <TextContextMenu variant='readonly' getSelectAllTarget={() => contentElementRef.current}>
+      <div className='relative flex-1 h-full'>
+        {/* Use PreviewGroup to wrap all messages for cross-message image preview */}
+        <Image.PreviewGroup actionsLayout={IMAGE_PREVIEW_ACTIONS_LAYOUT}>
+          <ImagePreviewContext.Provider value={IN_PREVIEW_GROUP_VALUE}>
             <div
-              ref={setContentRef}
-              className='message-list-content'
-              data-testid='message-list-content'
-              style={{
-                overflowAnchor: 'none',
-                fontFamily: 'var(--chat-font-family, inherit)',
-                fontWeight: 'var(--chat-font-weight, inherit)',
-              }}
+              ref={setScrollerRef}
+              data-testid='message-list-scroller'
+              // Break out of the parent's 20px horizontal padding so the scrollbar hugs the
+              // window edge, while re-applying that padding inside to keep message content inset.
+              className='message-list-scroller flex-1 h-full overflow-y-auto pb-10px box-border -mx-20px px-20px'
+              style={{ overflowAnchor: 'none' }}
+              onPointerDown={handleListPointerDown}
+              onScroll={handleMessageListScroll}
+              onWheel={handleListWheel}
             >
-              <div className='h-10px' />
-              {headerSlot && !pagination.hasMoreBefore ? headerSlot : null}
-              {processedList.map((item, index) => (
-                <React.Fragment key={getProcessedItemKey(item) || index}>{renderItem(index, item)}</React.Fragment>
-              ))}
-              <div className='h-20px' />
-            </div>
-          </div>
-        </ImagePreviewContext.Provider>
-      </Image.PreviewGroup>
-
-      {/* Released from the bottom: one small pill offers the way back, and nothing else moves. */}
-      {showScrollButton && (
-        <div className='absolute bottom-16px left-50% transform -translate-x-50% z-100 jump-to-latest-pill'>
-          <button
-            type='button'
-            data-testid='jump-to-latest'
-            className='flex items-center gap-6px h-28px ps-10px pe-8px rd-999px bg-base cursor-pointer border-1 border-solid border-3 text-12px text-t-secondary hover:text-t-primary transition-all duration-150'
-            style={{ boxShadow: 'var(--mu-shadow-2)' }}
-            onClick={handleScrollButtonClick}
-            aria-label={t('messages.scrollToBottom')}
-          >
-            {isProcessing && (
-              <span
-                className='size-6px rd-full shrink-0'
+              <div
+                ref={setContentRef}
+                className='message-list-content'
+                data-testid='message-list-content'
                 style={{
-                  backgroundColor: 'rgb(var(--primary-6))',
-                  animation: 'jump-pill-pulse 1.4s ease-in-out infinite',
+                  overflowAnchor: 'none',
+                  fontFamily: 'var(--chat-font-family, inherit)',
+                  fontWeight: 'var(--chat-font-weight, inherit)',
                 }}
-                aria-hidden='true'
-              />
-            )}
-            {t('messages.scrollToBottom')}
-            <Down theme='outline' size='12' fill={iconColors.secondary} style={{ display: 'block' }} />
-          </button>
-        </div>
-      )}
+              >
+                <div className='h-10px' />
+                {headerSlot && !pagination.hasMoreBefore ? headerSlot : null}
+                {processedList.map((item, index) => (
+                  <React.Fragment key={getProcessedItemKey(item) || index}>{renderItem(index, item)}</React.Fragment>
+                ))}
+                <div className='h-20px' />
+              </div>
+            </div>
+          </ImagePreviewContext.Provider>
+        </Image.PreviewGroup>
 
-      <SelectionReplyButton messages={list} />
+        {/* Released from the bottom: one small pill offers the way back, and nothing else moves. */}
+        {showScrollButton && (
+          <div className='absolute bottom-16px left-50% transform -translate-x-50% z-100 jump-to-latest-pill'>
+            <button
+              type='button'
+              data-testid='jump-to-latest'
+              className='flex items-center gap-6px h-28px ps-10px pe-8px rd-999px bg-base cursor-pointer border-1 border-solid border-3 text-12px text-t-secondary hover:text-t-primary transition-all duration-150'
+              style={{ boxShadow: 'var(--mu-shadow-2)' }}
+              onClick={handleScrollButtonClick}
+              aria-label={t('messages.scrollToBottom')}
+            >
+              {isProcessing && (
+                <span
+                  className='size-6px rd-full shrink-0'
+                  style={{
+                    backgroundColor: 'rgb(var(--primary-6))',
+                    animation: 'jump-pill-pulse 1.4s ease-in-out infinite',
+                  }}
+                  aria-hidden='true'
+                />
+              )}
+              {t('messages.scrollToBottom')}
+              <Down theme='outline' size='12' fill={iconColors.secondary} style={{ display: 'block' }} />
+            </button>
+          </div>
+        )}
 
-      <MessageAnchorRail />
-    </div>
+        <SelectionReplyButton messages={list} />
+
+        <MessageAnchorRail />
+      </div>
+    </TextContextMenu>
   );
 };
 

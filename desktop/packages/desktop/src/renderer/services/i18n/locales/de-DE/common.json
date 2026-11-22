@@ -1533,6 +1533,7 @@
     "pasteAndMatchStyle": "Einfügen und Stil anpassen",
     "delete": "Löschen",
     "selectAll": "Alles auswählen",
+    "clearInput": "Eingabefeld leeren",
     "view": "Ansicht",
     "reload": "Neu laden",
     "forceReload": "Neu laden erzwingen",

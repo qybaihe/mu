@@ -7,12 +7,13 @@
 import { ipcBridge } from '@/common';
 import type { IGpuStatus, IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { configService } from '@/common/config/configService';
+import { DEFAULT_VOICE_INPUT_KEY, VOICE_INPUT_KEYS } from '@/common/config/voiceInputKeys';
 import MuScrollArea from '@/renderer/components/base/MuScrollArea';
 import { COMPLETION_SOUND_SETTING, playAttentionSound } from '@/renderer/hooks/system/notification/attentionSound';
 import { useKeepAwakeSetting } from '@/renderer/hooks/system/useKeepAwakeWhileRunning';
 import { notifyManualRestartRequired } from '@/renderer/utils/appRestart';
 import { isElectronDesktop, isMacOS } from '@/renderer/utils/platform';
-import { Alert, Form, Message, Modal, Switch } from '@arco-design/web-react';
+import { Alert, Form, Input, Message, Modal, Select, Switch } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
@@ -49,6 +50,10 @@ const SystemModalContent: React.FC = () => {
   const [cronNotificationEnabled, setCronNotificationEnabled] = useState(false);
   const keepAwakeWhileRunning = useKeepAwakeSetting();
   const [completionSound, setCompletionSound] = useState(false);
+  /** The external command the voice-input button fires; empty hides the button. */
+  const [voiceInputCommand, setVoiceInputCommand] = useState('');
+  /** Which key the built-in tap presses when no command is configured. */
+  const [voiceInputKey, setVoiceInputKey] = useState<string>(DEFAULT_VOICE_INPUT_KEY);
 
   useEffect(() => {
     if (!isDesktop) {
@@ -76,6 +81,8 @@ const SystemModalContent: React.FC = () => {
 
   useEffect(() => {
     setCloseToTray(configService.get('system.closeToTray') ?? false);
+    setVoiceInputCommand(configService.get('system.voiceInputCommand') ?? '');
+    setVoiceInputKey(configService.get('system.voiceInputKey') ?? DEFAULT_VOICE_INPUT_KEY);
     if (isDesktop) {
       ipcBridge.systemSettings.getCloseToTray
         .invoke()
@@ -229,6 +236,24 @@ const SystemModalContent: React.FC = () => {
     }
   }, [systemInfo, form]);
 
+  const handleVoiceInputKeyChange = useCallback((value: string | number | boolean | undefined) => {
+    const keyId = typeof value === 'string' ? value : DEFAULT_VOICE_INPUT_KEY;
+    setVoiceInputKey(keyId);
+    configService.setLocal('system.voiceInputKey', keyId);
+    configService.set('system.voiceInputKey', keyId).catch(() => {
+      Message.error(t('settings.saveFailed', { defaultValue: 'Failed to save' }));
+    });
+  }, [t]);
+
+  /** Saved on blur: the command runs as-is in a shell, so a half-typed command is never persisted. */
+  const handleVoiceInputCommandBlur = useCallback(() => {
+    const trimmed = voiceInputCommand.trim();
+    configService.setLocal('system.voiceInputCommand', trimmed);
+    configService.set('system.voiceInputCommand', trimmed).catch(() => {
+      Message.error(t('settings.saveFailed', { defaultValue: 'Failed to save' }));
+    });
+  }, [voiceInputCommand, t]);
+
   const preferenceItems = [
     {
       key: 'startOnBoot',
@@ -357,6 +382,46 @@ const SystemModalContent: React.FC = () => {
                   checked={completionSound}
                   onChange={handleCompletionSoundChange}
                   data-testid='completion-sound-switch'
+                />
+              </PreferenceRow>
+            ) : null}
+            {isDesktop ? (
+              <PreferenceRow
+                label={t('settings.voiceInputKey')}
+                description={t('settings.voiceInputKeyDesc', {
+                  defaultValue:
+                    "The key the mic button presses when no command is configured. Match your IME's voice hotkey (WeType: right Ctrl by default).",
+                })}
+              >
+                <Select
+                  size='small'
+                  style={{ width: 140 }}
+                  value={voiceInputKey}
+                  onChange={handleVoiceInputKeyChange}
+                  data-testid='voice-input-key-select'
+                  options={Object.keys(VOICE_INPUT_KEYS).map((id) => ({
+                    label: t(`settings.voiceInputKey_${id}`, { defaultValue: id }),
+                    value: id,
+                  }))}
+                />
+              </PreferenceRow>
+            ) : null}
+            {isDesktop ? (
+              <PreferenceRow
+                label={t('settings.voiceInputCommand')}
+                description={t('settings.voiceInputCommandDesc', {
+                  defaultValue:
+                    'External command fired by the mic button in the input box (e.g. a script that presses the IME voice hotkey). Empty hides the button.',
+                })}
+              >
+                <Input
+                  allowClear
+                  style={{ width: 260 }}
+                  placeholder='python C:/tools/voice_hotkey.py'
+                  value={voiceInputCommand}
+                  onChange={setVoiceInputCommand}
+                  onBlur={handleVoiceInputCommandBlur}
+                  data-testid='voice-input-command-input'
                 />
               </PreferenceRow>
             ) : null}

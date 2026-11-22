@@ -1077,5 +1077,15 @@
   "keepAwakeWhileRunning": "Keep the computer awake while a conversation runs",
   "keepAwakeWhileRunningDesc": "While a run is going, the computer doesn't go to sleep when idle. The display can still turn off, and closing the lid still puts it to sleep.",
   "completionSound": "Play a sound when a conversation finishes or needs you",
-  "completionSoundDesc": "Plays a short chime even while mu is in front, and a different one when mu asks something or a run fails. While it's on, system notifications stay silent, so you don't hear two sounds."
+  "completionSoundDesc": "Plays a short chime even while mu is in front, and a different one when mu asks something or a run fails. While it's on, system notifications stay silent, so you don't hear two sounds.",
+  "voiceInputCommand": "Voice input command",
+  "voiceInputKey": "Voice input hotkey",
+  "voiceInputKeyDesc": "The key the mic button presses when no command is configured. Match your IME's voice hotkey (WeType: right Ctrl by default).",
+  "voiceInputKey_rightCtrl": "Right Ctrl",
+  "voiceInputKey_leftCtrl": "Left Ctrl",
+  "voiceInputKey_rightShift": "Right Shift",
+  "voiceInputKey_leftShift": "Left Shift",
+  "voiceInputKey_f2": "F2",
+  "voiceInputKey_capsLock": "Caps Lock",
+  "voiceInputCommandDesc": "External command fired by the mic button in the input box (e.g. a script that presses the IME voice hotkey). Empty taps right Ctrl on Windows (the common IME voice hotkey)."
 }

@@ -1533,6 +1533,7 @@
     "pasteAndMatchStyle": "Yapıştır ve stili eşleştir",
     "delete": "Sil",
     "selectAll": "Tümünü seç",
+    "clearInput": "Giriş kutusunu temizle",
     "view": "Görünüm",
     "reload": "Yeniden yükle",
     "forceReload": "Zorla yeniden yükle",

@@ -24,6 +24,10 @@ export type ConfigKeyMap = {
   'assistants.enabledOrder': string[] | undefined;
   'upload.saveToWorkspace': boolean | undefined;
   'system.closeToTray': boolean | undefined;
+  /** External command the input box's voice-input button fires; empty/undefined hides the button. */
+  'system.voiceInputCommand': string | undefined;
+  /** Which key the built-in tap presses when no command is configured (see VOICE_INPUT_KEYS; default right Ctrl). */
+  'system.voiceInputKey': string | undefined;
   'system.notificationEnabled': boolean | undefined;
   'system.cronNotificationEnabled': boolean | undefined;
   'system.keepAwake': boolean | undefined;

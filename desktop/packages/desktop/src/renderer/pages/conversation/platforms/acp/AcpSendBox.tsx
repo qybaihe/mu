@@ -28,6 +28,7 @@ import {
   thoughtLevelOptionLabel,
 } from '@/renderer/components/agent/runtimeSelectorOptions';
 import FileAttachButton from '@/renderer/components/media/FileAttachButton';
+import VoiceInputButton from '@/renderer/components/chat/VoiceInputButton';
 import { audioExts, getFileExtension, imageExts } from '@/renderer/services/FileService';
 import FilePreview from '@/renderer/components/media/FilePreview';
 import HorizontalFileList from '@/renderer/components/media/HorizontalFileList';
@@ -1067,6 +1068,7 @@ Please check your local CLI tool authentication status`,
           // thinking level sit on the right, beside the send button.
           <>
             <FileAttachButton openFileSelector={openFileSelector} loadedMcpStatuses={loadedMcpStatuses} />
+            <VoiceInputButton />
             {showModeSelector && (
               <AgentModeSelector
                 backend={backend}
