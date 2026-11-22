@@ -2,8 +2,10 @@
  * The quiz's main-process side (side-tutor case 3): one journal entry in, one
  * scenario question out, the answer key graded here and never sent across the
  * bridge. The question is made by the same cheap model the quick-decision
- * layer uses (`tools.quickDecisionModel`, resolved the same way) under its own
- * 10s ceiling, and kept in memory for the entry's content hash — the same
+ * layer uses (`tools.quickDecisionModel`, resolved the same way) with
+ * thinking switched off, under its own ceiling (45s — the channel thinks by
+ * default and a thinking ask was measured at 22-34s; the cap is that ceiling
+ * plus margin), and kept in memory for the entry's content hash — the same
  * lesson is asked once, an edited lesson is a new quiz. Every doubt abandons:
  * no model configured, a thin entry, a model that declines, two answers that
  * do not parse. The entry itself is read from the same two files the journal
@@ -40,11 +42,12 @@ export type QuizDeps = {
   readSetting: () => Promise<QuickDecisionModelSetting | undefined>;
   /** The live provider list, secrets included — the setting's id resolves against it. */
   listProviders: () => Promise<IProvider[]>;
-  /** One completion: the prompt's messages in, the model's raw text out; must honor the timeout itself. */
+  /** One completion: the prompt's messages in, the model's raw text out; must honor the timeout itself. `thinkingOff` asks the channel not to think first (the zai coding endpoint does by default). */
   complete: (
     provider: TProviderWithModel,
     messages: Array<{ role: 'system' | 'user'; content: string }>,
-    timeoutMs: number
+    timeoutMs: number,
+    options?: { thinkingOff?: boolean }
   ) => Promise<string>;
   log: (...args: unknown[]) => void;
 };
@@ -69,7 +72,7 @@ const entryOf = (files: QuizFiles, entryId: string): QuizSource | undefined => {
 
 /**
  * The quiz of one entry: the model's question (the key held back), or why there is none. A thin entry is abandoned
- * without a call; a malformed answer is retried once; a timeout or a model error is not retried — ten seconds is
+ * without a call; a malformed answer is retried once; a timeout or a model error is not retried — one ceiling is
  * already the whole budget. Only questions that parsed are cached, under the entry's content hash.
  */
 export async function quizAskIn(
@@ -88,7 +91,7 @@ export async function quizAskIn(
   if (cached) return { action: 'ask', question: quizViewOf(hash, cached) };
   const prompt = buildQuizPrompt(entry);
 
-  /** One ask under the ceiling; false = the call itself failed (timeout or model error). */
+  /** One ask under the ceiling; false = the call itself failed (timeout or model error). Thinking off: the zai channel thinks by default and a thinking quiz cannot fit any honest ceiling. */
   const ask = async (): Promise<QuizQuestion | { skip: string } | false> => {
     try {
       return parseQuizDecision(
@@ -98,7 +101,8 @@ export async function quizAskIn(
             { role: 'system', content: prompt.system },
             { role: 'user', content: prompt.user },
           ],
-          QUIZ_TIMEOUT_MS
+          QUIZ_TIMEOUT_MS,
+          { thinkingOff: true }
         )
       );
     } catch (error) {

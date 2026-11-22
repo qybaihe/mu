@@ -377,7 +377,8 @@ async function askModel(
 export const completeUnderCeiling = async (
   provider: TProviderWithModel,
   messages: Array<{ role: 'system' | 'user'; content: string }>,
-  timeoutMs: number
+  timeoutMs: number,
+  options?: { thinkingOff?: boolean }
 ): Promise<string> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -388,11 +389,20 @@ export const completeUnderCeiling = async (
       // run zero times and `throw lastError` — which is undefined.)
       rotatingOptions: { maxRetries: 1 },
     });
+    const baseRequest = { model: provider.use_model, messages };
+    // The zai coding endpoint thinks by default, and a thinking call cannot
+    // fit any honest ceiling (measured 22-34s of thinking on quiz-sized
+    // asks). The OpenAI SDK passes unknown body fields through, so the
+    // switch rides the wire as-is; zai-coding-cn is an OpenAI-family
+    // endpoint, and every other platform never sees the field.
+    const request =
+      options?.thinkingOff === true && provider.platform === 'zai-coding-cn'
+        ? ({ ...baseRequest, thinking: { type: 'disabled' } } as typeof baseRequest & {
+            thinking: { type: 'disabled' };
+          })
+        : baseRequest;
     const completion = await Promise.race([
-      client.createChatCompletion(
-        { model: provider.use_model, messages },
-        { signal: controller.signal, timeout: timeoutMs }
-      ),
+      client.createChatCompletion(request, { signal: controller.signal, timeout: timeoutMs }),
       new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('quick-decision-timeout')), timeoutMs);
       }),

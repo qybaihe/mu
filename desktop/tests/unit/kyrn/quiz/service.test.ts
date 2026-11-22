@@ -25,16 +25,21 @@ afterEach(() => {
 const lessonLine = (id: string, trigger: string, lesson: string, updated: string): string =>
   `${JSON.stringify({ id, kind: 'pitfall', trigger, lesson, cwd: 'E:/Projects/mu', updated })}\n`;
 
-/** A deps whose model always answers `raw`, counts its calls, and records the ceiling it was asked under. */
-const depsOf = (raw: string | Error): { deps: QuizDeps; calls: Array<{ messages: unknown[]; timeoutMs: number }> } => {
-  const calls: Array<{ messages: unknown[]; timeoutMs: number }> = [];
+/** A deps whose model always answers `raw`, counts its calls, and records the ceiling and options it was asked under. */
+const depsOf = (
+  raw: string | Error
+): {
+  deps: QuizDeps;
+  calls: Array<{ messages: unknown[]; timeoutMs: number; options?: { thinkingOff?: boolean } }>;
+} => {
+  const calls: Array<{ messages: unknown[]; timeoutMs: number; options?: { thinkingOff?: boolean } }> = [];
   const provider = { id: 'p', name: 'p', use_model: 'cheap' } as unknown as TProviderWithModel;
   const deps: QuizDeps = {
     now: Date.now,
     readSetting: async () => ({ id: 'p', use_model: 'cheap' }) as unknown as TProviderWithModel,
     listProviders: async () => [provider] as unknown as IProvider[],
-    complete: async (_model, messages, timeoutMs) => {
-      calls.push({ messages, timeoutMs });
+    complete: async (_model, messages, timeoutMs, options) => {
+      calls.push({ messages, timeoutMs, options });
       if (raw instanceof Error) throw raw;
       return raw;
     },
@@ -97,8 +102,9 @@ describe('the ask of one entry', () => {
     // The bridge's object holds no key anywhere.
     expect(JSON.stringify(result)).not.toContain('answerIndex');
     expect(JSON.stringify(result)).not.toContain('"answer"');
-    // The ceiling is the quiz's own, and the entry rode the user turn.
+    // The ceiling is the quiz's own, the entry rode the user turn, and the ask switches the channel's thinking off.
     expect(calls[0].timeoutMs).toBe(QUIZ_TIMEOUT_MS);
+    expect(calls[0].options).toEqual({ thinkingOff: true });
     expect(calls[0].messages).toEqual([
       { role: 'system', content: expect.stringContaining('NEW, concrete situation') },
       { role: 'user', content: expect.stringContaining('Push rules hold for docs too.') },
@@ -131,7 +137,7 @@ describe('the ask of one entry', () => {
     expect(result.action).toBe('ask');
   });
 
-  it('does not retry a failed call — ten seconds is already the whole budget', async () => {
+  it('does not retry a failed call — one ceiling is already the whole budget', async () => {
     const files = filesOf(lessonLine('a', 'when pushing', 'Push rules hold for docs too.', '2026-11-22T06:00:00.000Z'));
     const { deps, calls } = depsOf(new Error('quick-decision-timeout'));
     expect(await quizAskIn(deps, files, new Map(), 'a')).toEqual({ action: 'no-question' });

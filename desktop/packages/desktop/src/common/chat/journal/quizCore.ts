@@ -18,8 +18,8 @@
  */
 import { extractDecisionJson } from '../team/quickDecision/quickDecisionCore';
 
-/** The ceiling of one quiz ask. The quick-decision layer's 2s serves sends; a quiz is off the send path, so it gets air. */
-export const QUIZ_TIMEOUT_MS = 10_000;
+/** The ceiling of one quiz ask. The quick-decision layer's 2s serves sends; a quiz is off the send path, so it gets air. The quiz asks with thinking off (see `completeUnderCeiling`), which lands in seconds — but the channel was measured taking 22-34s while it thought, so the cap is that measured ceiling plus margin, and it is ONE ask's whole budget (a retry gets its own). */
+export const QUIZ_TIMEOUT_MS = 45_000;
 /** Exactly this many options, one of them right. */
 export const QUIZ_OPTION_COUNT = 4;
 /**
