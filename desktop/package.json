@@ -252,7 +252,8 @@
   "muAgentVersion": "0.3.13",
   "patchedDependencies": {
     "7zip-bin@5.2.0": "patches/7zip-bin@5.2.0.patch",
-    "@arco-design/web-react@2.66.11": "patches/@arco-design+web-react@2.66.11.patch"
+    "@arco-design/web-react@2.66.11": "patches/@arco-design+web-react@2.66.11.patch",
+    "app-builder-lib@26.15.2": "patches/app-builder-lib@26.15.2.patch"
   },
   "productName": "mu"
 }

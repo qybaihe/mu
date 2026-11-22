@@ -1,0 +1,40 @@
+# Retries the final rm+rename swap of extractArchive with exponential backoff:
+# on Windows the freshly extracted exe is often still being scanned by
+# antivirus, which made the .tmp -> win-unpacked rename fail with EPERM
+# about half the builds. 6 retries, 250ms * 2^n (~15.7s total patience).
+
+--- a/out/util/electronGet.js
++++ b/out/util/electronGet.js
+@@ -183,8 +183,30 @@
+         if (extractedFiles.length === 0) {
+             throw new Error(`Extraction of ${path.basename(file)} produced no files`);
+         }
+-        await fs.rm(dir, { recursive: true, force: true });
+-        await fs.rename(tmpDir, dir);
++        // mu local patch: on Windows the freshly extracted exe inside tmpDir is
++        // often still being scanned by antivirus, which makes rm/rename of these
++        // directories fail with EPERM/EACCES/ENOTEMPTY for a moment. Retry the
++        // swap with exponential backoff instead of failing the whole build.
++        const SWAP_RETRIES = 6; // 250ms * 2^n backoff: ~15.7s of total patience
++        let swapError;
++        for (let attempt = 0; attempt <= SWAP_RETRIES; attempt++) {
++            try {
++                await fs.rm(dir, { recursive: true, force: true });
++                await fs.rename(tmpDir, dir);
++                swapError = null;
++                break;
++            }
++            catch (e) {
++                swapError = e;
++                const code = e && e.code;
++                const retryable = code === "EPERM" || code === "EACCES" || code === "ENOTEMPTY" || code === "EBUSY" || code === "ETXTBSY" || code === "EAGAIN";
++                if (!retryable || attempt === SWAP_RETRIES) break;
++                const delayMs = 250 * Math.pow(2, attempt);
++                builder_util_1.log.warn({ code, file: path.basename(file), attempt: attempt + 1, retries: SWAP_RETRIES, delayMs }, "extracted dir swap locked (antivirus?), retrying");
++                await new Promise(r => setTimeout(r, delayMs));
++            }
++        }
++        if (swapError) throw swapError;
+     }
+     finally {
+         await release().catch(err => builder_util_1.log.warn({ err }, "failed to release lockfile"));
