@@ -40,4 +40,12 @@ Ships in **shadow**: the verdict, the card and the presentation are recorded (le
 
 ### Calibration log (shadow)
 
-- (to be filled from the fork instance's ledger and judge panel; see the batch N report)
+First sample (fork build `build/local-fork-n`, 2026-11-22, judge `glm-flash` tier at ~1 s per ask, writer `zai-coding-cn/glm-5.3`):
+
+| turn | asked | judge's pick | probability | card | right? |
+|---|---|---|---|---|---|
+| "配置塞进一个 config 对象还是拆成命名参数？权衡一下" | pivot | `arch_weighing` | 0.85 | yes — "两种方式各有代价，所以没有全押一边，而是按参数性质拆分：必需项保可读性，可选项打包保扩展性。" | yes |
+| "先只做 JSON 导出还是一步到位三格式？取舍一下" | pivot | `product_tradeoff` | 0.85 | yes — "JSON 最先落地，因为它是最小可用方案；展平规则和依赖只有在有实际需求时才确定。" | yes |
+| "把变量名 x 改成 itemCount" | pivot | `routine` | 0.85 (0.6, 0.7 on its later sub-runs) | none | yes |
+
+3/3 correct, no false positive, distribution sharp (0.85 against 0.0375 for the rest) — the 0.7 bar sits comfortably. Shadow presented every card with `state: shadow`; the transcript showed no card row and no judge-line row (the fold held), and the judge panel listed the records.
