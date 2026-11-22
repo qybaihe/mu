@@ -11,7 +11,7 @@
  * the library scan reads back.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { analyzeProjectDirectory, createPositionIn, scanPositionLibrary } from '@process/services/team/positions';
@@ -180,5 +180,25 @@ describe('createPositionIn cache honesty', () => {
     await createPositionIn({ libraryDir: library }, creationParams);
     const roster = await scanPositionLibrary(library);
     expect(roster.some((position) => position.name === 'freight-lab')).toBe(true);
+  });
+
+  it('sees a content edit of an existing position file on the next scan (the file mtime is part of the key)', async () => {
+    const library = temp();
+    mkdirSync(library, { recursive: true });
+    await createPositionIn({ libraryDir: library }, creationParams);
+    await scanPositionLibrary(library); // warm the cache with the file present
+    // A content edit moves the file's mtime, not the directory's — the scan
+    // must not serve the cached parse (an edited approval tier would never
+    // land). The mtime is pushed explicitly: two writes inside one filesystem
+    // clock tick can carry the same stamp, and the test must not depend on
+    // where the ticks fall.
+    const file = join(library, 'freight-lab.md');
+    const edited = readFileSync(file, 'utf8').replace('description: ', 'description: edited ');
+    writeFileSync(file, edited, 'utf8');
+    const later = new Date(Date.now() + 5000);
+    utimesSync(file, later, later);
+    const roster = await scanPositionLibrary(library);
+    const position = roster.find((candidate) => candidate.name === 'freight-lab');
+    expect(position?.description).toContain('edited');
   });
 });

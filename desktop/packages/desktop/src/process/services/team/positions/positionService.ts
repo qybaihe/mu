@@ -109,8 +109,13 @@ export const safeFolderName = (name: string): string => {
   return safe;
 };
 
-/** Cache of the last scan of one library directory, reused until its mtime moves. */
-const cacheByDir = new Map<string, { dirMtimeMs: number; positions: PositionInfo[] }>();
+/**
+ * Cache of the last scan of one library directory, reused until something
+ * changes: the directory's mtime (a file added or removed) or any file's
+ * mtime (a content edit moves the file's mtime, not the directory's —
+ * without the file mtimes an edited approval tier would never be seen).
+ */
+const cacheByDir = new Map<string, { dirMtimeMs: number; fileStamps: readonly string[]; positions: PositionInfo[] }>();
 
 /**
  * The roster as one library directory defines it: every position file, in name
@@ -127,15 +132,29 @@ export async function scanPositionLibrary(libraryDir: string): Promise<PositionI
   }
   if (!dirStat.isDirectory()) return [];
 
-  const dirMtimeMs = dirStat.mtimeMs;
-  const cached = cacheByDir.get(libraryDir);
-  if (cached && cached.dirMtimeMs === dirMtimeMs) return cached.positions;
-
   // Dot entries are the app's own hidden folder (the delete quarantine), not
   // positions; the manifest inside it never lists here either.
   const files = (await readdir(libraryDir))
     .filter((name) => name.toLowerCase().endsWith('.md') && !name.startsWith('.'))
     .toSorted();
+  const fileStamps: string[] = [];
+  for (const file of files) {
+    try {
+      fileStamps.push(`${file}:${(await stat(join(libraryDir, file))).mtimeMs}`);
+    } catch {
+      fileStamps.push(`${file}:gone`); // vanished mid-scan; the read below skips it too
+    }
+  }
+  const cached = cacheByDir.get(libraryDir);
+  if (
+    cached &&
+    cached.dirMtimeMs === dirStat.mtimeMs &&
+    cached.fileStamps.length === fileStamps.length &&
+    cached.fileStamps.every((stamp, index) => stamp === fileStamps[index])
+  ) {
+    return cached.positions;
+  }
+
   const positions: PositionInfo[] = [];
   for (const file of files) {
     let content: string;
@@ -147,7 +166,7 @@ export async function scanPositionLibrary(libraryDir: string): Promise<PositionI
     const position = parsePositionDocument(file, content);
     if (position) positions.push(position);
   }
-  cacheByDir.set(libraryDir, { dirMtimeMs, positions });
+  cacheByDir.set(libraryDir, { dirMtimeMs: dirStat.mtimeMs, fileStamps, positions });
   return positions;
 }
 
