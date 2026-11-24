@@ -407,6 +407,11 @@ mude 1.0 由 [d3-nano](https://huggingface.co/vllm-sr/d3-nano)（Decision 3.0，
 
 桌面端最初 fork 自 [AionUi](https://github.com/iOfficeAI/AionUi)，从 AionUi 带来的文件列在 [desktop/APACHE-FILES.txt](../../desktop/APACHE-FILES.txt)，仍按 Apache License 2.0 授权（见 [desktop/NOTICE](../../desktop/NOTICE)）。
 
+## 作者的其他项目
+
+- [BotArk](https://github.com/qybaihe/botark) — 将 Grok Bot、Google Antigravity、ChatGPT Dot、Meta Muse、Hark、Cue 与开源 Hermes 收进同一个 macOS / Windows / iOS / Android 原生工作台，支持跨平台多 Agent 协作室、单账号独立代理隔离与受控本地 MCP。
+- [BLA](https://github.com/qybaihe/bla) — 面向自动化 AI 逆向代理的构建期对抗防御工具（CLI 与 MCP Server）。
+
 ## 社区支持
 
 - 提问和想法：[Discussions](https://github.com/qybaihe/mu/discussions)；中文讨论也可以去 [linux.do](https://linux.do)。

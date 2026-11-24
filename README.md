@@ -452,6 +452,11 @@ If you use mude in your work, please cite it:
 }
 ```
 
+## More by [@qybaihe](https://github.com/qybaihe)
+
+- [BotArk](https://github.com/qybaihe/botark) — Native macOS, Windows, iOS and Android workspace for running Grok Bot, Google Antigravity, ChatGPT Dot, Meta Muse, Hark, Cue and Hermes side by side, with multi-agent collaboration rooms, per-account sandboxing and local MCP.
+- [BLA](https://github.com/qybaihe/bla) — Adversarial build defense (CLI & MCP server) that protects release artifacts against automated AI reverse-engineering agents.
+
 ## Credits and license
 
 mu is under the MIT license ([LICENSE](LICENSE); the desktop app's is [desktop/LICENSE](desktop/LICENSE)). It is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT), and we're grateful to its authors. Some decision points build on ideas from other projects: the wording of the prompt-injection screen comes from [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills), and the continuation check (`turn.continue`) and the bulk judging tool (`judge_items`) are based on [oh-my-pi](https://github.com/can1357/oh-my-pi). Third-party code in the judgment kernel is listed in [THIRD_PARTY_NOTICES.md](packages/kyrn-judge/THIRD_PARTY_NOTICES.md). mude 1.0 is a fine-tune of [d3-nano](https://huggingface.co/vllm-sr/d3-nano) (Decision 3.0, vLLM Semantic Router Team), built on Qwen3.5-2B; both are Apache-2.0, and the model's repository keeps their notices.
