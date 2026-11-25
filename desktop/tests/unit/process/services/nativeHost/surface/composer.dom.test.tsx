@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
 import type { PiCommand } from '@/common/utils/nativeHost';
 import NativeComposer from '@/renderer/pages/native/components/NativeComposer';
+import { clearSendBoxDrafts, readSendBoxDraftContent } from '@/renderer/hooks/chat/useSendBoxDraft';
 import { stageFirstMessage, useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext } from '@/renderer/pages/native/utils/nativeClient';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
@@ -79,7 +80,11 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
   ),
 }));
 
-afterEach(cleanup);
+// The send box remembers unsent text by conversation between mounts; one case must not inherit another's.
+afterEach(() => {
+  cleanup();
+  clearSendBoxDrafts();
+});
 
 const i18n = createInstance();
 void i18n.init({
@@ -419,6 +424,46 @@ describe('the native send box', () => {
     });
     expect(status()).toHaveAttribute('data-status', 'error');
     expect(status()).toBeEmptyDOMElement();
+  });
+});
+
+describe('what was typed and not sent', () => {
+  // The send box is unmounted whenever the person switches conversations, so its text cannot live in the component alone.
+  it('is back in the box when the person returns to the conversation, and only in that conversation', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'd1' });
+    host.add({ id: 'd2' });
+    const first = await mount(host, 'd1');
+    type('typed, not sent');
+    first.unmount();
+
+    const other = await mount(host, 'd2');
+    expect(input().value).toBe('');
+    other.unmount();
+
+    const back = await mount(host, 'd1');
+    expect(input().value).toBe('typed, not sent');
+    type('');
+    back.unmount();
+    expect(readSendBoxDraftContent('acp', 'd1')).toBe('');
+  });
+
+  it('is gone once it is sent', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'd1' });
+    host.answer((id, command) => {
+      if (command.type !== 'prompt') return { ok: true, data: { isStreaming: false, isCompacting: false } };
+      return { ok: true, data: { isStreaming: false, isCompacting: false } };
+    });
+    const view = await mount(host, 'd1');
+    type('a message that goes');
+    await send();
+    expect(commands(host)).toContainEqual({ type: 'prompt', message: 'a message that goes' });
+    view.unmount();
+
+    const back = await mount(host, 'd1');
+    expect(input().value).toBe('');
+    back.unmount();
   });
 });
 

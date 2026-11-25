@@ -28,6 +28,7 @@ import { getChatSurfaceWidthClass } from '@/renderer/pages/conversation/utils/ch
 import { useAddEventListener, type SendBoxCommandState } from '@/renderer/utils/emitter';
 import { mergeFileSelectionItems, type FileSelectionItem } from '@/renderer/utils/file/fileSelection';
 import { useNativeAttachments } from '../hooks/useNativeAttachments';
+import { readSendBoxDraftContent, writeSendBoxDraftContent } from '@/renderer/hooks/chat/useSendBoxDraft';
 import { useNativeCommands } from '../hooks/useNativeCommands';
 import type { NativeConversationApi, NativeConversationState } from '../hooks/useNativeConversation';
 import { useNativeModels } from '../hooks/useNativeModels';
@@ -145,7 +146,11 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
     conversation;
   const { clearFailure, waiting, returned, takeBackWaiting, settingUp } = conversation;
   const cwd = conversation.conversation?.cwd;
-  const [draft, setDraft] = useState('');
+  // Kept in the draft store as well, because the send box is unmounted whenever the person switches conversations.
+  const [draft, setDraft] = useState(() => readSendBoxDraftContent('acp', id));
+  useEffect(() => {
+    writeSendBoxDraftContent('acp', id, draft);
+  }, [id, draft]);
   // The project's files the person mentioned with `@` (the send box keeps them in step with the text).
   const [mentioned, setMentioned] = useState<FileSelectionItem[]>([]);
   const files = useNativeAttachments();
