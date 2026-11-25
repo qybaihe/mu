@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { IMessageText } from '@/common/chat/chatLib';
 import type { NativeConversation, NativeHostStatus } from '@/common/kyrn/nativeBridge';
+import { clearSendBoxDrafts } from '@/renderer/hooks/chat/useSendBoxDraft';
 import { useMessageListRun } from '@/renderer/pages/conversation/Messages/hooks';
 import { getCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { getCurrentProject, setCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
@@ -81,6 +82,7 @@ afterEach(() => {
   cleanup();
   forgetProjects();
   forgetRepoRoots();
+  clearSendBoxDrafts();
 });
 
 const i18n = createInstance();

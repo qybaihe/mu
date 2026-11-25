@@ -166,6 +166,27 @@ const getDraft = <K extends DraftConversationType>(
   }
 };
 
+/** Forgets every draft. Tests that mount a send box call it between cases, so one case's text is not the next case's. */
+export const clearSendBoxDrafts = (): void => {
+  for (const drafts of Object.values(store)) drafts.clear();
+};
+
+/**
+ * A conversation's unsent draft, for a send box that keeps its draft in component state while it is mounted and
+ * needs it back when it is mounted again. Reads the store directly: no React.
+ */
+export const readSendBoxDraft = <K extends DraftConversationType>(
+  type: K,
+  conversation_id: string
+): Extract<Draft, { _type: K }> | undefined => getDraft(type, conversation_id);
+
+/** Keeps a conversation's unsent draft in the store for `readSendBoxDraft`; undefined forgets it. */
+export const writeSendBoxDraft = <K extends DraftConversationType>(
+  type: K,
+  conversation_id: string,
+  draft: Extract<Draft, { _type: K }> | undefined
+): void => setDraft(type, conversation_id, draft);
+
 /**
  * 获得一种类型下的会话草稿操作的 React Hook
  */

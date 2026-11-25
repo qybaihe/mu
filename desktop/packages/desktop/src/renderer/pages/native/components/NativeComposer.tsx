@@ -28,6 +28,7 @@ import { getChatSurfaceWidthClass } from '@/renderer/pages/conversation/utils/ch
 import { useAddEventListener, type SendBoxCommandState } from '@/renderer/utils/emitter';
 import { mergeFileSelectionItems, type FileSelectionItem } from '@/renderer/utils/file/fileSelection';
 import { useNativeAttachments } from '../hooks/useNativeAttachments';
+import { readSendBoxDraft, writeSendBoxDraft } from '@/renderer/hooks/chat/useSendBoxDraft';
 import { useNativeCommands } from '../hooks/useNativeCommands';
 import type { NativeConversationApi, NativeConversationState } from '../hooks/useNativeConversation';
 import { useNativeModels } from '../hooks/useNativeModels';
@@ -145,9 +146,19 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
     conversation;
   const { clearFailure, waiting, returned, takeBackWaiting, settingUp } = conversation;
   const cwd = conversation.conversation?.cwd;
-  const [draft, setDraft] = useState('');
-  // The project's files the person mentioned with `@` (the send box keeps them in step with the text).
-  const [mentioned, setMentioned] = useState<FileSelectionItem[]>([]);
+  // The draft: the text, and the project's files the person mentioned with `@` (the send box keeps them in step with
+  // the text). Both are component state, for typing to stay synchronous, and are kept in the draft store as well,
+  // because the send box is unmounted whenever the person switches conversations.
+  const [kept] = useState(() => readSendBoxDraft('acp', id));
+  const [draft, setDraft] = useState(kept?.content ?? '');
+  const [mentioned, setMentioned] = useState<FileSelectionItem[]>(kept?.atPath ?? []);
+  useEffect(() => {
+    writeSendBoxDraft(
+      'acp',
+      id,
+      draft || mentioned.length ? { _type: 'acp', content: draft, atPath: mentioned, uploadFile: [] } : undefined
+    );
+  }, [id, draft, mentioned]);
   const files = useNativeAttachments();
   const picker = useRef<HTMLInputElement>(null);
   const models = useNativeModels(view, settings, request, settingUp);
