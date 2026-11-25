@@ -35,6 +35,7 @@ import { applyStartupAppLanguage, onAppLanguageApplied } from '@process/services
 import { setApplicationMenuWindow, setupApplicationMenu } from './process/utils/appMenu';
 import { getUpdateService } from './process/services/update';
 import { initializeZoomFactor, setupZoomForWindow } from './process/utils/zoom';
+import { registerContextMenu } from './process/utils/contextMenu';
 import {
   followSystemAppearance,
   initializeWindowAppearance,
@@ -498,6 +499,7 @@ const createWindow = ({ showOnReady = true }: { showOnReady?: boolean } = {}): v
   setupApplicationMenu();
 
   setupZoomForWindow(mainWindow);
+  registerContextMenu(mainWindow);
   registerWindowMaximizeListeners(mainWindow);
   attachWindowBoundsPersistence(mainWindow, (bounds) => ProcessConfig.set('window.bounds', bounds));
 
