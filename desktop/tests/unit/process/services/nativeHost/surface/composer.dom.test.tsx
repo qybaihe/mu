@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
 import type { PiCommand } from '@/common/utils/nativeHost';
 import NativeComposer from '@/renderer/pages/native/components/NativeComposer';
-import { clearSendBoxDrafts, readSendBoxDraftContent } from '@/renderer/hooks/chat/useSendBoxDraft';
+import { clearSendBoxDrafts, readSendBoxDraft } from '@/renderer/hooks/chat/useSendBoxDraft';
 import { stageFirstMessage, useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext } from '@/renderer/pages/native/utils/nativeClient';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
@@ -35,7 +35,9 @@ type BoxProps = {
   placeholder?: string;
   tools?: React.ReactNode;
   testIds?: { input?: string; send?: string; stop?: string };
+  selectedWorkspaceItems?: string[];
 };
+const mentioned = (): string[] => JSON.parse(box().getAttribute('data-mentioned') ?? '[]');
 
 vi.mock('@/renderer/components/chat/SendBox', () => ({
   // As the real box: sending clears the text and a `false` answer brings it back; stop shows while loading.
@@ -49,11 +51,13 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
     placeholder,
     tools,
     testIds,
+    selectedWorkspaceItems,
   }: BoxProps) => (
     <div
       data-testid='sendbox'
       data-loading={String(Boolean(loading))}
       data-send={String(Boolean(allowSendWhileLoading))}
+      data-mentioned={JSON.stringify(selectedWorkspaceItems)}
     >
       {tools}
       <textarea
@@ -445,7 +449,28 @@ describe('what was typed and not sent', () => {
     expect(input().value).toBe('typed, not sent');
     type('');
     back.unmount();
-    expect(readSendBoxDraftContent('acp', 'd1')).toBe('');
+    expect(readSendBoxDraft('acp', 'd1')).toBeUndefined();
+  });
+
+  it('takes the files mentioned with @ along with it', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'd1' });
+    const first = await mount(host, 'd1');
+    type('look at @notes');
+    act(() => {
+      emitter.emit('acp.selected.file.append', ['E:/notes.md']);
+    });
+    expect(mentioned()).toEqual(['E:/notes.md']);
+    first.unmount();
+
+    const back = await mount(host, 'd1');
+    expect(input().value).toBe('look at @notes');
+    expect(mentioned()).toEqual(['E:/notes.md']);
+    act(() => {
+      emitter.emit('acp.selected.file.append', ['E:/other.md']);
+    });
+    expect(mentioned()).toEqual(['E:/notes.md', 'E:/other.md']);
+    back.unmount();
   });
 
   it('is gone once it is sent', async () => {

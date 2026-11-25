@@ -172,26 +172,20 @@ export const clearSendBoxDrafts = (): void => {
 };
 
 /**
- * The unsent text of a conversation's draft, for a send box that keeps its text in component state while it is
- * mounted and needs the text back when it is mounted again. Reads the store directly: no React.
+ * A conversation's unsent draft, for a send box that keeps its draft in component state while it is mounted and
+ * needs it back when it is mounted again. Reads the store directly: no React.
  */
-export const readSendBoxDraftContent = <K extends DraftConversationType>(type: K, conversation_id: string): string =>
-  getDraft(type, conversation_id)?.content ?? '';
+export const readSendBoxDraft = <K extends DraftConversationType>(
+  type: K,
+  conversation_id: string
+): Extract<Draft, { _type: K }> | undefined => getDraft(type, conversation_id);
 
-/**
- * Keeps a conversation's unsent text in the store for `readSendBoxDraftContent`; an empty text forgets the draft.
- */
-export const writeSendBoxDraftContent = <K extends DraftConversationType>(
+/** Keeps a conversation's unsent draft in the store for `readSendBoxDraft`; undefined forgets it. */
+export const writeSendBoxDraft = <K extends DraftConversationType>(
   type: K,
   conversation_id: string,
-  content: string
-): void => {
-  const kept = getDraft(type, conversation_id);
-  const draft = content
-    ? ({ ...(kept ?? { content: '', atPath: [], uploadFile: [] }), content } as Extract<Draft, { _type: K }>)
-    : undefined;
-  setDraft(type, conversation_id, draft);
-};
+  draft: Extract<Draft, { _type: K }> | undefined
+): void => setDraft(type, conversation_id, draft);
 
 /**
  * 获得一种类型下的会话草稿操作的 React Hook
